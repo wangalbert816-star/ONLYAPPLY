@@ -1,12 +1,42 @@
 :root {
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC",
-    "Microsoft YaHei", sans-serif;
+  /* 单一主色 + 灰阶（禁止多蓝、乱渐变） */
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-pressed: #1e40af;
+  --color-bg: #fafafa;
+  --color-surface: #ffffff;
+  --color-fg: #0a0a0a;
+  --color-muted: #737373;
+  --color-muted-2: #a3a3a3;
+  --color-line: #e5e5e5;
+  --color-line-subtle: #f0f0f0;
+
+  --radius-input: 8px;
+  --radius-card: 12px;
+  --radius-cta: 11px;
+
+  --shadow-cta: 0 1px 2px rgba(15, 23, 42, 0.05), 0 4px 14px rgba(37, 99, 235, 0.12);
+  --shadow-cta-hover: 0 2px 4px rgba(15, 23, 42, 0.06), 0 8px 20px rgba(37, 99, 235, 0.16);
+
+  --space-section: clamp(3rem, 7vh, 4.5rem);
+  --space-block: clamp(2.75rem, 6vh, 4rem);
+
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "PingFang SC",
+    "Microsoft YaHei",
+    sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #0f172a;
-  background-color: #f8fafc;
-  /* 与 BrandWallBackground 底部两行条带等高，避免免责声明压在 logo 上 */
-  --brand-wall-strip-height: clamp(11rem, 34vh, 15rem);
+  color: var(--color-fg);
+  background-color: var(--color-bg);
+  --brand-wall-strip-height: clamp(10rem, 28vh, 13rem);
+  --app-disclaimer-h: 3.25rem;
+  font-feature-settings: "rlig" 1, "calt" 1;
 }
 
 * {
@@ -16,13 +46,15 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background-color: #f8fafc;
+  background-color: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
 }
 
 #root {
   position: relative;
   isolation: isolate;
   min-height: 100vh;
+  background-color: var(--color-bg);
 }
 
 button,
@@ -36,7 +68,7 @@ img.onlyapply-logo {
   display: block;
   height: auto;
   width: auto;
-  max-height: 2.5rem;
-  max-width: min(11rem, 78vw);
+  max-height: 4.25rem;
+  max-width: min(22rem, 94vw);
   object-fit: contain;
 }

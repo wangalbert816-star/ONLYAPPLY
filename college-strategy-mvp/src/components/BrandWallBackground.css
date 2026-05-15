@@ -1,4 +1,16 @@
-/* 全屏底层：z-index -1；2 行双向慢速无缝滚动，条带固定在视口底部（在免责声明之下） */
+/* 全屏底层品牌墙：无「卡片感」，仅低对比灰阶 + 单一主色页面留白 */
+
+html[data-intro] {
+  --brand-wall-strip-height: clamp(7rem, 18vh, 10rem);
+}
+
+html[data-intro] .brand-wall-logo img {
+  opacity: 0.2 !important;
+}
+
+html[data-intro] .brand-wall-vignette {
+  opacity: 0.35;
+}
 
 .brand-wall-bg {
   position: fixed;
@@ -6,7 +18,7 @@
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
-  background: #eef2f7;
+  background: var(--color-bg, #fafafa);
 }
 
 .brand-wall-canvas {
@@ -15,7 +27,6 @@
   pointer-events: none;
 }
 
-/* 与 :root --brand-wall-strip-height、.app 底部 padding 对齐 */
 .brand-wall-bottom-band {
   position: absolute;
   left: 0;
@@ -27,6 +38,11 @@
   justify-content: flex-end;
   padding-bottom: max(0.35rem, env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
+}
+
+/** 表单页底部有固定免责声明时：品牌墙整体上移，避免最下行被挡 */
+html[data-app-disclaimer] .brand-wall-bottom-band {
+  bottom: calc(var(--app-disclaimer-h, 3.25rem) + 0.2rem);
 }
 
 .brand-wall-rows {
@@ -44,7 +60,7 @@
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  min-height: calc(var(--bw-logo-size, 78px) + 28px);
+  min-height: calc(var(--bw-logo-size, 72px) + 20px);
 }
 
 .brand-wall-strip-nudge {
@@ -95,8 +111,8 @@
 
 .brand-wall-logo {
   flex: 0 0 auto;
-  width: var(--bw-logo-size, 78px);
-  height: var(--bw-logo-size, 78px);
+  width: var(--bw-logo-size, 72px);
+  height: var(--bw-logo-size, 72px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -106,30 +122,22 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  opacity: var(--bw-logo-opacity, 0.34);
-  filter: grayscale(0.52) contrast(1.05) saturate(1.06);
+  opacity: var(--bw-logo-opacity, 0.3);
+  filter: grayscale(1) contrast(1.04);
 }
 
+/* 极轻底部收边，不用多段彩色渐变 */
 .brand-wall-vignette {
   position: absolute;
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background:
-    radial-gradient(
-      ellipse 98% 88% at 50% 48%,
-      rgba(248, 250, 252, 0) 0%,
-      rgba(248, 250, 252, 0.06) 58%,
-      rgba(248, 250, 252, 0.42) 100%
-    ),
-    linear-gradient(
-      180deg,
-      rgba(248, 250, 252, 0.32) 0%,
-      rgba(248, 250, 252, 0.03) 18%,
-      transparent 40%,
-      transparent 60%,
-      rgba(248, 250, 252, 0.28) 100%
-    );
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 55%,
+    rgba(0, 0, 0, 0.025) 100%
+  );
 }
 
 @media (prefers-reduced-motion: reduce) {

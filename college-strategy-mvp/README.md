@@ -7,11 +7,24 @@
 ```bash
 cd college-strategy-mvp
 cp .env.example .env
-# 编辑 .env：见下方「模型提供方」
+# 编辑 .env：见下方「模型提供方」；可选配置 Supabase（登录与保存）
 
 npm install
 npm run dev
 ```
+
+### 登录与云端保存（可选 Supabase）
+
+未配置时应用仍可匿名使用；配置后可在报告页登录并保存问卷与报告。
+
+1. 在 [Supabase](https://supabase.com) 新建项目，在 **SQL Editor** 执行 `supabase/schema.sql`。
+2. **Authentication** 中启用 **Email**（Magic Link）与 **Google**；在 **URL Configuration** 将 Site URL 设为本地开发地址（如 `http://localhost:5173`），并把该地址加入 Redirect URLs。
+3. 在 **Project Settings → API** 复制 URL 与 `anon` key，写入 `.env`：
+
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+
+4. 重新 `npm run dev`。登录后生成或解锁报告会自动写入 `saved_applications` / `saved_reports`；「我的申请」可查看历史并重新打开。
 
 ### 模型提供方
 

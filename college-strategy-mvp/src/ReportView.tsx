@@ -1,10 +1,20 @@
-import type { PaywallCopy, PaywallTone, ReportDiff, ReportPayload, SchoolRow, SchoolTier, SupplementaryNote } from "./types";
+import type { FormState, PaywallCopy, PaywallTone, ReportDiff, ReportPayload, SchoolRow, SchoolTier, SupplementaryNote } from "./types";
 import "./ReportView.css";
+import { useMemo } from "react";
 import { useLanguage } from "./i18n/LanguageContext";
 import { EN_PAYWALL } from "./i18n/paywallEn";
 import { InformationGapsInteractive } from "./components/InformationGapsInteractive";
 import { BrandLogo } from "./components/BrandLogo";
 import { ExpertConsultSection } from "./components/ExpertConsultSection";
+import { ApplicationProfileRadar } from "./components/ApplicationProfileRadar";
+import { buildFiveDimensionProfile } from "./lib/fiveDimensionProfile";
+import { buildBiggestGapBlock, buildOverallVerdict } from "./lib/decisionReport";
+import { DecisionVerdictCard } from "./components/DecisionVerdictCard";
+import { ReportBiggestGapBanner } from "./components/ReportBiggestGapBanner";
+import { ReportOptimizeCtaBar } from "./components/ReportOptimizeCtaBar";
+import { ReportPathStep } from "./components/ReportPathStep";
+import { SaveReportBanner } from "./components/auth/SaveReportBanner";
+import { AuthMenuButton } from "./components/auth/AuthMenuButton";
 
 export type { PaywallCopy, PaywallTone } from "./types";
 
@@ -111,6 +121,12 @@ export const PAYWALL_PACKS: Record<PaywallTone, PaywallCopy> = {
 /** @deprecated 使用 PAYWALL_PACKS[getPaywallTone()] */
 export const PAYWALL_GUIDE = PAYWALL_PACKS.rational;
 
+function clampCellText(s: string, max: number): string {
+  const v = (s || "").replace(/\s+/g, " ").trim();
+  if (v.length <= max) return v;
+  return `${v.slice(0, max - 1)}…`;
+}
+
 function StrongHookCard({
   report,
   tone,
@@ -181,6 +197,7 @@ function whyCell(row: SchoolRow, tier: "reach" | "match" | "safety"): string {
 
 interface ReportViewProps {
   report: ReportPayload;
+  form: FormState;
   unlocked: boolean;
   onUnlock: () => void;
   onReset: () => void;
@@ -193,10 +210,19 @@ interface ReportViewProps {
   onDismissReportDiff?: () => void;
   highlightSchoolKeys?: Set<string>;
   onRefreshReportWithGaps?: (notes: SupplementaryNote[]) => Promise<void>;
+  onCommitProfileFiveNotes?: (notes: SupplementaryNote[]) => Promise<void>;
+  authConfigured?: boolean;
+  isAuthenticated?: boolean;
+  showSaveBanner?: boolean;
+  sessionSaved?: boolean;
+  onRequestSignIn?: () => void;
+  onOpenAccount?: () => void;
+  onDismissSaveBanner?: () => void;
 }
 
 export function ReportView({
   report,
+  form,
   unlocked,
   onUnlock,
   onReset,
@@ -209,8 +235,19 @@ export function ReportView({
   onDismissReportDiff,
   highlightSchoolKeys = new Set(),
   onRefreshReportWithGaps,
+  onCommitProfileFiveNotes,
+  authConfigured = false,
+  isAuthenticated = false,
+  showSaveBanner = false,
+  sessionSaved = false,
+  onRequestSignIn,
+  onOpenAccount,
+  onDismissSaveBanner,
 }: ReportViewProps) {
   const { t, locale } = useLanguage();
+  const profileFive = useMemo(() => buildFiveDimensionProfile(form, locale), [form, locale]);
+  const verdict = useMemo(() => buildOverallVerdict(form, profileFive, locale), [form, profileFive, locale]);
+  const biggestGap = useMemo(() => buildBiggestGapBlock(profileFive, locale), [profileFive, locale]);
   const tone = getPaywallTone();
   const copy = locale === "zh" ? PAYWALL_PACKS[tone] : EN_PAYWALL[tone];
 
@@ -323,10 +360,23 @@ export function ReportView({
             {unlocked ? <span className="badge-full">{t("report.badgeFull")}</span> : <span className="badge-preview">{t("report.badgePreview")}</span>}
           </h1>
         </div>
-        <button type="button" className="btn btn-secondary" onClick={onReset}>
-          {t("report.reset")}
-        </button>
+        <div className="top-actions__auth">
+          {authConfigured && onRequestSignIn && onOpenAccount && (
+            <AuthMenuButton onSignIn={onRequestSignIn} onOpenAccount={onOpenAccount} />
+          )}
+          <button type="button" className="btn btn-secondary" onClick={onReset}>
+            {t("report.reset")}
+          </button>
+        </div>
       </div>
+
+      {authConfigured && (showSaveBanner || (isAuthenticated && sessionSaved)) && onRequestSignIn && (
+        <SaveReportBanner
+          saved={isAuthenticated && sessionSaved}
+          onSignIn={onRequestSignIn}
+          onDismiss={showSaveBanner ? onDismissSaveBanner : undefined}
+        />
+      )}
 
       {!unlocked && (
         <p className="tone-pill" aria-label={t("report.toneAria")}>
@@ -362,35 +412,38 @@ export function ReportView({
         </>
       )}
 
-      <section className="card report-block">
-        <h2>{t("report.summaryTitle")}</h2>
-        <ul>
-          {report.executive_summary?.map((line, i) => (
-            <li key={i}>{line}</li>
-          ))}
-        </ul>
-      </section>
+      <div className="report-path" aria-label={t("report.decision.pathAria")}>
+        <ReportPathStep step={1} id="report-step-verdict" title={t("report.decision.step1Title")} lead={t("report.decision.step1Lead")}>
+          <DecisionVerdictCard verdict={verdict} t={t} />
+        </ReportPathStep>
 
-      {report.information_gaps?.length > 0 && (
-        <InformationGapsInteractive
-          gaps={report.information_gaps}
-          onRegenerate={onRefreshReportWithGaps}
-          isRegenerating={reportRefreshing}
-        />
-      )}
+        <ReportPathStep step={2} id="report-step-gap" title={t("report.decision.step2Title")} lead={t("report.decision.step2Lead")}>
+          <ReportBiggestGapBanner block={biggestGap} t={t} embedded />
+        </ReportPathStep>
 
-      {(["reach", "match", "safety"] as const).map((tier) => {
+        <ReportPathStep step={3} id="report-step-profile" title={t("report.decision.step3Title")} lead={t("report.decision.step3Lead")}>
+          <ApplicationProfileRadar
+            items={profileFive}
+            t={t}
+            onCommitProfileFiveNotes={onCommitProfileFiveNotes}
+            isCommitting={reportRefreshing}
+          />
+        </ReportPathStep>
+
+        <ReportPathStep step={4} id="report-step-schools" title={t("report.decision.step4Title")} lead={t("report.decision.step4Lead")} bare>
+          {(["reach", "match", "safety"] as const).map((tier) => {
         const rows = report[tier] as SchoolRow[] | undefined;
         if (!rows?.length) return null;
         const visible = rows.slice(0, lockedSchoolRows);
         const lockedCount = unlocked ? 0 : Math.max(0, rows.length - 1);
         return (
-          <section className="card report-block" key={tier}>
+          <section className="card report-block report-path-step__panel" key={tier}>
             <h2>
               {tierTitle(tier)}
               {!unlocked && lockedCount > 0 && <span className="inline-hint">{t("report.tierMore", { n: lockedCount })}</span>}
             </h2>
-            <div className="table-wrap">
+            {tier === "reach" && <p className="report-table-guide">{t("report.decision.tableGuide")}</p>}
+            <div className="table-wrap report-table-wrap--dense">
               <table>
                 <thead>
                   <tr>
@@ -407,20 +460,20 @@ export function ReportView({
                     return (
                     <tr key={i} className={hot ? "school-row-highlight" : undefined}>
                       <td>{row.school}</td>
-                      <td>{whyCell(row, tier)}</td>
+                      <td>{clampCellText(whyCell(row, tier), 118)}</td>
                       <td>
                         {(row.key_fit_signals || []).map((x, j) => (
-                          <div key={j}>{x}</div>
+                          <div key={j}>{clampCellText(x, 88)}</div>
                         ))}
                       </td>
                       <td>
                         {(row.key_risks || []).map((x, j) => (
-                          <div key={j}>{x}</div>
+                          <div key={j}>{clampCellText(x, 88)}</div>
                         ))}
                       </td>
                       <td>
                         {(row.verification_focus || []).map((x, j) => (
-                          <div key={j}>{x}</div>
+                          <div key={j}>{clampCellText(x, 88)}</div>
                         ))}
                       </td>
                     </tr>
@@ -444,10 +497,37 @@ export function ReportView({
           </section>
         );
       })}
+        </ReportPathStep>
 
-      <ExpertConsultSection gapCount={report.information_gaps?.length ?? 0} />
+        <ReportPathStep step={5} id="report-step-action" title={t("report.decision.step5Title")} lead={t("report.decision.step5Lead")} bare>
+          <InformationGapsInteractive
+            gaps={report.information_gaps ?? []}
+            onRegenerate={onRefreshReportWithGaps}
+            isRegenerating={reportRefreshing}
+            embedded
+          />
+          <ReportOptimizeCtaBar t={t} />
+        </ReportPathStep>
+      </div>
 
-      <section className="card report-block">
+      <div className="report-path-appendix">
+        <h2 className="report-path-appendix__title">{t("report.decision.appendixTitle")}</h2>
+        <p className="report-path-appendix__lead">{t("report.decision.appendixLead")}</p>
+
+        {(report.executive_summary?.length ?? 0) > 0 && (
+          <section className="card report-block report-path-appendix__card">
+            <h3>{t("report.decision.execDigestTitle")}</h3>
+            <ul className="report-exec-digest__list">
+              {report.executive_summary?.map((line, i) => (
+                <li key={i}>{line}</li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <ExpertConsultSection gapCount={report.information_gaps?.length ?? 0} />
+
+      <section className="card report-block report-path-appendix__card">
         <h2>
           {t("report.risksTitle")}
           {!unlocked && risks.length > 2 && <span className="inline-hint">{t("report.risksPreview")}</span>}
@@ -535,6 +615,8 @@ export function ReportView({
             ))}
         </ul>
       </section>
+
+      </div>
 
       {!unlocked && (
         <section className="card paywall-footer" aria-labelledby="paywall-footer-title">

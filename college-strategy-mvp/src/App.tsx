@@ -1,16 +1,25 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { FormState, GeoPref, ReportDiff, ReportPayload, SupplementaryNote } from "./types";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { FormState, ReportDiff, ReportPayload, SupplementaryNote } from "./types";
+import { getEffectiveIntake } from "./lib/intakeTerm";
 import { buildReportApiBody } from "./lib/reportApiBody";
 import { collectHighlightKeys, compareReports, reportDiffIsEmpty } from "./lib/reportDiff";
 import { apiUrl } from "./lib/apiBase";
 import { clearUnlockStorage, ReportView, writeUnlockToStorage } from "./ReportView";
 import { BrandLogo } from "./components/BrandLogo";
-import { UniversityLogoMarquee } from "./components/UniversityLogoMarquee";
+import { FormLiveSummary, GuidedStep1, GuidedStep2, GuidedStep3, type GuideTouch } from "./components/GuidedQuestionnaire";
+import { FullscreenLogoMarquee } from "./components/FullscreenLogoMarquee";
 import { useLanguage } from "./i18n/LanguageContext";
+import { useAuth } from "./auth/AuthContext";
+import { AuthModal } from "./components/auth/AuthModal";
+import { AccountHome } from "./components/auth/AccountHome";
+import { AuthMenuButton } from "./components/auth/AuthMenuButton";
+import { saveUserSession } from "./lib/supabase/accounts";
+import { clearPendingSave, readPendingSave, writePendingSave } from "./lib/pendingSave";
 import "./App.css";
 
 const initialForm: FormState = {
-  intakeTerm: "2026 Fall",
+  intakeTerm: "",
+  intakeOtherDetail: "",
   applicantIdentity: "",
   budget: "",
   testing: "",
@@ -29,16 +38,9 @@ const initialForm: FormState = {
 
 const LOADING_TIP_KEYS = ["app.loading.tip0", "app.loading.tip1", "app.loading.tip2", "app.loading.tip3"] as const;
 
-function toggleGeo(prefs: GeoPref[], g: GeoPref): GeoPref[] {
-  if (g === "any") return prefs.includes("any") ? [] : ["any"];
-  const withoutAny = prefs.filter((x) => x !== "any");
-  if (withoutAny.includes(g)) return withoutAny.filter((x) => x !== g);
-  return [...withoutAny, g];
-}
-
 function validateStep(step: number, f: FormState, tr: (path: string) => string): string | null {
   if (step === 1) {
-    if (!f.intakeTerm.trim()) return tr("validation.intake");
+    if (!getEffectiveIntake(f).trim()) return tr("validation.intake");
     if (!f.applicantIdentity) return tr("validation.identity");
     if (!f.budget) return tr("validation.budget");
     if (!f.testing) return tr("validation.testing");
@@ -63,26 +65,88 @@ function validateStep(step: number, f: FormState, tr: (path: string) => string):
 }
 
 export default function App() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [flowStarted, setFlowStarted] = useState(false);
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormState>(initialForm);
-  const [view, setView] = useState<"form" | "report">("form");
+  const [guideTouch, setGuideTouch] = useState<GuideTouch>({});
+  const [view, setView] = useState<"form" | "report" | "account">("form");
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [currentApplicationId, setCurrentApplicationId] = useState<string | null>(null);
+  const [saveBannerDismissed, setSaveBannerDismissed] = useState(false);
+  const [sessionSaved, setSessionSaved] = useState(false);
+  const [saveNotice, setSaveNotice] = useState<string | null>(null);
+  const { user, loading: authLoading, configured: authConfigured } = useAuth();
   const [loading, setLoading] = useState(false);
   const [loadingTipIndex, setLoadingTipIndex] = useState(0);
   const [err, setErr] = useState<string | null>(null);
   const [report, setReport] = useState<ReportPayload | null>(null);
   const [reportUnlocked, setReportUnlocked] = useState(false);
   const submitLockRef = useRef(false);
+  const applicationHubTriggerRef = useRef<HTMLButtonElement>(null);
+  const [applicationHubOpen, setApplicationHubOpen] = useState(false);
   const [reportRefreshing, setReportRefreshing] = useState(false);
   const [reportDiff, setReportDiff] = useState<ReportDiff | null>(null);
   const [highlightSchoolKeys, setHighlightSchoolKeys] = useState<Set<string>>(new Set());
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [subtleRefreshNotice, setSubtleRefreshNotice] = useState<string | null>(null);
   const refreshLockRef = useRef(false);
+  /** 五维「下一步」下提交的补充；与信息缺口触发的刷新合并后一并 POST */
+  const profileFiveSupplementaryRef = useRef<SupplementaryNote[]>([]);
   const highlightTimerRef = useRef<number | null>(null);
 
   const stepError = useMemo(() => validateStep(step, form, t), [step, form, t]);
+
+  const persistToCloud = useCallback(
+    async (payload: {
+      formState: FormState;
+      reportPayload: ReportPayload;
+      unlocked?: boolean;
+      applicationId?: string | null;
+    }) => {
+      if (!user || !authConfigured) return false;
+      try {
+        const { applicationId } = await saveUserSession({
+          applicationId: payload.applicationId ?? currentApplicationId,
+          form: payload.formState,
+          locale,
+          report: payload.reportPayload,
+          supplementaryNotes: profileFiveSupplementaryRef.current,
+          reportUnlocked: payload.unlocked ?? reportUnlocked,
+        });
+        setCurrentApplicationId(applicationId);
+        clearPendingSave();
+        setSessionSaved(true);
+        setSaveNotice(t("auth.saveSuccess"));
+        return true;
+      } catch {
+        setSaveNotice(t("auth.saveErr"));
+        return false;
+      }
+    },
+    [user, authConfigured, currentApplicationId, locale, reportUnlocked, t],
+  );
+
+  useEffect(() => {
+    if (authLoading || !user) return;
+    const pending = readPendingSave();
+    if (!pending) return;
+    setForm(pending.form);
+    setReport(pending.report);
+    setReportUnlocked(Boolean(pending.reportUnlocked));
+    setView("report");
+    void persistToCloud({
+      formState: pending.form,
+      reportPayload: pending.report,
+      unlocked: pending.reportUnlocked,
+    });
+  }, [authLoading, user, persistToCloud]);
+
+  useEffect(() => {
+    if (view !== "account" || authLoading || user) return;
+    setView(report ? "report" : "form");
+    setAuthModalOpen(true);
+  }, [view, authLoading, user, report]);
 
   useEffect(() => {
     if (!loading) return;
@@ -99,9 +163,37 @@ export default function App() {
     };
   }, []);
 
+  /** 首屏介绍态：压低底层校徽墙视觉权重 */
+  useEffect(() => {
+    const root = document.documentElement;
+    if (view !== "form") {
+      root.removeAttribute("data-intro");
+      return;
+    }
+    if (!flowStarted) root.setAttribute("data-intro", "");
+    else root.removeAttribute("data-intro");
+    return () => root.removeAttribute("data-intro");
+  }, [flowStarted, view]);
+
+  /** 有底部固定免责声明时：底层走马灯整体上移，避免被遮挡 */
+  useEffect(() => {
+    const root = document.documentElement;
+    if (view === "form") root.setAttribute("data-app-disclaimer", "");
+    else root.removeAttribute("data-app-disclaimer");
+    return () => root.removeAttribute("data-app-disclaimer");
+  }, [view]);
+
   function update<K extends keyof FormState>(key: K, v: FormState[K]) {
     setForm((s) => ({ ...s, [key]: v }));
   }
+
+  const markGuideTouch = useCallback((key: keyof GuideTouch) => {
+    setGuideTouch((s) => ({ ...s, [key]: true }));
+  }, []);
+
+  useEffect(() => {
+    setGuideTouch({});
+  }, [step]);
 
   async function submitReport() {
     if (submitLockRef.current) return;
@@ -121,7 +213,7 @@ export default function App() {
       const res = await fetch(apiUrl("/api/report"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(buildReportApiBody(form)),
+        body: JSON.stringify(buildReportApiBody(form, undefined, locale)),
       });
       const llmMs = res.headers.get("X-LLM-Duration-Ms");
       const data = await res.json();
@@ -139,10 +231,18 @@ export default function App() {
       setHighlightSchoolKeys(new Set());
       setRefreshError(null);
       setSubtleRefreshNotice(null);
-      setReport(data as ReportPayload);
+      profileFiveSupplementaryRef.current = [];
+      const nextReport = data as ReportPayload;
+      setReport(nextReport);
       setView("report");
       clearUnlockStorage();
       setReportUnlocked(false);
+      setSessionSaved(false);
+      setSaveNotice(null);
+      writePendingSave({ form, locale, report: nextReport, reportUnlocked: false });
+      if (user) {
+        void persistToCloud({ formState: form, reportPayload: nextReport, unlocked: false });
+      }
       queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
     } catch {
       setErr(t("app.errNetwork"));
@@ -174,18 +274,19 @@ export default function App() {
     }
   }
 
-  async function refreshReportWithGapNotes(notes: SupplementaryNote[]) {
+  async function refreshReportWithGapNotes(gapNotes: SupplementaryNote[]) {
     if (!report || refreshLockRef.current) return;
     refreshLockRef.current = true;
     setRefreshError(null);
     setSubtleRefreshNotice(null);
     setReportRefreshing(true);
     const prev = report;
+    const merged = [...gapNotes, ...profileFiveSupplementaryRef.current];
     try {
       const res = await fetch(apiUrl("/api/report"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(buildReportApiBody(form, notes)),
+        body: JSON.stringify(buildReportApiBody(form, merged.length > 0 ? merged : undefined, locale)),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -194,6 +295,11 @@ export default function App() {
       }
       const next = data as ReportPayload;
       setReport(next);
+      if (user) {
+        void persistToCloud({ formState: form, reportPayload: next, unlocked: reportUnlocked });
+      } else {
+        writePendingSave({ form, locale, report: next, reportUnlocked });
+      }
       const diff = compareReports(prev, next);
       if (reportDiffIsEmpty(diff)) {
         setReportDiff(null);
@@ -218,11 +324,73 @@ export default function App() {
     }
   }
 
+  async function commitProfileFiveNotesAndRefresh(notes: SupplementaryNote[]) {
+    profileFiveSupplementaryRef.current = notes;
+    await refreshReportWithGapNotes([]);
+  }
+
+  if (view === "account" && user) {
+    return (
+      <>
+        <AccountHome
+          onBack={() => {
+            if (report) setView("report");
+            else if (flowStarted) setView("form");
+            else setView("form");
+          }}
+          onNewApplication={() => {
+            setForm(initialForm);
+            setReport(null);
+            setCurrentApplicationId(null);
+            setStep(1);
+            setFlowStarted(true);
+            setView("form");
+            setSessionSaved(false);
+            setSaveBannerDismissed(false);
+            clearPendingSave();
+          }}
+          onEditForm={({ form: f, applicationId }) => {
+            setForm(f);
+            setCurrentApplicationId(applicationId);
+            setReport(null);
+            setStep(1);
+            setFlowStarted(true);
+            setView("form");
+          }}
+          onOpenReport={({ form: f, report: r, applicationId, reportUnlocked: u }) => {
+            setForm(f);
+            setReport(r);
+            setCurrentApplicationId(applicationId);
+            if (u) {
+              writeUnlockToStorage();
+              setReportUnlocked(true);
+            } else {
+              clearUnlockStorage();
+              setReportUnlocked(false);
+            }
+            setView("report");
+            queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+          }}
+        />
+        <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} successHint={saveNotice} />
+      </>
+    );
+  }
+
   if (view === "report" && report) {
     return (
+      <>
       <ReportView
         report={report}
+        form={form}
         unlocked={reportUnlocked}
+        authConfigured={authConfigured}
+        isAuthenticated={Boolean(user)}
+        showSaveBanner={authConfigured && !user && !saveBannerDismissed && !authLoading}
+        sessionSaved={sessionSaved}
+        onRequestSignIn={() => setAuthModalOpen(true)}
+        onOpenAccount={() => setView("account")}
+        onDismissSaveBanner={() => setSaveBannerDismissed(true)}
         reportRefreshing={reportRefreshing}
         refreshError={refreshError}
         onClearRefreshError={() => setRefreshError(null)}
@@ -232,84 +400,117 @@ export default function App() {
         onDismissReportDiff={dismissReportDiff}
         highlightSchoolKeys={highlightSchoolKeys}
         onRefreshReportWithGaps={refreshReportWithGapNotes}
+        onCommitProfileFiveNotes={commitProfileFiveNotesAndRefresh}
         onUnlock={() => {
           writeUnlockToStorage();
           setReportUnlocked(true);
+          if (user && report) {
+            void persistToCloud({ formState: form, reportPayload: report, unlocked: true });
+          }
         }}
         onReset={() => {
           clearUnlockStorage();
           setReportUnlocked(false);
+          profileFiveSupplementaryRef.current = [];
+          setCurrentApplicationId(null);
+          setSessionSaved(false);
+          setSaveBannerDismissed(false);
+          clearPendingSave();
           setView("form");
           setReport(null);
           setStep(1);
           setFlowStarted(false);
+          setApplicationHubOpen(false);
           setReportDiff(null);
           setHighlightSchoolKeys(new Set());
           setRefreshError(null);
           setSubtleRefreshNotice(null);
+          setSaveNotice(null);
           if (highlightTimerRef.current != null) {
             window.clearTimeout(highlightTimerRef.current);
             highlightTimerRef.current = null;
           }
         }}
       />
+      <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} successHint={saveNotice} />
+      </>
     );
   }
 
   if (!flowStarted) {
     return (
-      <div className="app">
-        <header className="hero">
-          <BrandLogo />
-          <h1>{t("app.hero.title")}</h1>
-          <p>{t("app.hero.lead")}</p>
-        </header>
+      <div className="app app--landing">
+        <div className="landing-sheet">
+          <header className="landing-hero">
+            <div className="landing-hero__top">
+              <BrandLogo className="landing-logo" />
+              <AuthMenuButton onSignIn={() => setAuthModalOpen(true)} onOpenAccount={() => setView("account")} />
+            </div>
+            <div className="landing-copy">
+              <h1 className="landing-title">
+                <span className="landing-title__l1">{t("app.hero.titleLine1")}</span>
+                <span className="landing-title__l2">{t("app.hero.titleLine2")}</span>
+              </h1>
+              <p className="landing-lead">{t("app.hero.lead")}</p>
+            </div>
+          </header>
 
-        <UniversityLogoMarquee />
+          <div className="landing-cta-wrap">
+            <button
+              type="button"
+              className="btn btn-primary btn-block btn-cta-landing"
+              onClick={() => {
+                setApplicationHubOpen(false);
+                setFlowStarted(true);
+                queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+              }}
+            >
+              {t("app.welcome.start")}
+            </button>
+            <p className="landing-trust">{t("app.welcome.meta")}</p>
+          </div>
 
-        <section className="card welcome-card">
-          <h2 className="welcome-title">{t("app.welcome.title")}</h2>
-          <ol className="welcome-steps">
-            <li>
-              <strong>{t("app.welcome.s1t")}</strong>
-              <span>{t("app.welcome.s1d")}</span>
-            </li>
-            <li>
-              <strong>{t("app.welcome.s2t")}</strong>
-              <span>{t("app.welcome.s2d")}</span>
-            </li>
-            <li>
-              <strong>{t("app.welcome.s3t")}</strong>
-              <span>{t("app.welcome.s3d")}</span>
-            </li>
-          </ol>
-          <p className="welcome-meta">{t("app.welcome.meta")}</p>
-          <button
-            type="button"
-            className="btn btn-primary btn-block"
-            onClick={() => {
-              setFlowStarted(true);
-              queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
-            }}
-          >
-            {t("app.welcome.start")}
-          </button>
-        </section>
+          <div className="app-links-entry-wrap">
+            <button
+              ref={applicationHubTriggerRef}
+              type="button"
+              className="app-links-entry"
+              aria-expanded={applicationHubOpen}
+              aria-controls="application-hub-dialog"
+              onClick={() => setApplicationHubOpen(true)}
+            >
+              {t("appLinks.entry")}
+            </button>
+          </div>
+        </div>
 
-        <p className="disclaimer">{t("app.disclaimer")}</p>
+        <FullscreenLogoMarquee
+          open={applicationHubOpen}
+          onClose={() => {
+            setApplicationHubOpen(false);
+            queueMicrotask(() => applicationHubTriggerRef.current?.focus());
+          }}
+        />
+
+        <footer className="app-disclaimer-fixed" role="contentinfo">
+          <p>{t("app.disclaimer")}</p>
+        </footer>
+        <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} successHint={saveNotice} />
       </div>
     );
   }
 
   return (
-    <div className="app">
-      <header className="hero">
+    <>
+    <div className="app app--flow">
+      <header className="hero--compact">
         <BrandLogo />
-        <h1>{t("app.hero.title")}</h1>
-        <p>{t("app.hero.lead")}</p>
+        <div className="hero--compact-copy">
+          <h1>{t("app.flow.headline")}</h1>
+          <p className="hero-flow-tagline">{t("app.flow.tagline")}</p>
+        </div>
+        <AuthMenuButton onSignIn={() => setAuthModalOpen(true)} onOpenAccount={() => setView("account")} />
       </header>
-
-      <UniversityLogoMarquee />
 
       <p className="steps-caption" aria-live="polite">
         {t("app.steps.caption", { step })}
@@ -323,188 +524,29 @@ export default function App() {
       </div>
 
       {step === 1 && (
-        <div className="card">
+        <div className="card card--step">
           <h2>{t("steps.1.title")}</h2>
           <p className="step-lead">{t("steps.1.lead")}</p>
-
-          <div className="field">
-            <label htmlFor="intakeTerm">{t("form.intake")}</label>
-            <select id="intakeTerm" value={form.intakeTerm} onChange={(e) => update("intakeTerm", e.target.value)}>
-              <option value="2026 Fall">2026 Fall</option>
-              <option value="2027 Fall">2027 Fall</option>
-              <option value="其他">{t("form.opt.intakeOther")}</option>
-            </select>
-          </div>
-
-          <div className="field">
-            <label>{t("form.identity")}</label>
-            <select
-              value={form.applicantIdentity}
-              onChange={(e) => update("applicantIdentity", e.target.value as FormState["applicantIdentity"])}
-            >
-              <option value="">{t("form.opt.choose")}</option>
-              <option value="intl">{t("form.opt.idIntl")}</option>
-              <option value="us_citizen">{t("form.opt.idUs")}</option>
-              <option value="other">{t("form.opt.idOther")}</option>
-            </select>
-          </div>
-
-          <div className="field">
-            <label>{t("form.budget")}</label>
-            <select value={form.budget} onChange={(e) => update("budget", e.target.value as FormState["budget"])}>
-              <option value="">{t("form.opt.choose")}</option>
-              <option value="full_pay">{t("form.opt.budgetFull")}</option>
-              <option value="need_aid">{t("form.opt.budgetAid")}</option>
-              <option value="unsure">{t("form.opt.budgetUnsure")}</option>
-            </select>
-          </div>
-
-          <div className="field">
-            <label>{t("form.testing")}</label>
-            <select value={form.testing} onChange={(e) => update("testing", e.target.value as FormState["testing"])}>
-              <option value="">{t("form.opt.choose")}</option>
-              <option value="test_optional">{t("form.opt.testOpt")}</option>
-              <option value="will_submit">{t("form.opt.testSubmit")}</option>
-            </select>
-          </div>
-
-          {form.testing === "will_submit" && (
-            <>
-              <div className="field">
-                <label htmlFor="sat">{t("form.sat")}</label>
-                <input
-                  id="sat"
-                  type="text"
-                  placeholder={t("form.placeholder.sat")}
-                  value={form.satScore}
-                  onChange={(e) => update("satScore", e.target.value)}
-                />
-              </div>
-              <div className="field">
-                <label htmlFor="act">{t("form.act")}</label>
-                <input
-                  id="act"
-                  type="text"
-                  placeholder={t("form.placeholder.act")}
-                  value={form.actScore}
-                  onChange={(e) => update("actScore", e.target.value)}
-                />
-              </div>
-            </>
-          )}
+          <GuidedStep1 form={form} update={update} t={t} />
+          <FormLiveSummary form={form} t={t} />
         </div>
       )}
 
       {step === 2 && (
-        <div className="card">
+        <div className="card card--step">
           <h2>{t("steps.2.title")}</h2>
           <p className="step-lead">{t("steps.2.lead")}</p>
-
-          <div className="field">
-            <label>{t("form.hs")}</label>
-            <select value={form.highSchoolSystem} onChange={(e) => update("highSchoolSystem", e.target.value)}>
-              <option value="">{t("form.opt.choose")}</option>
-              <option value="国内普高">{t("form.opt.hsCn")}</option>
-              <option value="美高">{t("form.opt.hsUs")}</option>
-              <option value="IB">{t("form.opt.hsIb")}</option>
-              <option value="A-Level">{t("form.opt.hsAl")}</option>
-              <option value="AP体系">{t("form.opt.hsAp")}</option>
-              <option value="其他">{t("form.opt.hsOther")}</option>
-            </select>
-          </div>
-
-          <div className="field">
-            <label htmlFor="gpa">{t("form.gpa")}</label>
-            <textarea
-              id="gpa"
-              placeholder={t("form.placeholder.gpa")}
-              value={form.gpa}
-              onChange={(e) => update("gpa", e.target.value)}
-            />
-          </div>
-
-          <div className="field">
-            <label htmlFor="major">{t("form.major")}</label>
-            <input
-              id="major"
-              type="text"
-              placeholder={t("form.placeholder.major")}
-              value={form.majorPrimary}
-              onChange={(e) => update("majorPrimary", e.target.value)}
-            />
-          </div>
-
-          <div className="field">
-            <label htmlFor="major2">{t("form.major2")}</label>
-            <input id="major2" type="text" value={form.majorSecondary} onChange={(e) => update("majorSecondary", e.target.value)} />
-          </div>
-
-          <div className="field">
-            <label>{t("form.schoolSize")}</label>
-            <select value={form.schoolSize} onChange={(e) => update("schoolSize", e.target.value as FormState["schoolSize"])}>
-              <option value="">{t("form.opt.choose")}</option>
-              <option value="small">{t("form.opt.sizeS")}</option>
-              <option value="medium">{t("form.opt.sizeM")}</option>
-              <option value="large">{t("form.opt.sizeL")}</option>
-              <option value="any">{t("form.opt.sizeAny")}</option>
-            </select>
-          </div>
-
-          <div className="field">
-            <label>{t("form.geo")}</label>
-            <div className="row-check">
-              {(["west", "east", "south", "midwest", "great_lakes", "any"] as const).map((g) => (
-                <label key={g}>
-                  <input
-                    type="checkbox"
-                    checked={form.geoPrefs.includes(g)}
-                    onChange={() => update("geoPrefs", toggleGeo(form.geoPrefs, g))}
-                  />
-                  {t(`geo.${g}`)}
-                </label>
-              ))}
-            </div>
-          </div>
+          <GuidedStep2 form={form} update={update} t={t} guideTouch={guideTouch} markTouch={markGuideTouch} />
+          <FormLiveSummary form={form} t={t} />
         </div>
       )}
 
       {step === 3 && (
-        <div className="card">
+        <div className="card card--step">
           <h2>{t("steps.3.title")}</h2>
           <p className="step-lead">{t("steps.3.lead")}</p>
-
-          <div className="field">
-            <label htmlFor="actv">{t("form.activities")}</label>
-            <textarea
-              id="actv"
-              maxLength={600}
-              placeholder={t("form.placeholder.activities")}
-              value={form.activities}
-              onChange={(e) => update("activities", e.target.value)}
-            />
-            <small>{form.activities.length}/600</small>
-          </div>
-
-          <div className="field">
-            <label>{t("form.risk")}</label>
-            <select value={form.riskStyle} onChange={(e) => update("riskStyle", e.target.value as FormState["riskStyle"])}>
-              <option value="">{t("form.opt.choose")}</option>
-              <option value="conservative">{t("form.opt.riskCon")}</option>
-              <option value="balanced">{t("form.opt.riskBal")}</option>
-              <option value="aggressive">{t("form.opt.riskAgg")}</option>
-            </select>
-          </div>
-
-          <div className="field">
-            <label htmlFor="deal">{t("form.deal")}</label>
-            <input
-              id="deal"
-              type="text"
-              placeholder={t("form.placeholder.deal")}
-              value={form.dealbreakers}
-              onChange={(e) => update("dealbreakers", e.target.value)}
-            />
-          </div>
+          <GuidedStep3 form={form} update={update} t={t} guideTouch={guideTouch} markTouch={markGuideTouch} />
+          <FormLiveSummary form={form} t={t} />
         </div>
       )}
 
@@ -516,6 +558,7 @@ export default function App() {
             type="button"
             className="btn btn-secondary"
             onClick={() => {
+              setApplicationHubOpen(false);
               setFlowStarted(false);
               setErr(null);
             }}
@@ -554,7 +597,11 @@ export default function App() {
         </div>
       )}
 
-      <p className="disclaimer">{t("app.disclaimer")}</p>
+      <footer className="app-disclaimer-fixed" role="contentinfo">
+        <p>{t("app.disclaimer")}</p>
+      </footer>
     </div>
+    <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} successHint={saveNotice} />
+    </>
   );
 }

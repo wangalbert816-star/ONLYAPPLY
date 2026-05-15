@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { FullscreenLogoMarquee } from "./FullscreenLogoMarquee";
+import { useCallback, useMemo, useState, type CSSProperties } from "react";
 import amherstLogo from "../assets/logos/amherst.png";
 import berkeleyLogo from "../assets/logos/berkeley.png";
 import brownLogo from "../assets/logos/brown.png";
@@ -12,7 +11,6 @@ import stanfordLogo from "../assets/logos/stanford.png";
 import uclaLogo from "../assets/logos/ucla.png";
 import "./UniversityLogoMarquee.css";
 import { repeatMarqueeStrip } from "../utils/repeatMarqueeStrip";
-import { useLanguage } from "../i18n/LanguageContext";
 
 export interface MarqueeSchool {
   id: string;
@@ -21,7 +19,7 @@ export interface MarqueeSchool {
   logoUrl: string;
 }
 
-/** 自托管 logo（Vite 打包）；前景条、底层墙、全屏层共用 */
+/** 自托管 logo（Vite 打包）；前景条、底层墙共用；纯装饰，不承载交互 */
 export const DEFAULT_MARQUEE_SCHOOLS: MarqueeSchool[] = [
   { id: "harvard", name: "Harvard", logoUrl: harvardLogo },
   { id: "stanford", name: "Stanford", logoUrl: stanfordLogo },
@@ -49,25 +47,10 @@ function InitialFallback({ name }: { name: string }) {
 
 export function UniversityLogoMarquee({
   schools = DEFAULT_MARQUEE_SCHOOLS,
-  durationSec = 210,
+  durationSec = 280,
   className = "",
 }: UniversityLogoMarqueeProps) {
-  const { t } = useLanguage();
-  const triggerRef = useRef<HTMLDivElement>(null);
   const [broken, setBroken] = useState<Record<string, boolean>>({});
-  const [fullscreen, setFullscreen] = useState(false);
-  const wasFullscreen = useRef(false);
-
-  useEffect(() => {
-    if (fullscreen) {
-      wasFullscreen.current = true;
-      return;
-    }
-    if (wasFullscreen.current) {
-      wasFullscreen.current = false;
-      triggerRef.current?.focus({ preventScroll: true });
-    }
-  }, [fullscreen]);
 
   const onImgError = useCallback((id: string) => {
     setBroken((prev) => ({ ...prev, [id]: true }));
@@ -78,7 +61,7 @@ export function UniversityLogoMarquee({
   const stripSchools = useMemo(() => repeatMarqueeStrip(schools, 10), [schools]);
 
   const renderLogo = (school: MarqueeSchool, keySuffix: string) => (
-    <div className="marquee-logo-cell" key={`${school.id}-${keySuffix}`} title={school.name}>
+    <div className="marquee-logo-cell" key={`${school.id}-${keySuffix}`} aria-hidden>
       <div className="marquee-logo-frame">
         {broken[school.id] ? (
           <InitialFallback name={school.name} />
@@ -86,7 +69,7 @@ export function UniversityLogoMarquee({
           <img
             src={school.logoUrl}
             alt=""
-            loading="eager"
+            loading="lazy"
             decoding="async"
             draggable={false}
             onError={() => onImgError(school.id)}
@@ -99,25 +82,7 @@ export function UniversityLogoMarquee({
   const rootClass = ["university-logo-marquee", className].filter(Boolean).join(" ");
 
   return (
-    <div
-      ref={triggerRef}
-      className={rootClass}
-      style={style}
-      role="button"
-      tabIndex={0}
-      title={t("marquee.title")}
-      aria-label={t("marquee.aria")}
-      aria-expanded={fullscreen}
-      aria-haspopup="dialog"
-      onClick={() => setFullscreen(true)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          setFullscreen(true);
-        }
-      }}
-    >
-      <FullscreenLogoMarquee open={fullscreen} onClose={() => setFullscreen(false)} schools={schools} />
+    <div className={rootClass} style={style} aria-hidden="true">
       <div className="marquee-fade marquee-fade--left" aria-hidden />
       <div className="marquee-fade marquee-fade--right" aria-hidden />
       <div className="marquee-viewport">

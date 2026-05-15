@@ -14,6 +14,8 @@ export type GeoPref =
 
 export interface FormState {
   intakeTerm: string;
+  /** 当 intakeTerm 为「其他」时，由用户自行填写的入学季说明 */
+  intakeOtherDetail: string;
   applicantIdentity: ApplicantIdentity | "";
   budget: Budget | "";
   testing: Testing | "";

@@ -23,7 +23,7 @@ const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json({ limit: "256kb" }));
 
-const SYSTEM_PROMPT = `你是一位资深美国本科升学顾问（10年+经验），风格：专业、克制、可执行。基于用户问卷生成「选校策略草案」。
+const SYSTEM_PROMPT_ZH = `你是一位资深美国本科升学顾问（10年+经验），风格：专业、克制、可执行。基于用户问卷生成「选校策略草案」。
 
 【语言】全程简体中文（校名保留英文）。
 
@@ -68,6 +68,60 @@ match 每元素字段名必须为：school, why_match_for_you, key_fit_signals, 
 safety 每元素字段名必须为：school, why_safety_for_you, key_fit_signals, key_risks, verification_focus
 reach 每元素字段名必须为：school, why_reach_for_you, key_fit_signals, key_risks, verification_focus
 `;
+
+const SYSTEM_PROMPT_EN = `You are a senior U.S. undergraduate admissions counselor (10+ years), tone: professional, restrained, and actionable. Produce a school-list strategy from the user's questionnaire.
+
+【Language】Write the entire JSON in natural American English. Keep school names in English as usual.
+
+【Counselor stance】
+- First judge whether information is sufficient; if not, list 0–6 concrete follow-ups in information_gaps.
+- If the user message ends with a [User supplementary notes] block: you MUST revise reach/match/safety rationales and risks accordingly; remove or merge gap items that are fully addressed; never contradict those notes.
+- Reference at least 3 specific questionnaire fields (budget/identity/testing/major/preferences/activities). If supplementary notes exist, reference at least one concrete fact from them.
+- Never promise admission ("guaranteed", "sure admit", etc.). Do not invent exact deadlines, exact aid dollar amounts, or exact admit rates unless the user supplied them and you are only repeating.
+
+【Volatile facts】For policies, costs, rounds, international requirements: say "confirm on each school's official site for the application cycle." Put checklist items in verification_focus without inventing specific calendar dates.
+
+【Reach / Match / Safety】
+- Reach: higher uncertainty but still a reasonable case to apply.
+- Match: main battlefield; fit is generally reasonable but variance remains.
+- Safety: true floor logic—explain how it reduces all-reject risk (not a random filler).
+
+【Counts】Exactly 3 schools in reach, 3 in match, and 3 in safety (9 total U.S. bachelor's institutions).
+
+【Unique school list — hard rules】
+1. Each school appears at most once across the whole report: using the English school string, the union of reach+match+safety must be 9 distinct school names.
+2. No duplicates across tiers or within a tier. Treat common aliases/abbreviations that refer to the same institution as one school; pick one spelling and use it consistently.
+3. The three tiers are pairwise disjoint; within each tier the 3 schools are mutually distinct.
+4. If tier boundaries are ambiguous: prioritize "no duplicates"; prefer slightly conservative tiering over reusing any school to fill a slot.
+
+【Pre-output self-check】Before printing the final JSON (internally only; output JSON only):
+- List all 9 school strings and verify uniqueness; if any duplicate exists, replace with a new U.S. bachelor's institution not yet used and rewrite that row's rationale, risks, and verification items for consistency.
+- The returned JSON must be the deduplicated final version.
+
+【Output】Return only one valid JSON object (no Markdown fences, no extra prose), schema:
+{
+  "executive_summary": ["3-5 bullets, each <=120 characters"],
+  "information_gaps": ["0-6 bullets"],
+  "reach": [{"school":"","why_reach_for_you":"","key_fit_signals":["",""],"key_risks":["",""],"verification_focus":["","",""]}],
+  "match": [same shape, but each object uses why_match_for_you and explains why it sits in Match],
+  "safety": [same shape, each object uses why_safety_for_you],
+  "portfolio_risks": [{"risk_title":"","what_it_means_for_you":"","mitigation":""}],
+  "improvement_plan": {"this_week":["3-5 items"],"this_month":["4-7 items"],"before_submitting":["4-7 items"]},
+  "strategy_notes": ["3-6 items"]
+}
+
+Field names for match rows must be: school, why_match_for_you, key_fit_signals, key_risks, verification_focus
+Field names for safety rows must be: school, why_safety_for_you, key_fit_signals, key_risks, verification_focus
+Field names for reach rows must be: school, why_reach_for_you, key_fit_signals, key_risks, verification_focus
+`;
+
+function resolveReportLocale(body) {
+  return body && body.locale === "en" ? "en" : "zh";
+}
+
+function systemPromptForLocale(locale) {
+  return locale === "en" ? SYSTEM_PROMPT_EN : SYSTEM_PROMPT_ZH;
+}
 
 function tryBuildChinaArkConfig() {
   const key = (
@@ -228,6 +282,8 @@ function normalizeSupplementaryNotes(raw) {
 }
 
 function buildUserPayload(body) {
+  const locale = resolveReportLocale(body);
+  const isEn = locale === "en";
   const {
     intakeTerm,
     applicantIdentity,
@@ -244,13 +300,44 @@ function buildUserPayload(body) {
     activities,
     riskStyle,
     dealbreakers,
-  } = body;
+  } = body || {};
 
-  const supplementary = normalizeSupplementaryNotes(body.supplementary_notes);
+  const supplementary = normalizeSupplementaryNotes(body?.supplementary_notes);
   let extra = "";
   if (supplementary.length > 0) {
-    const lines = supplementary.map((x) => `【${x.topic}】${x.text}`);
-    extra = `\n\n【用户补充说明（信息缺口已更新，请据此重写 JSON：档位、理由、风险与 information_gaps 须与补充一致；已覆盖的缺口应移除或显著缩短）】\n${lines.join("\n")}`;
+    if (isEn) {
+      const lines = supplementary.map((x) => `[${x.topic}] ${x.text}`);
+      extra = `\n\n[User supplementary notes — gaps have been updated; rewrite JSON so tiers, rationales, risks, and information_gaps stay consistent; remove or shorten gaps that are now fully covered]\n${lines.join("\n")}`;
+    } else {
+      const lines = supplementary.map((x) => `【${x.topic}】${x.text}`);
+      extra = `\n\n【用户补充说明（信息缺口已更新，请据此重写 JSON：档位、理由、风险与 information_gaps 须与补充一致；已覆盖的缺口应移除或显著缩短）】\n${lines.join("\n")}`;
+    }
+  }
+
+  if (isEn) {
+    const na = "Not provided";
+    const none = "None";
+    const geoStr = Array.isArray(geoPrefs) ? geoPrefs.join(", ") : geoPrefs || na;
+    return `Generate a JSON report from the following questionnaire (strictly follow the system schema; exactly 3 schools per tier).
+
+[Intake term] ${intakeTerm || na}
+[Applicant identity] ${applicantIdentity || na}
+[Target scope] U.S. undergraduate (bachelor's)
+[Tuition / budget posture] ${budget || na}
+[Testing strategy] ${testing || na}${
+      testing === "will_submit" ? `\nSAT: ${satScore || na}\nACT: ${actScore || na}` : ""
+    }
+
+[High school system] ${highSchoolSystem || na}
+[GPA / transcript notes] ${gpa || na}
+[Primary major] ${majorPrimary || na}
+[Alternate major] ${majorSecondary || none}
+[Campus size preference] ${schoolSize || na}
+[Geography preferences] ${geoStr}
+
+[Activities / awards summary] ${activities || na}
+[List risk posture] ${riskStyle || na}
+[Hard dealbreakers] ${dealbreakers || none}${extra}`;
   }
 
   return `请基于以下问卷生成 JSON 报告（严格遵守 system 的结构与每档3所的数量）。
@@ -326,6 +413,7 @@ app.post("/api/report", async (req, res) => {
       timeout: LLM_TIMEOUT_MS,
       maxRetries: LLM_MAX_RETRIES,
     });
+    const locale = resolveReportLocale(req.body || {});
     const userContent = buildUserPayload(req.body || {});
 
     const tLlm = Date.now();
@@ -333,7 +421,7 @@ app.post("/api/report", async (req, res) => {
       model,
       temperature: 0.4,
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: systemPromptForLocale(locale) },
         { role: "user", content: userContent },
       ],
     };

@@ -41,10 +41,12 @@ export function InformationGapsInteractive({
   gaps,
   onRegenerate,
   isRegenerating,
+  embedded = false,
 }: {
   gaps: string[];
   onRegenerate?: (notes: SupplementaryNote[]) => Promise<void>;
   isRegenerating?: boolean;
+  embedded?: boolean;
 }) {
   const { t, locale } = useLanguage();
   const tasks = useMemo(() => buildGapTasks(gaps, locale), [gaps, locale]);
@@ -73,6 +75,7 @@ export function InformationGapsInteractive({
     [tasks, completions],
   );
   const progressPct = tasks.length ? Math.round((completedCount / tasks.length) * 100) : 0;
+  const hasTasks = tasks.length > 0;
 
   const closeModal = useCallback(() => {
     setOpenId(null);
@@ -206,87 +209,102 @@ export function InformationGapsInteractive({
       document.body,
     );
 
+  const Tag = embedded ? "div" : "section";
+  const panelClass = embedded
+    ? "gaps-panel gaps-panel--embedded card report-block"
+    : "card report-block gaps-panel";
+
   return (
-    <section className="card report-block gaps-panel" aria-labelledby="gaps-interactive-title">
-      <h2 id="gaps-interactive-title">{t("report.gapsTitle")}</h2>
-      <p className="gaps-panel__intro">{t("report.gapsInteractive.intro")}</p>
+    <Tag
+      className={panelClass}
+      id="report-section-gaps"
+      aria-labelledby={embedded ? undefined : "gaps-interactive-title"}
+    >
+      {!embedded && <h2 id="gaps-interactive-title">{t("report.gapsTitle")}</h2>}
+      {hasTasks ? (
+        <>
+          <p className="gaps-panel__intro">{t("report.gapsInteractive.intro")}</p>
 
-      <div className="gaps-progress" aria-label={t("report.gapsInteractive.ariaProgress")}>
-        <div className="gaps-progress__row">
-          <span className="gaps-progress__label">{t("report.gapsInteractive.completeness")}</span>
-          <span className="gaps-progress__value">{t("report.gapsInteractive.percent", { n: progressPct })}</span>
-        </div>
-        <div className="gaps-progress__track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progressPct}>
-          <div className="gaps-progress__fill" style={{ width: `${progressPct}%` }} />
-        </div>
-        <p className="gaps-progress__hint">{t("report.gapsInteractive.progressHint")}</p>
-      </div>
+          <div className="gaps-progress" aria-label={t("report.gapsInteractive.ariaProgress")}>
+            <div className="gaps-progress__row">
+              <span className="gaps-progress__label">{t("report.gapsInteractive.completeness")}</span>
+              <span className="gaps-progress__value">{t("report.gapsInteractive.percent", { n: progressPct })}</span>
+            </div>
+            <div className="gaps-progress__track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progressPct}>
+              <div className="gaps-progress__fill" style={{ width: `${progressPct}%` }} />
+            </div>
+            <p className="gaps-progress__hint">{t("report.gapsInteractive.progressHint")}</p>
+          </div>
 
-      {progressPct === 100 && <p className="gaps-all-done">{t("report.gapsInteractive.allDone")}</p>}
+          {progressPct === 100 && <p className="gaps-all-done">{t("report.gapsInteractive.allDone")}</p>}
 
-      <div className="gaps-list">
-        {tasks.map((task) => {
-          const filled = (completions[task.id]?.value || "").trim().length > 0;
-          return (
-            <article key={task.id} className={`gaps-card${filled ? " gaps-card--done" : ""}`}>
-              <div className="gaps-card__top">
-                <h3 className="gaps-card__title">{task.title}</h3>
-                <span className={`gaps-card__status${filled ? " gaps-card__status--done" : " gaps-card__status--todo"}`}>
-                  {filled ? t("report.gapsInteractive.statusDone") : t("report.gapsInteractive.statusTodo")}
-                </span>
-              </div>
-              <p className="gaps-card__why">
-                <strong>{t("report.gapsInteractive.whyTitle")}</strong>
-                {task.whyNeeded}
-              </p>
-              <p className="gaps-card__impact">
-                <strong>{t("report.gapsInteractive.impactTitle")}</strong>
-                {task.impactIfMissing}
-              </p>
-              {!filled && (
-                <p className="gaps-card__preview">
-                  <strong>{t("report.gapsInteractive.modelNote")}</strong>
-                  {task.rawLine}
-                </p>
+          <div className="gaps-list">
+            {tasks.map((task) => {
+              const filled = (completions[task.id]?.value || "").trim().length > 0;
+              return (
+                <article key={task.id} className={`gaps-card${filled ? " gaps-card--done" : ""}`}>
+                  <div className="gaps-card__top">
+                    <h3 className="gaps-card__title">{task.title}</h3>
+                    <span className={`gaps-card__status${filled ? " gaps-card__status--done" : " gaps-card__status--todo"}`}>
+                      {filled ? t("report.gapsInteractive.statusDone") : t("report.gapsInteractive.statusTodo")}
+                    </span>
+                  </div>
+                  <p className="gaps-card__why">
+                    <strong>{t("report.gapsInteractive.whyTitle")}</strong>
+                    {task.whyNeeded}
+                  </p>
+                  <p className="gaps-card__impact">
+                    <strong>{t("report.gapsInteractive.impactTitle")}</strong>
+                    {task.impactIfMissing}
+                  </p>
+                  {!filled && (
+                    <p className="gaps-card__preview">
+                      <strong>{t("report.gapsInteractive.modelNote")}</strong>
+                      {task.rawLine}
+                    </p>
+                  )}
+                  {filled && (
+                    <p className="gaps-card__preview">
+                      <strong>{t("report.gapsInteractive.yourAnswer")}</strong>
+                      {completions[task.id]!.value}
+                    </p>
+                  )}
+                  <div className="gaps-card__actions">
+                    <button
+                      type="button"
+                      className={`gaps-card__btn${filled ? " gaps-card__btn--ghost" : " gaps-card__btn--primary"}`}
+                      onClick={() => setOpenId(task.id)}
+                      disabled={!!isRegenerating}
+                    >
+                      {filled ? t("report.gapsInteractive.edit") : t("report.gapsInteractive.cta")}
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+
+          {onRegenerate && (
+            <div className="gaps-regen-block">
+              <button
+                type="button"
+                className="btn btn-primary gaps-regen-btn"
+                onClick={() => void handleRegenerateClick()}
+                disabled={!canRunRegen}
+              >
+                {t("report.gapsInteractive.regenCta")}
+              </button>
+              {completedCount > 0 && completedCount < minFilledBeforeRegen && tasks.length >= 2 && (
+                <p className="gaps-regen-blocked">{t("report.gapsInteractive.regenBlocked", { need: minFilledBeforeRegen, have: completedCount })}</p>
               )}
-              {filled && (
-                <p className="gaps-card__preview">
-                  <strong>{t("report.gapsInteractive.yourAnswer")}</strong>
-                  {completions[task.id]!.value}
-                </p>
-              )}
-              <div className="gaps-card__actions">
-                <button
-                  type="button"
-                  className={`gaps-card__btn${filled ? " gaps-card__btn--ghost" : " gaps-card__btn--primary"}`}
-                  onClick={() => setOpenId(task.id)}
-                  disabled={!!isRegenerating}
-                >
-                  {filled ? t("report.gapsInteractive.edit") : t("report.gapsInteractive.cta")}
-                </button>
-              </div>
-            </article>
-          );
-        })}
-      </div>
-
-      {onRegenerate && (
-        <div className="gaps-regen-block">
-          <button
-            type="button"
-            className="btn btn-primary gaps-regen-btn"
-            onClick={() => void handleRegenerateClick()}
-            disabled={!canRunRegen}
-          >
-            {t("report.gapsInteractive.regenCta")}
-          </button>
-          {completedCount > 0 && completedCount < minFilledBeforeRegen && tasks.length >= 2 && (
-            <p className="gaps-regen-blocked">{t("report.gapsInteractive.regenBlocked", { need: minFilledBeforeRegen, have: completedCount })}</p>
+            </div>
           )}
-        </div>
+        </>
+      ) : (
+        <p className="gaps-panel__empty">{t("report.gapsInteractive.emptyIntro")}</p>
       )}
 
       {modal}
-    </section>
+    </Tag>
   );
 }

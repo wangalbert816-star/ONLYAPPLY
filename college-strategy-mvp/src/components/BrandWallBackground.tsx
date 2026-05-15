@@ -21,24 +21,24 @@ type RowConfig = {
 /** 2 行、双向、慢速；固定在视口底部，落在页面免责声明段落之下 */
 const ROWS: RowConfig[] = [
   {
-    durationSec: 220,
+    durationSec: 240,
     delaySec: -8,
     direction: "left",
-    marginTop: "1.4vh",
-    marginBottom: "1.6vh",
-    stripOffsetPx: 20,
-    logoOpacity: 0.36,
-    logoSizePx: 80,
+    marginTop: "1.2vh",
+    marginBottom: "1.4vh",
+    stripOffsetPx: 16,
+    logoOpacity: 0.32,
+    logoSizePx: 68,
   },
   {
-    durationSec: 185,
-    delaySec: -22,
+    durationSec: 200,
+    delaySec: -20,
     direction: "right",
-    marginTop: "0.9vh",
-    marginBottom: "1.2vh",
-    stripOffsetPx: -48,
-    logoOpacity: 0.33,
-    logoSizePx: 74,
+    marginTop: "0.8vh",
+    marginBottom: "1vh",
+    stripOffsetPx: -40,
+    logoOpacity: 0.28,
+    logoSizePx: 62,
   },
 ];
 

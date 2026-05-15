@@ -1,4 +1,4 @@
-/* 全屏层：深色遮罩 + 常用申请外链列表（原多行 logo 走马灯） */
+/* 全屏层：申请流程导航（按阶段分组的外链，底部返回问卷） */
 
 @keyframes fs-root-enter {
   from {
@@ -59,22 +59,25 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.5rem 0.95rem;
-  font-size: 0.88rem;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.84rem;
   font-weight: 600;
-  color: #f1f5f9;
-  background: rgba(30, 41, 59, 0.88);
-  border: 1px solid rgba(148, 163, 184, 0.4);
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 10px;
   cursor: pointer;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  box-shadow: none;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .fs-close:hover {
-  background: rgba(51, 65, 85, 0.95);
-  border-color: rgba(186, 230, 253, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
 .fs-close:focus-visible {
@@ -112,93 +115,269 @@
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   pointer-events: auto;
-  padding: 0.35rem 1.25rem 5.25rem;
+  padding: 0.35rem 1.25rem 10.75rem;
   z-index: 10;
 }
 
-.fs-links-lead {
-  margin: 0 auto 1rem;
+.fs-hub-intro {
+  margin: 0 auto 0.65rem;
   max-width: 28rem;
-  font-size: 0.84rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.55;
+  color: rgba(248, 250, 252, 0.96);
+  text-align: left;
+}
+
+.fs-hub-hint {
+  margin: 0 auto 0.55rem;
+  max-width: 28rem;
+  font-size: 0.76rem;
   line-height: 1.45;
-  color: rgba(203, 213, 225, 0.92);
+  color: rgba(203, 213, 225, 0.78);
+  text-align: left;
+}
+
+.fs-hub-flow {
+  margin: 0 auto 1.35rem;
+  max-width: 28rem;
+  padding: 0.55rem 0.65rem 0.55rem 0.75rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: rgba(226, 232, 240, 0.82);
+  text-align: left;
+  border-radius: 0 10px 10px 0;
+  border-left: 3px solid rgba(147, 197, 253, 0.55);
+  background: rgba(30, 41, 59, 0.45);
+}
+
+.fs-links-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 28rem;
+  margin: 0 auto;
+}
+
+.fs-link-section {
+  margin: 0;
+}
+
+.fs-link-cat {
+  margin: 0 0 0.6rem;
+  padding: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(203, 213, 225, 0.82);
+  line-height: 1.35;
 }
 
 .fs-links-grid {
   list-style: none;
-  margin: 0 auto;
+  margin: 0;
   padding: 0;
-  max-width: 26rem;
+  max-width: 28rem;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
-}
-
-.fs-link-item {
-  margin: 0;
+  gap: 0.5rem;
 }
 
 .fs-link-card {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  padding: 0.9rem 1.05rem;
-  border-radius: 14px;
+  gap: 0.4rem;
+  padding: 0.8rem 0.95rem;
+  border-radius: 12px;
   text-decoration: none;
   color: #f8fafc;
-  background: rgba(30, 41, 59, 0.72);
-  border: 1px solid rgba(148, 163, 184, 0.28);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
-    0 10px 36px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.2s ease;
+    background 0.22s ease,
+    border-color 0.22s ease,
+    transform 0.22s cubic-bezier(0.34, 1.3, 0.64, 1),
+    box-shadow 0.22s ease;
+}
+
+.fs-link-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.fs-badge {
+  flex-shrink: 0;
+  margin-top: 0.06rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  padding: 0.22rem 0.42rem;
+  border-radius: 6px;
+  max-width: 11rem;
+  text-align: right;
+}
+
+.fs-badge--first {
+  color: #fde68a;
+  background: rgba(251, 191, 36, 0.16);
+  border: 1px solid rgba(251, 191, 36, 0.42);
+}
+
+.fs-badge--recommended {
+  color: #bfdbfe;
+  background: rgba(59, 130, 246, 0.18);
+  border: 1px solid rgba(96, 165, 250, 0.45);
+}
+
+.fs-link-desc {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: rgba(203, 213, 225, 0.88);
 }
 
 .fs-link-card:hover {
-  border-color: rgba(147, 197, 253, 0.45);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.06) inset,
-    0 14px 44px rgba(0, 0, 0, 0.4);
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(147, 197, 253, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+}
+
+.fs-link-card:active {
+  transform: translateY(0);
+  transition-duration: 0.1s;
 }
 
 .fs-link-card:focus-visible {
-  outline: 2px solid #93c5fd;
+  outline: 2px solid rgba(147, 197, 253, 0.75);
   outline-offset: 2px;
 }
 
 .fs-link-title {
-  font-weight: 700;
-  font-size: 1rem;
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 0.94rem;
   letter-spacing: 0.01em;
   line-height: 1.25;
 }
 
-.fs-link-host {
-  font-size: 0.8rem;
-  line-height: 1.35;
-  color: rgba(148, 163, 184, 0.95);
+.fs-link-url-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+  margin-top: 0.05rem;
+}
+
+.fs-link-url-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.72);
+}
+
+.fs-link-url {
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: rgba(186, 230, 253, 0.9);
   word-break: break-all;
 }
 
-.fs-hint {
-  pointer-events: none;
+.fs-foot {
+  pointer-events: auto;
   position: absolute;
-  bottom: 1.1rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 22;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 38;
+  padding: 0.65rem 1.25rem max(0.65rem, env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(180deg, transparent 0%, rgba(15, 23, 42, 0.82) 28%, rgba(2, 6, 23, 0.96) 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.fs-foot-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 28rem;
+  margin: 0 auto 0.45rem;
+}
+
+@media (min-width: 420px) {
+  .fs-foot-actions {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .fs-foot-actions .fs-btn {
+    flex: 1;
+  }
+}
+
+.fs-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.fs-btn--primary {
+  color: #0f172a;
+  background: linear-gradient(180deg, #e0f2fe 0%, #bae6fd 100%);
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+}
+
+.fs-btn--primary:hover {
+  background: linear-gradient(180deg, #f0f9ff 0%, #7dd3fc 100%);
+}
+
+.fs-btn--primary:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+.fs-btn--ghost {
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.fs-btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.fs-btn--ghost:focus-visible {
+  outline: 2px solid rgba(147, 197, 253, 0.75);
+  outline-offset: 2px;
+}
+
+.fs-foot-hint {
   margin: 0;
-  font-size: 0.78rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  color: rgba(148, 163, 184, 0.85);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: rgba(148, 163, 184, 0.82);
 }
 
 .fs-vignette {
@@ -218,5 +397,20 @@
 @media (prefers-reduced-motion: reduce) {
   .fs-root {
     animation: none;
+  }
+
+  .fs-link-card,
+  .fs-link-card:hover,
+  .fs-link-card:active {
+    transform: none;
+    transition:
+      background 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .fs-btn--primary:hover,
+  .fs-btn--ghost:hover {
+    transition-duration: 0.1s;
   }
 }

@@ -1,0 +1,29 @@
+.auth-menu-btn {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #334155;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.auth-menu-btn:hover {
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.auth-menu-btn--signed-in {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.top-actions__auth {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
