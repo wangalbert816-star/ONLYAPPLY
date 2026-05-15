@@ -1,0 +1,174 @@
+/* 品牌条：默认轻度去色保留一点彩色，悬停更鲜艳 */
+
+.university-logo-marquee {
+  --marquee-duration: 210s;
+  --logo-size: 96px;
+  --logo-gap: 3.25rem;
+  --wall-fade: 96px;
+  /* 与左右遮罩 0% 色对齐，避免接缝 */
+  --wall-edge: #f5f5f7;
+  --wall-mid: #fafafa;
+
+  position: relative;
+  width: 100%;
+  margin: 0 auto 1.75rem;
+  padding: 1.55rem 0 1.65rem;
+  border-radius: 18px;
+  cursor: pointer;
+  background: linear-gradient(180deg, var(--wall-mid) 0%, #f4f4f5 48%, #ececed 100%);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 12px 40px rgba(0, 0, 0, 0.04);
+}
+
+.university-logo-marquee:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 3px;
+}
+
+.marquee-viewport {
+  overflow: hidden;
+  width: 100%;
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: marquee-scroll var(--marquee-duration) linear infinite;
+}
+
+.university-logo-marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-group {
+  display: flex;
+  align-items: center;
+  gap: var(--logo-gap);
+  padding: 0 0.75rem;
+  flex-shrink: 0;
+}
+
+.marquee-logo-cell {
+  flex: 0 0 auto;
+}
+
+.marquee-logo-frame {
+  width: var(--logo-size);
+  height: var(--logo-size);
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition:
+    box-shadow 0.35s cubic-bezier(0.25, 0.1, 0.25, 1),
+    transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1),
+    border-color 0.35s ease;
+}
+
+.marquee-logo-cell:hover .marquee-logo-frame {
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.7) inset;
+  transform: translateY(-2px);
+}
+
+/* 默认：约六成饱和度；悬停：全彩略提亮 */
+.marquee-logo-frame img {
+  width: 74%;
+  height: 74%;
+  object-fit: contain;
+  filter: grayscale(0.38) contrast(1.04) saturate(1.12) opacity(0.9);
+  transition:
+    filter 0.45s cubic-bezier(0.25, 0.1, 0.25, 1),
+    opacity 0.35s ease;
+}
+
+.marquee-logo-cell:hover .marquee-logo-frame img {
+  filter: grayscale(0) contrast(1.06) saturate(1.08) opacity(1);
+}
+
+.marquee-fallback-letter {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #9ca3af;
+  user-select: none;
+  transition: color 0.35s ease;
+}
+
+.marquee-logo-cell:hover .marquee-fallback-letter {
+  color: #475569;
+}
+
+/* 左右长渐变淡出 — 多段 stop，边缘更「软」 */
+.marquee-fade {
+  pointer-events: none;
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  width: var(--wall-fade);
+  z-index: 3;
+}
+
+.marquee-fade--left {
+  left: 0;
+  border-radius: 18px 0 0 18px;
+  background: linear-gradient(
+    90deg,
+    var(--wall-edge) 0%,
+    rgba(245, 245, 247, 0.92) 28%,
+    rgba(245, 245, 247, 0.45) 62%,
+    rgba(245, 245, 247, 0) 100%
+  );
+}
+
+.marquee-fade--right {
+  right: 0;
+  border-radius: 0 18px 18px 0;
+  background: linear-gradient(
+    270deg,
+    var(--wall-edge) 0%,
+    rgba(245, 245, 247, 0.92) 28%,
+    rgba(245, 245, 247, 0.45) 62%,
+    rgba(245, 245, 247, 0) 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+    transform: translateX(0);
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 0.75rem;
+    width: 100%;
+  }
+
+  .marquee-group[aria-hidden="true"] {
+    display: none;
+  }
+
+  .marquee-logo-frame img {
+    filter: grayscale(0.32) contrast(1.03) saturate(1.1) opacity(0.92);
+  }
+}

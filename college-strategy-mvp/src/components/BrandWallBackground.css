@@ -1,0 +1,148 @@
+/* 全屏底层：z-index -1；2 行双向慢速无缝滚动，条带固定在视口底部（在免责声明之下） */
+
+.brand-wall-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background: #eef2f7;
+}
+
+.brand-wall-canvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* 与 :root --brand-wall-strip-height、.app 底部 padding 对齐 */
+.brand-wall-bottom-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--brand-wall-strip-height, 14rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: max(0.35rem, env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
+}
+
+.brand-wall-rows {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  flex: 1;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.brand-wall-row {
+  position: relative;
+  overflow: hidden;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  min-height: calc(var(--bw-logo-size, 78px) + 28px);
+}
+
+.brand-wall-strip-nudge {
+  width: 100%;
+}
+
+.brand-wall-track {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  width: max-content;
+  will-change: transform;
+  animation: brand-wall-scroll-left var(--bw-dur, 200s) linear infinite;
+  animation-delay: var(--bw-delay, 0s);
+  backface-visibility: hidden;
+}
+
+.brand-wall-track--rev {
+  animation-name: brand-wall-scroll-right;
+}
+
+@keyframes brand-wall-scroll-left {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes brand-wall-scroll-right {
+  from {
+    transform: translate3d(-50%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.brand-wall-group {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  flex: 0 0 auto;
+  flex-shrink: 0;
+}
+
+.brand-wall-logo {
+  flex: 0 0 auto;
+  width: var(--bw-logo-size, 78px);
+  height: var(--bw-logo-size, 78px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-wall-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: var(--bw-logo-opacity, 0.34);
+  filter: grayscale(0.52) contrast(1.05) saturate(1.06);
+}
+
+.brand-wall-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse 98% 88% at 50% 48%,
+      rgba(248, 250, 252, 0) 0%,
+      rgba(248, 250, 252, 0.06) 58%,
+      rgba(248, 250, 252, 0.42) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(248, 250, 252, 0.32) 0%,
+      rgba(248, 250, 252, 0.03) 18%,
+      transparent 40%,
+      transparent 60%,
+      rgba(248, 250, 252, 0.28) 100%
+    );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-wall-track,
+  .brand-wall-track--rev {
+    animation: none !important;
+  }
+
+  .brand-wall-track {
+    transform: translate3d(-8%, 0, 0);
+  }
+
+  .brand-wall-track--rev {
+    transform: translate3d(-42%, 0, 0);
+  }
+}

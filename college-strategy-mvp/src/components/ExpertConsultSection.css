@@ -1,0 +1,136 @@
+.expert-consult.card.report-block {
+  background: #fafbfc;
+  border-color: #e8ecf1;
+}
+
+.expert-consult__title {
+  margin: 0 0 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #0f172a;
+}
+
+.expert-consult__risk,
+.expert-consult__guide {
+  margin: 0 0 0.65rem;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: #334155;
+}
+
+.expert-consult__guide {
+  margin-bottom: 0.85rem;
+  color: #475569;
+}
+
+.expert-consult__cta {
+  width: 100%;
+  max-width: 16rem;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid #0f172a;
+  background: #0f172a;
+  color: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.expert-consult__cta:hover {
+  border-color: #000;
+  background: #000;
+  color: #fff;
+}
+
+.expert-consult__cta:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.expert-consult-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  background: rgba(15, 23, 42, 0.4);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 1rem;
+}
+
+@media (min-width: 520px) {
+  .expert-consult-modal-backdrop {
+    align-items: center;
+  }
+}
+
+.expert-consult-modal {
+  width: 100%;
+  max-width: 22rem;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 16px 48px rgba(15, 23, 42, 0.14);
+  padding: 1rem 1.05rem;
+}
+
+.expert-consult-modal__title {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.expert-consult-modal__lead {
+  margin: 0 0 0.85rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.expert-consult-modal .field {
+  margin-bottom: 0.75rem;
+}
+
+.expert-consult-modal .field label {
+  font-size: 0.76rem;
+}
+
+.expert-consult-modal__optional {
+  font-weight: 400;
+  color: #94a3b8;
+}
+
+.expert-consult-modal__error {
+  margin: 0 0 0.5rem;
+  font-size: 0.74rem;
+  color: #b91c1c;
+  white-space: pre-line;
+  line-height: 1.45;
+}
+
+.expert-consult-modal__success {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #166534;
+  padding: 0.65rem 0.7rem;
+  border-radius: 8px;
+  background: #ecfdf5;
+  border: 1px solid #bbf7d0;
+}
+
+.expert-consult-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  margin-top: 0.85rem;
+}
+
+.expert-consult-modal__actions .btn {
+  font-size: 0.82rem;
+  padding: 0.45rem 0.85rem;
+}
