@@ -38,12 +38,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     let mounted = true;
 
-    sb.auth.getSession().then(({ data }) => {
+    const syncSession = async () => {
+      const { data } = await sb.auth.getSession();
       if (!mounted) return;
       setSession(data.session);
       setUser(data.session?.user ?? null);
       setLoading(false);
-    });
+    };
+
+    void syncSession();
 
     const {
       data: { subscription },
@@ -53,8 +56,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
+    const onFocus = () => void syncSession();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") void syncSession();
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key?.startsWith("sb-")) void syncSession();
+    };
+
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("storage", onStorage);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
     return () => {
       mounted = false;
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("storage", onStorage);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       subscription.unsubscribe();
     };
   }, [configured]);

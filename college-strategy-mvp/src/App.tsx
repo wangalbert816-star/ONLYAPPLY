@@ -43,6 +43,17 @@ const initialForm: FormState = {
 
 const LOADING_TIP_KEYS = ["app.loading.tip0", "app.loading.tip1", "app.loading.tip2", "app.loading.tip3"] as const;
 
+function isAuthReturnUrl(): boolean {
+  const { hash, search } = window.location;
+  return (
+    hash.includes("access_token") ||
+    hash.includes("refresh_token") ||
+    hash.includes("error=") ||
+    search.includes("code=") ||
+    search.includes("error=")
+  );
+}
+
 function translateInviteError(code: string, tf: (k: string) => string): string {
   const path = `report.inviteErr.${code}`;
   const msg = tf(path);
@@ -135,6 +146,7 @@ export default function App() {
   const [inviteBusy, setInviteBusy] = useState(false);
   const [unlockedApplicationIds, setUnlockedApplicationIds] = useState<string[]>([]);
   const submitLockRef = useRef(false);
+  const authReturnRef = useRef(isAuthReturnUrl());
   const applicationHubTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [applicationHubOpen, setApplicationHubOpen] = useState(false);
 
@@ -385,10 +397,16 @@ export default function App() {
     );
     setView("report");
     setFlowStarted(true);
+    if (authReturnRef.current) {
+      setAuthModalOpen(false);
+      setSaveBannerDismissed(true);
+      queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+    }
   }, [cloudEntitlementsEnabled]);
 
   useEffect(() => {
     if (authLoading || !user) return;
+    setAuthModalOpen(false);
     const pending = readPendingSave();
     if (!pending) return;
     setForm(pending.form);
@@ -398,6 +416,8 @@ export default function App() {
     );
     setView("report");
     setFlowStarted(true);
+    setSaveBannerDismissed(true);
+    queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
     void (async () => {
       const { ok, applicationId } = await persistToCloud({
         formState: pending.form,
