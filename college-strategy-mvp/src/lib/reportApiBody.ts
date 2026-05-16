@@ -11,6 +11,8 @@ export function buildReportApiBody(
   const base = {
     intakeTerm: getEffectiveIntake(form),
     applicantIdentity: form.applicantIdentity,
+    citizenship: form.citizenship,
+    residenceRegion: form.residenceRegion,
     budget: form.budget,
     testing: form.testing,
     satScore: form.satScore,

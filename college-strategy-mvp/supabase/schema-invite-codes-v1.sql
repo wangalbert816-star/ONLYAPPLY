@@ -40,12 +40,16 @@ create table if not exists public.invite_codes (
   code text not null,
   label text,
   max_uses int,
+  used_count int not null default 0,
   max_uses_per_user int not null default 1,
   valid_from timestamptz,
   valid_until timestamptz,
   active boolean not null default true,
   created_at timestamptz not null default now()
 );
+
+alter table public.invite_codes
+  add column if not exists used_count int not null default 0;
 
 -- 唯一：规范化后相同视为同一码（upper + trim）
 create unique index if not exists invite_codes_code_normalized_idx
@@ -72,6 +76,17 @@ create table if not exists public.invite_redemptions (
 
 create index if not exists invite_redemptions_code_idx on public.invite_redemptions (invite_code_id);
 create index if not exists invite_redemptions_user_idx on public.invite_redemptions (user_id);
+create unique index if not exists invite_redemptions_code_user_application_idx
+  on public.invite_redemptions (invite_code_id, user_id, application_id);
+
+update public.invite_codes c
+set used_count = coalesce(r.count, 0)
+from (
+  select invite_code_id, count(*)::int
+  from public.invite_redemptions
+  group by invite_code_id
+) r
+where c.id = r.invite_code_id;
 
 -- ── RLS ─────────────────────────────────────────────────────────────
 alter table public.invite_codes enable row level security;
@@ -130,7 +145,11 @@ begin
     return jsonb_build_object('ok', true, 'already', true);
   end if;
 
-  select * into ic from public.invite_codes c where upper(trim(c.code)) = v_norm limit 1;
+  select * into ic
+  from public.invite_codes c
+  where upper(trim(c.code)) = v_norm
+  limit 1
+  for update;
   if not found then
     return jsonb_build_object('ok', false, 'error', 'invalid_code');
   end if;
@@ -147,7 +166,7 @@ begin
     return jsonb_build_object('ok', false, 'error', 'expired');
   end if;
 
-  select count(*) into v_total from public.invite_redemptions where invite_code_id = ic.id;
+  v_total := coalesce(ic.used_count, 0);
   if ic.max_uses is not null and v_total >= ic.max_uses then
     return jsonb_build_object('ok', false, 'error', 'code_exhausted');
   end if;
@@ -168,6 +187,10 @@ begin
 
   insert into public.invite_redemptions (invite_code_id, user_id, application_id)
   values (ic.id, v_uid, p_application_id);
+
+  update public.invite_codes
+  set used_count = used_count + 1
+  where id = ic.id;
 
   insert into public.application_unlock_entitlements (
     user_id,

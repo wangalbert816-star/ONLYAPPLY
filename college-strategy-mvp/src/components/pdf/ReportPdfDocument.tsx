@@ -197,7 +197,7 @@ export function ReportPdfDocument({ form, report, locale, unlocked, recipientNam
           </div>
         </section>
 
-        {m.schoolTiers.length > 0 && (
+        {(m.schoolTiers.length > 0 || m.topReferenceSchools.length > 0) && (
           <section className="pdf-section">
             <PdfSectionHead
               title={zh ? "推荐院校（按冲 / 稳 / 保）" : "Recommended schools (Reach / Match / Safety)"}
@@ -242,6 +242,26 @@ export function ReportPdfDocument({ form, report, locale, unlocked, recipientNam
                 </table>
               </div>
             ))}
+            {m.topReferenceSchools.length > 0 && (
+              <PdfKeep className="pdf-top-reference">
+                <h3 className="pdf-h3 pdf-school-tier__title">
+                  {zh ? "顶级学校（参考）" : "Top schools (reference only)"}
+                </h3>
+                <p className="pdf-lead">
+                  {zh
+                    ? "这些学校在当前条件下录取概率极低，且对所有申请者都属于极高风险申请；它们不是常规推荐选择。"
+                    : "Under the current information, these schools are extremely unlikely and high-risk for nearly every applicant; they are not regular recommendations."}
+                </p>
+                <ul className="pdf-bullets">
+                  {m.topReferenceSchools.map((row) => (
+                    <li key={row.school}>
+                      <strong>{row.school}</strong>
+                      {zh ? "：理论存在的参考选项，不应替代现实可冲名单。" : ": theoretical reference only; do not treat as a realistic reach."}
+                    </li>
+                  ))}
+                </ul>
+              </PdfKeep>
+            )}
           </section>
         )}
 

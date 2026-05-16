@@ -27,6 +27,8 @@ const initialForm: FormState = {
   intakeTerm: "",
   intakeOtherDetail: "",
   applicantIdentity: "",
+  citizenship: "",
+  residenceRegion: "",
   budget: "",
   testing: "",
   satScore: "",
@@ -120,11 +122,29 @@ function validateStep(step: number, f: FormState, tr: (path: string) => string):
   return null;
 }
 
+function mergeSupplementaryNotes(...groups: SupplementaryNote[][]): SupplementaryNote[] {
+  const seen = new Set<string>();
+  const merged: SupplementaryNote[] = [];
+  for (const group of groups) {
+    for (const note of group) {
+      const topic = note.topic.trim();
+      const text = note.text.trim();
+      if (!text) continue;
+      const key = `${topic.toLowerCase()}::${text.toLowerCase()}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push({ topic, text });
+    }
+  }
+  return merged.slice(-24);
+}
+
 export default function App() {
   const { t, locale } = useLanguage();
   const stripeCheckoutEnabled = isStripeCheckoutEnabled();
   const inviteCodesEnabled = isInviteCodesEnabled();
   const cloudEntitlementsEnabled = stripeCheckoutEnabled || inviteCodesEnabled;
+  const demoUnlockEnabled = !cloudEntitlementsEnabled && import.meta.env.DEV;
   const [flowStarted, setFlowStarted] = useState(false);
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormState>(initialForm);
@@ -164,6 +184,8 @@ export default function App() {
   const refreshLockRef = useRef(false);
   /** 五维「下一步」下提交的补充；与信息缺口触发的刷新合并后一并 POST */
   const profileFiveSupplementaryRef = useRef<SupplementaryNote[]>([]);
+  /** 信息缺口的历史回答需要跨多轮刷新持续传给模型，避免同一问题被反复追问 */
+  const answeredGapSupplementaryRef = useRef<SupplementaryNote[]>([]);
   const highlightTimerRef = useRef<number | null>(null);
 
   const stepError = useMemo(() => validateStep(step, form, t), [step, form, t]);
@@ -214,13 +236,13 @@ export default function App() {
           setSaveNotice(translateInviteError(res.error, t));
           return;
         }
+        const ids = await refreshEntitlements();
         if (res.already) {
-          setReportUnlocked(true);
+          setReportUnlocked(ids.includes(currentApplicationId));
           setSaveNotice(t("report.stripeAlreadyOwned"));
           return;
         }
-        await refreshEntitlements();
-        setReportUnlocked(true);
+        setReportUnlocked(ids.includes(currentApplicationId));
         setSaveNotice(t("report.inviteRedeemSuccess"));
       } catch (e) {
         setSaveNotice(formatSupabaseError(e, t));
@@ -249,7 +271,7 @@ export default function App() {
           form: payload.formState,
           locale,
           report: payload.reportPayload,
-          supplementaryNotes: profileFiveSupplementaryRef.current,
+          supplementaryNotes: mergeSupplementaryNotes(answeredGapSupplementaryRef.current, profileFiveSupplementaryRef.current),
         });
         setCurrentApplicationId(applicationId);
         setCurrentReportId(reportId);
@@ -299,6 +321,10 @@ export default function App() {
         } finally {
           setCheckoutBusy(false);
         }
+        return;
+      }
+      if (!demoUnlockEnabled) {
+        setSaveNotice(t("report.unlockUnavailable"));
         return;
       }
       writeUnlockToStorage();
@@ -384,6 +410,7 @@ export default function App() {
     currentApplicationId,
     currentReportId,
     t,
+    demoUnlockEnabled,
     persistToCloud,
     refreshEntitlements,
   ]);
@@ -394,8 +421,10 @@ export default function App() {
     if (!pending) return;
     setForm(pending.form);
     setReport(pending.report);
+    answeredGapSupplementaryRef.current = pending.supplementaryNotes ?? [];
+    profileFiveSupplementaryRef.current = [];
     setReportUnlocked(
-      cloudEntitlementsEnabled ? false : Boolean(pending.reportUnlocked) || readUnlockFromStorage(),
+      cloudEntitlementsEnabled ? false : demoUnlockEnabled && (Boolean(pending.reportUnlocked) || readUnlockFromStorage()),
     );
     setView("report");
     setFlowStarted(true);
@@ -404,7 +433,7 @@ export default function App() {
       setSaveBannerDismissed(true);
       queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
     }
-  }, [cloudEntitlementsEnabled]);
+  }, [cloudEntitlementsEnabled, demoUnlockEnabled]);
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -413,8 +442,10 @@ export default function App() {
     if (!pending) return;
     setForm(pending.form);
     setReport(pending.report);
+    answeredGapSupplementaryRef.current = pending.supplementaryNotes ?? [];
+    profileFiveSupplementaryRef.current = [];
     setReportUnlocked(
-      cloudEntitlementsEnabled ? false : Boolean(pending.reportUnlocked) || readUnlockFromStorage(),
+      cloudEntitlementsEnabled ? false : demoUnlockEnabled && (Boolean(pending.reportUnlocked) || readUnlockFromStorage()),
     );
     setView("report");
     setFlowStarted(true);
@@ -430,7 +461,7 @@ export default function App() {
         setReportUnlocked(ids.includes(applicationId));
       }
     })();
-  }, [authLoading, user, persistToCloud, refreshEntitlements, cloudEntitlementsEnabled]);
+  }, [authLoading, user, persistToCloud, refreshEntitlements, cloudEntitlementsEnabled, demoUnlockEnabled]);
 
   useEffect(() => {
     currentApplicationIdRef.current = currentApplicationId;
@@ -548,6 +579,7 @@ export default function App() {
       setRefreshError(null);
       setSubtleRefreshNotice(null);
       profileFiveSupplementaryRef.current = [];
+      answeredGapSupplementaryRef.current = [];
       const nextReport = data as ReportPayload;
       setReport(nextReport);
       setView("report");
@@ -606,7 +638,8 @@ export default function App() {
     setSubtleRefreshNotice(null);
     setReportRefreshing(true);
     const prev = report;
-    const merged = [...gapNotes, ...profileFiveSupplementaryRef.current];
+    answeredGapSupplementaryRef.current = mergeSupplementaryNotes(answeredGapSupplementaryRef.current, gapNotes);
+    const merged = mergeSupplementaryNotes(answeredGapSupplementaryRef.current, profileFiveSupplementaryRef.current);
     try {
       const res = await fetch(apiUrl("/api/report"), {
         method: "POST",
@@ -627,7 +660,7 @@ export default function App() {
           setReportUnlocked(ids.includes(saved.applicationId));
         }
       } else {
-        writePendingSave({ form, locale, report: next, reportUnlocked });
+        writePendingSave({ form, locale, report: next, supplementaryNotes: merged, reportUnlocked });
       }
       const diff = compareReports(prev, next);
       if (reportDiffIsEmpty(diff)) {
@@ -654,7 +687,7 @@ export default function App() {
   }
 
   async function commitProfileFiveNotesAndRefresh(notes: SupplementaryNote[]) {
-    profileFiveSupplementaryRef.current = notes;
+    profileFiveSupplementaryRef.current = mergeSupplementaryNotes(profileFiveSupplementaryRef.current, notes);
     await refreshReportWithGapNotes([]);
   }
 
@@ -694,6 +727,7 @@ export default function App() {
             report: r,
             applicationId,
             reportId,
+            supplementaryNotes,
             reportUnlocked: legacyUnlocked,
           }) => {
             const ids =
@@ -703,11 +737,13 @@ export default function App() {
             setReport(r);
             setCurrentApplicationId(applicationId);
             setCurrentReportId(reportId);
+            answeredGapSupplementaryRef.current = supplementaryNotes ?? [];
+            profileFiveSupplementaryRef.current = [];
             setSessionSaved(true);
             if (cloudEntitlementsEnabled) {
               clearUnlockStorage();
-              setReportUnlocked(entitled || legacyUnlocked);
-            } else if (legacyUnlocked) {
+              setReportUnlocked(entitled);
+            } else if (demoUnlockEnabled && legacyUnlocked) {
               writeUnlockToStorage();
               setReportUnlocked(true);
             } else {
@@ -770,6 +806,7 @@ export default function App() {
           clearUnlockStorage();
           setReportUnlocked(false);
           profileFiveSupplementaryRef.current = [];
+          answeredGapSupplementaryRef.current = [];
           setCurrentApplicationId(null);
           setCurrentReportId(null);
           setSessionSaved(false);

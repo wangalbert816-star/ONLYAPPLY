@@ -22,6 +22,7 @@ const LLM_MAX_RETRIES = Number(process.env.LLM_MAX_RETRIES ?? 0);
 const COMPLETION_MAX_TOKENS = Number(process.env.COMPLETION_MAX_TOKENS ?? 6000);
 
 const app = express();
+const IS_PROD = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL);
 app.use(cors({ origin: true }));
 
 function stripeEnv() {
@@ -91,10 +92,33 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
     console.error("[stripe webhook] missing metadata", session.id);
     return res.status(400).json({ error: "missing_metadata" });
   }
+  if (session.payment_status && session.payment_status !== "paid") {
+    console.warn("[stripe webhook] session not paid", session.id, session.payment_status);
+    return res.status(400).json({ error: "payment_not_completed" });
+  }
 
   const admin = supabaseAdmin();
   if (!admin) {
     return res.status(503).json({ error: "supabase_admin_missing" });
+  }
+
+  const { data: application, error: appErr } = await admin
+    .from("saved_applications")
+    .select("id,user_id")
+    .eq("id", applicationId)
+    .single();
+
+  if (appErr || !application) {
+    console.error("[stripe webhook] application lookup failed", session.id, appErr);
+    return res.status(400).json({ error: "application_not_found" });
+  }
+  if (application.user_id !== userId) {
+    console.error("[stripe webhook] ownership mismatch", session.id, {
+      metadataUserId: userId,
+      applicationUserId: application.user_id,
+      applicationId,
+    });
+    return res.status(403).json({ error: "ownership_mismatch" });
   }
 
   const { error } = await admin.from("application_unlock_entitlements").upsert(
@@ -102,6 +126,7 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
       user_id: userId,
       application_id: applicationId,
       stripe_checkout_session_id: session.id,
+      source: "stripe",
     },
     { onConflict: "user_id,application_id" },
   );
@@ -199,17 +224,30 @@ const SYSTEM_PROMPT_ZH = `你是一位资深美国本科升学顾问（10年+经
 【顾问感】
 - 先判断信息是否足够；不足则在 information_gaps 列出需补充问题（0-6条）。
 - 若用户消息末含有【用户补充说明】区块：必须结合其更新 reach/match/safety 的入档理由与风险表述；information_gaps 中已被充分覆盖的点应删除或合并；禁止输出与补充说明明显矛盾的内容。
+- 用户补充说明是跨轮次已确认事实：若用户已说明不考/不提交 SAT、ACT，不得再追问对应考试；若已提供 TOEFL/IELTS/Duolingo 等语言成绩或说明无需语言成绩，不得再追问“是否有语言成绩”，只能在必要时追问更具体的未覆盖细节。
 - 至少3处明确引用用户问卷中的具体字段（预算/身份/标化/专业/偏好/活动）；若有补充说明，至少1处明确引用补充中的事实。
 - 禁止「保证」「稳进」「必录」；不编造具体截止日期、具体奖学金金额、具体录取率（除非用户提供了且你仅复述）。
+
+【申请环境与竞争密度】
+- 用户可能提供国籍/护照地区、常驻地区或主要受教育地区；这些仅用于判断申请环境，不要在正文中用作标签化评价。
+- 必须使用「竞争密度：低/中/高」或「申请群体竞争较集中/竞争密度较高」这类中性表达；禁止写「因为某国籍所以更难」或把国籍直接等同于难度。
+- 在 reach/match/safety 的 key_risks 或 verification_focus 中，可写「该校在当前竞争环境下录取难度更高」「需要用更可验证的课程/活动证据支撑」。
+- 若申请环境信息缺失，在 information_gaps 中提醒补充「常驻地区/主要受教育地区」以校准竞争密度。
 
 【易变信息】涉及政策/费用/轮次/国际生要求：写「以学校官网当年公布为准」，verification_focus 写核对项但不要写具体日期数字。
 
 【冲稳保】
-- 冲：录取不确定性高但有合理申请理由。
+- 冲：必须是「现实可冲」学校，录取不确定性高但仍有可解释的申请理由；不要把几乎不可能的顶级彩票校放进常规冲刺。
 - 稳：主战场，总体匹配仍有方差。
 - 保：底线逻辑，解释如何降低全拒风险（非随便一所）。
 
-【数量】reach、match、safety 每档恰好 3 所学校（共9所）。
+【顶级彩票校处理】
+- MIT、Stanford、Harvard、Princeton、Yale、Caltech 等极高选择性学校，不得作为常规 reach 推荐，除非用户背景中有非常明确且罕见的全国/国际级证据。
+- 若用户提到这些学校，只能在 strategy_notes 里作为「顶级学校（参考）/理论存在但极高风险」说明；不要把它们写入 reach/match/safety 的 9 校名单。
+- reach 列表应优先选择有现实可解释空间的学校，而不是用品牌名制造不可靠的希望。
+- 注意：即使有顶级学校作为参考，reach 字段仍必须恰好 3 所「现实可冲」学校；顶级参考校不能占用这 3 个名额。
+
+【数量】reach、match、safety 每档恰好 3 所学校（共9所）。其中 reach 的 3 所必须全部是现实可冲学校。
 
 【校名单一性·硬性】
 1. 同一所学校在全报告中只能出现一次：以英文校名字符串为准，reach、match、safety 合并后共 9 条 school 字段，必须 9 个互不相同的校名。
@@ -245,17 +283,30 @@ const SYSTEM_PROMPT_EN = `You are a senior U.S. undergraduate admissions counsel
 【Counselor stance】
 - First judge whether information is sufficient; if not, list 0–6 concrete follow-ups in information_gaps.
 - If the user message ends with a [User supplementary notes] block: you MUST revise reach/match/safety rationales and risks accordingly; remove or merge gap items that are fully addressed; never contradict those notes.
+- Supplementary notes are confirmed facts across refreshes: if the user already said they will not take/submit SAT or ACT, do not ask about that test again; if they already provided TOEFL/IELTS/Duolingo or said no language score is needed, do not ask whether a language score exists again. Only ask for narrower missing details that are not covered.
 - Reference at least 3 specific questionnaire fields (budget/identity/testing/major/preferences/activities). If supplementary notes exist, reference at least one concrete fact from them.
 - Never promise admission ("guaranteed", "sure admit", etc.). Do not invent exact deadlines, exact aid dollar amounts, or exact admit rates unless the user supplied them and you are only repeating.
+
+【Application environment and competition density】
+- The user may provide citizenship/passport region, usual residence, or main education region. Use these only to calibrate applicant-environment context; do not label or judge the user by nationality.
+- Use neutral terms such as "competition density: low/medium/high", "more concentrated applicant pool", or "higher competition density." Do NOT write "this nationality is harder" or equate nationality directly with difficulty.
+- In reach/match/safety key_risks or verification_focus, you may say "under the current competition environment, admission difficulty is higher" and "more verifiable coursework/activity evidence is needed."
+- If environment information is missing, add an information_gaps item asking for usual residence/main education region to calibrate competition density.
 
 【Volatile facts】For policies, costs, rounds, international requirements: say "confirm on each school's official site for the application cycle." Put checklist items in verification_focus without inventing specific calendar dates.
 
 【Reach / Match / Safety】
-- Reach: higher uncertainty but still a reasonable case to apply.
+- Reach: realistic stretch only. It may be uncertain, but there must still be a defensible admissions case; do not put nearly-impossible lottery schools into the regular Reach tier.
 - Match: main battlefield; fit is generally reasonable but variance remains.
 - Safety: true floor logic—explain how it reduces all-reject risk (not a random filler).
 
-【Counts】Exactly 3 schools in reach, 3 in match, and 3 in safety (9 total U.S. bachelor's institutions).
+【Ultra-selective schools】
+- MIT, Stanford, Harvard, Princeton, Yale, Caltech, and similarly ultra-selective schools must NOT appear in reach/match/safety unless the user has very rare national/international-level evidence that makes the case unusually specific.
+- If the user mentions these schools, discuss them only in strategy_notes as "top schools (reference only) / theoretical but extreme risk"; do not include them in the 9-school list.
+- Reach should mean realistic stretch, not brand-name hope.
+- Important: even if top schools are discussed as reference, the reach field must still contain exactly 3 realistic stretch schools; reference-only top schools cannot occupy those 3 slots.
+
+【Counts】Exactly 3 schools in reach, 3 in match, and 3 in safety (9 total U.S. bachelor's institutions). All 3 reach schools must be realistic stretch choices.
 
 【Unique school list — hard rules】
 1. Each school appears at most once across the whole report: using the English school string, the union of reach+match+safety must be 9 distinct school names.
@@ -445,9 +496,60 @@ function normalizeSupplementaryNotes(raw) {
     const text = String(item.text || "").trim().slice(0, 2000);
     if (!text) continue;
     out.push({ topic, text });
-    if (out.length >= 12) break;
+    if (out.length >= 24) break;
   }
   return out;
+}
+
+function inferCompetitionDensity({ applicantIdentity, citizenship, residenceRegion, highSchoolSystem }) {
+  const text = `${applicantIdentity || ""} ${citizenship || ""} ${residenceRegion || ""} ${highSchoolSystem || ""}`.toLowerCase();
+  const highSignals = [
+    "china",
+    "chinese",
+    "中国",
+    "大陆",
+    "mainland",
+    "india",
+    "indian",
+    "印度",
+    "korea",
+    "korean",
+    "韩国",
+    "singapore",
+    "新加坡",
+  ];
+  const mediumSignals = [
+    "hong kong",
+    "香港",
+    "taiwan",
+    "台湾",
+    "canada",
+    "加拿大",
+    "vietnam",
+    "越南",
+    "japan",
+    "日本",
+    "international",
+    "intl",
+  ];
+  if (highSignals.some((x) => text.includes(x))) return "high";
+  if (mediumSignals.some((x) => text.includes(x))) return "medium";
+  if (applicantIdentity === "intl") return "medium";
+  if (applicantIdentity === "us_citizen") return "low";
+  return "unknown";
+}
+
+function competitionDensityLabel(density, locale) {
+  if (locale === "en") {
+    if (density === "high") return "High competition density (use neutral wording: concentrated applicant pool; do not attribute difficulty directly to nationality)";
+    if (density === "medium") return "Medium competition density (use neutral applicant-environment wording)";
+    if (density === "low") return "Low to medium competition density (still verify school-specific selectivity)";
+    return "Unknown competition density (ask for usual residence/main education region if needed)";
+  }
+  if (density === "high") return "高竞争密度（请用「申请群体竞争较集中/竞争密度较高」等中性表达，不要写成国籍=难度）";
+  if (density === "medium") return "中等竞争密度（请使用申请环境相关的中性表达）";
+  if (density === "low") return "低至中等竞争密度（仍需核对学校自身选择性）";
+  return "竞争密度未知（必要时询问常驻地区/主要受教育地区）";
 }
 
 function buildUserPayload(body) {
@@ -456,6 +558,8 @@ function buildUserPayload(body) {
   const {
     intakeTerm,
     applicantIdentity,
+    citizenship,
+    residenceRegion,
     budget,
     testing,
     satScore,
@@ -472,6 +576,13 @@ function buildUserPayload(body) {
   } = body || {};
 
   const supplementary = normalizeSupplementaryNotes(body?.supplementary_notes);
+  const competitionDensity = inferCompetitionDensity({
+    applicantIdentity,
+    citizenship,
+    residenceRegion,
+    highSchoolSystem,
+  });
+  const competitionLine = competitionDensityLabel(competitionDensity, locale);
   let extra = "";
   if (supplementary.length > 0) {
     if (isEn) {
@@ -491,6 +602,9 @@ function buildUserPayload(body) {
 
 [Intake term] ${intakeTerm || na}
 [Applicant identity] ${applicantIdentity || na}
+[Citizenship / passport region — internal context only] ${citizenship || na}
+[Usual residence / main education region — internal context only] ${residenceRegion || na}
+[Competition density] ${competitionLine}
 [Target scope] U.S. undergraduate (bachelor's)
 [Tuition / budget posture] ${budget || na}
 [Testing strategy] ${testing || na}${
@@ -513,6 +627,9 @@ function buildUserPayload(body) {
 
 【申请入学季】${intakeTerm || "未填"}
 【申请身份】${applicantIdentity || "未填"}
+【国籍/护照地区（仅作申请环境上下文）】${citizenship || "未填"}
+【常驻地区/主要受教育地区（仅作申请环境上下文）】${residenceRegion || "未填"}
+【竞争密度】${competitionLine}
 【目标范围】美国本科
 【学费/经济】${budget || "未填"}
 【标化策略】${testing || "未填"}${testing === "will_submit" ? `\nSAT: ${satScore || "未填"}\nACT: ${actScore || "未填"}` : ""}
@@ -568,10 +685,77 @@ function validateSchoolUniqueness(parsed) {
   return { ok: true };
 }
 
+const ULTRA_SELECTIVE_SCHOOLS = [
+  "mit",
+  "massachusetts institute of technology",
+  "stanford",
+  "stanford university",
+  "harvard",
+  "harvard university",
+  "princeton",
+  "princeton university",
+  "yale",
+  "yale university",
+  "caltech",
+  "california institute of technology",
+  "columbia",
+  "columbia university",
+  "university of pennsylvania",
+  "upenn",
+  "penn",
+  "duke",
+  "duke university",
+  "brown",
+  "brown university",
+  "dartmouth",
+  "dartmouth college",
+  "cornell",
+  "cornell university",
+  "university of chicago",
+  "uchicago",
+];
+
+function normalizeSchoolNameForRisk(name) {
+  return String(name || "")
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isUltraSelectiveSchoolName(name) {
+  const normalized = normalizeSchoolNameForRisk(name);
+  if (!normalized) return false;
+  return ULTRA_SELECTIVE_SCHOOLS.some((pattern) => {
+    const p = normalizeSchoolNameForRisk(pattern);
+    return normalized === p || normalized.includes(p);
+  });
+}
+
+function validateRealisticReach(parsed) {
+  const reach = parsed && typeof parsed === "object" ? parsed.reach : null;
+  if (!Array.isArray(reach)) return { ok: false, reason: "reach 不是数组" };
+  const ultra = reach
+    .map((row) => String(row?.school || "").trim())
+    .filter((name) => isUltraSelectiveSchoolName(name));
+  if (ultra.length > 0) {
+    return {
+      ok: false,
+      reason: `reach 包含顶级参考校，不能占用现实可冲名额：${ultra.join(", ")}`,
+    };
+  }
+  if (reach.length !== 3) {
+    return { ok: false, reason: `reach 必须恰好 3 所现实可冲学校，实际为 ${reach.length}` };
+  }
+  return { ok: true };
+}
+
 app.post("/api/report", async (req, res) => {
   const cfg = resolveLLMConfig();
   if ("error" in cfg) {
-    return res.status(500).json({ error: cfg.error });
+    console.error("[api/report] llm_config", cfg.error);
+    return res.status(500).json({ error: IS_PROD ? "report_service_unavailable" : cfg.error });
   }
   const { key, baseURL, model, isArk, region, provider } = cfg;
 
@@ -613,10 +797,10 @@ app.post("/api/report", async (req, res) => {
     let parsed;
     try {
       parsed = JSON.parse(messageContent);
-    } catch {
+    } catch (e) {
+      console.error("[api/report] invalid_json", e);
       return res.status(502).json({
-        error: "模型返回非合法 JSON",
-        raw: messageContent.slice(0, 500),
+        error: IS_PROD ? "report_generation_failed" : "模型返回非合法 JSON",
       });
     }
 
@@ -628,6 +812,14 @@ app.post("/api/report", async (req, res) => {
       });
     }
 
+    const realisticReach = validateRealisticReach(parsed);
+    if (!realisticReach.ok) {
+      console.warn("[api/report] realistic_reach_invalid:", realisticReach.reason);
+      return res.status(502).json({
+        error: `冲刺名单未满足「3 所现实可冲」规则，请重新点击生成。（${realisticReach.reason}）`,
+      });
+    }
+
     return res
       .setHeader("X-LLM-Duration-Ms", String(llmMs))
       .setHeader("X-LLM-Region", region)
@@ -635,6 +827,7 @@ app.post("/api/report", async (req, res) => {
       .json(parsed);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
+    console.error("[api/report] generation_error", msg);
     let hint = "";
     if (/401|Incorrect API key/i.test(msg)) {
       hint =
@@ -644,7 +837,7 @@ app.post("/api/report", async (req, res) => {
             ? " 当前为 Ollama（OpenAI 兼容）。若仍 401：在 ollama.com/settings/keys 核对 key；云端须 US_OPENAI_BASE_URL=https://ollama.com/v1（或设 OLLAMA_API_KEY）；本地一般为 http://127.0.0.1:11434/v1 且 api_key 可填 ollama。"
             : " 当前为 OpenAI 兼容接口。若仍 401：核对 US_OPENAI_API_KEY（或 sk- 的 OPENAI_API_KEY）与 US_OPENAI_BASE_URL；改 .env 后重启。";
     }
-    return res.status(500).json({ error: msg + hint });
+    return res.status(500).json({ error: IS_PROD ? "report_generation_failed" : msg + hint });
   }
 });
 

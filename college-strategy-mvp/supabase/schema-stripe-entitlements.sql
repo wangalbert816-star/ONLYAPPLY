@@ -6,14 +6,43 @@ create table if not exists public.application_unlock_entitlements (
   user_id uuid not null references auth.users (id) on delete cascade,
   application_id uuid not null references public.saved_applications (id) on delete cascade,
   stripe_checkout_session_id text,
+  source text not null default 'stripe' check (source in ('stripe', 'invite', 'manual')),
   created_at timestamptz not null default now(),
   unique (user_id, application_id)
 );
+
+alter table public.application_unlock_entitlements
+  add column if not exists source text;
+
+update public.application_unlock_entitlements
+set source = 'stripe'
+where source is null;
+
+alter table public.application_unlock_entitlements
+  alter column source set default 'stripe';
+
+alter table public.application_unlock_entitlements
+  alter column source set not null;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'application_unlock_entitlements_source_check'
+  ) then
+    alter table public.application_unlock_entitlements
+      add constraint application_unlock_entitlements_source_check
+      check (source in ('stripe', 'invite', 'manual'));
+  end if;
+end $$;
 
 create index if not exists application_unlock_entitlements_user_idx
   on public.application_unlock_entitlements (user_id);
 
 alter table public.application_unlock_entitlements enable row level security;
+
+drop policy if exists "unlock_entitlements_select_own"
+  on public.application_unlock_entitlements;
 
 create policy "unlock_entitlements_select_own"
   on public.application_unlock_entitlements for select

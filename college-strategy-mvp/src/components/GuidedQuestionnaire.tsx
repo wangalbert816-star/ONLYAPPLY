@@ -159,6 +159,7 @@ export function FormLiveSummary({ form, t }: { form: FormState; t: Translate }) 
   const eff = getEffectiveIntake(form);
   if (eff) lines.push(t("wizard.summary.intake", { v: eff }));
   if (form.applicantIdentity) lines.push(t("wizard.summary.identity", { v: labelIdentity(form, t) }));
+  if ((form.citizenship ?? "").trim() || (form.residenceRegion ?? "").trim()) lines.push(t("wizard.summary.environment"));
   if (form.budget) lines.push(t("wizard.summary.budget", { v: labelBudget(form, t) }));
   if (form.testing) lines.push(t("wizard.summary.testing", { v: labelTesting(form, t) }));
   const scoreBits: string[] = [];
@@ -305,6 +306,55 @@ export function GuidedStep1({ form, update, t }: { form: FormState; update: Upda
             const fb = identityFeedback(form, t);
             return fb ? <p className="field-feedback">{fb}</p> : null;
           })()}
+        </>,
+      ),
+    );
+  }
+
+  if (intakeOk && idOk) {
+    blocks.push(
+      fieldWrap(
+        "s1-env",
+        <>
+          <p className="field-question" id="gq-s1-env">
+            {t("wizard.s1.environment.q")}
+          </p>
+          <p className="field-why" id="gw-s1-env">
+            {t("wizard.s1.environment.why")}
+          </p>
+          <div className="field-score-grid">
+            <div>
+              <label className="field-sub-label" htmlFor="citizenship">
+                {t("form.citizenship")}
+              </label>
+              <input
+                id="citizenship"
+                className="input-modern"
+                type="text"
+                autoComplete="country-name"
+                placeholder={t("form.placeholder.citizenship")}
+                value={form.citizenship ?? ""}
+                onChange={(e) => update("citizenship", e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="field-sub-label" htmlFor="residenceRegion">
+                {t("form.residenceRegion")}
+              </label>
+              <input
+                id="residenceRegion"
+                className="input-modern"
+                type="text"
+                autoComplete="country-name"
+                placeholder={t("form.placeholder.residenceRegion")}
+                value={form.residenceRegion ?? ""}
+                onChange={(e) => update("residenceRegion", e.target.value)}
+              />
+            </div>
+          </div>
+          {((form.citizenship ?? "").trim() || (form.residenceRegion ?? "").trim()) && (
+            <p className="field-feedback">{t("wizard.s1.environment.fb")}</p>
+          )}
         </>,
       ),
     );

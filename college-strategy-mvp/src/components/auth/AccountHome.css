@@ -1,5 +1,5 @@
 .account-home {
-  max-width: 720px;
+  max-width: 880px;
   margin: 0 auto;
   padding-bottom: 3rem;
 }
@@ -20,8 +20,33 @@
 }
 
 .account-home__title {
-  font-size: 1.15rem;
+  font-size: clamp(1.35rem, 2vw, 1.75rem);
   margin: 0 0 0.35rem;
+  letter-spacing: -0.03em;
+}
+
+.account-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.account-home__intro {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 1rem;
+}
+
+.account-home__eyebrow {
+  margin: 0 0 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #2563eb;
 }
 
 .account-home__lead {
@@ -32,13 +57,18 @@
 }
 
 .account-home__email {
-  margin: 0 0 0.85rem;
+  margin: 0;
+  flex: 0 0 auto;
   font-size: 0.78rem;
   color: #475569;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 0.35rem 0.65rem;
 }
 
 .account-home__new {
-  margin-bottom: 1rem;
+  box-shadow: 0 16px 35px rgba(37, 99, 235, 0.18);
 }
 
 .account-home__err {
@@ -52,6 +82,208 @@
   color: #94a3b8;
 }
 
+.account-status-card {
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: 22px;
+  padding: 1.1rem;
+  background:
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.14), transparent 32rem),
+    linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 20px 55px rgba(15, 23, 42, 0.08);
+}
+
+.account-status-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.account-status-card__kicker {
+  margin: 0 0 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #2563eb;
+}
+
+.account-status-card h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  color: #0f172a;
+}
+
+.account-status-card__basis {
+  margin: 0.3rem 0 0;
+  color: #64748b;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.account-status-card__badge {
+  border-radius: 999px;
+  padding: 0.35rem 0.6rem;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.account-status-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) minmax(0, 0.8fr);
+  gap: 0.65rem;
+}
+
+.account-status-metric {
+  min-width: 0;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 0.8rem;
+}
+
+.account-status-metric span,
+.account-status-metric small {
+  display: block;
+  font-size: 0.72rem;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.account-status-metric strong {
+  display: block;
+  margin: 0.18rem 0;
+  color: #0f172a;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.account-status-metric--wide strong {
+  font-size: 1rem;
+}
+
+.account-status-card__next {
+  margin: 0.85rem 0 0;
+  padding-left: 0.8rem;
+  border-left: 3px solid #93c5fd;
+  color: #334155;
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+.account-info-evidence {
+  margin-top: 0.9rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.26);
+  padding-top: 0.7rem;
+}
+
+.account-info-evidence summary {
+  width: fit-content;
+  cursor: pointer;
+  color: #2563eb;
+  font-size: 0.8rem;
+  font-weight: 800;
+  list-style: none;
+}
+
+.account-info-evidence summary::-webkit-details-marker {
+  display: none;
+}
+
+.account-info-evidence summary::after {
+  content: "▾";
+  display: inline-block;
+  margin-left: 0.35rem;
+  transition: transform 160ms ease;
+}
+
+.account-info-evidence[open] summary::after {
+  transform: rotate(180deg);
+}
+
+.account-info-evidence__lead {
+  margin: 0.55rem 0 0.6rem;
+  color: #64748b;
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.account-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.account-info-grid__item {
+  min-width: 0;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 12px;
+  background: rgba(248, 250, 252, 0.72);
+  padding: 0.55rem 0.65rem;
+}
+
+.account-info-grid dt {
+  margin: 0 0 0.18rem;
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.account-info-grid dd {
+  margin: 0;
+  color: #1e293b;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.account-status-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.account-status-card__action-hint {
+  flex-basis: 100%;
+  margin: 0;
+  color: #475569;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.account-history-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.35rem;
+}
+
+.account-history-head h2 {
+  margin: 0 0 0.2rem;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.account-history-head p {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.account-history-toggle {
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  font-weight: 800;
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 0.25rem 0;
+}
+
 .account-list {
   list-style: none;
   margin: 0;
@@ -63,9 +295,9 @@
 
 .account-list__item {
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  overflow: hidden;
-  background: #fafafa;
+  border-radius: 16px;
+  overflow: visible;
+  background: #ffffff;
 }
 
 .account-list__row {
@@ -90,7 +322,7 @@
 
 .account-list__main strong {
   display: block;
-  font-size: 0.88rem;
+  font-size: 0.92rem;
   color: #0f172a;
   margin-bottom: 0.2rem;
 }
@@ -102,6 +334,7 @@
 
 .account-list__btns {
   display: flex;
+  align-items: center;
   gap: 0.35rem;
   flex-wrap: wrap;
 }
@@ -112,7 +345,52 @@
 }
 
 .account-list__delete {
+  display: block;
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 0.45rem 0.6rem;
   color: #b45309;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.76rem;
+}
+
+.account-list__more {
+  position: relative;
+}
+
+.account-list__more summary {
+  list-style: none;
+  cursor: pointer;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 0.28rem 0.55rem;
+  color: #64748b;
+  font-size: 0.72rem;
+  background: #fff;
+}
+
+.account-list__more summary::-webkit-details-marker {
+  display: none;
+}
+
+.account-list__more[open] summary {
+  border-color: #bfdbfe;
+  color: #2563eb;
+}
+
+.account-list__more > button {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.3rem);
+  z-index: 3;
+  min-width: 7rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 16px 35px rgba(15, 23, 42, 0.14);
 }
 
 .account-list__reports {
@@ -151,16 +429,113 @@
   white-space: nowrap;
 }
 
+@media (max-width: 720px) {
+  .account-home__intro,
+  .account-status-card__head,
+  .account-history-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .account-home__email {
+    align-self: flex-start;
+  }
+
+  .account-status-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .account-status-card__actions .btn {
+    width: 100%;
+  }
+
+  .account-info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   .account-home__lead,
   .account-home__email,
-  .account-list__meta {
+  .account-list__meta,
+  .account-history-head p,
+  .account-status-metric span,
+  .account-status-metric small {
     color: var(--color-muted, #9ca3af);
+  }
+
+  .account-home__intro {
+    border-color: var(--color-line, #253044);
+  }
+
+  .account-home__eyebrow,
+  .account-status-card__kicker,
+  .account-history-toggle {
+    color: var(--color-primary, #60a5fa);
+  }
+
+  .account-home__email,
+  .account-status-metric {
+    background: rgba(15, 23, 42, 0.72);
+    border-color: var(--color-line, #253044);
+  }
+
+  .account-status-card {
+    background:
+      radial-gradient(circle at top left, rgba(96, 165, 250, 0.16), transparent 30rem),
+      linear-gradient(135deg, rgba(17, 24, 39, 0.98), rgba(15, 23, 42, 0.98));
+    border-color: rgba(96, 165, 250, 0.28);
+    box-shadow: 0 20px 55px rgba(0, 0, 0, 0.26);
+  }
+
+  .account-status-card h2,
+  .account-status-metric strong,
+  .account-history-head h2 {
+    color: var(--color-fg, #e5e7eb);
+  }
+
+  .account-status-card__badge {
+    background: rgba(96, 165, 250, 0.14);
+    color: #bfdbfe;
+  }
+
+  .account-status-card__next {
+    color: var(--color-muted, #9ca3af);
+    border-color: rgba(96, 165, 250, 0.45);
+  }
+
+  .account-status-card__basis,
+  .account-info-evidence__lead,
+  .account-info-grid dt {
+    color: var(--color-muted, #9ca3af);
+  }
+
+  .account-status-card__action-hint {
+    color: var(--color-muted, #9ca3af);
+  }
+
+  .account-info-evidence {
+    border-color: var(--color-line, #253044);
+  }
+
+  .account-info-evidence summary {
+    color: var(--color-primary, #60a5fa);
+  }
+
+  .account-info-grid__item {
+    background: rgba(15, 23, 42, 0.56);
+    border-color: var(--color-line, #253044);
+  }
+
+  .account-info-grid dd {
+    color: var(--color-fg, #e5e7eb);
   }
 
   .account-list__item,
   .account-list__reports,
-  .account-report-row {
+  .account-report-row,
+  .account-list__more summary,
+  .account-list__more > button {
     background: var(--color-surface, #111827);
     border-color: var(--color-line, #253044);
     color: var(--color-fg, #e5e7eb);

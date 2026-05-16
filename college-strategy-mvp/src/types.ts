@@ -17,6 +17,10 @@ export interface FormState {
   /** 当 intakeTerm 为「其他」时，由用户自行填写的入学季说明 */
   intakeOtherDetail: string;
   applicantIdentity: ApplicantIdentity | "";
+  /** 可选：仅用于申请环境/竞争密度判断，不作为报告中的直接标签 */
+  citizenship: string;
+  /** 可选：常驻地区/主要受教育地区，用于判断申请群体竞争密度 */
+  residenceRegion: string;
   budget: Budget | "";
   testing: Testing | "";
   satScore: string;

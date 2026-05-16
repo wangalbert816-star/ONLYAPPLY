@@ -4,48 +4,48 @@ import type { PaywallCopy, PaywallTone } from "../types";
 export const EN_PAYWALL: Record<PaywallTone, PaywallCopy> = {
   rational: {
     eyebrow: "Verifiable · Actionable · Take it with you",
-    title: "Preview proved the logic—full version saves the time",
-    body: `The overview and information gaps you saw are there to build trust. What actually saves time is the full report: “9 full school names + per-school official-site checklist + this-month / pre-submit action table”—ready to paste into your own spreadsheet instead of paging through dozens of admissions sites.
+    title: "The preview is a conservative read—the full version shows the basis",
+    body: `The overview and information gaps are there to show that the system is reading your known information. The full report expands the basis: “9 full school names + per-school official-site checklist + this-month / pre-submit action table”—so you can see what was judged, what still needs context, and what to verify.
 
-Preview shows one sample per tier on purpose—not to be stingy—but so you can confirm this report is worth what you’d pay next.`,
+Preview shows one sample per tier on purpose: first check the logic, then decide whether to unlock the full judgment.`,
     bullets: [
-      "All 9 school names and tier rationales expanded for finalizing your list",
+      "All 9 school names and tier rationales expanded for checking the system’s read",
       "Per-school “must verify on site”: rounds, international policy, cost definitions",
-      "Second half of risks + action plan: aligned with application season rhythm",
+      "Second half of risks + action plan: helps you add the missing context",
     ],
-    ctaPrimary: "Unlock full report · Executable checklist (9 schools + verify + actions)",
+    ctaPrimary: "Unlock the full-information read (9 schools + verify + actions)",
     ctaHint: "Demo: one click to unlock. Production: pay, then instant unlock.",
-    previewLine: "Preview shows logic and samples—full version saves alignment time with parents.",
+    previewLine: "Preview is a conservative read based on current information; full report expands the basis.",
     hookLead:
-      "The “name fingerprints” below come from this real generation (not random placeholders). Unlock isn’t about more words—it’s exporting finalized data into your decision once.",
+      "The “name fingerprints” below come from this real generation (not random placeholders). Unlock is not about more words—it is about seeing why the system read you this way.",
     footerTitle: "Still stitching spreadsheets by hand?",
     footerText:
-      "Full version trades structure for nights of random site-hopping. In demo you can unlock in one click to see everything.",
+      "Full version expands the judgment basis: what the system saw, what remains uncertain, and what to verify. In demo you can unlock in one click.",
   },
   anxiety: {
     eyebrow: "A wrong list costs more than this fee",
-    title: "The scary part isn’t one extra app—it’s “feeling safe” without a net",
-    body: `Preview already showed direction; what’s hidden is often the 2nd and 3rd school per tier—where parents ask the hardest questions and mistakes hide: does the safety actually hold, does the reach respect budget and visa status.
+    title: "The risk is not one extra app—it’s trusting an incomplete read",
+    body: `Preview already showed direction; what’s hidden is often the 2nd and 3rd school per tier—where parents ask the hardest questions and the judgment depends most on full context: does the safety actually hold, does the reach respect budget and visa status.
 
-If those rows are wrong, the loss isn’t the unlock fee—it’s rounds, materials, stress, and optionality. Full version lays out all 9 schools and risk responses so you at least know what you’re betting on.`,
+When information is incomplete, the system stays conservative. Full version lays out all 9 schools and risk reasoning so you know why the current read says what it says.`,
     bullets: [
       "See each tier’s “hidden” schools: is that really your safety net",
       "Second half of risks: international + aid + variance",
       "Pre-submit checklist: fewer “wrong round / missing material” full rejects",
     ],
-    ctaPrimary: "Unlock full report · Spread the risks before you commit",
+    ctaPrimary: "Unlock full report · See the complete risk read",
     ctaHint: "Demo: one click. Production: pay, then all sensitive rows show.",
-    previewLine: "Preview is enough to feel the tone—not enough to sign a list—that’s full version.",
+    previewLine: "Preview is a conservative read; full version shows the full risk basis.",
     hookLead:
-      "The three lines below are fingerprints of schools not yet shown by name. They’re not scare tactics—they remind you: the list is already in the system; you just haven’t seen all of it.",
+      "The three lines below are fingerprints of schools not yet shown by name. They are not scare tactics—they show that the system already made a read; you just have not seen the full basis.",
     footerTitle: "You can close the tab—the holes in the list won’t close themselves",
     footerText:
-      "If you’re anxious about your list right now, full version at least sends you to official sites with questions—not blanks. Demo unlocks in one click.",
+      "If you’re anxious about your list right now, full version sends you to official sites with the reasoning to verify—not blanks. Demo unlocks in one click.",
   },
   curiosity: {
     eyebrow: "Real names are already in the report—they’re just not lit up yet",
     title: "Guess who: the “second choice” per tier?",
-    body: `The second school in each tier is already in the model’s JSON; preview only shows fingerprints.
+    body: `The second school in each tier has already been judged by the system; preview only shows fingerprints.
 
 If preview felt “kind of accurate,” curiosity will make you want the rest—that’s what full version gives: not suspense for its own sake, but full names, reasons, and verification paths behind it.`,
     bullets: [
@@ -53,9 +53,9 @@ If preview felt “kind of accurate,” curiosity will make you want the rest—
       "Per school: why it sits in that tier and main landmines",
       "Turn guessing into checking: verification items laid out line by line",
     ],
-    ctaPrimary: "Reveal answers · Unlock 9 names + deep rows",
+    ctaPrimary: "Unlock the full read · 9 names + reasoning",
     ctaHint: "Demo: one click. Production: pay, instant open.",
-    previewLine: "Draft is generated—the reveal is in full version; read fingerprints first.",
+    previewLine: "The current read is generated—the full basis is in the full version; read fingerprints first.",
     hookLead:
       "Rule: only first letter and length; full names lock behind unlock. If that matches your guess, you probably should scroll on.",
     footerTitle: "You’re at the edge—might as well read it all",

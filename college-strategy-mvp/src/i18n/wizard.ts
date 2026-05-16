@@ -8,6 +8,7 @@ export const wizardZhNested = {
       empty: "还没有可总结的选择——从上面第一题开始即可。",
       intake: "计划入学季：{v}",
       identity: "申请身份：{v}",
+      environment: "申请环境信息：已填写",
       budget: "学费与经济约束：{v}",
       testing: "标化策略：{v}",
       scores: "已填标化：{v}",
@@ -37,6 +38,11 @@ export const wizardZhNested = {
         fbIntl: "明白。国际生路径里签证、资金与奖助信息会更关键，我们会据此加重验证点。",
         fbUs: "了解。本州/外州与公民身份会影响学费与部分项目门槛，我们会按此校准档位。",
         fbOther: "收到。身份边界不清晰时，我们会把需要你在官网二次确认的点单独列出。",
+      },
+      environment: {
+        q: "补充申请环境信息（可选）",
+        why: "国籍/护照地区与常驻地区只用于判断申请群体竞争密度；报告里会用「竞争密度」表达，不会简单写成某个地区更难。",
+        fb: "收到。系统会把它作为申请环境依据，用更中性的方式校准风险判断。",
       },
       budget: {
         q: "家庭在读大学期间的经济约束，更接近哪一种？",
@@ -130,6 +136,7 @@ export const wizardEnNested = {
       empty: "Nothing to summarize yet—start with the first question above.",
       intake: "Target intake: {v}",
       identity: "Applicant profile: {v}",
+      environment: "Application environment: entered",
       budget: "Cost / aid posture: {v}",
       testing: "Testing strategy: {v}",
       scores: "Test scores: {v}",
@@ -159,6 +166,11 @@ export const wizardEnNested = {
         fbIntl: "Understood. Visa, funding, and aid signals become central—we’ll emphasize verification.",
         fbUs: "Noted. Residency/citizenship changes cost and some program gates—we’ll calibrate tiers accordingly.",
         fbOther: "Received. If boundaries are fuzzy, we’ll list what you should confirm on official sites.",
+      },
+      environment: {
+        q: "Add application-environment context (optional)",
+        why: "Citizenship/passport region and usual residence are used only to estimate applicant-pool competition density. The report will use neutral language, not a simple nationality-equals-difficulty label.",
+        fb: "Received. The system will use this as context and express the result as competition density.",
       },
       budget: {
         q: "Which economic constraint is closest to your family’s situation for college years?",

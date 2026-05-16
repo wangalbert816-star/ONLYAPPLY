@@ -3,6 +3,7 @@ import type { Locale } from "../i18n/strings";
 import { buildBiggestGapBlock, buildOverallVerdict, pickWeakestDimension } from "./decisionReport";
 import { buildFiveDimensionProfile, type ProfileDimension, type ProfileDimensionKey } from "./fiveDimensionProfile";
 import { getEffectiveIntake } from "./intakeTerm";
+import { splitTopReferenceSchools } from "./ultraSelectiveSchools";
 
 export type PdfKeyValue = { label: string; value: string };
 
@@ -76,6 +77,7 @@ export type PdfReportModel = {
   radarDimensions: ProfileDimension[];
   dimensions: PdfDimensionCard[];
   schoolTiers: PdfSchoolTier[];
+  topReferenceSchools: PdfSchoolRow[];
   executiveSummary: string[];
   informationGaps: string[];
   portfolioRisks: PdfPortfolioRisk[];
@@ -191,15 +193,16 @@ function whyForRow(row: SchoolRow, tier: SchoolTier): string {
 }
 
 function buildSchoolTiers(report: ReportPayload, locale: Locale, unlocked: boolean): PdfSchoolTier[] {
+  const split = splitTopReferenceSchools(report, unlocked);
   const tierMeta: { tier: SchoolTier; title: string }[] =
     locale === "en"
       ? [
-          { tier: "reach", title: "Reach" },
+          { tier: "reach", title: "Reach (realistic stretch)" },
           { tier: "match", title: "Match" },
           { tier: "safety", title: "Safety" },
         ]
       : [
-          { tier: "reach", title: "冲刺" },
+          { tier: "reach", title: "冲刺（现实可冲）" },
           { tier: "match", title: "匹配" },
           { tier: "safety", title: "保底" },
         ];
@@ -209,7 +212,7 @@ function buildSchoolTiers(report: ReportPayload, locale: Locale, unlocked: boole
 
   return tierMeta
     .map(({ tier, title }) => {
-      const rows = (report[tier] as SchoolRow[] | undefined) ?? [];
+      const rows = split.regular[tier] ?? [];
       const visible = unlocked ? rows : rows.slice(0, 1);
       return {
         tier,
@@ -224,6 +227,20 @@ function buildSchoolTiers(report: ReportPayload, locale: Locale, unlocked: boole
       };
     })
     .filter((t) => t.rows.length > 0);
+}
+
+function buildTopReferenceSchools(report: ReportPayload, unlocked: boolean): PdfSchoolRow[] {
+  const split = splitTopReferenceSchools(report, unlocked);
+  const mapLines = (items: string[] | undefined, maxEach: number, maxItems: number) =>
+    (items ?? []).slice(0, maxItems).map((x) => clean(x, maxEach)).filter(Boolean);
+
+  return split.topReference.map(({ row, tier }) => ({
+    school: row.school,
+    why: clean(whyForRow(row, tier), 110),
+    signals: mapLines(row.key_fit_signals, 88, 2),
+    risks: mapLines(row.key_risks, 88, 2),
+    verify: mapLines(row.verification_focus, 88, 2),
+  }));
 }
 
 function buildProfileRows(form: FormState, locale: Locale): PdfKeyValue[] {
@@ -319,6 +336,7 @@ export function buildPdfReportModel(
     radarDimensions: dimensions,
     dimensions: buildDimensionCards(dimensions, locale),
     schoolTiers: buildSchoolTiers(report, locale, unlocked),
+    topReferenceSchools: buildTopReferenceSchools(report, unlocked),
     executiveSummary: (report.executive_summary ?? []).map((x) => clean(x, 120)).slice(0, unlocked ? 6 : 2),
     informationGaps: (report.information_gaps ?? []).map((x) => clean(x, 100)).slice(0, unlocked ? 8 : 3),
     portfolioRisks: (report.portfolio_risks ?? [])

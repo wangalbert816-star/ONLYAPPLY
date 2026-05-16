@@ -18,6 +18,7 @@ import { ReportDownloadButton } from "./components/ReportDownloadButton";
 import { ReportPdfDocument } from "./components/pdf/ReportPdfDocument";
 import { LegalLinks } from "./components/LegalLinks";
 import { getEffectiveIntake } from "./lib/intakeTerm";
+import { splitTopReferenceSchools } from "./lib/ultraSelectiveSchools";
 
 export type { PaywallCopy, PaywallTone } from "./types";
 
@@ -62,48 +63,48 @@ export function getPaywallTone(): PaywallTone {
 export const PAYWALL_PACKS: Record<PaywallTone, PaywallCopy> = {
   rational: {
     eyebrow: "可核对 · 可执行 · 一次带走",
-    title: "预览已证明「逻辑对」——完整版解决「省时间」",
-    body: `你看到的总览与信息缺口，是为了建立信任；真正省时间的，是完整版里「9 校全称 + 每校官网核对项 + 本月/提交前行动表」——可直接复制进自己的表格，少翻几十页招生网站。
+    title: "当前结果是保守判断——完整版更接近真实情况",
+    body: `你看到的总览与信息缺口，是为了让你确认：系统正在基于已知信息理解你。真正有价值的是完整版里「9 校全称 + 每校官网核对项 + 本月/提交前行动表」——它会把判断依据摊开，方便你继续补充信息、核对风险。
 
-预览每档只留 1 所样本，不是抠门，是让你先确认：这份报告配得上你接下来要付的那笔钱。`,
+预览每档只留 1 所样本，不是抠门，是先给你看判断逻辑；信息越完整，后续评估越接近你的真实情况。`,
     bullets: [
-      "9 校全名与入档理由一次展开，方便定稿 list",
+      "9 校全名与入档理由一次展开，方便核对系统判断",
       "逐校「官网必核」条目：轮次、国际生政策、费用口径",
-      "风险后半段 + 行动表后半段：对齐申请季节奏",
+      "风险后半段 + 行动表后半段：帮助你继续补全关键信息",
     ],
-    ctaPrimary: "解锁完整版 · 带走可执行清单（9 校 + 核对 + 行动表）",
+    ctaPrimary: "解锁基于完整信息的判断（9 校 + 核对 + 行动表）",
     ctaHint: "演示：点击即开。正式版跳转支付后即时解锁。",
-    previewLine: "预览：逻辑与样本已展示——完整版负责省你与家长的对齐时间。",
+    previewLine: "预览：这是基于当前信息的保守判断；完整版会展开更多依据。",
     hookLead:
-      "以下「校名指纹」来自本次真实生成结果（非随机占位）。解锁不是为了多看字，而是把已定稿的数据一次性导出到你的决策里。",
+      "以下「校名指纹」来自本次真实生成结果（非随机占位）。解锁不是为了多看字，而是看清系统为什么这样判断。",
     footerTitle: "还在用表格自己拼？",
     footerText:
-      "完整版的价值是「少返工」：同一套信息，用结构换你几个晚上的官网漫游。演示环境可一键解锁看全貌。",
+      "完整版的价值是「把判断依据展开」：同一套信息，用结构帮你发现还需要补什么、核对什么。演示环境可一键解锁看全貌。",
   },
   anxiety: {
     eyebrow: "名单错了，代价不是这几十块",
-    title: "最怕的不是多申一所，而是「以为稳了」其实没兜住",
-    body: `预览里你已经看到方向；没展开的是：每一档里「第二、第三所」往往才是家长问得最细、也最容易填错的那一格——保底是否真能保住、冲刺是否把你的预算/身份算进去。
+    title: "最怕的不是多申一所，而是判断依据没看完整",
+    body: `预览里你已经看到方向；没展开的是：每一档里「第二、第三所」往往才是家长问得最细、也最依赖完整信息的那一格——保底是否真能保住、冲刺是否把你的预算/身份算进去。
 
-这些行一旦错了，损失的不是解锁费，是轮次、材料、情绪与可选空间。完整版把 9 校与风险对策一次摊开，让你至少「知道自己在赌什么」。`,
+信息不完整时，系统会偏保守；完整版把 9 校与风险依据一次摊开，让你至少知道当前判断为什么成立、哪里还需要核对。`,
     bullets: [
       "看清每一档「隐藏校」：是不是你以为的那所保底",
       "风险后半段：专门对付「国际生 + 奖助学金 + 方差」",
       "提交前清单：减少「漏材料 / 看错轮次」这种低级全拒",
     ],
-    ctaPrimary: "解锁完整版 · 把风险摊开再决定怎么申",
+    ctaPrimary: "解锁完整版 · 看清完整风险判断",
     ctaHint: "演示：点击即开。正式版支付后立即展示全部敏感行。",
-    previewLine: "预览够用来「感受文风」；不够用来「签字定校」——后者在完整版。",
+    previewLine: "预览是保守判断；要看完整风险依据，需要完整版。",
     hookLead:
-      "下面三行是本次报告里「尚未展示真名」的学校指纹。它们不是吓唬你，是提醒你：名单已经写进系统了，你只是还没看见全貌。",
+      "下面三行是本次报告里「尚未展示真名」的学校指纹。它们不是吓唬你，是提醒你：系统已经给出判断，你只是还没看见完整依据。",
     footerTitle: "你可以关掉页面——但名单里的洞不会自己消失",
     footerText:
-      "若你此刻正在焦虑 list，完整版至少让你「带着问题去核对官网」，而不是带着空白去猜。演示可一键解锁。",
+      "若你此刻正在焦虑 list，完整版至少让你「带着判断依据去核对官网」，而不是带着空白去猜。演示可一键解锁。",
   },
   curiosity: {
     eyebrow: "真名已经写进报告了——只是还没亮给你",
     title: "来认认：这三所「第二顺位」到底是谁？",
-    body: `每一档的第二所学校，模型已经写进 JSON 里了；预览故意只露「指纹」。
+    body: `每一档的第二所学校，系统已经完成初步判定；预览故意只露「指纹」。
 
 如果你读完预览觉得「有点准」，好奇心会逼你想知道剩下是谁——这就是完整版要给你的：不是悬念本身，而是悬念背后的全名、理由与核对路径。`,
     bullets: [
@@ -111,9 +112,9 @@ export const PAYWALL_PACKS: Record<PaywallTone, PaywallCopy> = {
       "对照每所：为什么它在那一档、主要雷区是什么",
       "把「猜」变成「查」：官网核对项一条条摆出来",
     ],
-    ctaPrimary: "揭开谜底 · 解锁 9 校全名与深度行",
+    ctaPrimary: "解锁完整判断 · 9 校全名与依据",
     ctaHint: "演示：点击即开。正式版支付后秒开。",
-    previewLine: "草稿已生成——谜底在完整版；先看指纹，再决定要不要揭开。",
+    previewLine: "当前判断已生成——完整依据在完整版；先看指纹，再决定要不要展开。",
     hookLead:
       "规则很简单：只看首字母与长度，全名锁定在完整版。若和你心里猜的一样，说明你该解锁往下看了。",
     footerTitle: "都猜到边缘了，不如一次看完",
@@ -294,6 +295,8 @@ export function ReportView({
   const notes = report.strategy_notes || [];
 
   const lockedSchoolRows = unlocked ? 999 : 1;
+  const schoolSplit = useMemo(() => splitTopReferenceSchools(report, unlocked), [report, unlocked]);
+  const realisticReachUnderfilled = schoolSplit.topReference.length > 0 && schoolSplit.regular.reach.length < 3;
   const lockedRiskCount = unlocked ? risks.length : Math.min(1, risks.length);
   const lockedWeekItems = unlocked ? tw.length : Math.min(1, tw.length);
   const visibleExecutiveSummary = unlocked
@@ -340,6 +343,7 @@ export function ReportView({
               {t("report.diff.dismiss")}
             </button>
           </div>
+          <p className="report-diff-banner__lead">{t("report.diff.lead")}</p>
           {(reportDiff.tierMoves.length > 0 ||
             reportDiff.addedSchools.length > 0 ||
             reportDiff.removedSchools.length > 0) && (
@@ -495,8 +499,30 @@ export function ReportView({
         </ReportPathStep>
 
         <ReportPathStep step={4} id="report-step-schools" title={t("report.decision.step4Title")} lead={t("report.decision.step4Lead")} bare>
+          {schoolSplit.topReference.length > 0 && (
+            <section className="card report-block report-path-step__panel top-reference-card">
+              <p className="top-reference-card__eyebrow">{t("report.topReferenceEyebrow")}</p>
+              <h2>{t("report.topReferenceTitle")}</h2>
+              <p className="top-reference-card__lead">{t("report.topReferenceLead")}</p>
+              <ul className="top-reference-list">
+                {schoolSplit.topReference.map(({ row }, i) => (
+                  <li key={`${row.school}-${i}`}>
+                    <strong>{row.school}</strong>
+                    <span>{t("report.topReferenceRisk")}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="top-reference-card__note">{t("report.topReferenceNote")}</p>
+            </section>
+          )}
+          {realisticReachUnderfilled && (
+            <section className="card report-block report-path-step__panel realistic-reach-notice">
+              <h2>{t("report.realisticReachNoticeTitle")}</h2>
+              <p>{t("report.realisticReachNoticeBody")}</p>
+            </section>
+          )}
           {(["reach", "match", "safety"] as const).map((tier) => {
-        const rows = report[tier] as SchoolRow[] | undefined;
+        const rows = schoolSplit.regular[tier] as SchoolRow[] | undefined;
         if (!rows?.length) return null;
         const visible = rows.slice(0, lockedSchoolRows);
         const lockedCount = unlocked ? 0 : Math.max(0, rows.length - 1);
