@@ -9,9 +9,16 @@ export function isSchemaMissingError(error: unknown): boolean {
 
 export function formatSupabaseError(error: unknown, t: (key: string) => string): string {
   if (isSchemaMissingError(error)) return t("auth.schemaMissing");
-  if (error instanceof Error && error.message) return error.message;
-  if (error && typeof error === "object" && "message" in error && typeof (error as PostgrestError).message === "string") {
-    return (error as PostgrestError).message;
+  const message =
+    error instanceof Error
+      ? error.message
+      : error && typeof error === "object" && "message" in error && typeof (error as PostgrestError).message === "string"
+        ? (error as PostgrestError).message
+        : "";
+
+  const m = message.toLowerCase();
+  if (m.includes("jwt") || m.includes("session") || m.includes("auth")) {
+    return t("auth.errSessionExpired");
   }
-  return t("auth.accountLoadErr");
+  return t("auth.errCloudAction");
 }

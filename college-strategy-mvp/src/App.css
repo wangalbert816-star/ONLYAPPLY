@@ -194,12 +194,17 @@
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-top: 1px solid rgba(0, 0, 0, 0.04);
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .app-disclaimer-fixed p {
   margin: 0 auto;
   max-width: min(36rem, 92vw);
+}
+
+.app-disclaimer-fixed__legal {
+  display: flex;
+  margin-top: 0.2rem;
 }
 
 /* —— Flow header —— */
@@ -660,6 +665,11 @@ textarea {
   padding-top: var(--space-block, clamp(2.75rem, 6vh, 4rem));
   margin-top: var(--space-section, clamp(3rem, 7vh, 4.5rem));
   line-height: 1.5;
+}
+
+.report-legal-links {
+  display: flex;
+  margin: 0.45rem auto 0;
 }
 
 .step-lead {

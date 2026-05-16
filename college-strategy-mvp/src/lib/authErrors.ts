@@ -16,5 +16,5 @@ export function mapAuthError(message: string, t: (key: string) => string): strin
   if (m.includes("redirect") && m.includes("url")) {
     return t("auth.errRedirectUrl");
   }
-  return message;
+  return t("auth.errGeneric");
 }

@@ -16,6 +16,7 @@ import { ReportPathStep } from "./components/ReportPathStep";
 import { SaveReportBanner } from "./components/auth/SaveReportBanner";
 import { ReportDownloadButton } from "./components/ReportDownloadButton";
 import { ReportPdfDocument } from "./components/pdf/ReportPdfDocument";
+import { LegalLinks } from "./components/LegalLinks";
 import { getEffectiveIntake } from "./lib/intakeTerm";
 
 export type { PaywallCopy, PaywallTone } from "./types";
@@ -729,6 +730,7 @@ export function ReportView({
       </div>
 
       <p className="disclaimer">{t("report.disclaimer")}</p>
+      <LegalLinks className="report-legal-links" />
 
       <div ref={pdfSourceRef} className="report-pdf-export-root" aria-hidden>
         <ReportPdfDocument

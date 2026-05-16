@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { useLanguage } from "../../i18n/LanguageContext";
 import { mapAuthError } from "../../lib/authErrors";
+import { LegalConsentLine, LegalLinks } from "../LegalLinks";
 import "./AuthModal.css";
 
 type Props = {
@@ -39,7 +40,7 @@ export function AuthModal({ open, onClose, successHint, onOpenAppLinks }: Props)
       return;
     }
     if (res.error) {
-      setErr(res.error);
+      setErr(mapAuthError(res.error, t));
       return;
     }
     setPhase("email_sent");
@@ -125,6 +126,8 @@ export function AuthModal({ open, onClose, successHint, onOpenAppLinks }: Props)
                 {t("auth.emailSubmit")}
               </button>
             </form>
+            <LegalConsentLine />
+            <LegalLinks className="auth-modal__legal-links" />
           </>
         )}
       </div>

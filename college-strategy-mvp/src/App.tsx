@@ -14,6 +14,7 @@ import { AuthModal } from "./components/auth/AuthModal";
 import { AccountHome } from "./components/auth/AccountHome";
 import { AuthChromeProvider } from "./auth/AuthChromeContext";
 import { AppTopChrome } from "./components/AppTopChrome";
+import { LegalLinks } from "./components/LegalLinks";
 import { saveUserSession, fetchUnlockedApplicationIds, redeemInviteCode } from "./lib/supabase/accounts";
 import { formatSupabaseError } from "./lib/supabase/errors";
 import { clearPendingSave, readPendingSave, writePendingSave } from "./lib/pendingSave";
@@ -47,6 +48,22 @@ function translateInviteError(code: string, tf: (k: string) => string): string {
   const msg = tf(path);
   if (msg !== path) return msg;
   return tf("report.inviteErr.generic");
+}
+
+function translateReportApiError(code: string | undefined, tf: (k: string) => string): string {
+  const normalized = (code ?? "").toLowerCase();
+  if (normalized.includes("timeout") || normalized.includes("timed out")) {
+    return tf("app.errGenerateTimeout");
+  }
+  if (
+    normalized.includes("llm") ||
+    normalized.includes("openai") ||
+    normalized.includes("api_key") ||
+    normalized.includes("未配置")
+  ) {
+    return tf("app.errGenerateConfig");
+  }
+  return tf("app.errGenerate");
 }
 
 function translateCheckoutApiError(code: string | undefined, tf: (k: string) => string): string {
@@ -501,7 +518,7 @@ export default function App() {
         );
       }
       if (!res.ok) {
-        setErr(typeof data.error === "string" ? data.error : t("app.errGenerate"));
+        setErr(translateReportApiError(typeof data.error === "string" ? data.error : undefined, t));
         return;
       }
       setReportDiff(null);
@@ -576,7 +593,7 @@ export default function App() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setRefreshError(typeof data.error === "string" ? data.error : t("app.errGenerate"));
+        setRefreshError(translateReportApiError(typeof data.error === "string" ? data.error : undefined, t));
         return;
       }
       const next = data as ReportPayload;
@@ -823,6 +840,7 @@ export default function App() {
 
         <footer className="app-disclaimer-fixed" role="contentinfo">
           <p>{t("app.disclaimer")}</p>
+          <LegalLinks className="app-disclaimer-fixed__legal" />
         </footer>
         <AuthModal
           open={authModalOpen}
@@ -932,6 +950,7 @@ export default function App() {
 
       <footer className="app-disclaimer-fixed" role="contentinfo">
         <p>{t("app.disclaimer")}</p>
+        <LegalLinks className="app-disclaimer-fixed__legal" />
       </footer>
     </div>
       <FullscreenLogoMarquee
