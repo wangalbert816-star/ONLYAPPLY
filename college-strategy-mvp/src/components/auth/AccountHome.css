@@ -150,3 +150,32 @@
   font-weight: 600;
   white-space: nowrap;
 }
+
+@media (prefers-color-scheme: dark) {
+  .account-home__lead,
+  .account-home__email,
+  .account-list__meta {
+    color: var(--color-muted, #9ca3af);
+  }
+
+  .account-list__item,
+  .account-list__reports,
+  .account-report-row {
+    background: var(--color-surface, #111827);
+    border-color: var(--color-line, #253044);
+    color: var(--color-fg, #e5e7eb);
+  }
+
+  .account-list__main strong {
+    color: var(--color-fg, #e5e7eb);
+  }
+
+  .account-report-row:hover {
+    background: #151e2f;
+    border-color: rgba(96, 165, 250, 0.42);
+  }
+
+  .account-report-row__cta {
+    color: var(--color-primary, #60a5fa);
+  }
+}

@@ -295,3 +295,70 @@
   color: #b45309;
   line-height: 1.45;
 }
+
+@media (prefers-color-scheme: dark) {
+  .gaps-panel__intro,
+  .gaps-card__why,
+  .gaps-card__impact,
+  .gaps-card__preview,
+  .gaps-modal__meta {
+    color: var(--color-muted, #9ca3af);
+  }
+
+  .gaps-progress__label,
+  .gaps-card__title,
+  .gaps-card__why strong,
+  .gaps-card__impact strong,
+  .gaps-modal__title,
+  .gaps-modal__label {
+    color: var(--color-fg, #e5e7eb);
+  }
+
+  .gaps-panel__empty,
+  .gaps-card,
+  .gaps-card--done,
+  .gaps-card__preview,
+  .gaps-card__btn,
+  .gaps-modal {
+    background: var(--color-surface, #111827);
+    border-color: var(--color-line, #253044);
+    color: var(--color-fg, #e5e7eb);
+  }
+
+  .gaps-card:hover,
+  .gaps-card__btn:hover {
+    background: #151e2f;
+    border-color: #334155;
+  }
+
+  .gaps-card__status--todo,
+  .gaps-regen-blocked {
+    background: rgba(251, 191, 36, 0.12);
+    border-color: rgba(251, 191, 36, 0.28);
+    color: #fcd34d;
+  }
+
+  .gaps-card__status--done {
+    background: rgba(34, 197, 94, 0.14);
+    border-color: rgba(134, 239, 172, 0.3);
+    color: #86efac;
+  }
+
+  .gaps-card__btn--primary {
+    background: var(--color-primary, #60a5fa);
+    border-color: var(--color-primary, #60a5fa);
+    color: #08111f;
+  }
+
+  .gaps-progress__track {
+    background: #1f2937;
+  }
+
+  .gaps-modal-backdrop {
+    background: rgba(0, 0, 0, 0.62);
+  }
+
+  .gaps-modal__error {
+    color: #fca5a5;
+  }
+}

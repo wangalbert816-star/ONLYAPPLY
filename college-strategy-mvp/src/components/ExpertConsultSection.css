@@ -134,3 +134,50 @@
   font-size: 0.82rem;
   padding: 0.45rem 0.85rem;
 }
+
+@media (prefers-color-scheme: dark) {
+  .expert-consult.card.report-block,
+  .expert-consult-modal {
+    background: var(--color-surface, #111827);
+    border-color: var(--color-line, #253044);
+    color: var(--color-fg, #e5e7eb);
+  }
+
+  .expert-consult__title,
+  .expert-consult-modal__title {
+    color: var(--color-fg, #e5e7eb);
+  }
+
+  .expert-consult__risk,
+  .expert-consult__guide,
+  .expert-consult-modal__lead,
+  .expert-consult-modal__optional {
+    color: var(--color-muted, #9ca3af);
+  }
+
+  .expert-consult__cta {
+    background: var(--color-primary, #60a5fa);
+    border-color: var(--color-primary, #60a5fa);
+    color: #08111f;
+  }
+
+  .expert-consult__cta:hover {
+    background: var(--color-primary-hover, #93c5fd);
+    border-color: var(--color-primary-hover, #93c5fd);
+    color: #08111f;
+  }
+
+  .expert-consult-modal-backdrop {
+    background: rgba(0, 0, 0, 0.62);
+  }
+
+  .expert-consult-modal__error {
+    color: #fca5a5;
+  }
+
+  .expert-consult-modal__success {
+    background: rgba(16, 185, 129, 0.12);
+    border-color: rgba(110, 231, 183, 0.28);
+    color: #86efac;
+  }
+}

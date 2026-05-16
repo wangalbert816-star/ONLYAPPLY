@@ -159,3 +159,18 @@ html[data-app-disclaimer] .brand-wall-bottom-band {
     transform: translate3d(-42%, 0, 0);
   }
 }
+
+@media (prefers-color-scheme: dark) {
+  html[data-intro] .brand-wall-logo img {
+    opacity: 0.13 !important;
+  }
+
+  .brand-wall-logo img {
+    opacity: var(--bw-logo-opacity, 0.18);
+    filter: grayscale(1) contrast(0.95) brightness(0.78);
+  }
+
+  .brand-wall-vignette {
+    background: linear-gradient(180deg, transparent 0%, transparent 46%, rgba(96, 165, 250, 0.05) 100%);
+  }
+}
