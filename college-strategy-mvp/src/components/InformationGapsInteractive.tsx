@@ -269,7 +269,7 @@ export function InformationGapsInteractive({
                       {completions[task.id]!.value}
                     </p>
                   )}
-                  <div className="gaps-card__actions">
+                  <div className="gaps-card__actions" data-no-pdf>
                     <button
                       type="button"
                       className={`gaps-card__btn${filled ? " gaps-card__btn--ghost" : " gaps-card__btn--primary"}`}
@@ -285,7 +285,7 @@ export function InformationGapsInteractive({
           </div>
 
           {onRegenerate && (
-            <div className="gaps-regen-block">
+            <div className="gaps-regen-block" data-no-pdf>
               <button
                 type="button"
                 className="btn btn-primary gaps-regen-btn"

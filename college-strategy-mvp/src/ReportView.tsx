@@ -1,6 +1,6 @@
 import type { FormState, PaywallCopy, PaywallTone, ReportDiff, ReportPayload, SchoolRow, SchoolTier, SupplementaryNote } from "./types";
 import "./ReportView.css";
-import { useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useLanguage } from "./i18n/LanguageContext";
 import { EN_PAYWALL } from "./i18n/paywallEn";
 import { InformationGapsInteractive } from "./components/InformationGapsInteractive";
@@ -14,7 +14,9 @@ import { ReportBiggestGapBanner } from "./components/ReportBiggestGapBanner";
 import { ReportOptimizeCtaBar } from "./components/ReportOptimizeCtaBar";
 import { ReportPathStep } from "./components/ReportPathStep";
 import { SaveReportBanner } from "./components/auth/SaveReportBanner";
-import { AuthMenuButton } from "./components/auth/AuthMenuButton";
+import { ReportDownloadButton } from "./components/ReportDownloadButton";
+import { ReportPdfDocument } from "./components/pdf/ReportPdfDocument";
+import { getEffectiveIntake } from "./lib/intakeTerm";
 
 export type { PaywallCopy, PaywallTone } from "./types";
 
@@ -218,6 +220,13 @@ interface ReportViewProps {
   onRequestSignIn?: () => void;
   onOpenAccount?: () => void;
   onDismissSaveBanner?: () => void;
+  /** 用于 PDF 封面（如登录邮箱） */
+  pdfRecipientName?: string | null;
+  purchaseBusy?: boolean;
+  stripeCheckoutEnabled?: boolean;
+  inviteCodesEnabled?: boolean;
+  inviteRedeemBusy?: boolean;
+  onRedeemInviteCode?: (code: string) => void | Promise<void>;
 }
 
 export function ReportView({
@@ -241,10 +250,19 @@ export function ReportView({
   showSaveBanner = false,
   sessionSaved = false,
   onRequestSignIn,
-  onOpenAccount,
+  onOpenAccount: _onOpenAccount,
   onDismissSaveBanner,
+  pdfRecipientName = null,
+  purchaseBusy = false,
+  stripeCheckoutEnabled = false,
+  inviteCodesEnabled = false,
+  inviteRedeemBusy = false,
+  onRedeemInviteCode,
 }: ReportViewProps) {
   const { t, locale } = useLanguage();
+  const [inviteInput, setInviteInput] = useState("");
+  const pdfSourceRef = useRef<HTMLDivElement>(null);
+  const intakeLabel = useMemo(() => getEffectiveIntake(form) || t("report.title"), [form, t]);
   const profileFive = useMemo(() => buildFiveDimensionProfile(form, locale), [form, locale]);
   const verdict = useMemo(() => buildOverallVerdict(form, profileFive, locale), [form, profileFive, locale]);
   const biggestGap = useMemo(() => buildBiggestGapBlock(profileFive, locale), [profileFive, locale]);
@@ -257,6 +275,8 @@ export function ReportView({
 
   const toneLabel =
     tone === "rational" ? t("report.toneRational") : tone === "anxiety" ? t("report.toneAnxiety") : t("report.toneCuriosity");
+
+  const inviteModeOnly = inviteCodesEnabled && !stripeCheckoutEnabled;
 
   const risks = report.portfolio_risks || [];
   const tw = report.improvement_plan?.this_week || [];
@@ -361,8 +381,8 @@ export function ReportView({
           </h1>
         </div>
         <div className="top-actions__auth">
-          {authConfigured && onRequestSignIn && onOpenAccount && (
-            <AuthMenuButton onSignIn={onRequestSignIn} onOpenAccount={onOpenAccount} />
+          {isAuthenticated && sessionSaved && (
+            <ReportDownloadButton sourceRef={pdfSourceRef} intakeLabel={intakeLabel} unlocked={unlocked} />
           )}
           <button type="button" className="btn btn-secondary" onClick={onReset}>
             {t("report.reset")}
@@ -379,7 +399,7 @@ export function ReportView({
       )}
 
       {!unlocked && (
-        <p className="tone-pill" aria-label={t("report.toneAria")}>
+        <p className="tone-pill" aria-label={t("report.toneAria")} data-no-pdf>
           {t("report.tonePill", { tone: toneLabel })}{" "}
           <code>?paywall=rational|anxiety|curiosity</code>
         </p>
@@ -390,7 +410,7 @@ export function ReportView({
       </p>
 
       {!unlocked && (
-        <>
+        <div data-no-pdf>
           <StrongHookCard report={report} tone={tone} lead={copy.hookLead} />
 
           <section className="card paywall-guide" aria-labelledby="paywall-guide-title">
@@ -404,12 +424,46 @@ export function ReportView({
                 <li key={b}>{b}</li>
               ))}
             </ul>
-            <button type="button" className="btn btn-primary btn-block paywall-cta" onClick={onUnlock}>
-              {copy.ctaPrimary}
+            <button type="button" className="btn btn-primary btn-block paywall-cta" onClick={onUnlock} disabled={purchaseBusy}>
+              {inviteModeOnly ? t("report.inviteUnlockCta") : copy.ctaPrimary}
             </button>
-            <p className="paywall-cta-hint">{copy.ctaHint}</p>
+            <p className="paywall-cta-hint">{inviteModeOnly ? t("report.inviteUnlockHint") : copy.ctaHint}</p>
+            {inviteCodesEnabled && stripeCheckoutEnabled && (
+              <p className="paywall-invite-hybrid-hint">{t("report.inviteHybridHint")}</p>
+            )}
+            {inviteCodesEnabled && (
+              <div id="report-invite-redeem" className="invite-redeem" data-no-pdf>
+                <p className="invite-redeem__label">{t("report.inviteCodeLabel")}</p>
+                {!isAuthenticated ? (
+                  <p className="invite-redeem__hint">{t("report.inviteSignInFirst")}</p>
+                ) : !sessionSaved ? (
+                  <p className="invite-redeem__hint">{t("report.inviteNeedSave")}</p>
+                ) : (
+                  <div className="invite-redeem__row">
+                    <input
+                      type="text"
+                      className="invite-redeem__input"
+                      autoComplete="off"
+                      spellCheck={false}
+                      value={inviteInput}
+                      onChange={(e) => setInviteInput(e.target.value)}
+                      placeholder={t("report.inviteRedeemPlaceholder")}
+                      aria-label={t("report.inviteCodeLabel")}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-secondary invite-redeem__btn"
+                      disabled={inviteRedeemBusy}
+                      onClick={() => void onRedeemInviteCode?.(inviteInput)}
+                    >
+                      {inviteRedeemBusy ? t("report.inviteRedeemBusy") : t("report.inviteRedeemSubmit")}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </section>
-        </>
+        </div>
       )}
 
       <div className="report-path" aria-label={t("report.decision.pathAria")}>
@@ -618,19 +672,29 @@ export function ReportView({
 
       </div>
 
+      <p className="disclaimer">{t("report.disclaimer")}</p>
+
+      <div ref={pdfSourceRef} className="report-pdf-export-root" aria-hidden>
+        <ReportPdfDocument
+          form={form}
+          report={report}
+          locale={locale}
+          unlocked={unlocked}
+          recipientName={pdfRecipientName}
+        />
+      </div>
+
       {!unlocked && (
-        <section className="card paywall-footer" aria-labelledby="paywall-footer-title">
+        <section className="card paywall-footer" aria-labelledby="paywall-footer-title" data-no-pdf>
           <h2 id="paywall-footer-title" className="paywall-footer-title">
             {copy.footerTitle}
           </h2>
           <p className="paywall-footer-text">{copy.footerText}</p>
-          <button type="button" className="btn btn-primary btn-block" onClick={onUnlock}>
+          <button type="button" className="btn btn-primary btn-block" onClick={onUnlock} disabled={purchaseBusy}>
             {copy.ctaPrimary}
           </button>
         </section>
       )}
-
-      <p className="disclaimer">{t("report.disclaimer")}</p>
     </div>
   );
 }

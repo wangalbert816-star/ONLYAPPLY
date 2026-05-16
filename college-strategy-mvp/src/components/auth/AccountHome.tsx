@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type MouseEvent } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { useLanguage } from "../../i18n/LanguageContext";
 import {
@@ -8,23 +8,34 @@ import {
   type ApplicationListItem,
   type SavedReportRow,
 } from "../../lib/supabase/accounts";
+import { formatSupabaseError } from "../../lib/supabase/errors";
 import type { FormState, ReportPayload } from "../../types";
 import { BrandLogo } from "../BrandLogo";
 import "./AccountHome.css";
 
 type Props = {
+  unlockedApplicationIds: readonly string[];
   onBack: () => void;
   onOpenReport: (payload: {
     form: FormState;
     report: ReportPayload;
     applicationId: string;
+    reportId: string;
     reportUnlocked: boolean;
   }) => void;
   onEditForm: (payload: { form: FormState; applicationId: string }) => void;
   onNewApplication: () => void;
+  onOpenAppLinks: (e: MouseEvent<HTMLButtonElement>) => void;
 };
 
-export function AccountHome({ onBack, onOpenReport, onEditForm, onNewApplication }: Props) {
+export function AccountHome({
+  unlockedApplicationIds,
+  onBack,
+  onOpenReport,
+  onEditForm,
+  onNewApplication,
+  onOpenAppLinks,
+}: Props) {
   const { t, locale } = useLanguage();
   const { user, signOut, configured } = useAuth();
   const [apps, setApps] = useState<ApplicationListItem[]>([]);
@@ -42,7 +53,7 @@ export function AccountHome({ onBack, onOpenReport, onEditForm, onNewApplication
       const list = await listApplications();
       setApps(list);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : t("auth.accountLoadErr"));
+      setErr(formatSupabaseError(e, t));
     } finally {
       setLoading(false);
     }
@@ -64,7 +75,7 @@ export function AccountHome({ onBack, onOpenReport, onEditForm, onNewApplication
       const { reports } = await getApplicationReports(appId);
       setReportsByApp((prev) => ({ ...prev, [appId]: reports }));
     } catch (e) {
-      setErr(e instanceof Error ? e.message : t("auth.accountLoadErr"));
+      setErr(formatSupabaseError(e, t));
     } finally {
       setLoadingReports(null);
     }
@@ -77,7 +88,7 @@ export function AccountHome({ onBack, onOpenReport, onEditForm, onNewApplication
       setApps((prev) => prev.filter((a) => a.id !== appId));
       if (expandedId === appId) setExpandedId(null);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : t("auth.accountLoadErr"));
+      setErr(formatSupabaseError(e, t));
     }
   }
 
@@ -100,6 +111,9 @@ export function AccountHome({ onBack, onOpenReport, onEditForm, onNewApplication
       <header className="account-home__head">
         <BrandLogo />
         <div className="account-home__head-actions">
+          <button type="button" className="btn btn-secondary account-home__hub" onClick={onOpenAppLinks}>
+            {t("appLinks.entry")}
+          </button>
           <button type="button" className="btn btn-secondary" onClick={onBack}>
             {t("auth.accountBack")}
           </button>
@@ -162,7 +176,8 @@ export function AccountHome({ onBack, onOpenReport, onEditForm, onNewApplication
                           form: app.form_state,
                           report: r.report_payload,
                           applicationId: app.id,
-                          reportUnlocked: r.report_unlocked,
+                          reportId: r.id,
+                          reportUnlocked: unlockedApplicationIds.includes(app.id) || r.report_unlocked,
                         })
                       }
                     >

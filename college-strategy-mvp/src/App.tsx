@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import type { FormState, ReportDiff, ReportPayload, SupplementaryNote } from "./types";
 import { getEffectiveIntake } from "./lib/intakeTerm";
 import { buildReportApiBody } from "./lib/reportApiBody";
 import { collectHighlightKeys, compareReports, reportDiffIsEmpty } from "./lib/reportDiff";
 import { apiUrl } from "./lib/apiBase";
-import { clearUnlockStorage, ReportView, writeUnlockToStorage } from "./ReportView";
+import { clearUnlockStorage, readUnlockFromStorage, ReportView, writeUnlockToStorage } from "./ReportView";
 import { BrandLogo } from "./components/BrandLogo";
 import { FormLiveSummary, GuidedStep1, GuidedStep2, GuidedStep3, type GuideTouch } from "./components/GuidedQuestionnaire";
 import { FullscreenLogoMarquee } from "./components/FullscreenLogoMarquee";
@@ -12,9 +12,13 @@ import { useLanguage } from "./i18n/LanguageContext";
 import { useAuth } from "./auth/AuthContext";
 import { AuthModal } from "./components/auth/AuthModal";
 import { AccountHome } from "./components/auth/AccountHome";
-import { AuthMenuButton } from "./components/auth/AuthMenuButton";
-import { saveUserSession } from "./lib/supabase/accounts";
+import { AuthChromeProvider } from "./auth/AuthChromeContext";
+import { AppTopChrome } from "./components/AppTopChrome";
+import { saveUserSession, fetchUnlockedApplicationIds, redeemInviteCode } from "./lib/supabase/accounts";
+import { formatSupabaseError } from "./lib/supabase/errors";
 import { clearPendingSave, readPendingSave, writePendingSave } from "./lib/pendingSave";
+import { isStripeCheckoutEnabled } from "./lib/stripeCheckout";
+import { isInviteCodesEnabled } from "./lib/inviteCodes";
 import "./App.css";
 
 const initialForm: FormState = {
@@ -37,6 +41,29 @@ const initialForm: FormState = {
 };
 
 const LOADING_TIP_KEYS = ["app.loading.tip0", "app.loading.tip1", "app.loading.tip2", "app.loading.tip3"] as const;
+
+function translateInviteError(code: string, tf: (k: string) => string): string {
+  const path = `report.inviteErr.${code}`;
+  const msg = tf(path);
+  if (msg !== path) return msg;
+  return tf("report.inviteErr.generic");
+}
+
+function translateCheckoutApiError(code: string | undefined, tf: (k: string) => string): string {
+  switch (code) {
+    case "stripe_checkout_unavailable":
+      return tf("report.stripeNotConfigured");
+    case "auth_required":
+    case "invalid_session":
+      return tf("report.stripeSignInFirst");
+    case "already_unlocked":
+      return tf("report.stripeAlreadyOwned");
+    case "report_not_found":
+      return tf("report.stripeSaveFirst");
+    default:
+      return tf("report.stripeErr");
+  }
+}
 
 function validateStep(step: number, f: FormState, tr: (path: string) => string): string | null {
   if (step === 1) {
@@ -66,6 +93,9 @@ function validateStep(step: number, f: FormState, tr: (path: string) => string):
 
 export default function App() {
   const { t, locale } = useLanguage();
+  const stripeCheckoutEnabled = isStripeCheckoutEnabled();
+  const inviteCodesEnabled = isInviteCodesEnabled();
+  const cloudEntitlementsEnabled = stripeCheckoutEnabled || inviteCodesEnabled;
   const [flowStarted, setFlowStarted] = useState(false);
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormState>(initialForm);
@@ -73,18 +103,28 @@ export default function App() {
   const [view, setView] = useState<"form" | "report" | "account">("form");
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [currentApplicationId, setCurrentApplicationId] = useState<string | null>(null);
+  const [currentReportId, setCurrentReportId] = useState<string | null>(null);
+  const currentApplicationIdRef = useRef<string | null>(null);
   const [saveBannerDismissed, setSaveBannerDismissed] = useState(false);
   const [sessionSaved, setSessionSaved] = useState(false);
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
-  const { user, loading: authLoading, configured: authConfigured } = useAuth();
+  const { user, loading: authLoading, configured: authConfigured, session } = useAuth();
   const [loading, setLoading] = useState(false);
   const [loadingTipIndex, setLoadingTipIndex] = useState(0);
   const [err, setErr] = useState<string | null>(null);
   const [report, setReport] = useState<ReportPayload | null>(null);
   const [reportUnlocked, setReportUnlocked] = useState(false);
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
+  const [inviteBusy, setInviteBusy] = useState(false);
+  const [unlockedApplicationIds, setUnlockedApplicationIds] = useState<string[]>([]);
   const submitLockRef = useRef(false);
-  const applicationHubTriggerRef = useRef<HTMLButtonElement>(null);
+  const applicationHubTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [applicationHubOpen, setApplicationHubOpen] = useState(false);
+
+  const openApplicationHub = useCallback((e: MouseEvent<HTMLElement>) => {
+    applicationHubTriggerRef.current = e.currentTarget as HTMLButtonElement;
+    setApplicationHubOpen(true);
+  }, []);
   const [reportRefreshing, setReportRefreshing] = useState(false);
   const [reportDiff, setReportDiff] = useState<ReportDiff | null>(null);
   const [highlightSchoolKeys, setHighlightSchoolKeys] = useState<Set<string>>(new Set());
@@ -97,35 +137,238 @@ export default function App() {
 
   const stepError = useMemo(() => validateStep(step, form, t), [step, form, t]);
 
+  const authChromeHandlers = useMemo(
+    () => ({
+      onSignIn: () => setAuthModalOpen(true),
+      onOpenAccount: () => setView("account"),
+    }),
+    [],
+  );
+
+  const withChrome = useCallback(
+    (content: ReactNode) => (
+      <AuthChromeProvider value={authChromeHandlers}>
+        <AppTopChrome />
+        {content}
+      </AuthChromeProvider>
+    ),
+    [authChromeHandlers],
+  );
+
+  const refreshEntitlements = useCallback(async (): Promise<string[]> => {
+    if (!cloudEntitlementsEnabled || !user || !authConfigured) {
+      setUnlockedApplicationIds([]);
+      return [];
+    }
+    try {
+      const ids = await fetchUnlockedApplicationIds();
+      setUnlockedApplicationIds(ids);
+      return ids;
+    } catch {
+      setUnlockedApplicationIds([]);
+      return [];
+    }
+  }, [cloudEntitlementsEnabled, user, authConfigured]);
+
+  const handleInviteRedeem = useCallback(
+    async (code: string) => {
+      if (!inviteCodesEnabled || !currentApplicationId) {
+        setSaveNotice(t("report.inviteNeedSave"));
+        return;
+      }
+      setInviteBusy(true);
+      try {
+        const res = await redeemInviteCode(code.trim(), currentApplicationId);
+        if (!res.ok) {
+          setSaveNotice(translateInviteError(res.error, t));
+          return;
+        }
+        if (res.already) {
+          setReportUnlocked(true);
+          setSaveNotice(t("report.stripeAlreadyOwned"));
+          return;
+        }
+        await refreshEntitlements();
+        setReportUnlocked(true);
+        setSaveNotice(t("report.inviteRedeemSuccess"));
+      } catch (e) {
+        setSaveNotice(formatSupabaseError(e, t));
+      } finally {
+        setInviteBusy(false);
+      }
+    },
+    [inviteCodesEnabled, currentApplicationId, t, refreshEntitlements],
+  );
+
   const persistToCloud = useCallback(
     async (payload: {
       formState: FormState;
       reportPayload: ReportPayload;
-      unlocked?: boolean;
       applicationId?: string | null;
-    }) => {
-      if (!user || !authConfigured) return false;
+    }): Promise<{
+      ok: boolean;
+      applicationId: string | null;
+      reportId: string | null;
+    }> => {
+      if (!user || !authConfigured)
+        return { ok: false, applicationId: currentApplicationId, reportId: currentReportId };
       try {
-        const { applicationId } = await saveUserSession({
+        const { applicationId, reportId } = await saveUserSession({
           applicationId: payload.applicationId ?? currentApplicationId,
           form: payload.formState,
           locale,
           report: payload.reportPayload,
           supplementaryNotes: profileFiveSupplementaryRef.current,
-          reportUnlocked: payload.unlocked ?? reportUnlocked,
         });
         setCurrentApplicationId(applicationId);
+        setCurrentReportId(reportId);
         clearPendingSave();
         setSessionSaved(true);
         setSaveNotice(t("auth.saveSuccess"));
-        return true;
-      } catch {
-        setSaveNotice(t("auth.saveErr"));
-        return false;
+        return { ok: true, applicationId, reportId };
+      } catch (e) {
+        setSaveNotice(formatSupabaseError(e, t));
+        return { ok: false, applicationId: currentApplicationId, reportId: currentReportId };
       }
     },
-    [user, authConfigured, currentApplicationId, locale, reportUnlocked, t],
+    [user, authConfigured, currentApplicationId, currentReportId, locale, t],
   );
+
+  const handleReportUnlockFlow = useCallback(async () => {
+    if (!stripeCheckoutEnabled) {
+      if (inviteCodesEnabled) {
+        if (!user || !session?.access_token) {
+          setSaveNotice(t("report.inviteSignInFirst"));
+          setAuthModalOpen(true);
+          return;
+        }
+        if (!report) return;
+        setCheckoutBusy(true);
+        try {
+          let appId = currentApplicationId;
+          if (!appId) {
+            const saved = await persistToCloud({ formState: form, reportPayload: report });
+            if (!saved.ok || !saved.applicationId) return;
+            appId = saved.applicationId;
+          }
+          const refreshed = await refreshEntitlements();
+          if (appId && refreshed.includes(appId)) {
+            setReportUnlocked(true);
+            setSaveNotice(t("report.stripeAlreadyOwned"));
+            return;
+          }
+          setSaveNotice(t("report.inviteUseCodeBelow"));
+          queueMicrotask(() =>
+            document
+              .getElementById("report-invite-redeem")
+              ?.scrollIntoView({ behavior: "smooth", block: "center" }),
+          );
+        } catch (e) {
+          setSaveNotice(formatSupabaseError(e, t));
+        } finally {
+          setCheckoutBusy(false);
+        }
+        return;
+      }
+      writeUnlockToStorage();
+      setReportUnlocked(true);
+      if (report) {
+        writePendingSave({ form, locale, report, reportUnlocked: true });
+      }
+      if (user && report) {
+        await persistToCloud({ formState: form, reportPayload: report });
+      }
+      return;
+    }
+
+    if (!user || !session?.access_token) {
+      setSaveNotice(t("report.stripeSignInFirst"));
+      setAuthModalOpen(true);
+      return;
+    }
+
+    if (!report) return;
+
+    setCheckoutBusy(true);
+    try {
+      let appId = currentApplicationId;
+      let repId = currentReportId;
+
+      if (!appId || !repId) {
+        const saved = await persistToCloud({ formState: form, reportPayload: report });
+        if (!saved.ok || !saved.applicationId || !saved.reportId) return;
+        appId = saved.applicationId;
+        repId = saved.reportId;
+      }
+
+      const refreshed = await refreshEntitlements();
+      if (appId && refreshed.includes(appId)) {
+        setReportUnlocked(true);
+        setSaveNotice(t("report.stripeAlreadyOwned"));
+        return;
+      }
+
+      const res = await fetch(apiUrl("/api/stripe/create-checkout-session"), {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ reportId: repId }),
+      });
+
+      let data: { error?: string; url?: string } = {};
+      try {
+        data = (await res.json()) as typeof data;
+      } catch {
+        data = {};
+      }
+
+      if (res.status === 409) {
+        setSaveNotice(t("report.stripeAlreadyOwned"));
+        const ids = await refreshEntitlements();
+        if (appId) setReportUnlocked(ids.includes(appId));
+        return;
+      }
+
+      if (!res.ok || typeof data.url !== "string") {
+        setSaveNotice(translateCheckoutApiError(data.error, t));
+        return;
+      }
+
+      window.location.assign(data.url);
+    } catch (e) {
+      setSaveNotice(formatSupabaseError(e, t));
+    } finally {
+      setCheckoutBusy(false);
+    }
+  }, [
+    stripeCheckoutEnabled,
+    inviteCodesEnabled,
+    user,
+    session,
+    report,
+    form,
+    locale,
+    currentApplicationId,
+    currentReportId,
+    t,
+    persistToCloud,
+    refreshEntitlements,
+  ]);
+
+  /** 刷新页面或邮件 Magic Link 回到本站后，恢复未登录前生成的报告 */
+  useEffect(() => {
+    const pending = readPendingSave();
+    if (!pending) return;
+    setForm(pending.form);
+    setReport(pending.report);
+    setReportUnlocked(
+      cloudEntitlementsEnabled ? false : Boolean(pending.reportUnlocked) || readUnlockFromStorage(),
+    );
+    setView("report");
+    setFlowStarted(true);
+  }, [cloudEntitlementsEnabled]);
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -133,14 +376,48 @@ export default function App() {
     if (!pending) return;
     setForm(pending.form);
     setReport(pending.report);
-    setReportUnlocked(Boolean(pending.reportUnlocked));
+    setReportUnlocked(
+      cloudEntitlementsEnabled ? false : Boolean(pending.reportUnlocked) || readUnlockFromStorage(),
+    );
     setView("report");
-    void persistToCloud({
-      formState: pending.form,
-      reportPayload: pending.report,
-      unlocked: pending.reportUnlocked,
-    });
-  }, [authLoading, user, persistToCloud]);
+    setFlowStarted(true);
+    void (async () => {
+      const { ok, applicationId } = await persistToCloud({
+        formState: pending.form,
+        reportPayload: pending.report,
+      });
+      if (cloudEntitlementsEnabled && ok && applicationId) {
+        const ids = await refreshEntitlements();
+        setReportUnlocked(ids.includes(applicationId));
+      }
+    })();
+  }, [authLoading, user, persistToCloud, refreshEntitlements, cloudEntitlementsEnabled]);
+
+  useEffect(() => {
+    currentApplicationIdRef.current = currentApplicationId;
+  }, [currentApplicationId]);
+
+  useEffect(() => {
+    void refreshEntitlements();
+  }, [refreshEntitlements]);
+
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const st = p.get("stripe_checkout");
+    if (!st || !stripeCheckoutEnabled) return;
+    const path = `${window.location.pathname}${window.location.hash}`;
+    void (async () => {
+      if (st === "success") {
+        const ids = await refreshEntitlements();
+        setSaveNotice(t("report.stripeSuccessBanner"));
+        const aid = currentApplicationIdRef.current;
+        if (aid) setReportUnlocked(ids.includes(aid));
+      } else if (st === "cancel") {
+        setSaveNotice(t("report.stripeCanceled"));
+      }
+      window.history.replaceState({}, "", path);
+    })();
+  }, [stripeCheckoutEnabled, refreshEntitlements, t]);
 
   useEffect(() => {
     if (view !== "account" || authLoading || user) return;
@@ -235,13 +512,22 @@ export default function App() {
       const nextReport = data as ReportPayload;
       setReport(nextReport);
       setView("report");
-      clearUnlockStorage();
-      setReportUnlocked(false);
       setSessionSaved(false);
       setSaveNotice(null);
       writePendingSave({ form, locale, report: nextReport, reportUnlocked: false });
       if (user) {
-        void persistToCloud({ formState: form, reportPayload: nextReport, unlocked: false });
+        const saved = await persistToCloud({ formState: form, reportPayload: nextReport });
+        if (cloudEntitlementsEnabled && saved.ok && saved.applicationId) {
+          const ids = await refreshEntitlements();
+          clearUnlockStorage();
+          setReportUnlocked(ids.includes(saved.applicationId));
+        } else {
+          clearUnlockStorage();
+          setReportUnlocked(false);
+        }
+      } else {
+        clearUnlockStorage();
+        setReportUnlocked(false);
       }
       queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
     } catch {
@@ -296,7 +582,11 @@ export default function App() {
       const next = data as ReportPayload;
       setReport(next);
       if (user) {
-        void persistToCloud({ formState: form, reportPayload: next, unlocked: reportUnlocked });
+        const saved = await persistToCloud({ formState: form, reportPayload: next });
+        if (cloudEntitlementsEnabled && saved.ok && saved.applicationId) {
+          const ids = await refreshEntitlements();
+          setReportUnlocked(ids.includes(saved.applicationId));
+        }
       } else {
         writePendingSave({ form, locale, report: next, reportUnlocked });
       }
@@ -330,9 +620,11 @@ export default function App() {
   }
 
   if (view === "account" && user) {
-    return (
+    return withChrome(
       <>
         <AccountHome
+          unlockedApplicationIds={unlockedApplicationIds}
+          onOpenAppLinks={openApplicationHub}
           onBack={() => {
             if (report) setView("report");
             else if (flowStarted) setView("form");
@@ -342,6 +634,7 @@ export default function App() {
             setForm(initialForm);
             setReport(null);
             setCurrentApplicationId(null);
+            setCurrentReportId(null);
             setStep(1);
             setFlowStarted(true);
             setView("form");
@@ -357,11 +650,25 @@ export default function App() {
             setFlowStarted(true);
             setView("form");
           }}
-          onOpenReport={({ form: f, report: r, applicationId, reportUnlocked: u }) => {
+          onOpenReport={async ({
+            form: f,
+            report: r,
+            applicationId,
+            reportId,
+            reportUnlocked: legacyUnlocked,
+          }) => {
+            const ids =
+              cloudEntitlementsEnabled && user ? await refreshEntitlements() : unlockedApplicationIds;
+            const entitled = cloudEntitlementsEnabled && ids.includes(applicationId);
             setForm(f);
             setReport(r);
             setCurrentApplicationId(applicationId);
-            if (u) {
+            setCurrentReportId(reportId);
+            setSessionSaved(true);
+            if (cloudEntitlementsEnabled) {
+              clearUnlockStorage();
+              setReportUnlocked(entitled || legacyUnlocked);
+            } else if (legacyUnlocked) {
               writeUnlockToStorage();
               setReportUnlocked(true);
             } else {
@@ -372,13 +679,25 @@ export default function App() {
             queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
           }}
         />
-        <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} successHint={saveNotice} />
-      </>
+        <FullscreenLogoMarquee
+          open={applicationHubOpen}
+          onClose={() => {
+            setApplicationHubOpen(false);
+            queueMicrotask(() => applicationHubTriggerRef.current?.focus());
+          }}
+        />
+        <AuthModal
+          open={authModalOpen}
+          onClose={() => setAuthModalOpen(false)}
+          successHint={saveNotice}
+          onOpenAppLinks={openApplicationHub}
+        />
+      </>,
     );
   }
 
   if (view === "report" && report) {
-    return (
+    return withChrome(
       <>
       <ReportView
         report={report}
@@ -388,6 +707,7 @@ export default function App() {
         isAuthenticated={Boolean(user)}
         showSaveBanner={authConfigured && !user && !saveBannerDismissed && !authLoading}
         sessionSaved={sessionSaved}
+        pdfRecipientName={user?.email ?? null}
         onRequestSignIn={() => setAuthModalOpen(true)}
         onOpenAccount={() => setView("account")}
         onDismissSaveBanner={() => setSaveBannerDismissed(true)}
@@ -401,18 +721,18 @@ export default function App() {
         highlightSchoolKeys={highlightSchoolKeys}
         onRefreshReportWithGaps={refreshReportWithGapNotes}
         onCommitProfileFiveNotes={commitProfileFiveNotesAndRefresh}
-        onUnlock={() => {
-          writeUnlockToStorage();
-          setReportUnlocked(true);
-          if (user && report) {
-            void persistToCloud({ formState: form, reportPayload: report, unlocked: true });
-          }
-        }}
+        stripeCheckoutEnabled={stripeCheckoutEnabled}
+        inviteCodesEnabled={inviteCodesEnabled}
+        inviteRedeemBusy={inviteBusy}
+        onRedeemInviteCode={(c) => void handleInviteRedeem(c)}
+        purchaseBusy={checkoutBusy}
+        onUnlock={() => void handleReportUnlockFlow()}
         onReset={() => {
           clearUnlockStorage();
           setReportUnlocked(false);
           profileFiveSupplementaryRef.current = [];
           setCurrentApplicationId(null);
+          setCurrentReportId(null);
           setSessionSaved(false);
           setSaveBannerDismissed(false);
           clearPendingSave();
@@ -432,20 +752,29 @@ export default function App() {
           }
         }}
       />
-      <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} successHint={saveNotice} />
-      </>
+      <FullscreenLogoMarquee
+        open={applicationHubOpen}
+        onClose={() => {
+          setApplicationHubOpen(false);
+          queueMicrotask(() => applicationHubTriggerRef.current?.focus());
+        }}
+      />
+      <AuthModal
+        open={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        successHint={saveNotice}
+        onOpenAppLinks={openApplicationHub}
+      />
+      </>,
     );
   }
 
   if (!flowStarted) {
-    return (
+    return withChrome(
       <div className="app app--landing">
         <div className="landing-sheet">
           <header className="landing-hero">
-            <div className="landing-hero__top">
-              <BrandLogo className="landing-logo" />
-              <AuthMenuButton onSignIn={() => setAuthModalOpen(true)} onOpenAccount={() => setView("account")} />
-            </div>
+            <BrandLogo className="landing-logo" />
             <div className="landing-copy">
               <h1 className="landing-title">
                 <span className="landing-title__l1">{t("app.hero.titleLine1")}</span>
@@ -477,7 +806,7 @@ export default function App() {
               className="app-links-entry"
               aria-expanded={applicationHubOpen}
               aria-controls="application-hub-dialog"
-              onClick={() => setApplicationHubOpen(true)}
+              onClick={(e) => openApplicationHub(e)}
             >
               {t("appLinks.entry")}
             </button>
@@ -495,12 +824,17 @@ export default function App() {
         <footer className="app-disclaimer-fixed" role="contentinfo">
           <p>{t("app.disclaimer")}</p>
         </footer>
-        <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} successHint={saveNotice} />
-      </div>
+        <AuthModal
+          open={authModalOpen}
+          onClose={() => setAuthModalOpen(false)}
+          successHint={saveNotice}
+          onOpenAppLinks={openApplicationHub}
+        />
+      </div>,
     );
   }
 
-  return (
+  return withChrome(
     <>
     <div className="app app--flow">
       <header className="hero--compact">
@@ -509,7 +843,6 @@ export default function App() {
           <h1>{t("app.flow.headline")}</h1>
           <p className="hero-flow-tagline">{t("app.flow.tagline")}</p>
         </div>
-        <AuthMenuButton onSignIn={() => setAuthModalOpen(true)} onOpenAccount={() => setView("account")} />
       </header>
 
       <p className="steps-caption" aria-live="polite">
@@ -601,7 +934,19 @@ export default function App() {
         <p>{t("app.disclaimer")}</p>
       </footer>
     </div>
-    <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} successHint={saveNotice} />
-    </>
+      <FullscreenLogoMarquee
+        open={applicationHubOpen}
+        onClose={() => {
+          setApplicationHubOpen(false);
+          queueMicrotask(() => applicationHubTriggerRef.current?.focus());
+        }}
+      />
+      <AuthModal
+        open={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        successHint={saveNotice}
+        onOpenAppLinks={openApplicationHub}
+      />
+    </>,
   );
 }

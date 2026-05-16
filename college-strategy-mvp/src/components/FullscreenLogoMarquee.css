@@ -1,9 +1,10 @@
-/* 全屏层：申请流程导航（按阶段分组的外链，底部返回问卷） */
+/* 全屏层：申请流程导航 — 浅色主题（与站内 #fafafa + 卡片一致） */
 
 @keyframes fs-root-enter {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -22,8 +23,13 @@
   inset: 0;
   cursor: pointer;
   background:
-    radial-gradient(ellipse 120% 85% at 50% 40%, rgba(30, 41, 59, 0.55) 0%, rgba(15, 23, 42, 0.88) 55%, rgba(2, 6, 23, 0.92) 100%),
-    #0f172a;
+    radial-gradient(
+      ellipse 120% 90% at 50% 20%,
+      rgba(255, 255, 255, 0.96) 0%,
+      rgba(250, 250, 250, 0.94) 45%,
+      rgba(241, 245, 249, 0.92) 100%
+    ),
+    var(--color-bg, #fafafa);
 }
 
 .fs-panel {
@@ -50,7 +56,7 @@
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgba(148, 163, 184, 0.75);
+  color: var(--color-muted-2, #a3a3a3);
 }
 
 .fs-close {
@@ -62,26 +68,25 @@
   padding: 0.45rem 0.85rem;
   font-size: 0.84rem;
   font-weight: 600;
-  color: #f8fafc;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--color-fg, #0a0a0a);
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-line, #e5e5e5);
   border-radius: 10px;
   cursor: pointer;
-  box-shadow: none;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
   transition:
     background 0.2s ease,
-    border-color 0.2s ease;
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .fs-close:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.22);
+  background: var(--color-line-subtle, #f0f0f0);
+  border-color: #d4d4d8;
 }
 
 .fs-close:focus-visible {
-  outline: 2px solid #93c5fd;
+  outline: 2px solid var(--color-primary, #2563eb);
   outline-offset: 2px;
 }
 
@@ -91,9 +96,9 @@
   font-weight: 600;
   padding: 0.12rem 0.38rem;
   border-radius: 5px;
-  color: #e2e8f0;
-  background: rgba(15, 23, 42, 0.65);
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  color: var(--color-muted, #737373);
+  background: var(--color-line-subtle, #f0f0f0);
+  border: 1px solid var(--color-line, #e5e5e5);
 }
 
 .fs-sr-only {
@@ -125,7 +130,7 @@
   font-size: 0.95rem;
   font-weight: 600;
   line-height: 1.55;
-  color: rgba(248, 250, 252, 0.96);
+  color: var(--color-fg, #0a0a0a);
   text-align: left;
 }
 
@@ -134,7 +139,7 @@
   max-width: 28rem;
   font-size: 0.76rem;
   line-height: 1.45;
-  color: rgba(203, 213, 225, 0.78);
+  color: var(--color-muted, #737373);
   text-align: left;
 }
 
@@ -144,11 +149,11 @@
   padding: 0.55rem 0.65rem 0.55rem 0.75rem;
   font-size: 0.78rem;
   line-height: 1.5;
-  color: rgba(226, 232, 240, 0.82);
+  color: var(--color-muted, #737373);
   text-align: left;
   border-radius: 0 10px 10px 0;
-  border-left: 3px solid rgba(147, 197, 253, 0.55);
-  background: rgba(30, 41, 59, 0.45);
+  border-left: 3px solid rgba(37, 99, 235, 0.45);
+  background: rgba(37, 99, 235, 0.06);
 }
 
 .fs-links-groups {
@@ -170,7 +175,7 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(203, 213, 225, 0.82);
+  color: var(--color-muted-2, #a3a3a3);
   line-height: 1.35;
 }
 
@@ -191,12 +196,10 @@
   padding: 0.8rem 0.95rem;
   border-radius: 12px;
   text-decoration: none;
-  color: #f8fafc;
-  background: rgba(255, 255, 255, 0.045);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: none;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  color: var(--color-fg, #0a0a0a);
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-line, #e5e5e5);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
   transition:
     background 0.22s ease,
     border-color 0.22s ease,
@@ -225,29 +228,28 @@
 }
 
 .fs-badge--first {
-  color: #fde68a;
-  background: rgba(251, 191, 36, 0.16);
-  border: 1px solid rgba(251, 191, 36, 0.42);
+  color: #a16207;
+  background: #fef9c3;
+  border: 1px solid rgba(234, 179, 8, 0.45);
 }
 
 .fs-badge--recommended {
-  color: #bfdbfe;
-  background: rgba(59, 130, 246, 0.18);
-  border: 1px solid rgba(96, 165, 250, 0.45);
+  color: var(--color-primary-hover, #1d4ed8);
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.28);
 }
 
 .fs-link-desc {
   margin: 0;
   font-size: 0.78rem;
   line-height: 1.45;
-  color: rgba(203, 213, 225, 0.88);
+  color: var(--color-muted, #737373);
 }
 
 .fs-link-card:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(147, 197, 253, 0.35);
+  border-color: rgba(37, 99, 235, 0.35);
   transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
 }
 
 .fs-link-card:active {
@@ -256,7 +258,7 @@
 }
 
 .fs-link-card:focus-visible {
-  outline: 2px solid rgba(147, 197, 253, 0.75);
+  outline: 2px solid var(--color-primary, #2563eb);
   outline-offset: 2px;
 }
 
@@ -281,13 +283,13 @@
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(148, 163, 184, 0.72);
+  color: var(--color-muted-2, #a3a3a3);
 }
 
 .fs-link-url {
   font-size: 0.74rem;
   line-height: 1.4;
-  color: rgba(186, 230, 253, 0.9);
+  color: var(--color-primary, #2563eb);
   word-break: break-all;
 }
 
@@ -299,8 +301,16 @@
   bottom: 0;
   z-index: 38;
   padding: 0.65rem 1.25rem max(0.65rem, env(safe-area-inset-bottom, 0px));
-  background: linear-gradient(180deg, transparent 0%, rgba(15, 23, 42, 0.82) 28%, rgba(2, 6, 23, 0.96) 100%);
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(250, 250, 250, 0.72) 18%,
+    rgba(250, 250, 250, 0.98) 52%,
+    var(--color-bg, #fafafa) 100%
+  );
+  border-top: 1px solid rgba(229, 231, 235, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .fs-foot-actions {
@@ -337,38 +347,45 @@
     background 0.2s ease,
     border-color 0.2s ease,
     color 0.2s ease,
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease,
+    transform 0.12s ease;
 }
 
 .fs-btn--primary {
-  color: #0f172a;
-  background: linear-gradient(180deg, #e0f2fe 0%, #bae6fd 100%);
-  border-color: rgba(255, 255, 255, 0.35);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+  color: #fff;
+  background: var(--color-primary, #2563eb);
+  border-color: transparent;
+  box-shadow: var(--shadow-cta, 0 1px 2px rgba(15, 23, 42, 0.05));
 }
 
 .fs-btn--primary:hover {
-  background: linear-gradient(180deg, #f0f9ff 0%, #7dd3fc 100%);
+  background: var(--color-primary-hover, #1d4ed8);
+  box-shadow: var(--shadow-cta-hover, 0 2px 4px rgba(15, 23, 42, 0.06), 0 8px 20px rgba(37, 99, 235, 0.16));
 }
 
 .fs-btn--primary:focus-visible {
-  outline: 2px solid #93c5fd;
+  outline: 2px solid var(--color-primary, #2563eb);
   outline-offset: 2px;
 }
 
+.fs-btn--primary:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
 .fs-btn--ghost {
-  color: #e2e8f0;
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.14);
+  color: var(--color-fg, #0a0a0a);
+  background: var(--color-surface, #fff);
+  border-color: var(--color-line, #e5e5e5);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .fs-btn--ghost:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.22);
+  background: var(--color-line-subtle, #f0f0f0);
+  border-color: #d4d4d8;
 }
 
 .fs-btn--ghost:focus-visible {
-  outline: 2px solid rgba(147, 197, 253, 0.75);
+  outline: 2px solid var(--color-primary, #2563eb);
   outline-offset: 2px;
 }
 
@@ -377,7 +394,7 @@
   text-align: center;
   font-size: 0.72rem;
   line-height: 1.4;
-  color: rgba(148, 163, 184, 0.82);
+  color: var(--color-muted-2, #a3a3a3);
 }
 
 .fs-vignette {
@@ -385,13 +402,14 @@
   inset: 0;
   z-index: 6;
   pointer-events: none;
-  background: radial-gradient(
-      ellipse 96% 82% at 50% 50%,
-      rgba(2, 6, 23, 0) 0%,
-      rgba(2, 6, 23, 0.12) 58%,
-      rgba(2, 6, 23, 0.48) 100%
+  background:
+    radial-gradient(
+      ellipse 85% 45% at 50% -5%,
+      rgba(37, 99, 235, 0.1) 0%,
+      rgba(147, 197, 253, 0.04) 35%,
+      transparent 62%
     ),
-    linear-gradient(180deg, rgba(2, 6, 23, 0.35) 0%, transparent 16%, transparent 84%, rgba(2, 6, 23, 0.38) 100%);
+    linear-gradient(180deg, rgba(250, 250, 250, 0.4) 0%, transparent 12%, transparent 88%, transparent 100%);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -410,7 +428,8 @@
   }
 
   .fs-btn--primary:hover,
-  .fs-btn--ghost:hover {
+  .fs-btn--ghost:hover,
+  .fs-btn--primary:active:not(:disabled) {
     transition-duration: 0.1s;
   }
 }

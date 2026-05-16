@@ -5,6 +5,8 @@ import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
 import OpenAI from "openai";
+import Stripe from "stripe";
+import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // 始终从项目根目录加载 .env（避免从别的 cwd 启动 node 时读不到 OPENAI_BASE_URL，误连 OpenAI 官方导致 401）
@@ -21,7 +23,174 @@ const COMPLETION_MAX_TOKENS = Number(process.env.COMPLETION_MAX_TOKENS ?? 6000);
 
 const app = express();
 app.use(cors({ origin: true }));
+
+function stripeEnv() {
+  const secret = (process.env.STRIPE_SECRET_KEY || "").trim();
+  const webhookSecret = (process.env.STRIPE_WEBHOOK_SECRET || "").trim();
+  const priceId = (process.env.STRIPE_PRICE_ID || "").trim();
+  const siteUrl = (process.env.SITE_URL || "").trim().replace(/\/$/, "");
+  return { secret, webhookSecret, priceId, siteUrl };
+}
+
+function supabaseAdmin() {
+  const url = (process.env.SUPABASE_URL || "").trim() || (process.env.VITE_SUPABASE_URL || "").trim();
+  const key = (process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+  if (!url || !key) return null;
+  return createSupabaseAdmin(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+}
+
+function stripeReadyForCheckout() {
+  const { secret, priceId, siteUrl } = stripeEnv();
+  return Boolean(secret && priceId && siteUrl && supabaseAdmin());
+}
+
+/** 自检：便于配环境；不向客户端泄漏密钥 */
+function stripeConfigStatus() {
+  const { secret, webhookSecret, priceId, siteUrl } = stripeEnv();
+  const admin = supabaseAdmin();
+  const blockers = [];
+  if (!secret) blockers.push("STRIPE_SECRET_KEY");
+  if (!priceId) blockers.push("STRIPE_PRICE_ID");
+  if (!siteUrl) blockers.push("SITE_URL");
+  if (!admin) blockers.push("SUPABASE_SERVICE_ROLE_KEY");
+  if (!webhookSecret) blockers.push("STRIPE_WEBHOOK_SECRET");
+  return {
+    createCheckoutSession: Boolean(secret && priceId && siteUrl && admin),
+    /** 未配置时用户付完款也不会写入权益表 */
+    webhookVerified: Boolean(secret && webhookSecret),
+    envBlockers: blockers,
+  };
+}
+
+app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+  const { secret, webhookSecret } = stripeEnv();
+  if (!secret || !webhookSecret) {
+    return res.status(503).send("stripe webhook not configured");
+  }
+  const stripe = new Stripe(secret);
+  const sig = req.headers["stripe-signature"];
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[stripe webhook] signature", msg);
+    return res.status(400).send(`Webhook Error: ${msg}`);
+  }
+
+  if (event.type !== "checkout.session.completed") {
+    return res.json({ received: true });
+  }
+
+  const session = event.data.object;
+  const userId = session.metadata?.supabase_user_id;
+  const applicationId = session.metadata?.application_id;
+  if (!userId || !applicationId || typeof session.id !== "string") {
+    console.error("[stripe webhook] missing metadata", session.id);
+    return res.status(400).json({ error: "missing_metadata" });
+  }
+
+  const admin = supabaseAdmin();
+  if (!admin) {
+    return res.status(503).json({ error: "supabase_admin_missing" });
+  }
+
+  const { error } = await admin.from("application_unlock_entitlements").upsert(
+    {
+      user_id: userId,
+      application_id: applicationId,
+      stripe_checkout_session_id: session.id,
+    },
+    { onConflict: "user_id,application_id" },
+  );
+
+  if (error) {
+    console.error("[stripe webhook] upsert", error);
+    return res.status(500).json({ error: error.message });
+  }
+
+  res.json({ received: true });
+});
+
 app.use(express.json({ limit: "256kb" }));
+
+app.post("/api/stripe/create-checkout-session", async (req, res) => {
+  if (!stripeReadyForCheckout()) {
+    return res.status(503).json({ error: "stripe_checkout_unavailable" });
+  }
+  const { secret, priceId, siteUrl } = stripeEnv();
+  const stripe = new Stripe(secret);
+
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+  if (!token) {
+    return res.status(401).json({ error: "auth_required" });
+  }
+
+  const admin = supabaseAdmin();
+  if (!admin) {
+    return res.status(503).json({ error: "supabase_admin_missing" });
+  }
+
+  const { data: userData, error: userErr } = await admin.auth.getUser(token);
+  if (userErr || !userData.user) {
+    return res.status(401).json({ error: "invalid_session" });
+  }
+  const subject = userData.user;
+
+  const reportId = String(req.body?.reportId ?? "").trim();
+  if (!reportId) {
+    return res.status(400).json({ error: "report_id_required" });
+  }
+
+  const { data: rep, error: repErr } = await admin
+    .from("saved_reports")
+    .select("id,user_id,application_id")
+    .eq("id", reportId)
+    .single();
+
+  if (repErr || !rep) {
+    return res.status(404).json({ error: "report_not_found" });
+  }
+  if (rep.user_id !== subject.id) {
+    return res.status(403).json({ error: "forbidden" });
+  }
+
+  const { data: existing } = await admin
+    .from("application_unlock_entitlements")
+    .select("application_id")
+    .eq("user_id", subject.id)
+    .eq("application_id", rep.application_id)
+    .maybeSingle();
+
+  if (existing) {
+    return res.status(409).json({ error: "already_unlocked" });
+  }
+
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      client_reference_id: subject.id,
+      customer_email: subject.email ?? undefined,
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${siteUrl}/?stripe_checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${siteUrl}/?stripe_checkout=cancel`,
+      metadata: {
+        supabase_user_id: subject.id,
+        application_id: rep.application_id,
+        report_id: rep.id,
+      },
+    });
+
+    return res.json({ url: session.url });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[stripe create-checkout-session]", msg);
+    return res.status(500).json({ error: msg });
+  }
+});
 
 const SYSTEM_PROMPT_ZH = `你是一位资深美国本科升学顾问（10年+经验），风格：专业、克制、可执行。基于用户问卷生成「选校策略草案」。
 
@@ -488,8 +657,10 @@ const DEFAULT_EXPERT_CONSULT_LEADS = path.join(__dirname, "..", "data", "expert-
 
 function resolveConsultLeadsFilePath() {
   const rel = (process.env.CONSULT_LEADS_FILE || "").trim();
-  if (!rel) return DEFAULT_EXPERT_CONSULT_LEADS;
-  return path.isAbsolute(rel) ? rel : path.join(__dirname, "..", rel);
+  if (rel) return path.isAbsolute(rel) ? rel : path.join(__dirname, "..", rel);
+  // Vercel Serverless 除 /tmp 外文件系统只读；留资落盘仅作冷启动间缓冲，生产请接外部存储或 Webhook
+  if (process.env.VERCEL) return "/tmp/expert-consult-leads.jsonl";
+  return DEFAULT_EXPERT_CONSULT_LEADS;
 }
 
 /** 与 .jsonl 同目录、同名改后缀，便于后台用 Excel 打开 */
@@ -538,41 +709,69 @@ app.post("/api/consult-lead", (req, res) => {
 
 app.get("/api/health", (_req, res) => {
   const cfg = resolveLLMConfig();
+  const stripeCheckout = stripeReadyForCheckout();
+  const stripe = stripeConfigStatus();
   if ("error" in cfg) {
-    return res.json({ ok: true, llm: false, llmError: cfg.error });
+    return res.json({ ok: true, llm: false, llmError: cfg.error, stripeCheckout, stripe });
   }
   res.json({
     ok: true,
     llm: true,
     llmRegion: cfg.region,
     provider: cfg.provider,
+    stripeCheckout,
+    stripe,
   });
 });
 
-const port = Number(process.env.PORT || 8787);
-const server = app.listen(port, () => {
-  const cfg = resolveLLMConfig();
-  if ("error" in cfg) {
-    console.log(`API http://127.0.0.1:${port} | 配置未就绪: ${cfg.error}`);
-    return;
-  }
-  const { baseURL, model, region, provider } = cfg;
-  console.log(
-    `API http://127.0.0.1:${port} | llmRegion=${region} | provider=${provider} | baseURL=${baseURL || "(官方默认)"} | model=${model}`,
-  );
-});
+/** 生产：同一进程托管 Vite 构建产物（非 Vercel；Vercel 由 CDN 提供 dist） */
+const distDir = path.join(__dirname, "..", "dist");
+const shouldServeDist =
+  !process.env.VERCEL &&
+  (process.env.SERVE_DIST === "1" ||
+    process.env.SERVE_DIST === "true" ||
+    (process.env.NODE_ENV === "production" && fs.existsSync(path.join(distDir, "index.html"))));
 
-server.on("error", (err) => {
-  if (err && err.code === "EADDRINUSE") {
-    console.error(
-      `[API] 端口 ${port} 已被占用。\n` +
-        `  做法 A：结束占用进程后再启动：\n` +
-        `       lsof -nP -iTCP:${port} -sTCP:LISTEN\n` +
-        `       kill <上面看到的 PID>\n` +
-        `  做法 B：在 college-strategy-mvp/.env 里设置 PORT=8788（或任意空闲端口），保存后重新执行 npm run dev。\n` +
-        `       （Vite 代理会读取同一 PORT，无需改 vite.config。）`,
+if (shouldServeDist && fs.existsSync(path.join(distDir, "index.html"))) {
+  app.use(express.static(distDir));
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api")) {
+      return res.status(404).json({ error: "not_found" });
+    }
+    res.sendFile(path.join(distDir, "index.html"));
+  });
+  console.log(`[static] serving ${distDir}`);
+}
+
+const port = Number(process.env.PORT || 8787);
+
+if (!process.env.VERCEL) {
+  const server = app.listen(port, () => {
+    const cfg = resolveLLMConfig();
+    if ("error" in cfg) {
+      console.log(`API http://127.0.0.1:${port} | 配置未就绪: ${cfg.error}`);
+      return;
+    }
+    const { baseURL, model, region, provider } = cfg;
+    console.log(
+      `API http://127.0.0.1:${port} | llmRegion=${region} | provider=${provider} | baseURL=${baseURL || "(官方默认)"} | model=${model}`,
     );
-    process.exit(1);
-  }
-  throw err;
-});
+  });
+
+  server.on("error", (err) => {
+    if (err && err.code === "EADDRINUSE") {
+      console.error(
+        `[API] 端口 ${port} 已被占用。\n` +
+          `  做法 A：结束占用进程后再启动：\n` +
+          `       lsof -nP -iTCP:${port} -sTCP:LISTEN\n` +
+          `       kill <上面看到的 PID>\n` +
+          `  做法 B：在 college-strategy-mvp/.env 里设置 PORT=8788（或任意空闲端口），保存后重新执行 npm run dev。\n` +
+          `       （Vite 代理会读取同一 PORT，无需改 vite.config。）`,
+      );
+      process.exit(1);
+    }
+    throw err;
+  });
+}
+
+export default app;

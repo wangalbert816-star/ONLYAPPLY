@@ -1,6 +1,5 @@
 import { useLanguage } from "../../i18n/LanguageContext";
 import { useAuth } from "../../auth/AuthContext";
-import "./AuthMenuButton.css";
 
 type Props = {
   onSignIn: () => void;
@@ -13,17 +12,18 @@ export function AuthMenuButton({ onSignIn, onOpenAccount }: Props) {
 
   if (!configured || loading) return null;
 
-  if (user) {
-    return (
-      <button type="button" className="auth-menu-btn auth-menu-btn--signed-in" onClick={onOpenAccount}>
-        {t("auth.myApplications")}
-      </button>
-    );
-  }
+  const label = user ? t("auth.myApplications") : t("auth.signIn");
+  const onClick = user ? onOpenAccount : onSignIn;
 
   return (
-    <button type="button" className="auth-menu-btn" onClick={onSignIn}>
-      {t("auth.signIn")}
-    </button>
+    <div className="lang-toggle lang-toggle--solo" role="group" aria-label={label}>
+      <button
+        type="button"
+        className={`lang-toggle__btn${user ? " lang-toggle__btn--on" : ""}`}
+        onClick={onClick}
+      >
+        {label}
+      </button>
+    </div>
   );
 }

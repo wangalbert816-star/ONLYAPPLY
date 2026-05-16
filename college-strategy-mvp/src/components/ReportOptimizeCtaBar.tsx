@@ -6,7 +6,7 @@ export function ReportOptimizeCtaBar({ t }: { t: Translate }) {
   }
 
   return (
-    <div className="report-optimize-cta" role="group" aria-label={t("report.decision.ctaGroupAria")}>
+    <div className="report-optimize-cta" role="group" aria-label={t("report.decision.ctaGroupAria")} data-no-pdf>
       <button type="button" className="btn btn-primary report-optimize-cta__primary" onClick={() => scrollToId("report-section-gaps")}>
         {t("report.decision.ctaPrimary")}
       </button>

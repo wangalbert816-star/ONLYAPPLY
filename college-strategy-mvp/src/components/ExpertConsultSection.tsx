@@ -189,7 +189,7 @@ export function ExpertConsultSection({ gapCount }: Props) {
     );
 
   return (
-    <section className="card report-block expert-consult" aria-labelledby="expert-consult-heading">
+    <section className="card report-block expert-consult" aria-labelledby="expert-consult-heading" data-no-pdf>
       <h2 className="expert-consult__title" id="expert-consult-heading">
         {t("report.expertConsult.sectionLabel")}
       </h2>

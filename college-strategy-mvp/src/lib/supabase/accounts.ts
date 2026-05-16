@@ -117,6 +117,7 @@ export type SaveSessionInput = {
   locale: Locale;
   report: ReportPayload;
   supplementaryNotes?: SupplementaryNote[];
+  /** 已废弃：服务端触发器禁止客户端写解锁；Stripe Webhook + 权益表为准 */
   reportUnlocked?: boolean;
   title?: string;
 };
@@ -170,7 +171,7 @@ export async function saveUserSession(input: SaveSessionInput): Promise<{ applic
       application_id: applicationId,
       report_payload: input.report,
       supplementary_notes: input.supplementaryNotes?.length ? input.supplementaryNotes : null,
-      report_unlocked: Boolean(input.reportUnlocked),
+      report_unlocked: false,
     })
     .select("id")
     .single();
@@ -179,6 +180,45 @@ export async function saveUserSession(input: SaveSessionInput): Promise<{ applic
   if (!applicationId) throw new Error("Failed to save application");
 
   return { applicationId, reportId: reportRow.id };
+}
+
+/** 返回当前用户已解锁的 application id 列表（Stripe 或邀请码等，以权益表为准） */
+export async function fetchUnlockedApplicationIds(): Promise<string[]> {
+  const sb = getSupabase();
+  if (!sb) return [];
+
+  const { data, error } = await sb.from("application_unlock_entitlements").select("application_id");
+  if (error) throw error;
+
+  const ids = [...new Set((data ?? []).map((r) => r.application_id as string))];
+  return ids;
+}
+
+export type RedeemInviteOutcome =
+  | { ok: true; already?: boolean }
+  | { ok: false; error: string };
+
+/** 需在 SQL 侧创建 redeem_invite_code；见 supabase/schema-invite-codes-v1.sql */
+export async function redeemInviteCode(code: string, applicationId: string): Promise<RedeemInviteOutcome> {
+  const sb = getSupabase();
+  if (!sb) throw new Error("Supabase not configured");
+
+  const { data, error } = await sb.rpc("redeem_invite_code", {
+    p_code: code,
+    p_application_id: applicationId,
+  });
+
+  if (error) throw error;
+
+  const row = data as Record<string, unknown> | null;
+  if (!row || typeof row !== "object") {
+    return { ok: false, error: "bad_response" };
+  }
+  if (row.ok === true) {
+    return { ok: true, already: Boolean(row.already) };
+  }
+  const errCode = typeof row.error === "string" ? row.error : "unknown";
+  return { ok: false, error: errCode };
 }
 
 export async function deleteApplication(applicationId: string): Promise<void> {

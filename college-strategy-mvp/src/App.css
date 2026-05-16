@@ -210,12 +210,6 @@
   margin-bottom: var(--space-section, clamp(3rem, 7vh, 4.5rem));
 }
 
-.hero--compact > .auth-menu-btn,
-.hero--compact > .auth-menu-btn--signed-in {
-  margin-left: auto;
-  flex-shrink: 0;
-}
-
 .hero--compact .onlyapply-logo {
   max-height: 2rem;
   max-width: min(10rem, 44vw);
@@ -829,11 +823,28 @@ th {
   margin: 0;
 }
 
-.lang-toggle {
+.app-top-chrome {
   position: fixed;
   top: 0.75rem;
+  left: 0.75rem;
   right: 0.75rem;
   z-index: 40;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0;
+  pointer-events: none;
+  font-size: 0.75rem;
+}
+
+.app-top-chrome__start,
+.app-top-chrome__end {
+  pointer-events: auto;
+  flex: 0 0 auto;
+}
+
+.lang-toggle {
   display: flex;
   align-items: center;
   gap: 0.15rem;
@@ -845,6 +856,10 @@ th {
   border: none;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   font-size: 0.75rem;
+}
+
+.lang-toggle--solo .lang-toggle__btn {
+  padding: 0.25rem 0.55rem;
 }
 
 .lang-toggle__sep {

@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import type { User, Session } from "@supabase/supabase-js";
+import { getAuthRedirectUrl } from "../lib/supabase/authRedirect";
 import { getSupabase, isSupabaseConfigured } from "../lib/supabase/client";
 
 type AuthContextValue = {
@@ -67,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await sb.auth.signInWithOtp({
       email: trimmed,
       options: {
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: getAuthRedirectUrl(),
       },
     });
     if (error) return { error: error.message };
@@ -81,12 +82,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await sb.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: window.location.origin,
+        redirectTo: getAuthRedirectUrl(),
+        queryParams: {
+          access_type: "offline",
+          prompt: "consent",
+        },
       },
     });
     if (error) return { error: error.message };
     return {};
   }, []);
+
+  useEffect(() => {
+    if (!session) return;
+    const { hash, search } = window.location;
+    if (
+      hash.includes("access_token") ||
+      hash.includes("error=") ||
+      search.includes("code=") ||
+      search.includes("error=")
+    ) {
+      window.history.replaceState(null, "", getAuthRedirectUrl());
+    }
+  }, [session]);
 
   const signOut = useCallback(async () => {
     const sb = getSupabase();

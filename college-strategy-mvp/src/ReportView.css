@@ -151,6 +151,57 @@
   text-align: center;
 }
 
+.paywall-invite-hybrid-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  color: #475569;
+  text-align: center;
+  line-height: 1.45;
+}
+
+.invite-redeem {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed #bfdbfe;
+}
+
+.invite-redeem__label {
+  margin: 0 0 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1e40af;
+  letter-spacing: 0.02em;
+}
+
+.invite-redeem__hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.invite-redeem__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.invite-redeem__input {
+  flex: 1 1 10rem;
+  min-width: 0;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  background: #fff;
+}
+
+.invite-redeem__btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 .inline-hint {
   font-size: 0.72rem;
   font-weight: 500;
@@ -1027,4 +1078,33 @@
 
 .report-table-wrap--dense td div:last-child {
   margin-bottom: 0;
+}
+
+/* PDF export: clipped off-screen but still paintable for html2canvas clone */
+.report-pdf-export-root {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 210mm;
+  height: 0;
+  overflow: hidden;
+  clip-path: inset(100%);
+  clip: rect(0, 0, 0, 0);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.report-download {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.report-download__err {
+  margin: 0;
+  font-size: 0.72rem;
+  color: #b91c1c;
+  max-width: 12rem;
+  text-align: right;
 }

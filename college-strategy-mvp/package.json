@@ -3,11 +3,15 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "concurrently -k \"npm run dev:api\" \"npm run dev:vite\"",
     "dev:vite": "vite",
     "dev:api": "node server/index.mjs",
     "build": "tsc --noEmit && vite build",
+    "start": "node server/index.mjs",
     "preview": "vite preview",
     "knockout-logos": "node scripts/knockout-logo-backgrounds.mjs",
     "build:onlyapply-logo": "node scripts/build-onlyapply-brand-logo.mjs"
@@ -17,9 +21,11 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
+    "html2pdf.js": "^0.14.0",
     "openai": "^4.73.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "stripe": "^17.7.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
