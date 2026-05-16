@@ -197,6 +197,17 @@ function whyCell(row: SchoolRow, tier: "reach" | "match" | "safety"): string {
   return row.why_safety_for_you || "";
 }
 
+function PreviewLockedCell({ label }: { label: string }) {
+  return (
+    <span className="preview-locked-cell">
+      <span className="lock-icon" aria-hidden>
+        🔒
+      </span>
+      {label}
+    </span>
+  );
+}
+
 interface ReportViewProps {
   report: ReportPayload;
   form: FormState;
@@ -273,9 +284,6 @@ export function ReportView({
     tier === "reach" ? t("report.tierReach") : tier === "match" ? t("report.tierMatch") : t("report.tierSafety");
   const tierTitle = tierLabel;
 
-  const toneLabel =
-    tone === "rational" ? t("report.toneRational") : tone === "anxiety" ? t("report.toneAnxiety") : t("report.toneCuriosity");
-
   const inviteModeOnly = inviteCodesEnabled && !stripeCheckoutEnabled;
 
   const risks = report.portfolio_risks || [];
@@ -285,8 +293,12 @@ export function ReportView({
   const notes = report.strategy_notes || [];
 
   const lockedSchoolRows = unlocked ? 999 : 1;
-  const lockedRiskCount = unlocked ? risks.length : Math.min(2, risks.length);
-  const lockedWeekItems = unlocked ? tw.length : Math.min(2, tw.length);
+  const lockedRiskCount = unlocked ? risks.length : Math.min(1, risks.length);
+  const lockedWeekItems = unlocked ? tw.length : Math.min(1, tw.length);
+  const visibleExecutiveSummary = unlocked
+    ? report.executive_summary ?? []
+    : (report.executive_summary ?? []).slice(0, 1);
+  const previewGapCount = Math.min(2, report.information_gaps?.length ?? 0);
 
   return (
     <div className={`app report-view${reportRefreshing ? " report-view--busy" : ""}`}>
@@ -381,8 +393,11 @@ export function ReportView({
           </h1>
         </div>
         <div className="top-actions__auth">
-          {isAuthenticated && sessionSaved && (
+          {isAuthenticated && sessionSaved && unlocked && (
             <ReportDownloadButton sourceRef={pdfSourceRef} intakeLabel={intakeLabel} unlocked={unlocked} />
+          )}
+          {isAuthenticated && sessionSaved && !unlocked && (
+            <span className="preview-pdf-lock" data-no-pdf>{t("report.previewPdfLocked")}</span>
           )}
           <button type="button" className="btn btn-secondary" onClick={onReset}>
             {t("report.reset")}
@@ -396,13 +411,6 @@ export function ReportView({
           onSignIn={onRequestSignIn}
           onDismiss={showSaveBanner ? onDismissSaveBanner : undefined}
         />
-      )}
-
-      {!unlocked && (
-        <p className="tone-pill" aria-label={t("report.toneAria")} data-no-pdf>
-          {t("report.tonePill", { tone: toneLabel })}{" "}
-          <code>?paywall=rational|anxiety|curiosity</code>
-        </p>
       )}
 
       <p className="report-ready">
@@ -479,8 +487,9 @@ export function ReportView({
           <ApplicationProfileRadar
             items={profileFive}
             t={t}
-            onCommitProfileFiveNotes={onCommitProfileFiveNotes}
+            onCommitProfileFiveNotes={unlocked ? onCommitProfileFiveNotes : undefined}
             isCommitting={reportRefreshing}
+            previewLocked={!unlocked}
           />
         </ReportPathStep>
 
@@ -514,22 +523,32 @@ export function ReportView({
                     return (
                     <tr key={i} className={hot ? "school-row-highlight" : undefined}>
                       <td>{row.school}</td>
-                      <td>{clampCellText(whyCell(row, tier), 118)}</td>
-                      <td>
-                        {(row.key_fit_signals || []).map((x, j) => (
-                          <div key={j}>{clampCellText(x, 88)}</div>
-                        ))}
-                      </td>
-                      <td>
-                        {(row.key_risks || []).map((x, j) => (
-                          <div key={j}>{clampCellText(x, 88)}</div>
-                        ))}
-                      </td>
-                      <td>
-                        {(row.verification_focus || []).map((x, j) => (
-                          <div key={j}>{clampCellText(x, 88)}</div>
-                        ))}
-                      </td>
+                      <td>{clampCellText(whyCell(row, tier), unlocked ? 118 : 72)}</td>
+                      {unlocked ? (
+                        <>
+                          <td>
+                            {(row.key_fit_signals || []).map((x, j) => (
+                              <div key={j}>{clampCellText(x, 88)}</div>
+                            ))}
+                          </td>
+                          <td>
+                            {(row.key_risks || []).map((x, j) => (
+                              <div key={j}>{clampCellText(x, 88)}</div>
+                            ))}
+                          </td>
+                          <td>
+                            {(row.verification_focus || []).map((x, j) => (
+                              <div key={j}>{clampCellText(x, 88)}</div>
+                            ))}
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td><PreviewLockedCell label={t("report.previewTableSignalsLocked")} /></td>
+                          <td><PreviewLockedCell label={t("report.previewTableRisksLocked")} /></td>
+                          <td><PreviewLockedCell label={t("report.previewTableVerifyLocked")} /></td>
+                        </>
+                      )}
                     </tr>
                     );
                   })}
@@ -554,13 +573,37 @@ export function ReportView({
         </ReportPathStep>
 
         <ReportPathStep step={5} id="report-step-action" title={t("report.decision.step5Title")} lead={t("report.decision.step5Lead")} bare>
-          <InformationGapsInteractive
-            gaps={report.information_gaps ?? []}
-            onRegenerate={onRefreshReportWithGaps}
-            isRegenerating={reportRefreshing}
-            embedded
-          />
-          <ReportOptimizeCtaBar t={t} />
+          {unlocked ? (
+            <>
+              <InformationGapsInteractive
+                gaps={report.information_gaps ?? []}
+                onRegenerate={onRefreshReportWithGaps}
+                isRegenerating={reportRefreshing}
+                embedded
+              />
+              <ReportOptimizeCtaBar t={t} />
+            </>
+          ) : (
+            <section className="card report-block report-path-step__panel preview-gaps-card" id="report-section-gaps">
+              <p className="paywall-eyebrow">{t("report.previewGapsEyebrow")}</p>
+              <h2>{t("report.previewGapsTitle", { n: report.information_gaps?.length ?? 0 })}</h2>
+              <p className="preview-gaps-card__lead">{t("report.previewGapsLead")}</p>
+              {(report.information_gaps ?? []).slice(0, previewGapCount).map((gap, i) => (
+                <p key={i} className="preview-gap-line">
+                  <strong>{t("report.previewGapLabel", { n: i + 1 })}</strong>
+                  {clampCellText(gap, 88)}
+                </p>
+              ))}
+              {(report.information_gaps?.length ?? 0) > previewGapCount && (
+                <p className="block-locked">
+                  <span className="lock-icon" aria-hidden>
+                    🔒
+                  </span>
+                  {t("report.previewGapsLocked", { n: (report.information_gaps?.length ?? 0) - previewGapCount })}
+                </p>
+              )}
+            </section>
+          )}
         </ReportPathStep>
       </div>
 
@@ -568,13 +611,19 @@ export function ReportView({
         <h2 className="report-path-appendix__title">{t("report.decision.appendixTitle")}</h2>
         <p className="report-path-appendix__lead">{t("report.decision.appendixLead")}</p>
 
-        {(report.executive_summary?.length ?? 0) > 0 && (
+        {visibleExecutiveSummary.length > 0 && (
           <section className="card report-block report-path-appendix__card">
             <h3>{t("report.decision.execDigestTitle")}</h3>
             <ul className="report-exec-digest__list">
-              {report.executive_summary?.map((line, i) => (
+              {visibleExecutiveSummary.map((line, i) => (
                 <li key={i}>{line}</li>
               ))}
+              {!unlocked && (report.executive_summary?.length ?? 0) > visibleExecutiveSummary.length && (
+                <li className="li-locked">
+                  {t("report.previewExecLocked", { n: (report.executive_summary?.length ?? 0) - visibleExecutiveSummary.length })}
+                  <span className="lock-sub">{t("report.previewUnlockForDetails")}</span>
+                </li>
+              )}
             </ul>
           </section>
         )}
@@ -589,12 +638,19 @@ export function ReportView({
         <ul>
           {risks.slice(0, lockedRiskCount).map((r, i) => (
             <li key={i}>
-              <strong>{r.risk_title}</strong>：{r.what_it_means_for_you} <em>{t("report.risksMit")}</em>
-              {r.mitigation}
+              <strong>{r.risk_title}</strong>：{r.what_it_means_for_you}
+              {unlocked && (
+                <>
+                  {" "}
+                  <em>{t("report.risksMit")}</em>
+                  {r.mitigation}
+                </>
+              )}
+              {!unlocked && <span className="lock-sub">{t("report.previewRiskMitigationLocked")}</span>}
             </li>
           ))}
           {!unlocked &&
-            risks.slice(2).map((r, i) => (
+            risks.slice(1).map((r, i) => (
               <li key={`rlock-${i}`} className="li-locked">
                 <strong>{r.risk_title}</strong>
                 <span className="lock-sub">{t("report.risksLockSub")}</span>
@@ -614,8 +670,8 @@ export function ReportView({
             <li key={i}>{item}</li>
           ))}
         </ul>
-        {!unlocked && tw.length > 2 && (
-          <p className="lock-inline">{t("report.weekMore", { n: tw.length - 2 })}</p>
+        {!unlocked && tw.length > 1 && (
+          <p className="lock-inline">{t("report.weekMore", { n: tw.length - 1 })}</p>
         )}
         <h3 className="subh">{t("report.month")}</h3>
         {unlocked ? (
@@ -657,13 +713,13 @@ export function ReportView({
           {!unlocked && notes.length > 2 && <span className="inline-hint">{t("report.notesPreview")}</span>}
         </h2>
         <ul>
-          {notes.slice(0, unlocked ? notes.length : Math.min(2, notes.length)).map((item, i) => (
+          {notes.slice(0, unlocked ? notes.length : Math.min(1, notes.length)).map((item, i) => (
             <li key={i}>{item}</li>
           ))}
           {!unlocked &&
-            notes.slice(2).map((_, i) => (
+            notes.slice(1).map((_, i) => (
               <li key={`nlock-${i}`} className="li-locked">
-                {t("report.notesLock", { n: i + 3 })}
+                {t("report.notesLock", { n: i + 2 })}
                 <span className="lock-sub">{t("report.notesLockSub")}</span>
               </li>
             ))}

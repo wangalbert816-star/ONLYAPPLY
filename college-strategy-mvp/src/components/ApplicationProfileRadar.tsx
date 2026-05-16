@@ -8,6 +8,7 @@ type Props = {
   t: Translate;
   onCommitProfileFiveNotes?: (notes: SupplementaryNote[]) => Promise<void>;
   isCommitting?: boolean;
+  previewLocked?: boolean;
 };
 
 const MIN_DIRECT_LEN = 3;
@@ -41,7 +42,7 @@ function polygonForScale(scale: number): string {
   }).join("");
 }
 
-export function ApplicationProfileRadar({ items, t, onCommitProfileFiveNotes, isCommitting = false }: Props) {
+export function ApplicationProfileRadar({ items, t, onCommitProfileFiveNotes, isCommitting = false, previewLocked = false }: Props) {
   const [spotKey, setSpotKey] = useState<ProfileDimensionKey | null>(null);
   const [drafts, setDrafts] = useState<Record<ProfileDimensionKey, string>>(() => ({ ...BLANK_DRAFTS }));
   const [submitErr, setSubmitErr] = useState<string | null>(null);
@@ -91,7 +92,7 @@ export function ApplicationProfileRadar({ items, t, onCommitProfileFiveNotes, is
   const spot = spotKey ? items.find((x) => x.key === spotKey) : null;
 
   return (
-    <div className="profile-five">
+    <div className={`profile-five${previewLocked ? " profile-five--preview-locked" : ""}`}>
       <div className="profile-five-radar-wrap">
         <svg
           className="profile-five-radar"
@@ -127,13 +128,17 @@ export function ApplicationProfileRadar({ items, t, onCommitProfileFiveNotes, is
             return (
               <g
                 key={dim.key}
-                role="button"
-                tabIndex={0}
+                role={previewLocked ? undefined : "button"}
+                tabIndex={previewLocked ? undefined : 0}
                 className="profile-five-axis-hit"
                 aria-pressed={active}
-                aria-label={t("report.profileFive.axisTapAria", { axis: t(`report.profileFive.axisShort.${dim.key}`) })}
-                onClick={() => toggleSpot(dim.key)}
-                onKeyDown={(e) => onAxisKeyDown(e, dim.key)}
+                aria-label={
+                  previewLocked
+                    ? t(`report.profileFive.axisShort.${dim.key}`)
+                    : t("report.profileFive.axisTapAria", { axis: t(`report.profileFive.axisShort.${dim.key}`) })
+                }
+                onClick={previewLocked ? undefined : () => toggleSpot(dim.key)}
+                onKeyDown={previewLocked ? undefined : (e) => onAxisKeyDown(e, dim.key)}
               >
                 <circle className="profile-five-hit" cx={p.x} cy={p.y} r="18" fill="transparent" />
                 <circle
@@ -147,7 +152,7 @@ export function ApplicationProfileRadar({ items, t, onCommitProfileFiveNotes, is
           })}
         </svg>
 
-        {spot && (
+        {spot && !previewLocked && (
           <div className="profile-five-spotlight" role="region" aria-live="polite" id="profile-five-spotlight">
             <div className="profile-five-spotlight-head">
               <strong className="profile-five-spotlight-title">{t(`report.profileFive.axis.${spot.key}`)}</strong>
@@ -167,7 +172,9 @@ export function ApplicationProfileRadar({ items, t, onCommitProfileFiveNotes, is
           </div>
         )}
 
-        <p className="profile-five-radar-hint">{t("report.profileFive.chartHint")}</p>
+        <p className="profile-five-radar-hint">
+          {previewLocked ? t("report.profileFive.previewHint") : t("report.profileFive.chartHint")}
+        </p>
       </div>
 
       <ul className="profile-five-list">
@@ -181,16 +188,24 @@ export function ApplicationProfileRadar({ items, t, onCommitProfileFiveNotes, is
               <span className="profile-five-row-title">{t(`report.profileFive.axis.${it.key}`)}</span>
               <span className="profile-five-score">{t("report.profileFive.score", { n: it.score })}</span>
             </div>
-            <p className="profile-five-judgment">{it.judgment}</p>
-            <p className="profile-five-explain">
-              <span className="profile-five-k">{t("report.profileFive.reasonLabel")}</span>
-              {it.explain}
-            </p>
-            <p className="profile-five-suggest">
-              <span className="profile-five-k">{t("report.profileFive.suggestAdvisorLabel")}</span>
-              {it.suggest}
-            </p>
-            {onCommitProfileFiveNotes && (
+            {!previewLocked ? (
+              <>
+                <p className="profile-five-judgment">{it.judgment}</p>
+                <p className="profile-five-explain">
+                  <span className="profile-five-k">{t("report.profileFive.reasonLabel")}</span>
+                  {it.explain}
+                </p>
+                <p className="profile-five-suggest">
+                  <span className="profile-five-k">{t("report.profileFive.suggestAdvisorLabel")}</span>
+                  {it.suggest}
+                </p>
+              </>
+            ) : (
+              <div className="profile-five-preview-bar" aria-hidden>
+                <span style={{ width: `${Math.max(8, Math.min(100, it.score))}%` }} />
+              </div>
+            )}
+            {onCommitProfileFiveNotes && !previewLocked && (
               <div className="profile-five-direct">
                 <label className="profile-five-direct-label" htmlFor={`profile-five-input-${it.key}`}>
                   {t("report.profileFive.directLabel")}
@@ -214,7 +229,16 @@ export function ApplicationProfileRadar({ items, t, onCommitProfileFiveNotes, is
         ))}
       </ul>
 
-      {onCommitProfileFiveNotes && (
+      {previewLocked && (
+        <p className="block-locked profile-five-preview-lock">
+          <span className="lock-icon" aria-hidden>
+            🔒
+          </span>
+          {t("report.profileFive.previewLocked")}
+        </p>
+      )}
+
+      {onCommitProfileFiveNotes && !previewLocked && (
         <>
           <div id="profile-five-commit-anchor" className="profile-five-commit-anchor" aria-hidden />
           <div className="profile-five-commit">
