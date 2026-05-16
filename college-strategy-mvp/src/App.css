@@ -79,6 +79,37 @@
   margin-bottom: clamp(1.75rem, 4.5vh, 2.5rem);
 }
 
+.landing-logo-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: fit-content;
+  max-width: min(12.75rem, 74vw);
+  margin: 0 0 clamp(1.75rem, 4.5vh, 2.5rem);
+  padding: 0.25rem;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease;
+}
+
+.landing-logo-button .landing-logo {
+  margin-bottom: 0;
+}
+
+.landing-logo-button:hover {
+  transform: translateY(-1px);
+  background: rgba(37, 99, 235, 0.06);
+}
+
+.landing-logo-button:focus-visible {
+  outline: 2px solid var(--color-primary, #2563eb);
+  outline-offset: 3px;
+}
+
 .landing-title {
   display: flex;
   flex-direction: column;
@@ -920,6 +951,10 @@ th {
 
   .landing-title__l2 {
     color: #cbd5e1;
+  }
+
+  .landing-logo-button:hover {
+    background: rgba(96, 165, 250, 0.12);
   }
 
   @supports ((-webkit-background-clip: text) or (background-clip: text)) {

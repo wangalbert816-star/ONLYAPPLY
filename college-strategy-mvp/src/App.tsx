@@ -8,6 +8,7 @@ import { clearUnlockStorage, readUnlockFromStorage, ReportView, writeUnlockToSto
 import { BrandLogo } from "./components/BrandLogo";
 import { FormLiveSummary, GuidedStep1, GuidedStep2, GuidedStep3, type GuideTouch } from "./components/GuidedQuestionnaire";
 import { FullscreenLogoMarquee } from "./components/FullscreenLogoMarquee";
+import { BrandStoryOverlay } from "./components/BrandStoryOverlay";
 import { useLanguage } from "./i18n/LanguageContext";
 import { useAuth } from "./auth/AuthContext";
 import { AuthModal } from "./components/auth/AuthModal";
@@ -149,6 +150,7 @@ export default function App() {
   const authReturnRef = useRef(isAuthReturnUrl());
   const applicationHubTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [applicationHubOpen, setApplicationHubOpen] = useState(false);
+  const [brandStoryOpen, setBrandStoryOpen] = useState(false);
 
   const openApplicationHub = useCallback((e: MouseEvent<HTMLElement>) => {
     applicationHubTriggerRef.current = e.currentTarget as HTMLButtonElement;
@@ -811,7 +813,14 @@ export default function App() {
       <div className="app app--landing">
         <div className="landing-sheet">
           <header className="landing-hero">
-            <BrandLogo className="landing-logo" />
+            <button
+              type="button"
+              className="landing-logo-button"
+              onClick={() => setBrandStoryOpen(true)}
+              aria-label="了解 OnlyApply"
+            >
+              <BrandLogo className="landing-logo" />
+            </button>
             <div className="landing-copy">
               <h1 className="landing-title">
                 <span className="landing-title__l1">{t("app.hero.titleLine1")}</span>
@@ -855,6 +864,17 @@ export default function App() {
           onClose={() => {
             setApplicationHubOpen(false);
             queueMicrotask(() => applicationHubTriggerRef.current?.focus());
+          }}
+        />
+
+        <BrandStoryOverlay
+          open={brandStoryOpen}
+          onClose={() => setBrandStoryOpen(false)}
+          onStart={() => {
+            setBrandStoryOpen(false);
+            setApplicationHubOpen(false);
+            setFlowStarted(true);
+            queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
           }}
         />
 
