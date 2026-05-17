@@ -184,6 +184,7 @@ export default function App() {
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [subtleRefreshNotice, setSubtleRefreshNotice] = useState<string | null>(null);
   const refreshLockRef = useRef(false);
+  const autoSaveAfterAuthKeyRef = useRef<string | null>(null);
   /** 五维「下一步」下提交的补充；与信息缺口触发的刷新合并后一并 POST */
   const profileFiveSupplementaryRef = useRef<SupplementaryNote[]>([]);
   /** 信息缺口的历史回答需要跨多轮刷新持续传给模型，避免同一问题被反复追问 */
@@ -293,6 +294,9 @@ export default function App() {
     if (!stripeCheckoutEnabled) {
       if (inviteCodesEnabled) {
         if (!user || !session?.access_token) {
+          if (report) {
+            writePendingSave({ form, locale, report, reportUnlocked: false });
+          }
           setSaveNotice(t("report.inviteSignInFirst"));
           setAuthModalOpen(true);
           return;
@@ -341,6 +345,9 @@ export default function App() {
     }
 
     if (!user || !session?.access_token) {
+      if (report) {
+        writePendingSave({ form, locale, report, reportUnlocked: false });
+      }
       setSaveNotice(t("report.stripeSignInFirst"));
       setAuthModalOpen(true);
       return;
@@ -439,6 +446,9 @@ export default function App() {
 
   useEffect(() => {
     if (authLoading || !user) return;
+    setSaveNotice((notice) =>
+      notice === t("report.stripeSignInFirst") || notice === t("report.inviteSignInFirst") ? null : notice,
+    );
     setAuthModalOpen(false);
     const pending = readPendingSave();
     if (!pending) return;
@@ -464,6 +474,36 @@ export default function App() {
       }
     })();
   }, [authLoading, user, persistToCloud, refreshEntitlements, cloudEntitlementsEnabled, demoUnlockEnabled]);
+
+  useEffect(() => {
+    if (authLoading || !user || view !== "report" || !report || sessionSaved) return;
+    if (readPendingSave()) return;
+    const key = `${user.id}:${currentApplicationId ?? "new"}:${JSON.stringify(report).length}`;
+    if (autoSaveAfterAuthKeyRef.current === key) return;
+    autoSaveAfterAuthKeyRef.current = key;
+    setSaveNotice((notice) =>
+      notice === t("report.stripeSignInFirst") || notice === t("report.inviteSignInFirst") ? null : notice,
+    );
+    void (async () => {
+      const { ok, applicationId } = await persistToCloud({ formState: form, reportPayload: report });
+      if (cloudEntitlementsEnabled && ok && applicationId) {
+        const ids = await refreshEntitlements();
+        setReportUnlocked(ids.includes(applicationId));
+      }
+    })();
+  }, [
+    authLoading,
+    user,
+    view,
+    report,
+    sessionSaved,
+    currentApplicationId,
+    form,
+    persistToCloud,
+    cloudEntitlementsEnabled,
+    refreshEntitlements,
+    t,
+  ]);
 
   useEffect(() => {
     currentApplicationIdRef.current = currentApplicationId;
