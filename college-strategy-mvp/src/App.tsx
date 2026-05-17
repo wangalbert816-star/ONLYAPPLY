@@ -17,6 +17,7 @@ import { AuthChromeProvider } from "./auth/AuthChromeContext";
 import { AppTopChrome } from "./components/AppTopChrome";
 import { LegalLinks } from "./components/LegalLinks";
 import { saveUserSession, fetchUnlockedApplicationIds, redeemInviteCode } from "./lib/supabase/accounts";
+import { getSupabase } from "./lib/supabase/client";
 import { formatSupabaseError } from "./lib/supabase/errors";
 import { clearPendingSave, readPendingSave, writePendingSave } from "./lib/pendingSave";
 import { isEssayAnalysisCheckoutEnabled, isStripeCheckoutEnabled } from "./lib/stripeCheckout";
@@ -291,9 +292,18 @@ export default function App() {
   );
 
   const handleReportUnlockFlow = useCallback(async () => {
+    const getActiveAccessToken = async () => {
+      if (session?.access_token) return session.access_token;
+      const sb = getSupabase();
+      if (!sb) return null;
+      const { data } = await sb.auth.getSession();
+      return data.session?.access_token ?? null;
+    };
+
     if (!stripeCheckoutEnabled) {
       if (inviteCodesEnabled) {
-        if (!user || !session?.access_token) {
+        const accessToken = await getActiveAccessToken();
+        if (!accessToken) {
           if (report) {
             writePendingSave({ form, locale, report, reportUnlocked: false });
           }
@@ -344,7 +354,8 @@ export default function App() {
       return;
     }
 
-    if (!user || !session?.access_token) {
+    const accessToken = await getActiveAccessToken();
+    if (!accessToken) {
       if (report) {
         writePendingSave({ form, locale, report, reportUnlocked: false });
       }
@@ -377,7 +388,7 @@ export default function App() {
       const res = await fetch(apiUrl("/api/stripe/create-checkout-session"), {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ reportId: repId }),
