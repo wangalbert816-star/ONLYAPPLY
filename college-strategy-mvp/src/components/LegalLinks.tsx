@@ -37,7 +37,9 @@ const zhDocs: Record<LegalDoc, LegalCopy> = {
         title: "解锁、邀请码与付费",
         body: [
           "免费预览仅展示报告的一部分。完整版可能包含完整学校名单、逐校理由、风险应对、行动计划和 PDF 下载。",
+          "报告解锁通常按单份申请档案计算。若你在同一份申请档案中补充信息、更新活动或重新生成报告，系统会尽量沿用该档案的解锁状态；若你新建另一份申请档案或为不同学生/不同申请目标生成报告，可能需要单独解锁。",
           "文书分析可能作为独立功能提供，需要单独付费、订阅或使用指定邀请码解锁。报告解锁不一定自动包含文书分析解锁，具体以页面提示为准。",
+          "付款由 Stripe 等第三方支付服务处理。OnlyApply 不保存完整银行卡信息；支付成功后的解锁以支付服务回调和我们记录的权益状态为准。",
           "邀请码仅供指定用户或活动使用，不得转售、滥用或公开传播。我们保留停用、撤销或限制邀请码的权利。",
         ],
       },
@@ -57,14 +59,16 @@ const zhDocs: Record<LegalDoc, LegalCopy> = {
         title: "我们收集的信息",
         body: [
           "我们可能收集登录信息、问卷信息、报告内容、补充说明、文书草稿、文书分析结果、分析历史、使用数据、邀请码兑换记录和解锁状态。",
-          "问卷可能包含成绩、标化、预算、活动、专业偏好、地区偏好等申请规划相关信息。",
+          "问卷可能包含成绩、标化、预算、活动、结构化活动/竞赛、专业偏好、地区偏好、申请底线和其他申请规划相关信息。",
+          "当你回答信息缺口、补充活动或更新申请档案时，这些补充信息可能会被保存到同一份申请档案或报告历史中，用于后续重新生成报告，减少重复提问并提高判断一致性。",
           "文书草稿可能包含你主动输入的个人经历、活动细节、家庭或成长背景等内容。请不要提交你无权提供的他人信息，或不希望系统处理的敏感内容。",
         ],
       },
       {
         title: "我们如何使用信息",
         body: [
-          "这些信息用于生成和保存报告、保存文书草稿与分析历史、提供登录与解锁功能、改善产品体验、排查错误、防止滥用，以及在你主动留下联系方式时与你沟通。",
+          "这些信息用于生成和保存报告、保存申请档案和结构化活动、保留补充说明供后续报告使用、保存文书草稿与分析历史、提供登录与解锁功能、改善产品体验、排查错误、防止滥用，以及在你主动留下联系方式时与你沟通。",
+          "我们可能保存支付状态、Stripe Checkout 会话标识、邀请码兑换记录和权益记录，用于确认报告或文书分析是否已解锁。我们不保存完整银行卡号。",
         ],
       },
       {
@@ -90,6 +94,7 @@ const zhDocs: Record<LegalDoc, LegalCopy> = {
         title: "规划参考，而非最终结论",
         body: [
           "OnlyApply 报告和文书分析由 AI 根据你填写的问卷、报告上下文和你提交的文书草稿生成，仅用于申请规划与写作修改参考。",
+          "如果你在后续轮次补充 ACT、语言成绩、活动、预算、申请身份或其他信息，系统可能会把这些补充说明带入后续重新分析；但这仍然是基于输入的模型判断，不是人工顾问的连续记忆。",
           "这些内容不构成录取预测、录取保证、学校官方建议、法律意见、财务建议、人工顾问定稿或最终升学顾问意见。",
         ],
       },
@@ -135,7 +140,9 @@ const enDocs: Record<LegalDoc, LegalCopy> = {
         title: "Unlocks, invite codes, and payments",
         body: [
           "The free preview shows only part of the report. The full report may include complete school lists, school-by-school reasons, risk responses, action plans, and PDF download.",
+          "Full-report unlocks are generally tied to a single saved application profile. If you add information, update activities, or regenerate reports within the same profile, the service will try to preserve that profile's unlock status. A separate application profile, student, or application target may require a separate unlock.",
           "Essay analysis may be offered as a separate feature that requires a separate payment, subscription, or designated invite code. Unlocking a report does not necessarily unlock essay analysis unless the page says so.",
+          "Payments are processed by third-party payment providers such as Stripe. OnlyApply does not store full payment-card details. Unlock status is based on payment-provider callbacks and entitlement records in our system.",
           "Invite codes are for designated users or campaigns and may not be resold, abused, or publicly distributed. We may disable, revoke, or limit invite codes.",
         ],
       },
@@ -155,14 +162,16 @@ const enDocs: Record<LegalDoc, LegalCopy> = {
         title: "Information we collect",
         body: [
           "We may collect login information, questionnaire inputs, report content, supplementary notes, essay drafts, essay analysis results, analysis history, usage data, invite-code redemption records, and unlock status.",
-          "Questionnaires may include grades, testing, budget, activities, major interests, region preferences, and other application-planning information.",
+          "Questionnaires may include grades, testing, budget, activities, structured activity or competition entries, major interests, region preferences, dealbreakers, and other application-planning information.",
+          "When you answer information gaps, add activities, or update an application profile, those supplementary details may be saved with the same profile or report history and used in later report regeneration to reduce repeated questions and improve consistency.",
           "Essay drafts may include personal experiences, activity details, family or growth background, and other content you choose to enter. Do not submit another person's information without authorization or sensitive content you do not want processed by the service.",
         ],
       },
       {
         title: "How we use information",
         body: [
-          "We use information to generate and save reports, save essay drafts and analysis history, provide login and unlock features, improve product experience, debug issues, prevent abuse, and contact you when you choose to leave contact details.",
+          "We use information to generate and save reports, save application profiles and structured activities, preserve supplementary notes for later report runs, save essay drafts and analysis history, provide login and unlock features, improve product experience, debug issues, prevent abuse, and contact you when you choose to leave contact details.",
+          "We may store payment status, Stripe Checkout session identifiers, invite-code redemption records, and entitlement records to confirm whether reports or essay analyses are unlocked. We do not store full card numbers.",
         ],
       },
       {
@@ -188,6 +197,7 @@ const enDocs: Record<LegalDoc, LegalCopy> = {
         title: "Planning reference, not a final answer",
         body: [
           "OnlyApply reports and essay analyses are generated by AI from your questionnaire, report context, and essay drafts. They are intended only as application-planning and writing-revision references.",
+          "If you later add ACT, language scores, activities, budget, applicant identity, or other details, the system may carry those supplementary notes into later report regeneration. This is still model-based analysis from inputs, not human counselor memory.",
           "They are not an admission prediction, admission guarantee, official school advice, legal advice, financial advice, human counselor final draft, or final counselor opinion.",
         ],
       },
