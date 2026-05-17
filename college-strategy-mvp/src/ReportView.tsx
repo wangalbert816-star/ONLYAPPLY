@@ -236,6 +236,7 @@ interface ReportViewProps {
   /** 用于 PDF 封面（如登录邮箱） */
   pdfRecipientName?: string | null;
   purchaseBusy?: boolean;
+  purchaseNotice?: string | null;
   stripeCheckoutEnabled?: boolean;
   inviteCodesEnabled?: boolean;
   inviteRedeemBusy?: boolean;
@@ -267,6 +268,7 @@ export function ReportView({
   onDismissSaveBanner,
   pdfRecipientName = null,
   purchaseBusy = false,
+  purchaseNotice = null,
   stripeCheckoutEnabled = false,
   inviteCodesEnabled = false,
   inviteRedeemBusy = false,
@@ -438,8 +440,9 @@ export function ReportView({
               ))}
             </ul>
             <button type="button" className="btn btn-primary btn-block paywall-cta" onClick={onUnlock} disabled={purchaseBusy}>
-              {inviteModeOnly ? t("report.inviteUnlockCta") : copy.ctaPrimary}
+              {purchaseBusy ? t("report.checkoutOpening") : inviteModeOnly ? t("report.inviteUnlockCta") : copy.ctaPrimary}
             </button>
+            {purchaseNotice && <p className="paywall-notice">{purchaseNotice}</p>}
             <p className="paywall-cta-hint">{inviteModeOnly ? t("report.inviteUnlockHint") : copy.ctaHint}</p>
             {inviteCodesEnabled && stripeCheckoutEnabled && (
               <p className="paywall-invite-hybrid-hint">{t("report.inviteHybridHint")}</p>
@@ -775,8 +778,9 @@ export function ReportView({
           </h2>
           <p className="paywall-footer-text">{copy.footerText}</p>
           <button type="button" className="btn btn-primary btn-block" onClick={onUnlock} disabled={purchaseBusy}>
-            {copy.ctaPrimary}
+            {purchaseBusy ? t("report.checkoutOpening") : copy.ctaPrimary}
           </button>
+          {purchaseNotice && <p className="paywall-notice">{purchaseNotice}</p>}
         </section>
       )}
     </div>

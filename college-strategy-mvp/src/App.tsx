@@ -814,6 +814,7 @@ export default function App() {
         inviteRedeemBusy={inviteBusy}
         onRedeemInviteCode={(c) => void handleInviteRedeem(c)}
         purchaseBusy={checkoutBusy}
+        purchaseNotice={saveNotice}
         onUnlock={() => void handleReportUnlockFlow()}
         onReset={() => {
           clearUnlockStorage();

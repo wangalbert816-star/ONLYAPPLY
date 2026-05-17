@@ -577,6 +577,7 @@ merge(zhFlat, {
     stripeSignInFirst: "请先登录；完整版需对当前这场申请记录结账后才能解锁（我们会先替你保存本条报告）。",
     stripeAlreadyOwned: "本条申请已在账户中解锁，可直接查看完整报告。",
     stripeErr: "暂时无法发起支付链接。请刷新后重试；如果仍失败，请联系 support@onlyapply.ai。",
+    checkoutOpening: "正在打开结账页面…",
     stripeCanceled: "你已取消结账，仍可继续在预览模式中浏览内容。",
     stripeSuccessBanner: "支付已成功记录。若没有立刻显示完整版，请几秒后刷新或重新打开本条报告。",
     stripeNotConfigured: "服务端尚未配置 Stripe 或权益表不可用，结账暂时关闭。可将 VITE_ENABLE_STRIPE_CHECKOUT 设为关闭以继续使用演示解锁。",
@@ -1197,6 +1198,7 @@ merge(enFlat, {
     stripeSignInFirst: "Sign in to continue. Full access is unlocked per saved application after checkout (we’ll save this report first).",
     stripeAlreadyOwned: "This application is already unlocked for your account.",
     stripeErr: "Could not start checkout. Refresh and try again; if it still fails, contact support@onlyapply.ai.",
+    checkoutOpening: "Opening checkout…",
     stripeCanceled: "Checkout was cancelled. You can keep browsing the preview.",
     stripeSuccessBanner: "Payment recorded. If the full report doesn’t show yet, refresh in a few seconds or reopen this report.",
     stripeNotConfigured:
