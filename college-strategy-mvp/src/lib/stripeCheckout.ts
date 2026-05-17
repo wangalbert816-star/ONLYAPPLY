@@ -3,3 +3,7 @@
 export function isStripeCheckoutEnabled(): boolean {
   return import.meta.env.VITE_ENABLE_STRIPE_CHECKOUT === "true";
 }
+
+export function isEssayAnalysisCheckoutEnabled(): boolean {
+  return import.meta.env.VITE_ENABLE_ESSAY_ANALYSIS_CHECKOUT === "true";
+}

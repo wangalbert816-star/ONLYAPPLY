@@ -29,8 +29,10 @@ function stripeEnv() {
   const secret = (process.env.STRIPE_SECRET_KEY || "").trim();
   const webhookSecret = (process.env.STRIPE_WEBHOOK_SECRET || "").trim();
   const priceId = (process.env.STRIPE_PRICE_ID || "").trim();
+  const essayAnalysisPriceId = (process.env.STRIPE_ESSAY_ANALYSIS_PRICE_ID || "").trim();
+  const essaySubscriptionPriceId = (process.env.STRIPE_ESSAY_SUBSCRIPTION_PRICE_ID || "").trim();
   const siteUrl = (process.env.SITE_URL || "").trim().replace(/\/$/, "");
-  return { secret, webhookSecret, priceId, siteUrl };
+  return { secret, webhookSecret, priceId, essayAnalysisPriceId, essaySubscriptionPriceId, siteUrl };
 }
 
 function supabaseAdmin() {
@@ -42,26 +44,49 @@ function supabaseAdmin() {
   });
 }
 
+function supabaseUserClient(accessToken) {
+  const url = (process.env.SUPABASE_URL || "").trim() || (process.env.VITE_SUPABASE_URL || "").trim();
+  const anonKey = (process.env.VITE_SUPABASE_ANON_KEY || "").trim();
+  if (!url || !anonKey || !accessToken) return null;
+  return createSupabaseAdmin(url, anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    global: { headers: { Authorization: `Bearer ${accessToken}` } },
+  });
+}
+
 function stripeReadyForCheckout() {
   const { secret, priceId, siteUrl } = stripeEnv();
   return Boolean(secret && priceId && siteUrl && supabaseAdmin());
 }
 
+function stripeReadyForEssayAnalysisCheckout() {
+  const { secret, essayAnalysisPriceId, siteUrl } = stripeEnv();
+  return Boolean(secret && essayAnalysisPriceId && siteUrl && supabaseAdmin());
+}
+
 /** 自检：便于配环境；不向客户端泄漏密钥 */
 function stripeConfigStatus() {
-  const { secret, webhookSecret, priceId, siteUrl } = stripeEnv();
+  const { secret, webhookSecret, priceId, essayAnalysisPriceId, siteUrl } = stripeEnv();
   const admin = supabaseAdmin();
   const blockers = [];
+  const essayBlockers = [];
   if (!secret) blockers.push("STRIPE_SECRET_KEY");
   if (!priceId) blockers.push("STRIPE_PRICE_ID");
   if (!siteUrl) blockers.push("SITE_URL");
   if (!admin) blockers.push("SUPABASE_SERVICE_ROLE_KEY");
   if (!webhookSecret) blockers.push("STRIPE_WEBHOOK_SECRET");
+  if (!secret) essayBlockers.push("STRIPE_SECRET_KEY");
+  if (!essayAnalysisPriceId) essayBlockers.push("STRIPE_ESSAY_ANALYSIS_PRICE_ID");
+  if (!siteUrl) essayBlockers.push("SITE_URL");
+  if (!admin) essayBlockers.push("SUPABASE_SERVICE_ROLE_KEY");
+  if (!webhookSecret) essayBlockers.push("STRIPE_WEBHOOK_SECRET");
   return {
     createCheckoutSession: Boolean(secret && priceId && siteUrl && admin),
+    createEssayAnalysisCheckoutSession: Boolean(secret && essayAnalysisPriceId && siteUrl && admin),
     /** 未配置时用户付完款也不会写入权益表 */
     webhookVerified: Boolean(secret && webhookSecret),
     envBlockers: blockers,
+    essayEnvBlockers: essayBlockers,
   };
 }
 
@@ -88,6 +113,8 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
   const session = event.data.object;
   const userId = session.metadata?.supabase_user_id;
   const applicationId = session.metadata?.application_id;
+  const reportId = session.metadata?.report_id;
+  const productType = session.metadata?.product_type || "report_unlock";
   if (!userId || !applicationId || typeof session.id !== "string") {
     console.error("[stripe webhook] missing metadata", session.id);
     return res.status(400).json({ error: "missing_metadata" });
@@ -119,6 +146,60 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
       applicationId,
     });
     return res.status(403).json({ error: "ownership_mismatch" });
+  }
+
+  if (productType === "essay_analysis") {
+    if (!reportId) {
+      console.error("[stripe webhook] missing essay report_id", session.id);
+      return res.status(400).json({ error: "missing_report_id" });
+    }
+
+    const { data: report, error: reportErr } = await admin
+      .from("saved_reports")
+      .select("id,user_id,application_id")
+      .eq("id", reportId)
+      .single();
+
+    if (reportErr || !report) {
+      console.error("[stripe webhook] essay report lookup failed", session.id, reportErr);
+      return res.status(400).json({ error: "report_not_found" });
+    }
+    if (report.user_id !== userId || report.application_id !== applicationId) {
+      console.error("[stripe webhook] essay ownership mismatch", session.id, {
+        metadataUserId: userId,
+        reportUserId: report.user_id,
+        metadataApplicationId: applicationId,
+        reportApplicationId: report.application_id,
+      });
+      return res.status(403).json({ error: "ownership_mismatch" });
+    }
+
+    const { data: existingEssay } = await admin
+      .from("essay_analysis_entitlements")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("application_id", applicationId)
+      .eq("report_id", reportId)
+      .eq("entitlement_kind", "per_session")
+      .maybeSingle();
+
+    if (!existingEssay) {
+      const { error: essayErr } = await admin.from("essay_analysis_entitlements").insert({
+        user_id: userId,
+        application_id: applicationId,
+        report_id: reportId,
+        entitlement_kind: "per_session",
+        stripe_checkout_session_id: session.id,
+        source: "stripe",
+      });
+
+      if (essayErr && essayErr.code !== "23505") {
+        console.error("[stripe webhook] essay entitlement insert", essayErr);
+        return res.status(500).json({ error: essayErr.message });
+      }
+    }
+
+    return res.json({ received: true });
   }
 
   const { error } = await admin.from("application_unlock_entitlements").upsert(
@@ -154,12 +235,14 @@ app.post("/api/stripe/create-checkout-session", async (req, res) => {
     return res.status(401).json({ error: "auth_required" });
   }
 
+  const essayCheckoutEnabled = process.env.VITE_ENABLE_ESSAY_ANALYSIS_CHECKOUT === "true";
   const admin = supabaseAdmin();
-  if (!admin) {
-    return res.status(503).json({ error: "supabase_admin_missing" });
+  const db = admin ?? (!essayCheckoutEnabled ? supabaseUserClient(token) : null);
+  if (!db) {
+    return res.status(503).json({ error: essayCheckoutEnabled ? "supabase_admin_missing" : "supabase_client_missing" });
   }
 
-  const { data: userData, error: userErr } = await admin.auth.getUser(token);
+  const { data: userData, error: userErr } = await db.auth.getUser(token);
   if (userErr || !userData.user) {
     return res.status(401).json({ error: "invalid_session" });
   }
@@ -170,7 +253,7 @@ app.post("/api/stripe/create-checkout-session", async (req, res) => {
     return res.status(400).json({ error: "report_id_required" });
   }
 
-  const { data: rep, error: repErr } = await admin
+  const { data: rep, error: repErr } = await db
     .from("saved_reports")
     .select("id,user_id,application_id")
     .eq("id", reportId)
@@ -203,6 +286,7 @@ app.post("/api/stripe/create-checkout-session", async (req, res) => {
       success_url: `${siteUrl}/?stripe_checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/?stripe_checkout=cancel`,
       metadata: {
+        product_type: "report_unlock",
         supabase_user_id: subject.id,
         application_id: rep.application_id,
         report_id: rep.id,
@@ -213,6 +297,87 @@ app.post("/api/stripe/create-checkout-session", async (req, res) => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("[stripe create-checkout-session]", msg);
+    return res.status(500).json({ error: msg });
+  }
+});
+
+app.post("/api/stripe/create-essay-analysis-checkout-session", async (req, res) => {
+  if (!stripeReadyForEssayAnalysisCheckout()) {
+    return res.status(503).json({ error: "essay_checkout_unavailable" });
+  }
+  const { secret, essayAnalysisPriceId, siteUrl } = stripeEnv();
+  const stripe = new Stripe(secret);
+
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+  if (!token) {
+    return res.status(401).json({ error: "auth_required" });
+  }
+
+  const admin = supabaseAdmin();
+  const db = admin ?? supabaseUserClient(token);
+  if (!db) {
+    return res.status(503).json({ error: "supabase_client_missing" });
+  }
+
+  const { data: userData, error: userErr } = await db.auth.getUser(token);
+  if (userErr || !userData.user) {
+    return res.status(401).json({ error: "invalid_session" });
+  }
+  const subject = userData.user;
+
+  const reportId = String(req.body?.reportId ?? "").trim();
+  if (!reportId) {
+    return res.status(400).json({ error: "report_id_required" });
+  }
+
+  const { data: rep, error: repErr } = await db
+    .from("saved_reports")
+    .select("id,user_id,application_id")
+    .eq("id", reportId)
+    .single();
+
+  if (repErr || !rep) {
+    return res.status(404).json({ error: "report_not_found" });
+  }
+  if (rep.user_id !== subject.id) {
+    return res.status(403).json({ error: "forbidden" });
+  }
+
+  const { data: existing } = await admin
+    .from("essay_analysis_entitlements")
+    .select("id")
+    .eq("user_id", subject.id)
+    .eq("application_id", rep.application_id)
+    .eq("report_id", rep.id)
+    .eq("entitlement_kind", "per_session")
+    .maybeSingle();
+
+  if (existing) {
+    return res.status(409).json({ error: "essay_already_unlocked" });
+  }
+
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      client_reference_id: subject.id,
+      customer_email: subject.email ?? undefined,
+      line_items: [{ price: essayAnalysisPriceId, quantity: 1 }],
+      success_url: `${siteUrl}/?essay_checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${siteUrl}/?essay_checkout=cancel`,
+      metadata: {
+        product_type: "essay_analysis",
+        entitlement_kind: "per_session",
+        supabase_user_id: subject.id,
+        application_id: rep.application_id,
+        report_id: rep.id,
+      },
+    });
+
+    return res.json({ url: session.url });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[stripe create-essay-analysis-checkout-session]", msg);
     return res.status(500).json({ error: msg });
   }
 });
@@ -841,6 +1006,309 @@ app.post("/api/report", async (req, res) => {
   }
 });
 
+function normalizeEssayAnalysis(raw, locale) {
+  const fallback = locale === "en" ? "This paragraph has a useful starting point, but it needs to become more specific." : "你现在这段的问题很典型：有一个可以写的方向，但还没有写到真正具体的地方。";
+  const obj = raw && typeof raw === "object" ? raw : {};
+  const verdict = String(obj.verdict || obj.directFeedback || obj.direct_feedback || fallback).trim().slice(0, 520);
+  const rawChecks = Array.isArray(obj.checks) ? obj.checks : [];
+  const rawIssues = Array.isArray(obj.issues) ? obj.issues : [];
+  const issues = rawIssues
+    .map((item) => String(item || "").trim().slice(0, 260))
+    .filter(Boolean)
+    .slice(0, 4);
+  const checks = rawChecks
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const label = String(item.label || "").trim().slice(0, 60);
+      const detail = String(item.detail || "").trim().slice(0, 500);
+      if (!label || !detail) return null;
+      return { label, ok: Boolean(item.ok), detail };
+    })
+    .filter(Boolean)
+    .slice(0, 6);
+  const nextRevision = String(obj.nextRevision || obj.next_revision || obj.revisionIdea || obj.revision_idea || "")
+    .trim()
+    .slice(0, 700);
+  const rewrite = obj.rewriteExample || obj.rewrite_example || {};
+  const rewriteBefore =
+    rewrite && typeof rewrite === "object" ? String(rewrite.before || rewrite.original || "").trim().slice(0, 260) : "";
+  const rewriteAfter =
+    rewrite && typeof rewrite === "object" ? String(rewrite.after || rewrite.revised || "").trim().slice(0, 360) : "";
+  return {
+    verdict,
+    issues:
+      issues.length > 0
+        ? issues
+        : checks.length > 0
+          ? checks.map((check) => check.detail).slice(0, 4)
+          : [
+              locale === "en"
+                ? "Right now the reader can understand the idea, but cannot yet see the moment clearly."
+                : "现在读者大概知道你想写什么，但还看不见那个具体瞬间。",
+            ],
+    checks:
+      checks.length > 0
+        ? checks
+        : [
+            {
+              label: locale === "en" ? "Specificity" : "具体性",
+              ok: false,
+              detail: locale === "en" ? "Add more concrete scene-level evidence." : "需要补充更具体的场景级证据。",
+            },
+          ],
+    nextRevision:
+      nextRevision ||
+      (locale === "en"
+        ? "For the next version, pick one moment and slow it down: what you saw, what choice you made, and what changed because of it."
+        : "下一版别急着总结，先抓住一个瞬间慢下来写：你看见了什么、你做了什么选择、这件事后来改变了什么。"),
+    rewriteExample: {
+      before:
+        rewriteBefore ||
+        (locale === "en" ? "I learned a lot from this experience." : "这段经历让我学到了很多。"),
+      after:
+        rewriteAfter ||
+        (locale === "en"
+          ? "Change it into a visible moment: “When ___ happened, I first ___, then I decided to ___.”"
+          : "可以改成一个看得见的瞬间：『当___发生时，我一开始___，后来我决定___。』"),
+    },
+  };
+}
+
+function buildEssayAnalysisPrompt({ locale, draft, formState, reportPayload, strategy }) {
+  const isEn = locale === "en";
+  const safeDraft = String(draft || "").trim().slice(0, 5000);
+  const compactForm = JSON.stringify(formState || {}).slice(0, 5000);
+  const compactReport = JSON.stringify(reportPayload || {}).slice(0, 7000);
+  const compactStrategy = JSON.stringify(strategy || {}).slice(0, 1600);
+
+  if (isEn) {
+    return `You are an experienced U.S. undergraduate application essay advisor.
+
+Read the student's raw paragraph and respond like a real advisor sitting next to them. Do NOT write the full essay for them.
+
+Use the latest report context, but do not sound like an analysis report. Be short, direct, conversational, and specific to this draft.
+
+Do not use abstract category labels such as "generic risk", "concrete scene", "change", "major connection", or "professional connection".
+Do not teach essay theory. Point to what is weak, what to do next, and show one sentence-level rewrite example.
+The opening must be a direct evaluation, like: "The issue with this paragraph is pretty common..."
+
+Current essay strategy:
+${compactStrategy}
+
+Student form state:
+${compactForm}
+
+Latest report JSON:
+${compactReport}
+
+Student draft:
+${safeDraft}
+
+Return only valid JSON:
+{
+  "verdict": "1-2 short conversational sentences. Start with direct evaluation.",
+  "issues": ["Natural-language issue 1, like something an advisor would say in chat.", "Natural-language issue 2."],
+  "nextRevision": "One concrete revision direction. No theory. Tell the student what to add or replace next.",
+  "rewriteExample": {
+    "before": "A weak phrase or sentence from the student's draft, or a close paraphrase.",
+    "after": "A more specific version of that sentence. Do not write the full essay."
+  }
+}`;
+  }
+
+  return `你是一位有经验的美国本科申请文书顾问。
+
+请读学生刚写出的原始段落，像坐在旁边帮他改文书的人一样反馈。不要替学生代写完整文书，不要输出成稿。
+
+必须结合最新报告上下文，但不要写得像分析报告。语气要短、直接、像对话，必须针对这段草稿本身。
+
+不要使用抽象分类标签，比如“是否generic”“具体情境”“变化”“专业关联”。
+不要长篇解释写作结构，不要上课。直接指出哪里不够、下一版怎么改，并给一个句子级的示例改写。
+开头必须是直接评价，例如：“你现在这段的问题很典型……”
+
+当前文书策略：
+${compactStrategy}
+
+学生问卷信息：
+${compactForm}
+
+最新报告 JSON：
+${compactReport}
+
+学生草稿：
+${safeDraft}
+
+只返回合法 JSON：
+{
+  "verdict": "1-2句短句。必须用直接评价开头。",
+  "issues": ["像顾问聊天一样指出一个具体问题。", "再指出一个具体问题。"],
+  "nextRevision": "一个具体修改思路。不要讲理论，直接告诉学生下一版加什么、删什么或替换什么。",
+  "rewriteExample": {
+    "before": "学生原文里较弱的一句话，或贴近原文的概括。",
+    "after": "把这句话改得更具体。不要写完整文书。"
+  }
+}`;
+}
+
+app.post("/api/essay/analyze", async (req, res) => {
+  const cfg = resolveLLMConfig();
+  if ("error" in cfg) {
+    console.error("[api/essay/analyze] llm_config", cfg.error);
+    return res.status(500).json({ error: IS_PROD ? "essay_service_unavailable" : cfg.error });
+  }
+
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+  if (!token) {
+    return res.status(401).json({ error: "auth_required" });
+  }
+
+  const admin = supabaseAdmin();
+  const db = admin ?? supabaseUserClient(token);
+  if (!db) {
+    return res.status(503).json({ error: "supabase_client_missing" });
+  }
+
+  const { data: userData, error: userErr } = await db.auth.getUser(token);
+  if (userErr || !userData.user) {
+    return res.status(401).json({ error: "invalid_session" });
+  }
+  const subject = userData.user;
+  const locale = resolveReportLocale(req.body || {});
+  const reportId = String(req.body?.reportId ?? "").trim();
+  const draft = String(req.body?.draft ?? "").trim();
+  if (!reportId) return res.status(400).json({ error: "report_id_required" });
+  if (draft.length < 6) return res.status(400).json({ error: "draft_too_short" });
+
+  const { data: rep, error: repErr } = await db
+    .from("saved_reports")
+    .select("id,user_id,application_id,report_payload")
+    .eq("id", reportId)
+    .single();
+  if (repErr || !rep) return res.status(404).json({ error: "report_not_found" });
+  if (rep.user_id !== subject.id) return res.status(403).json({ error: "forbidden" });
+
+  const { data: application, error: appErr } = await db
+    .from("saved_applications")
+    .select("id,user_id,form_state")
+    .eq("id", rep.application_id)
+    .single();
+  if (appErr || !application) return res.status(404).json({ error: "application_not_found" });
+  if (application.user_id !== subject.id) return res.status(403).json({ error: "forbidden" });
+
+  const { data: entitlement, error: entitlementErr } = await db
+    .from("essay_analysis_entitlements")
+    .select("id")
+    .eq("user_id", subject.id)
+    .eq("application_id", rep.application_id)
+    .eq("report_id", rep.id)
+    .eq("entitlement_kind", "per_session")
+    .maybeSingle();
+  if (entitlementErr) {
+    console.error("[api/essay/analyze] entitlement_lookup", entitlementErr);
+    return res.status(500).json({ error: "essay_entitlement_lookup_failed" });
+  }
+  if (!entitlement) {
+    return res.status(402).json({ error: "essay_analysis_locked" });
+  }
+
+  const { key, baseURL, model, region, provider } = cfg;
+  try {
+    const client = new OpenAI({
+      apiKey: key,
+      ...(baseURL ? { baseURL } : {}),
+      timeout: LLM_TIMEOUT_MS,
+      maxRetries: LLM_MAX_RETRIES,
+    });
+
+    const requestBody = {
+      model,
+      temperature: 0.35,
+      messages: [
+        {
+          role: "system",
+          content:
+            locale === "en"
+              ? "Return only valid JSON. Do not write the student's essay for them."
+              : "只返回合法 JSON。不要代写学生文书成稿。",
+        },
+        {
+          role: "user",
+          content: buildEssayAnalysisPrompt({
+            locale,
+            draft,
+            formState: application.form_state,
+            reportPayload: rep.report_payload,
+            strategy: req.body?.strategy,
+          }),
+        },
+      ],
+    };
+    if (provider !== "ollama") requestBody.response_format = { type: "json_object" };
+    if (COMPLETION_MAX_TOKENS > 0) requestBody.max_tokens = Math.min(COMPLETION_MAX_TOKENS, 1800);
+
+    const tLlm = Date.now();
+    const completion = await client.chat.completions.create(requestBody);
+    const llmMs = Date.now() - tLlm;
+    console.log(`[api/essay/analyze] llm_ms=${llmMs} model=${model}`);
+
+    const messageContent = completion.choices[0]?.message?.content;
+    if (!messageContent) return res.status(502).json({ error: "essay_analysis_empty" });
+    let parsed;
+    try {
+      parsed = JSON.parse(messageContent);
+    } catch (e) {
+      console.error("[api/essay/analyze] invalid_json", e);
+      return res.status(502).json({ error: IS_PROD ? "essay_analysis_failed" : "模型返回非合法 JSON" });
+    }
+
+    const analysis = normalizeEssayAnalysis(parsed, locale);
+    const now = new Date().toISOString();
+    const { error: draftSaveErr } = await db.from("essay_drafts").upsert(
+      {
+        user_id: subject.id,
+        application_id: rep.application_id,
+        report_id: rep.id,
+        draft_text: draft,
+        updated_at: now,
+      },
+      { onConflict: "user_id,report_id" },
+    );
+    if (draftSaveErr) {
+      console.error("[api/essay/analyze] draft_save", draftSaveErr);
+    }
+
+    const { data: savedAnalysis, error: analysisSaveErr } = await db
+      .from("essay_analyses")
+      .insert({
+        user_id: subject.id,
+        application_id: rep.application_id,
+        report_id: rep.id,
+        draft_text: draft,
+        analysis_payload: analysis,
+      })
+      .select("id,created_at")
+      .single();
+    if (analysisSaveErr) {
+      console.error("[api/essay/analyze] analysis_save", analysisSaveErr);
+    }
+
+    return res
+      .setHeader("X-LLM-Duration-Ms", String(llmMs))
+      .setHeader("X-LLM-Region", region)
+      .setHeader("X-LLM-Provider", provider)
+      .json({
+        ...analysis,
+        id: savedAnalysis?.id ?? undefined,
+        created_at: savedAnalysis?.created_at ?? undefined,
+      });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[api/essay/analyze] analysis_error", msg);
+    return res.status(500).json({ error: IS_PROD ? "essay_analysis_failed" : msg });
+  }
+});
+
 function isValidConsultEmail(s) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 }
@@ -903,9 +1371,10 @@ app.post("/api/consult-lead", (req, res) => {
 app.get("/api/health", (_req, res) => {
   const cfg = resolveLLMConfig();
   const stripeCheckout = stripeReadyForCheckout();
+  const essayAnalysisCheckout = stripeReadyForEssayAnalysisCheckout();
   const stripe = stripeConfigStatus();
   if ("error" in cfg) {
-    return res.json({ ok: true, llm: false, llmError: cfg.error, stripeCheckout, stripe });
+    return res.json({ ok: true, llm: false, llmError: cfg.error, stripeCheckout, essayAnalysisCheckout, stripe });
   }
   res.json({
     ok: true,
@@ -913,6 +1382,7 @@ app.get("/api/health", (_req, res) => {
     llmRegion: cfg.region,
     provider: cfg.provider,
     stripeCheckout,
+    essayAnalysisCheckout,
     stripe,
   });
 });

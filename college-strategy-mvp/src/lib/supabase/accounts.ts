@@ -28,6 +28,39 @@ export type ApplicationListItem = SavedApplicationRow & {
   report_count: number;
 };
 
+export type EssayDraftRow = {
+  id: string;
+  user_id: string;
+  application_id: string;
+  report_id: string;
+  draft_text: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EssayAnalysisPayload = {
+  verdict: string;
+  checks: { label: string; ok: boolean; detail: string }[];
+  issues?: string[];
+  nextRevision: string;
+  rewriteExample?: {
+    before: string;
+    after: string;
+  };
+  id?: string;
+  created_at?: string;
+};
+
+export type EssayAnalysisRow = {
+  id: string;
+  user_id: string;
+  application_id: string;
+  report_id: string;
+  draft_text: string;
+  analysis_payload: EssayAnalysisPayload;
+  created_at: string;
+};
+
 function defaultTitle(form: FormState, locale: Locale): string {
   const intake = getEffectiveIntake(form) || (locale === "en" ? "Application" : "申请");
   const d = new Date();
@@ -194,6 +227,20 @@ export async function fetchUnlockedApplicationIds(): Promise<string[]> {
   return ids;
 }
 
+/** 返回当前用户已解锁文书分析的 report id 列表（per-session 或未来订阅均由 SQL 权益表提供） */
+export async function fetchEssayAnalysisReportIds(): Promise<string[]> {
+  const sb = getSupabase();
+  if (!sb) return [];
+
+  const { data, error } = await sb
+    .from("essay_analysis_entitlements")
+    .select("report_id")
+    .eq("entitlement_kind", "per_session");
+  if (error) throw error;
+
+  return [...new Set((data ?? []).map((r) => r.report_id as string).filter(Boolean))];
+}
+
 export type RedeemInviteOutcome =
   | { ok: true; already?: boolean }
   | { ok: false; error: string };
@@ -219,6 +266,91 @@ export async function redeemInviteCode(code: string, applicationId: string): Pro
   }
   const errCode = typeof row.error === "string" ? row.error : "unknown";
   return { ok: false, error: errCode };
+}
+
+/** 需在 SQL 侧创建 redeem_essay_analysis_invite_code；见 supabase/schema-essay-analysis-entitlements.sql */
+export async function redeemEssayAnalysisInviteCode(
+  code: string,
+  applicationId: string,
+  reportId: string,
+): Promise<RedeemInviteOutcome> {
+  const sb = getSupabase();
+  if (!sb) throw new Error("Supabase not configured");
+
+  const { data, error } = await sb.rpc("redeem_essay_analysis_invite_code", {
+    p_code: code,
+    p_application_id: applicationId,
+    p_report_id: reportId,
+  });
+
+  if (error) throw error;
+
+  const row = data as Record<string, unknown> | null;
+  if (!row || typeof row !== "object") {
+    return { ok: false, error: "bad_response" };
+  }
+  if (row.ok === true) {
+    return { ok: true, already: Boolean(row.already) };
+  }
+  const errCode = typeof row.error === "string" ? row.error : "unknown";
+  return { ok: false, error: errCode };
+}
+
+export async function getEssayWorkspace(reportId: string): Promise<{
+  draft: EssayDraftRow | null;
+  analyses: EssayAnalysisRow[];
+}> {
+  const sb = getSupabase();
+  if (!sb) throw new Error("Supabase not configured");
+
+  const { data: draft, error: dErr } = await sb
+    .from("essay_drafts")
+    .select("*")
+    .eq("report_id", reportId)
+    .maybeSingle();
+  if (dErr) throw dErr;
+
+  const { data: analyses, error: aErr } = await sb
+    .from("essay_analyses")
+    .select("*")
+    .eq("report_id", reportId)
+    .order("created_at", { ascending: false })
+    .limit(6);
+  if (aErr) throw aErr;
+
+  return {
+    draft: draft ? (draft as EssayDraftRow) : null,
+    analyses: (analyses ?? []).map((row) => ({
+      ...(row as EssayAnalysisRow),
+      analysis_payload: (row as EssayAnalysisRow).analysis_payload as EssayAnalysisPayload,
+    })),
+  };
+}
+
+export async function upsertEssayDraft(input: {
+  applicationId: string;
+  reportId: string;
+  draftText: string;
+}): Promise<void> {
+  const sb = getSupabase();
+  if (!sb) throw new Error("Supabase not configured");
+
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const { error } = await sb.from("essay_drafts").upsert(
+    {
+      user_id: user.id,
+      application_id: input.applicationId,
+      report_id: input.reportId,
+      draft_text: input.draftText,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id,report_id" },
+  );
+  if (error) throw error;
 }
 
 export async function deleteApplication(applicationId: string): Promise<void> {
