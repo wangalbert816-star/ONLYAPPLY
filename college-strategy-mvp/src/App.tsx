@@ -658,10 +658,11 @@ export default function App() {
     setLoading(true);
     const t0 = performance.now();
     try {
+      const existingNotes = mergeSupplementaryNotes(answeredGapSupplementaryRef.current, profileFiveSupplementaryRef.current);
       const res = await fetch(apiUrl("/api/report"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(buildReportApiBody(form, undefined, locale)),
+        body: JSON.stringify(buildReportApiBody(form, existingNotes.length > 0 ? existingNotes : undefined, locale)),
       });
       const llmMs = res.headers.get("X-LLM-Duration-Ms");
       const data = await res.json();
@@ -679,14 +680,20 @@ export default function App() {
       setHighlightSchoolKeys(new Set());
       setRefreshError(null);
       setSubtleRefreshNotice(null);
+      answeredGapSupplementaryRef.current = existingNotes;
       profileFiveSupplementaryRef.current = [];
-      answeredGapSupplementaryRef.current = [];
       const nextReport = data as ReportPayload;
       setReport(nextReport);
       setView("report");
       setSessionSaved(false);
       setSaveNotice(null);
-      writePendingSave({ form, locale, report: nextReport, reportUnlocked: false });
+      writePendingSave({
+        form,
+        locale,
+        report: nextReport,
+        supplementaryNotes: existingNotes.length > 0 ? existingNotes : undefined,
+        reportUnlocked: false,
+      });
       if (user) {
         const saved = await persistToCloud({ formState: form, reportPayload: nextReport });
         if (cloudEntitlementsEnabled && saved.ok && saved.applicationId) {
@@ -815,10 +822,12 @@ export default function App() {
             setSaveBannerDismissed(false);
             clearPendingSave();
           }}
-          onEditForm={({ form: f, applicationId, targetStep }) => {
+          onEditForm={({ form: f, applicationId, supplementaryNotes, targetStep }) => {
             setForm(f);
             setCurrentApplicationId(applicationId);
             setReport(null);
+            answeredGapSupplementaryRef.current = supplementaryNotes ?? [];
+            profileFiveSupplementaryRef.current = [];
             setStep(targetStep ?? 1);
             setFlowStarted(true);
             setView("form");

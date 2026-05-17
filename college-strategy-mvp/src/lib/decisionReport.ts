@@ -74,15 +74,93 @@ function strategyLineForWeakest(weakest: ProfileDimensionKey, locale: Locale): s
   }
 }
 
-function headlineFromAvg(avg: number, locale: Locale): string {
+function hasStructuredActivities(form: FormState): boolean {
+  return (form.structuredActivities ?? []).some((item) =>
+    [item.name, item.role, item.description, item.outcome, item.award].some((value) => value.trim().length > 0),
+  );
+}
+
+function informationCompleteness(form: FormState): number {
+  let score = 0;
+  if (form.gpa.trim().length > 0) score += 1;
+  if (form.highSchoolSystem.trim().length > 0) score += 1;
+  if (form.testing === "test_optional" || form.satScore.trim() || form.actScore.trim()) score += 1;
+  if (form.majorPrimary.trim().length > 0) score += 1;
+  if (form.activities.trim().length > 20 || hasStructuredActivities(form)) score += 1;
+  if (form.riskStyle) score += 1;
+  if (form.budget) score += 1;
+  if (form.geoPrefs.length > 0 || form.dealbreakers.trim().length > 0) score += 1;
+  return score / 8;
+}
+
+function dimension(dimensions: ProfileDimension[], key: ProfileDimensionKey): ProfileDimension {
+  return dimensions.find((d) => d.key === key) ?? dimensions[0];
+}
+
+function headlineFromProfile(form: FormState, dimensions: ProfileDimension[], locale: Locale): string {
+  const avg = avgScore(dimensions);
+  const completeness = informationCompleteness(form);
+  const weakest = pickWeakestDimension(dimensions);
+  const strongest = pickStrongestDimension(dimensions);
+  const academic = dimension(dimensions, "academic");
+  const testing = dimension(dimensions, "testing");
+  const activities = dimension(dimensions, "activities");
+  const essays = dimension(dimensions, "essays");
+  const strategy = dimension(dimensions, "strategy");
+
   if (locale === "en") {
-    if (avg < 52) return "Right now your profile reads closer to a Top ~50 anchor school band.";
-    if (avg < 62) return "Right now you’re on the edge of Top ~30: strengths show, but a short board caps the ceiling.";
-    return "Right now you’re closer to a Top ~30 band—if the shortest board is fixed, the list firms up.";
+    if (completeness < 0.45) {
+      return "There isn’t enough signal yet to name a clean school band; I’d treat this as a conservative first read.";
+    }
+    if (academic.score < 48) {
+      return "The list should stay anchored in the Top 50–80 range until the transcript context is clearer.";
+    }
+    if (testing.score < 48 && form.testing === "will_submit") {
+      return "Your ceiling is hard to price until the promised test score becomes real; keep the first list conservative.";
+    }
+    if (activities.score < 50 && essays.score < 58) {
+      return "Academics may carry part of the case, but the application story is not ready for a Top 30-heavy list yet.";
+    }
+    if (avg >= 74 && academic.score >= 66 && (testing.score >= 66 || form.testing === "test_optional") && activities.score >= 62) {
+      return "You have a real high-selectivity case; the risk is overloading the list with reach schools, not lacking ambition.";
+    }
+    if (avg >= 64 && weakest.score >= 54) {
+      return "You are closer to a Top 30–50 main battlefield; the next move is tightening fit proof, not adding more names.";
+    }
+    if (strongest.key === "academic" && activities.score < 58) {
+      return "Your academic signal is the anchor, but activity evidence still keeps the list closer to Top 40–60 for now.";
+    }
+    if (strategy.score < 54) {
+      return "The profile has usable signals, but the school list will wobble until budget, geography, and risk posture are fixed.";
+    }
+    return "This reads like a Top 40–60 planning case right now: workable, but not stable enough to call Top 30 by default.";
   }
-  if (avg < 52) return "你目前整体更落在 Top 50 主战场；想把冲刺说服力抬上去，得先把材料短板抬一档。";
-  if (avg < 62) return "你目前处在 Top 30 边缘：有几项能打，但最短的那块会拽住你的上限。";
-  return "你目前更靠近 Top 30 主战场；把最短一块补齐，名单会更站得住。";
+
+  if (completeness < 0.45) {
+    return "现在信息还不够给出稳定档位；系统会先按保守模式处理，别急着把目标锁死。";
+  }
+  if (academic.score < 48) {
+    return "当前名单更应该先锚在 Top 50–80；成绩单口径没补清前，不适合直接喊 Top 30。";
+  }
+  if (testing.score < 48 && form.testing === "will_submit") {
+    return "你现在的上限还卡在标化承诺上：说要交分但分数没落地，名单先别推太激进。";
+  }
+  if (activities.score < 50 && essays.score < 58) {
+    return "学术可能能撑住一部分，但活动和叙事还不够，暂时不适合做 Top 30 密集名单。";
+  }
+  if (avg >= 74 && academic.score >= 66 && (testing.score >= 66 || form.testing === "test_optional") && activities.score >= 62) {
+    return "你已经有冲高选择性学校的基础；真正要控的是名单风险，不是继续证明自己够不够敢。";
+  }
+  if (avg >= 64 && weakest.score >= 54) {
+    return "你更接近 Top 30–50 主战场；下一步不是加学校，而是把匹配证据写得更硬。";
+  }
+  if (strongest.key === "academic" && activities.score < 58) {
+    return "你的学术信号是锚点，但活动证据还没跟上；现在更像 Top 40–60 的规划局面。";
+  }
+  if (strategy.score < 54) {
+    return "你的材料里有可用信号，但预算、地区和风险姿态没定清，名单会比较容易摇摆。";
+  }
+  return "目前更像 Top 40–60 的规划盘：不是没有机会，而是还不足以默认按 Top 30 来排。";
 }
 
 function sublineFromForm(form: FormState, weakest: ProfileDimension, locale: Locale): string | null {
@@ -95,10 +173,9 @@ function sublineFromForm(form: FormState, weakest: ProfileDimension, locale: Loc
 }
 
 export function buildOverallVerdict(form: FormState, dimensions: ProfileDimension[], locale: Locale): OverallVerdict {
-  const avg = avgScore(dimensions);
   const weakest = pickWeakestDimension(dimensions);
   const strongest = pickStrongestDimension(dimensions);
-  const headline = headlineFromAvg(avg, locale);
+  const headline = headlineFromProfile(form, dimensions, locale);
   const subline = sublineFromForm(form, weakest, locale);
 
   if (locale === "en") {

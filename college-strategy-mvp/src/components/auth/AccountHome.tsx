@@ -36,7 +36,7 @@ type Props = {
     supplementaryNotes?: SupplementaryNote[];
     reportUnlocked: boolean;
   }) => void;
-  onEditForm: (payload: { form: FormState; applicationId: string; targetStep?: number }) => void;
+  onEditForm: (payload: { form: FormState; applicationId: string; supplementaryNotes?: SupplementaryNote[]; targetStep?: number }) => void;
   onNewApplication: () => void;
   onOpenAppLinks: (e: MouseEvent<HTMLButtonElement>) => void;
 };
@@ -540,6 +540,10 @@ export function AccountHome({
     });
   }
 
+  function latestSupplementaryNotesFor(appId: string): SupplementaryNote[] {
+    return reportsByApp[appId]?.[0]?.supplementary_notes ?? [];
+  }
+
   async function openLatestReport(app: ApplicationListItem) {
     let reports = reportsByApp[app.id];
     if (!reports) {
@@ -561,7 +565,11 @@ export function AccountHome({
 
   function handlePrimaryContinue() {
     if (currentApp) {
-      onEditForm({ form: currentApp.form_state, applicationId: currentApp.id });
+      onEditForm({
+        form: currentApp.form_state,
+        applicationId: currentApp.id,
+        supplementaryNotes: latestSupplementaryNotesFor(currentApp.id),
+      });
       return;
     }
     onNewApplication();
@@ -618,7 +626,12 @@ export function AccountHome({
     if (!currentApp) return;
     const nextForm = await saveProfileDraft();
     if (!nextForm) return;
-    onEditForm({ form: nextForm, applicationId: currentApp.id, targetStep: 1 });
+    onEditForm({
+      form: nextForm,
+      applicationId: currentApp.id,
+      supplementaryNotes: latestSupplementaryNotesFor(currentApp.id),
+      targetStep: 1,
+    });
   }
 
   function updateActivityDraft(id: string, patch: Partial<ActivityItem>) {
@@ -675,7 +688,12 @@ export function AccountHome({
     if (!currentApp) return;
     const nextForm = await saveActivityProfile();
     if (!nextForm) return;
-    onEditForm({ form: nextForm, applicationId: currentApp.id, targetStep: 3 });
+    onEditForm({
+      form: nextForm,
+      applicationId: currentApp.id,
+      supplementaryNotes: latestSupplementaryNotesFor(currentApp.id),
+      targetStep: 3,
+    });
   }
 
   useEffect(() => {
@@ -1522,7 +1540,13 @@ export function AccountHome({
                   <button
                     type="button"
                     className="btn btn-secondary btn-sm"
-                    onClick={() => onEditForm({ form: app.form_state, applicationId: app.id })}
+                    onClick={() =>
+                      onEditForm({
+                        form: app.form_state,
+                        applicationId: app.id,
+                        supplementaryNotes: latestSupplementaryNotesFor(app.id),
+                      })
+                    }
                   >
                     {t("auth.accountContinueShort")}
                   </button>
