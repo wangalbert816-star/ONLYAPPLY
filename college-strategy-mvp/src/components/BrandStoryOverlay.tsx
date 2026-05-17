@@ -76,7 +76,7 @@ const storyCopy = {
       { text: "The hardest part is not effort. It is seeing where you stand after you have already tried so hard.", kind: "emphasis" },
       { text: "I hope OnlyApply can make that part a little lighter, and a little clearer." },
     ] satisfies LetterParagraph[],
-    signature: ["Someone who has been through it", "Founder, OnlyApply", "Written at Babson College"],
+    signature: ["Someone who has been through it", "Founder of OnlyApply", "Written at Babson College"],
     start: "Start Questionnaire",
   },
 };
