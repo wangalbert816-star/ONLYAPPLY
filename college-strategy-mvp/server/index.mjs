@@ -54,6 +54,12 @@ function supabaseUserClient(accessToken) {
   });
 }
 
+function checkoutApplicationTitle(form, locale) {
+  const intake = String(form?.intakeTerm || form?.intakeOtherDetail || "").trim();
+  if (intake) return intake;
+  return locale === "en" ? "Application profile" : "申请档案";
+}
+
 function stripeReadyForCheckout() {
   const { secret, priceId, siteUrl } = stripeEnv();
   return Boolean(secret && priceId && siteUrl && supabaseAdmin());
@@ -235,33 +241,96 @@ app.post("/api/stripe/create-checkout-session", async (req, res) => {
     return res.status(401).json({ error: "auth_required" });
   }
 
-  const essayCheckoutEnabled = process.env.VITE_ENABLE_ESSAY_ANALYSIS_CHECKOUT === "true";
   const admin = supabaseAdmin();
-  const db = admin ?? (!essayCheckoutEnabled ? supabaseUserClient(token) : null);
-  if (!db) {
-    return res.status(503).json({ error: essayCheckoutEnabled ? "supabase_admin_missing" : "supabase_client_missing" });
+  if (!admin) {
+    return res.status(503).json({ error: "supabase_admin_missing" });
   }
 
-  const { data: userData, error: userErr } = await db.auth.getUser(token);
+  const { data: userData, error: userErr } = await admin.auth.getUser(token);
   if (userErr || !userData.user) {
     return res.status(401).json({ error: "invalid_session" });
   }
   const subject = userData.user;
 
   const reportId = String(req.body?.reportId ?? "").trim();
-  if (!reportId) {
-    return res.status(400).json({ error: "report_id_required" });
+  let rep = null;
+  if (reportId) {
+    const { data, error: repErr } = await admin
+      .from("saved_reports")
+      .select("id,user_id,application_id")
+      .eq("id", reportId)
+      .single();
+
+    if (repErr || !data) {
+      return res.status(404).json({ error: "report_not_found" });
+    }
+    rep = data;
+  } else {
+    const form = req.body?.form;
+    const report = req.body?.report;
+    const locale = req.body?.locale === "en" ? "en" : "zh";
+    const applicationId = String(req.body?.applicationId ?? "").trim();
+    const supplementaryNotes = Array.isArray(req.body?.supplementaryNotes) ? req.body.supplementaryNotes : null;
+
+    if (!form || !report) {
+      return res.status(400).json({ error: "report_snapshot_required" });
+    }
+
+    const now = new Date().toISOString();
+    let appId = applicationId;
+    if (appId) {
+      const { data: updatedApp, error: appUpdateErr } = await admin
+        .from("saved_applications")
+        .update({
+          form_state: form,
+          locale,
+          updated_at: now,
+        })
+        .eq("id", appId)
+        .eq("user_id", subject.id)
+        .select("id")
+        .maybeSingle();
+      if (appUpdateErr) {
+        return res.status(500).json({ error: appUpdateErr.message });
+      }
+      if (!updatedApp) {
+        return res.status(403).json({ error: "forbidden" });
+      }
+    } else {
+      const { data: newApp, error: appInsertErr } = await admin
+        .from("saved_applications")
+        .insert({
+          user_id: subject.id,
+          title: checkoutApplicationTitle(form, locale),
+          form_state: form,
+          locale,
+          updated_at: now,
+        })
+        .select("id")
+        .single();
+      if (appInsertErr || !newApp) {
+        return res.status(500).json({ error: appInsertErr?.message ?? "application_save_failed" });
+      }
+      appId = newApp.id;
+    }
+
+    const { data: newReport, error: reportInsertErr } = await admin
+      .from("saved_reports")
+      .insert({
+        user_id: subject.id,
+        application_id: appId,
+        report_payload: report,
+        supplementary_notes: supplementaryNotes?.length ? supplementaryNotes : null,
+        report_unlocked: false,
+      })
+      .select("id,user_id,application_id")
+      .single();
+    if (reportInsertErr || !newReport) {
+      return res.status(500).json({ error: reportInsertErr?.message ?? "report_save_failed" });
+    }
+    rep = newReport;
   }
 
-  const { data: rep, error: repErr } = await db
-    .from("saved_reports")
-    .select("id,user_id,application_id")
-    .eq("id", reportId)
-    .single();
-
-  if (repErr || !rep) {
-    return res.status(404).json({ error: "report_not_found" });
-  }
   if (rep.user_id !== subject.id) {
     return res.status(403).json({ error: "forbidden" });
   }
@@ -293,7 +362,7 @@ app.post("/api/stripe/create-checkout-session", async (req, res) => {
       },
     });
 
-    return res.json({ url: session.url });
+    return res.json({ url: session.url, applicationId: rep.application_id, reportId: rep.id });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("[stripe create-checkout-session]", msg);

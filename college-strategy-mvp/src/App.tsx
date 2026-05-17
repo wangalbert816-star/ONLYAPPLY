@@ -370,14 +370,7 @@ export default function App() {
     setCheckoutBusy(true);
     try {
       let appId = currentApplicationId;
-      let repId = currentReportId;
-
-      if (!appId || !repId) {
-        const saved = await persistToCloud({ formState: form, reportPayload: report, accessToken });
-        if (!saved.ok || !saved.applicationId || !saved.reportId) return;
-        appId = saved.applicationId;
-        repId = saved.reportId;
-      }
+      const repId = currentReportId;
 
       const refreshed = await refreshEntitlements();
       if (appId && refreshed.includes(appId)) {
@@ -392,10 +385,20 @@ export default function App() {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ reportId: repId }),
+        body: JSON.stringify(
+          repId
+            ? { reportId: repId }
+            : {
+                applicationId: appId,
+                form,
+                locale,
+                report,
+                supplementaryNotes: mergeSupplementaryNotes(answeredGapSupplementaryRef.current, profileFiveSupplementaryRef.current),
+              },
+        ),
       });
 
-      let data: { error?: string; url?: string } = {};
+      let data: { applicationId?: string; error?: string; reportId?: string; url?: string } = {};
       try {
         data = (await res.json()) as typeof data;
       } catch {
@@ -412,6 +415,16 @@ export default function App() {
       if (!res.ok || typeof data.url !== "string") {
         setSaveNotice(translateCheckoutApiError(data.error, t));
         return;
+      }
+
+      if (data.applicationId) {
+        appId = data.applicationId;
+        setCurrentApplicationId(data.applicationId);
+      }
+      if (data.reportId) {
+        setCurrentReportId(data.reportId);
+        setSessionSaved(true);
+        clearPendingSave();
       }
 
       window.location.assign(data.url);
