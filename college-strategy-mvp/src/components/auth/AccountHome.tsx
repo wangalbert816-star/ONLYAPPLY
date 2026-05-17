@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { useLanguage } from "../../i18n/LanguageContext";
 import {
@@ -8,6 +8,7 @@ import {
   getApplicationReports,
   listApplications,
   redeemEssayAnalysisInviteCode,
+  updateApplicationForm,
   upsertEssayDraft,
   type ApplicationListItem,
   type EssayAnalysisPayload,
@@ -20,7 +21,7 @@ import { isInviteCodesEnabled } from "../../lib/inviteCodes";
 import { formatSupabaseError } from "../../lib/supabase/errors";
 import { buildBiggestGapBlock, buildOverallVerdict } from "../../lib/decisionReport";
 import { buildFiveDimensionProfile, type ProfileDimensionKey } from "../../lib/fiveDimensionProfile";
-import type { FormState, ReportPayload, SupplementaryNote } from "../../types";
+import type { ActivityItem, FormState, ReportPayload, SupplementaryNote } from "../../types";
 import { BrandLogo } from "../BrandLogo";
 import "./AccountHome.css";
 
@@ -35,7 +36,7 @@ type Props = {
     supplementaryNotes?: SupplementaryNote[];
     reportUnlocked: boolean;
   }) => void;
-  onEditForm: (payload: { form: FormState; applicationId: string }) => void;
+  onEditForm: (payload: { form: FormState; applicationId: string; targetStep?: number }) => void;
   onNewApplication: () => void;
   onOpenAppLinks: (e: MouseEvent<HTMLButtonElement>) => void;
 };
@@ -136,6 +137,54 @@ function saveEssayDraft(reportId: string, value: string) {
   } catch {
     /* ignore */
   }
+}
+
+function createActivityItem(): ActivityItem {
+  const id =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `act-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return {
+    id,
+    name: "",
+    kind: "",
+    grades: "",
+    hours: "",
+    role: "",
+    description: "",
+    outcome: "",
+    award: "",
+    scope: "",
+    majorRelated: "",
+    proof: "",
+  };
+}
+
+function activityKindLabel(kind: ActivityItem["kind"], locale: "zh" | "en"): string {
+  const zh: Record<string, string> = {
+    activity: "活动",
+    competition: "竞赛",
+    research: "科研",
+    internship: "实习",
+    club: "社团",
+    service: "公益",
+    arts: "艺术",
+    sports: "体育",
+    other: "其他",
+  };
+  const en: Record<string, string> = {
+    activity: "Activity",
+    competition: "Competition",
+    research: "Research",
+    internship: "Internship",
+    club: "Club",
+    service: "Service",
+    arts: "Arts",
+    sports: "Sports",
+    other: "Other",
+  };
+  if (!kind) return "";
+  return (locale === "en" ? en : zh)[kind] ?? kind;
 }
 
 type EssayDraftAnalysis = EssayAnalysisPayload;
@@ -295,6 +344,15 @@ export function AccountHome({
   const [essayAnalyses, setEssayAnalyses] = useState<EssayAnalysisRow[]>([]);
   const [essayWorkspaceLoading, setEssayWorkspaceLoading] = useState(false);
   const [essayDraftSaveState, setEssayDraftSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [activityEditorOpen, setActivityEditorOpen] = useState(false);
+  const [activityDraft, setActivityDraft] = useState<ActivityItem[]>([]);
+  const [activitySaveBusy, setActivitySaveBusy] = useState(false);
+  const [activitySaveNotice, setActivitySaveNotice] = useState<string | null>(null);
+  const lastSavedActivitySnapshotRef = useRef("");
+  const [profileEditorOpen, setProfileEditorOpen] = useState(false);
+  const [profileDraft, setProfileDraft] = useState<FormState | null>(null);
+  const [profileSaveBusy, setProfileSaveBusy] = useState(false);
+  const [profileSaveNotice, setProfileSaveNotice] = useState<string | null>(null);
 
   const currentApp = apps[0] ?? null;
   const currentReports = currentApp ? reportsByApp[currentApp.id] ?? [] : [];
@@ -321,6 +379,15 @@ export function AccountHome({
   );
   const essayAnalysisUnlocked = Boolean(latestReport && essayUnlockedReportIds.includes(latestReport.id));
   const visibleApps = historyExpanded ? apps : apps.slice(0, 2);
+
+  useEffect(() => {
+    const nextActivities = currentApp?.form_state.structuredActivities ?? [];
+    setActivityDraft(nextActivities);
+    lastSavedActivitySnapshotRef.current = JSON.stringify(nextActivities);
+    setActivitySaveNotice(null);
+    setProfileDraft(currentApp?.form_state ?? null);
+    setProfileSaveNotice(null);
+  }, [currentApp?.id]);
 
   useEffect(() => {
     setEssayDraftOpen(false);
@@ -499,6 +566,129 @@ export function AccountHome({
     }
     onNewApplication();
   }
+
+  function openProfileEditor() {
+    setProfileEditorOpen(true);
+  }
+
+  function handleProfileGridKeyDown(e: KeyboardEvent<HTMLDListElement>) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openProfileEditor();
+    }
+  }
+
+  function updateProfileDraft<K extends keyof FormState>(key: K, value: FormState[K]) {
+    setProfileDraft((prev) => (prev ? { ...prev, [key]: value } : prev));
+    setProfileSaveNotice(null);
+  }
+
+  async function saveProfileDraft(): Promise<FormState | null> {
+    if (!currentApp || !profileDraft) return null;
+    const nextForm = {
+      ...profileDraft,
+      structuredActivities: activityDraft,
+    };
+    setProfileSaveBusy(true);
+    setProfileSaveNotice(null);
+    try {
+      await updateApplicationForm(currentApp.id, nextForm, locale);
+      setApps((prev) =>
+        prev.map((app) =>
+          app.id === currentApp.id ? { ...app, form_state: nextForm, locale, updated_at: new Date().toISOString() } : app,
+        ),
+      );
+      setProfileDraft(nextForm);
+      setActivityDraft(nextForm.structuredActivities ?? []);
+      setProfileSaveNotice(t("auth.accountProfileSaved"));
+      return nextForm;
+    } catch (e) {
+      setProfileSaveNotice(formatSupabaseError(e, t));
+      return null;
+    } finally {
+      setProfileSaveBusy(false);
+    }
+  }
+
+  async function handleSaveProfileDraft() {
+    await saveProfileDraft();
+  }
+
+  async function handleUpdateReportFromProfile() {
+    if (!currentApp) return;
+    const nextForm = await saveProfileDraft();
+    if (!nextForm) return;
+    onEditForm({ form: nextForm, applicationId: currentApp.id, targetStep: 1 });
+  }
+
+  function updateActivityDraft(id: string, patch: Partial<ActivityItem>) {
+    setActivityDraft((prev) => prev.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+    setActivitySaveNotice(null);
+  }
+
+  function addActivityDraft() {
+    setActivityDraft((prev) => [...prev, createActivityItem()]);
+    setActivityEditorOpen(true);
+    setActivitySaveNotice(null);
+  }
+
+  function removeActivityDraft(id: string) {
+    setActivityDraft((prev) => prev.filter((item) => item.id !== id));
+    setActivitySaveNotice(null);
+  }
+
+  function buildActivityUpdatedForm(): FormState | null {
+    if (!currentApp) return null;
+    return {
+      ...(profileDraft ?? currentApp.form_state),
+      structuredActivities: activityDraft,
+    };
+  }
+
+  async function saveActivityProfile(options: { silent?: boolean } = {}): Promise<FormState | null> {
+    if (!currentApp) return null;
+    const nextForm = buildActivityUpdatedForm();
+    if (!nextForm) return null;
+    const snapshot = JSON.stringify(nextForm.structuredActivities ?? []);
+    setActivitySaveBusy(true);
+    setActivitySaveNotice(options.silent ? t("auth.accountActivitySaving") : null);
+    try {
+      await updateApplicationForm(currentApp.id, nextForm, locale);
+      setApps((prev) =>
+        prev.map((app) =>
+          app.id === currentApp.id ? { ...app, form_state: nextForm, locale, updated_at: new Date().toISOString() } : app,
+        ),
+      );
+      lastSavedActivitySnapshotRef.current = snapshot;
+      setProfileDraft(nextForm);
+      setActivitySaveNotice(t("auth.accountActivitySaved"));
+      return nextForm;
+    } catch (e) {
+      setActivitySaveNotice(formatSupabaseError(e, t));
+      return null;
+    } finally {
+      setActivitySaveBusy(false);
+    }
+  }
+
+  async function handleUpdateReportFromActivities() {
+    if (!currentApp) return;
+    const nextForm = await saveActivityProfile();
+    if (!nextForm) return;
+    onEditForm({ form: nextForm, applicationId: currentApp.id, targetStep: 3 });
+  }
+
+  useEffect(() => {
+    if (!currentApp) return;
+    const snapshot = JSON.stringify(activityDraft);
+    if (snapshot === lastSavedActivitySnapshotRef.current) return;
+
+    const id = window.setTimeout(() => {
+      void saveActivityProfile({ silent: true });
+    }, 900);
+
+    return () => window.clearTimeout(id);
+  }, [activityDraft, currentApp?.id]);
 
   function handleEssayDraftChange(value: string) {
     setEssayDraft(value);
@@ -732,7 +922,14 @@ export function AccountHome({
                 <summary>{t("auth.accountInfoToggle")}</summary>
                 <p className="account-info-evidence__lead">{t("auth.accountInfoLead")}</p>
                 {applicationInfoItems.length > 0 ? (
-                  <dl className="account-info-grid">
+                  <dl
+                    className="account-info-grid account-info-grid--editable"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={t("auth.accountProfileEdit")}
+                    onClick={openProfileEditor}
+                    onKeyDown={handleProfileGridKeyDown}
+                  >
                     {applicationInfoItems.map((item) => (
                       <div key={item.label} className="account-info-grid__item">
                         <dt>{item.label}</dt>
@@ -742,6 +939,143 @@ export function AccountHome({
                   </dl>
                 ) : (
                   <p className="account-home__muted">{t("auth.accountInfoEmpty")}</p>
+                )}
+                <button type="button" className="account-info-edit" onClick={() => setProfileEditorOpen((v) => !v)}>
+                  {profileEditorOpen ? t("auth.accountProfileCollapse") : t("auth.accountProfileEdit")}
+                </button>
+                {profileEditorOpen && profileDraft && (
+                  <div className="account-profile-editor">
+                    <div className="account-profile-editor__grid">
+                      <label>
+                        <span>{t("form.gpa")}</span>
+                        <input
+                          value={profileDraft.gpa}
+                          onChange={(e) => updateProfileDraft("gpa", e.target.value)}
+                          placeholder={t("form.placeholder.gpa")}
+                        />
+                      </label>
+                      <label>
+                        <span>{t("form.hs")}</span>
+                        <input
+                          value={profileDraft.highSchoolSystem}
+                          onChange={(e) => updateProfileDraft("highSchoolSystem", e.target.value)}
+                          placeholder={t("form.hs")}
+                        />
+                      </label>
+                      <label>
+                        <span>{t("form.sat")}</span>
+                        <input
+                          value={profileDraft.satScore}
+                          onChange={(e) => updateProfileDraft("satScore", e.target.value)}
+                          placeholder={t("form.placeholder.sat")}
+                        />
+                      </label>
+                      <label>
+                        <span>{t("form.act")}</span>
+                        <input
+                          value={profileDraft.actScore}
+                          onChange={(e) => updateProfileDraft("actScore", e.target.value)}
+                          placeholder={t("form.placeholder.act")}
+                        />
+                      </label>
+                      <label>
+                        <span>{t("form.major")}</span>
+                        <input
+                          value={profileDraft.majorPrimary}
+                          onChange={(e) => updateProfileDraft("majorPrimary", e.target.value)}
+                          placeholder={t("form.placeholder.major")}
+                        />
+                      </label>
+                      <label>
+                        <span>{t("form.major2")}</span>
+                        <input
+                          value={profileDraft.majorSecondary}
+                          onChange={(e) => updateProfileDraft("majorSecondary", e.target.value)}
+                          placeholder={t("form.placeholder.major2")}
+                        />
+                      </label>
+                      <label>
+                        <span>{t("form.citizenship")}</span>
+                        <input
+                          value={profileDraft.citizenship}
+                          onChange={(e) => updateProfileDraft("citizenship", e.target.value)}
+                          placeholder={t("form.placeholder.citizenship")}
+                        />
+                      </label>
+                      <label>
+                        <span>{t("form.residenceRegion")}</span>
+                        <input
+                          value={profileDraft.residenceRegion}
+                          onChange={(e) => updateProfileDraft("residenceRegion", e.target.value)}
+                          placeholder={t("form.placeholder.residenceRegion")}
+                        />
+                      </label>
+                      <label>
+                        <span>{t("form.identity")}</span>
+                        <select
+                          value={profileDraft.applicantIdentity}
+                          onChange={(e) => updateProfileDraft("applicantIdentity", e.target.value as FormState["applicantIdentity"])}
+                        >
+                          <option value="">{t("form.opt.choose")}</option>
+                          <option value="intl">{t("form.opt.idIntl")}</option>
+                          <option value="us_citizen">{t("form.opt.idUs")}</option>
+                          <option value="other">{t("form.opt.idOther")}</option>
+                        </select>
+                      </label>
+                      <label>
+                        <span>{t("form.budget")}</span>
+                        <select
+                          value={profileDraft.budget}
+                          onChange={(e) => updateProfileDraft("budget", e.target.value as FormState["budget"])}
+                        >
+                          <option value="">{t("form.opt.choose")}</option>
+                          <option value="full_pay">{t("form.opt.budgetFull")}</option>
+                          <option value="need_aid">{t("form.opt.budgetAid")}</option>
+                          <option value="unsure">{t("form.opt.budgetUnsure")}</option>
+                        </select>
+                      </label>
+                      <label>
+                        <span>{t("form.testing")}</span>
+                        <select
+                          value={profileDraft.testing}
+                          onChange={(e) => updateProfileDraft("testing", e.target.value as FormState["testing"])}
+                        >
+                          <option value="">{t("form.opt.choose")}</option>
+                          <option value="test_optional">{t("form.opt.testOpt")}</option>
+                          <option value="will_submit">{t("form.opt.testSubmit")}</option>
+                        </select>
+                      </label>
+                      <label>
+                        <span>{t("form.risk")}</span>
+                        <select
+                          value={profileDraft.riskStyle}
+                          onChange={(e) => updateProfileDraft("riskStyle", e.target.value as FormState["riskStyle"])}
+                        >
+                          <option value="">{t("form.opt.choose")}</option>
+                          <option value="conservative">{t("form.opt.riskCon")}</option>
+                          <option value="balanced">{t("form.opt.riskBal")}</option>
+                          <option value="aggressive">{t("form.opt.riskAgg")}</option>
+                        </select>
+                      </label>
+                    </div>
+                    <label className="account-profile-editor__full">
+                      <span>{t("form.deal")}</span>
+                      <textarea
+                        value={profileDraft.dealbreakers}
+                        onChange={(e) => updateProfileDraft("dealbreakers", e.target.value)}
+                        placeholder={t("form.placeholder.deal")}
+                      />
+                    </label>
+                    {profileSaveNotice && <p className="account-profile-editor__notice">{profileSaveNotice}</p>}
+                    <div className="account-profile-editor__actions">
+                      <button type="button" className="btn btn-secondary" onClick={() => void handleSaveProfileDraft()} disabled={profileSaveBusy}>
+                        {profileSaveBusy ? t("auth.accountProfileSaving") : t("auth.accountProfileSave")}
+                      </button>
+                      <button type="button" className="btn btn-primary" onClick={() => void handleUpdateReportFromProfile()} disabled={profileSaveBusy}>
+                        {t("auth.accountProfileUpdateReport")}
+                      </button>
+                    </div>
+                  </div>
                 )}
               </details>
             </>
@@ -761,6 +1095,174 @@ export function AccountHome({
             )}
           </div>
         </section>
+
+        {currentApp && (
+          <section className="account-activity-card" aria-labelledby="account-activity-title">
+            <div className="account-activity-card__head">
+              <div>
+                <p className="account-activity-card__kicker">{t("auth.accountActivityKicker")}</p>
+                <h2 id="account-activity-title">{t("auth.accountActivityTitle")}</h2>
+                <p>{t("auth.accountActivityLead")}</p>
+              </div>
+              <span>{t("auth.accountActivityCount", { n: activityDraft.length })}</span>
+            </div>
+
+            {!activityEditorOpen && activityDraft.length > 0 && (
+              <div className="account-activity-preview">
+                {activityDraft.slice(0, 3).map((item) => (
+                  <div key={item.id}>
+                    <strong>{item.name || t("auth.accountActivityUntitled")}</strong>
+                    <span>
+                      {[activityKindLabel(item.kind, locale), item.role, item.award || item.outcome].filter(Boolean).join(" · ")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {activityEditorOpen && (
+              <div className="account-activity-editor">
+                {activityDraft.length === 0 ? (
+                  <p className="account-home__muted">{t("auth.accountActivityEmpty")}</p>
+                ) : (
+                  activityDraft.map((item, index) => (
+                    <article className="account-activity-item" key={item.id}>
+                      <div className="account-activity-item__head">
+                        <strong>{t("wizard.s3.activities.cardTitle", { n: index + 1 })}</strong>
+                        <button type="button" onClick={() => removeActivityDraft(item.id)}>
+                          {t("wizard.s3.activities.remove")}
+                        </button>
+                      </div>
+                      <div className="account-activity-item__grid">
+                        <label>
+                          <span>{t("wizard.s3.activities.name")}</span>
+                          <input
+                            value={item.name}
+                            onChange={(e) => updateActivityDraft(item.id, { name: e.target.value })}
+                            placeholder={t("wizard.s3.activities.namePh")}
+                          />
+                        </label>
+                        <label>
+                          <span>{t("wizard.s3.activities.kind")}</span>
+                          <select
+                            value={item.kind}
+                            onChange={(e) => updateActivityDraft(item.id, { kind: e.target.value as ActivityItem["kind"] })}
+                          >
+                            <option value="">{t("form.opt.choose")}</option>
+                            {(["activity", "competition", "research", "internship", "club", "service", "arts", "sports", "other"] as const).map(
+                              (kind) => (
+                                <option key={kind} value={kind}>
+                                  {t(`wizard.s3.activities.kindOpt.${kind}`)}
+                                </option>
+                              ),
+                            )}
+                          </select>
+                        </label>
+                        <label>
+                          <span>{t("wizard.s3.activities.grades")}</span>
+                          <input
+                            value={item.grades}
+                            onChange={(e) => updateActivityDraft(item.id, { grades: e.target.value })}
+                            placeholder={t("wizard.s3.activities.gradesPh")}
+                          />
+                        </label>
+                        <label>
+                          <span>{t("wizard.s3.activities.hours")}</span>
+                          <input
+                            value={item.hours}
+                            onChange={(e) => updateActivityDraft(item.id, { hours: e.target.value })}
+                            placeholder={t("wizard.s3.activities.hoursPh")}
+                          />
+                        </label>
+                        <label>
+                          <span>{t("wizard.s3.activities.role")}</span>
+                          <input
+                            value={item.role}
+                            onChange={(e) => updateActivityDraft(item.id, { role: e.target.value })}
+                            placeholder={t("wizard.s3.activities.rolePh")}
+                          />
+                        </label>
+                        <label>
+                          <span>{t("wizard.s3.activities.scope")}</span>
+                          <select
+                            value={item.scope}
+                            onChange={(e) => updateActivityDraft(item.id, { scope: e.target.value as ActivityItem["scope"] })}
+                          >
+                            <option value="">{t("form.opt.choose")}</option>
+                            {(["school", "local", "regional", "state", "national", "international"] as const).map((scope) => (
+                              <option key={scope} value={scope}>
+                                {t(`wizard.s3.activities.scopeOpt.${scope}`)}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+                      <label className="account-activity-item__full">
+                        <span>{t("wizard.s3.activities.description")}</span>
+                        <textarea
+                          value={item.description}
+                          onChange={(e) => updateActivityDraft(item.id, { description: e.target.value })}
+                          placeholder={t("wizard.s3.activities.descriptionPh")}
+                        />
+                      </label>
+                      <div className="account-activity-item__grid">
+                        <label>
+                          <span>{t("wizard.s3.activities.outcome")}</span>
+                          <input
+                            value={item.outcome}
+                            onChange={(e) => updateActivityDraft(item.id, { outcome: e.target.value })}
+                            placeholder={t("wizard.s3.activities.outcomePh")}
+                          />
+                        </label>
+                        <label>
+                          <span>{t("wizard.s3.activities.award")}</span>
+                          <input
+                            value={item.award}
+                            onChange={(e) => updateActivityDraft(item.id, { award: e.target.value })}
+                            placeholder={t("wizard.s3.activities.awardPh")}
+                          />
+                        </label>
+                        <label>
+                          <span>{t("wizard.s3.activities.majorRelated")}</span>
+                          <select
+                            value={item.majorRelated}
+                            onChange={(e) => updateActivityDraft(item.id, { majorRelated: e.target.value as ActivityItem["majorRelated"] })}
+                          >
+                            <option value="">{t("form.opt.choose")}</option>
+                            <option value="yes">{t("wizard.s3.activities.majorYes")}</option>
+                            <option value="no">{t("wizard.s3.activities.majorNo")}</option>
+                            <option value="unsure">{t("wizard.s3.activities.majorUnsure")}</option>
+                          </select>
+                        </label>
+                        <label>
+                          <span>{t("wizard.s3.activities.proof")}</span>
+                          <input
+                            value={item.proof}
+                            onChange={(e) => updateActivityDraft(item.id, { proof: e.target.value })}
+                            placeholder={t("wizard.s3.activities.proofPh")}
+                          />
+                        </label>
+                      </div>
+                    </article>
+                  ))
+                )}
+              </div>
+            )}
+
+            {activitySaveNotice && <p className="account-activity-card__notice">{activitySaveNotice}</p>}
+            <div className="account-activity-card__actions">
+              <button type="button" className="btn btn-secondary" onClick={addActivityDraft}>
+                {t("wizard.s3.activities.add")}
+              </button>
+              <button type="button" className="btn btn-secondary" onClick={() => setActivityEditorOpen((v) => !v)}>
+                {activityEditorOpen ? t("auth.accountActivityCollapse") : t("auth.accountActivityEdit")}
+              </button>
+              <button type="button" className="btn btn-primary" onClick={() => void handleUpdateReportFromActivities()} disabled={activitySaveBusy}>
+                {t("auth.accountActivityUpdateReport")}
+              </button>
+            </div>
+          </section>
+        )}
 
         <section className="account-essay-card" aria-labelledby="account-essay-title">
           <div className="account-essay-card__head">

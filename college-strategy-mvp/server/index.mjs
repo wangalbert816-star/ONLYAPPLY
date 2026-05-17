@@ -666,6 +666,54 @@ function normalizeSupplementaryNotes(raw) {
   return out;
 }
 
+function formatStructuredActivities(items, locale) {
+  if (!Array.isArray(items)) return "";
+  const rows = [];
+  for (const item of items) {
+    if (!item || typeof item !== "object") continue;
+    const pick = (key) => String(item[key] ?? "").trim().slice(0, 500);
+    const name = pick("name");
+    const description = pick("description");
+    if (!name && !description) continue;
+    const fields =
+      locale === "en"
+        ? [
+            ["Name", name],
+            ["Type", pick("kind")],
+            ["Time / grades", pick("grades")],
+            ["Hours", pick("hours")],
+            ["Role", pick("role")],
+            ["Scope", pick("scope")],
+            ["Actions", description],
+            ["Outcome", pick("outcome")],
+            ["Award / ranking", pick("award")],
+            ["Major-related", pick("majorRelated")],
+            ["What it proves", pick("proof")],
+          ]
+        : [
+            ["名称", name],
+            ["类型", pick("kind")],
+            ["时间/年级", pick("grades")],
+            ["投入时间", pick("hours")],
+            ["角色", pick("role")],
+            ["影响范围", pick("scope")],
+            ["具体行动", description],
+            ["结果/影响", pick("outcome")],
+            ["奖项/排名", pick("award")],
+            ["是否相关专业", pick("majorRelated")],
+            ["证明点", pick("proof")],
+          ];
+    rows.push(
+      fields
+        .filter(([, value]) => value)
+        .map(([label, value]) => `${label}: ${value}`)
+        .join(locale === "en" ? "; " : "；"),
+    );
+    if (rows.length >= 8) break;
+  }
+  return rows.map((line, index) => `${index + 1}. ${line}`).join("\n");
+}
+
 function inferCompetitionDensity({ applicantIdentity, citizenship, residenceRegion, highSchoolSystem }) {
   const text = `${applicantIdentity || ""} ${citizenship || ""} ${residenceRegion || ""} ${highSchoolSystem || ""}`.toLowerCase();
   const highSignals = [
@@ -736,6 +784,7 @@ function buildUserPayload(body) {
     schoolSize,
     geoPrefs,
     activities,
+    structuredActivities,
     riskStyle,
     dealbreakers,
   } = body || {};
@@ -748,6 +797,7 @@ function buildUserPayload(body) {
     highSchoolSystem,
   });
   const competitionLine = competitionDensityLabel(competitionDensity, locale);
+  const structuredActivityText = formatStructuredActivities(structuredActivities, locale);
   let extra = "";
   if (supplementary.length > 0) {
     if (isEn) {
@@ -783,7 +833,9 @@ function buildUserPayload(body) {
 [Campus size preference] ${schoolSize || na}
 [Geography preferences] ${geoStr}
 
-[Activities / awards summary] ${activities || na}
+[Activities / awards summary] ${activities || na}${
+      structuredActivityText ? `\n[Structured activity / competition details]\n${structuredActivityText}` : ""
+    }
 [List risk posture] ${riskStyle || na}
 [Hard dealbreakers] ${dealbreakers || none}${extra}`;
   }
@@ -806,7 +858,7 @@ function buildUserPayload(body) {
 【校园规模偏好】${schoolSize || "未填"}
 【地理偏好】${Array.isArray(geoPrefs) ? geoPrefs.join("、") : geoPrefs || "未填"}
 
-【活动/奖项摘要】${activities || "未提供"}
+【活动/奖项摘要】${activities || "未提供"}${structuredActivityText ? `\n【活动/竞赛细节】\n${structuredActivityText}` : ""}
 【选校风格】${riskStyle || "未填"}
 【绝对不能接受】${dealbreakers || "无"}${extra}`;
 }

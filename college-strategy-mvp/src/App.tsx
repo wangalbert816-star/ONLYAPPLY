@@ -40,6 +40,7 @@ const initialForm: FormState = {
   schoolSize: "",
   geoPrefs: [],
   activities: "",
+  structuredActivities: [],
   riskStyle: "",
   dealbreakers: "",
 };
@@ -726,11 +727,11 @@ export default function App() {
             setSaveBannerDismissed(false);
             clearPendingSave();
           }}
-          onEditForm={({ form: f, applicationId }) => {
+          onEditForm={({ form: f, applicationId, targetStep }) => {
             setForm(f);
             setCurrentApplicationId(applicationId);
             setReport(null);
-            setStep(1);
+            setStep(targetStep ?? 1);
             setFlowStarted(true);
             setView("form");
           }}

@@ -24,6 +24,7 @@ export function buildReportApiBody(
     schoolSize: form.schoolSize,
     geoPrefs: form.geoPrefs,
     activities: form.activities,
+    structuredActivities: form.structuredActivities ?? [],
     riskStyle: form.riskStyle,
     dealbreakers: form.dealbreakers,
     locale,

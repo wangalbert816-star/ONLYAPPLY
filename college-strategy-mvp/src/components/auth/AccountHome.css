@@ -223,6 +223,22 @@
   border-radius: 12px;
   background: rgba(248, 250, 252, 0.72);
   padding: 0.55rem 0.65rem;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease;
+}
+
+.account-info-grid--editable {
+  cursor: pointer;
+  outline: none;
+}
+
+.account-info-grid--editable:hover .account-info-grid__item,
+.account-info-grid--editable:focus-visible .account-info-grid__item {
+  border-color: rgba(37, 99, 235, 0.38);
+  background: rgba(239, 246, 255, 0.92);
+  transform: translateY(-1px);
 }
 
 .account-info-grid dt {
@@ -239,6 +255,87 @@
   line-height: 1.45;
 }
 
+.account-info-edit {
+  margin-top: 0.7rem;
+  border: 1px solid rgba(37, 99, 235, 0.22);
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.07);
+  color: #2563eb;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 0.42rem 0.7rem;
+}
+
+.account-profile-editor {
+  margin-top: 0.75rem;
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.68);
+  padding: 0.8rem;
+}
+
+.account-profile-editor__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.account-profile-editor label,
+.account-profile-editor__full {
+  display: block;
+  min-width: 0;
+}
+
+.account-profile-editor label span,
+.account-profile-editor__full span {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.account-profile-editor input,
+.account-profile-editor select,
+.account-profile-editor textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(148, 163, 184, 0.42);
+  border-radius: 11px;
+  background: #fff;
+  color: #0f172a;
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  padding: 0.58rem 0.65rem;
+}
+
+.account-profile-editor textarea {
+  min-height: 4.3rem;
+  resize: vertical;
+}
+
+.account-profile-editor__full {
+  margin-top: 0.65rem;
+}
+
+.account-profile-editor__notice {
+  margin: 0.7rem 0 0;
+  color: #2563eb;
+  font-size: 0.78rem;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.account-profile-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+}
+
 .account-status-card__actions {
   display: flex;
   flex-wrap: wrap;
@@ -252,6 +349,177 @@
   color: #475569;
   font-size: 0.82rem;
   line-height: 1.5;
+}
+
+.account-activity-card {
+  border: 1px solid rgba(37, 99, 235, 0.16);
+  border-radius: 22px;
+  padding: 1rem;
+  background:
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.1), transparent 24rem),
+    linear-gradient(135deg, #fff 0%, #f8fbff 100%);
+  box-shadow: 0 18px 45px rgba(30, 64, 175, 0.06);
+}
+
+.account-activity-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.account-activity-card__kicker {
+  margin: 0 0 0.2rem;
+  color: #2563eb;
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.account-activity-card h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+
+.account-activity-card__head p {
+  margin: 0.35rem 0 0;
+  color: #64748b;
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.account-activity-card__head > span {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 0.32rem 0.58rem;
+  background: rgba(37, 99, 235, 0.1);
+  color: #1d4ed8;
+  font-size: 0.7rem;
+  font-weight: 850;
+}
+
+.account-activity-preview {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 0.75rem;
+}
+
+.account-activity-preview > div,
+.account-activity-item {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.74);
+  padding: 0.7rem;
+}
+
+.account-activity-preview strong {
+  display: block;
+  color: #1e293b;
+  font-size: 0.82rem;
+}
+
+.account-activity-preview span {
+  display: block;
+  margin-top: 0.18rem;
+  color: #64748b;
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+.account-activity-editor {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.account-activity-item__head,
+.account-activity-card__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.account-activity-item__head {
+  justify-content: space-between;
+  margin-bottom: 0.7rem;
+}
+
+.account-activity-item__head strong {
+  color: #1e293b;
+  font-size: 0.84rem;
+}
+
+.account-activity-item__head button {
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.07);
+  color: #b91c1c;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 750;
+  padding: 0.32rem 0.56rem;
+}
+
+.account-activity-item__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.account-activity-item label,
+.account-activity-item__full {
+  display: block;
+  min-width: 0;
+}
+
+.account-activity-item label span,
+.account-activity-item__full span {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.account-activity-item input,
+.account-activity-item select,
+.account-activity-item textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(148, 163, 184, 0.42);
+  border-radius: 11px;
+  background: #fff;
+  color: #0f172a;
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  padding: 0.58rem 0.65rem;
+}
+
+.account-activity-item textarea {
+  min-height: 4.5rem;
+  resize: vertical;
+}
+
+.account-activity-item__full {
+  margin: 0.65rem 0;
+}
+
+.account-activity-card__actions {
+  margin-top: 0.8rem;
+}
+
+.account-activity-card__notice {
+  margin: 0.7rem 0 0;
+  color: #2563eb;
+  font-size: 0.78rem;
+  font-weight: 750;
+  line-height: 1.45;
 }
 
 .account-essay-card {
@@ -900,6 +1168,7 @@
 @media (max-width: 720px) {
   .account-home__intro,
   .account-status-card__head,
+  .account-activity-card__head,
   .account-essay-card__head,
   .account-history-head {
     flex-direction: column;
@@ -914,11 +1183,21 @@
     grid-template-columns: 1fr;
   }
 
-  .account-status-card__actions .btn {
+  .account-status-card__actions .btn,
+  .account-profile-editor__actions .btn,
+  .account-activity-card__actions .btn {
     width: 100%;
   }
 
   .account-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .account-profile-editor__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .account-activity-item__grid {
     grid-template-columns: 1fr;
   }
 
@@ -952,6 +1231,7 @@
 
   .account-home__eyebrow,
   .account-status-card__kicker,
+  .account-activity-card__kicker,
   .account-history-toggle {
     color: var(--color-primary, #60a5fa);
   }
@@ -970,13 +1250,25 @@
     box-shadow: 0 20px 55px rgba(0, 0, 0, 0.26);
   }
 
+  .account-activity-card {
+    background:
+      radial-gradient(circle at top right, rgba(96, 165, 250, 0.16), transparent 24rem),
+      linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(17, 24, 39, 0.98));
+    border-color: rgba(96, 165, 250, 0.28);
+    box-shadow: 0 20px 55px rgba(0, 0, 0, 0.24);
+  }
+
   .account-status-card h2,
+  .account-activity-card h2,
+  .account-activity-preview strong,
+  .account-activity-item__head strong,
   .account-status-metric strong,
   .account-history-head h2 {
     color: var(--color-fg, #e5e7eb);
   }
 
-  .account-status-card__badge {
+  .account-status-card__badge,
+  .account-activity-card__head > span {
     background: rgba(96, 165, 250, 0.14);
     color: #bfdbfe;
   }
@@ -992,8 +1284,52 @@
     color: var(--color-muted, #9ca3af);
   }
 
-  .account-status-card__action-hint {
+  .account-status-card__action-hint,
+  .account-activity-card__head p,
+  .account-activity-preview span,
+  .account-activity-item label span,
+  .account-activity-item__full span {
     color: var(--color-muted, #9ca3af);
+  }
+
+  .account-activity-preview > div,
+  .account-activity-item,
+  .account-profile-editor {
+    background: rgba(15, 23, 42, 0.74);
+    border-color: rgba(148, 163, 184, 0.22);
+  }
+
+  .account-info-grid--editable:hover .account-info-grid__item,
+  .account-info-grid--editable:focus-visible .account-info-grid__item {
+    border-color: rgba(96, 165, 250, 0.42);
+    background: rgba(30, 41, 59, 0.86);
+  }
+
+  .account-info-edit {
+    border-color: rgba(96, 165, 250, 0.34);
+    background: rgba(96, 165, 250, 0.13);
+    color: #bfdbfe;
+  }
+
+  .account-activity-item input,
+  .account-activity-item select,
+  .account-activity-item textarea,
+  .account-profile-editor input,
+  .account-profile-editor select,
+  .account-profile-editor textarea {
+    background: rgba(15, 23, 42, 0.92);
+    border-color: var(--color-line, #253044);
+    color: var(--color-fg, #e5e7eb);
+  }
+
+  .account-profile-editor label span,
+  .account-profile-editor__full span {
+    color: var(--color-muted, #9ca3af);
+  }
+
+  .account-activity-card__notice,
+  .account-profile-editor__notice {
+    color: #bfdbfe;
   }
 
   .account-essay-card {

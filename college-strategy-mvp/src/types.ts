@@ -12,6 +12,34 @@ export type GeoPref =
   | "great_lakes"
   | "any";
 
+export type ActivityKind =
+  | "activity"
+  | "competition"
+  | "research"
+  | "internship"
+  | "club"
+  | "service"
+  | "arts"
+  | "sports"
+  | "other";
+
+export type ActivityScope = "school" | "local" | "regional" | "state" | "national" | "international" | "";
+
+export interface ActivityItem {
+  id: string;
+  name: string;
+  kind: ActivityKind | "";
+  grades: string;
+  hours: string;
+  role: string;
+  description: string;
+  outcome: string;
+  award: string;
+  scope: ActivityScope;
+  majorRelated: "" | "yes" | "no" | "unsure";
+  proof: string;
+}
+
 export interface FormState {
   intakeTerm: string;
   /** 当 intakeTerm 为「其他」时，由用户自行填写的入学季说明 */
@@ -32,6 +60,7 @@ export interface FormState {
   schoolSize: SchoolSize | "";
   geoPrefs: GeoPref[];
   activities: string;
+  structuredActivities?: ActivityItem[];
   riskStyle: RiskStyle | "";
   dealbreakers: string;
 }

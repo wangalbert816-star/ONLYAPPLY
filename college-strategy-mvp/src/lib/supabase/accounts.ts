@@ -215,6 +215,27 @@ export async function saveUserSession(input: SaveSessionInput): Promise<{ applic
   return { applicationId, reportId: reportRow.id };
 }
 
+export async function updateApplicationForm(applicationId: string, form: FormState, locale: Locale): Promise<void> {
+  const sb = getSupabase();
+  if (!sb) throw new Error("Supabase not configured");
+
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const { error } = await sb
+    .from("saved_applications")
+    .update({
+      form_state: form,
+      locale,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", applicationId)
+    .eq("user_id", user.id);
+  if (error) throw error;
+}
+
 /** 返回当前用户已解锁的 application id 列表（Stripe 或邀请码等，以权益表为准） */
 export async function fetchUnlockedApplicationIds(): Promise<string[]> {
   const sb = getSupabase();
