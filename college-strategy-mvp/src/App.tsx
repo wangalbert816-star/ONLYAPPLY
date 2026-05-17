@@ -141,6 +141,26 @@ function mergeSupplementaryNotes(...groups: SupplementaryNote[][]): Supplementar
   return merged.slice(-24);
 }
 
+function readStoredSupabaseAccessToken(): string | null {
+  try {
+    const stores = [localStorage, sessionStorage];
+    for (const store of stores) {
+      for (let i = 0; i < store.length; i += 1) {
+        const key = store.key(i);
+        if (!key || !key.startsWith("sb-") || !key.endsWith("-auth-token")) continue;
+        const raw = store.getItem(key);
+        if (!raw) continue;
+        const parsed = JSON.parse(raw) as { access_token?: string; currentSession?: { access_token?: string } };
+        const token = parsed.access_token ?? parsed.currentSession?.access_token ?? "";
+        if (token.trim()) return token.trim();
+      }
+    }
+  } catch {
+    /* ignore malformed browser storage */
+  }
+  return null;
+}
+
 export default function App() {
   const { t, locale } = useLanguage();
   const stripeCheckoutEnabled = isStripeCheckoutEnabled();
@@ -296,9 +316,12 @@ export default function App() {
     const getActiveAccessToken = async () => {
       if (session?.access_token) return session.access_token;
       const sb = getSupabase();
-      if (!sb) return null;
+      if (!sb) return readStoredSupabaseAccessToken();
       const { data } = await sb.auth.getSession();
-      return data.session?.access_token ?? null;
+      if (data.session?.access_token) return data.session.access_token;
+      const refreshed = await sb.auth.refreshSession();
+      if (refreshed.data.session?.access_token) return refreshed.data.session.access_token;
+      return readStoredSupabaseAccessToken();
     };
 
     if (!stripeCheckoutEnabled) {
