@@ -68,7 +68,13 @@ function compactText(value: string, max = 96) {
 function optionLabel(kind: "identity" | "budget" | "testing" | "size" | "risk" | "geo", value: string, locale: "zh" | "en") {
   const zh = {
     identity: { intl: "国际生", us_citizen: "美国身份", other: "其他身份" },
-    budget: { full_pay: "可全自费", need_aid: "需要奖助", unsure: "暂不确定" },
+    budget: {
+      full_pay: "可全自费",
+      high_budget: "较高预算，仍控成本",
+      budget_cap: "有明确预算上限",
+      need_aid: "需要奖助",
+      unsure: "暂不确定",
+    },
     testing: { test_optional: "Test-Optional / 暂不提交", will_submit: "计划提交 SAT / ACT" },
     size: { small: "小型校园", medium: "中等规模", large: "大型校园", any: "都可以" },
     risk: { conservative: "偏保守", balanced: "平衡", aggressive: "偏进取" },
@@ -76,7 +82,13 @@ function optionLabel(kind: "identity" | "budget" | "testing" | "size" | "risk" |
   };
   const en = {
     identity: { intl: "International", us_citizen: "U.S. citizen / resident", other: "Other identity" },
-    budget: { full_pay: "Full-pay possible", need_aid: "Needs aid", unsure: "Not sure yet" },
+    budget: {
+      full_pay: "Full-pay possible",
+      high_budget: "High budget, cost matters",
+      budget_cap: "Clear budget cap",
+      need_aid: "Needs aid",
+      unsure: "Not sure yet",
+    },
     testing: { test_optional: "Test-optional / not submitting", will_submit: "Planning to submit SAT / ACT" },
     size: { small: "Small campus", medium: "Medium campus", large: "Large campus", any: "Any size" },
     risk: { conservative: "Conservative", balanced: "Balanced", aggressive: "Aggressive" },
@@ -1048,6 +1060,8 @@ export function AccountHome({
                         >
                           <option value="">{t("form.opt.choose")}</option>
                           <option value="full_pay">{t("form.opt.budgetFull")}</option>
+                          <option value="high_budget">{t("form.opt.budgetHigh")}</option>
+                          <option value="budget_cap">{t("form.opt.budgetCap")}</option>
                           <option value="need_aid">{t("form.opt.budgetAid")}</option>
                           <option value="unsure">{t("form.opt.budgetUnsure")}</option>
                         </select>

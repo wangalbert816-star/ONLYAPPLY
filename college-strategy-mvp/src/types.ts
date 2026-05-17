@@ -1,5 +1,5 @@
 export type ApplicantIdentity = "intl" | "us_citizen" | "other";
-export type Budget = "full_pay" | "need_aid" | "unsure";
+export type Budget = "full_pay" | "high_budget" | "budget_cap" | "need_aid" | "unsure";
 export type Testing = "test_optional" | "will_submit";
 export type SchoolSize = "small" | "medium" | "large" | "any";
 export type RiskStyle = "conservative" | "balanced" | "aggressive";

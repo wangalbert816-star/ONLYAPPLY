@@ -834,6 +834,26 @@ function competitionDensityLabel(density, locale) {
   return "竞争密度未知（必要时询问常驻地区/主要受教育地区）";
 }
 
+function budgetPostureLabel(value, locale) {
+  const key = String(value || "").trim();
+  const en = {
+    full_pay: "Full-pay possible; private full cost is feasible",
+    high_budget: "High budget, but total cost still matters",
+    budget_cap: "Clear budget cap; prioritize value, lower-cost options, and merit scholarships",
+    need_aid: "Aid or scholarship support is needed; affordability materially affects attendance",
+    unsure: "Budget not yet clear; flag affordability and aid-policy uncertainty",
+  };
+  const zh = {
+    full_pay: "可全额自费；可接受私立大学全价",
+    high_budget: "可承担较高费用，但仍希望控制总成本",
+    budget_cap: "有明确预算上限；需优先考虑性价比、低成本选择与 merit 奖学金",
+    need_aid: "需要奖助学金支持；资助结果会明显影响是否能就读",
+    unsure: "预算尚不确定；需要提示费用与奖助政策不确定性",
+  };
+  if (locale === "en") return en[key] || key || "Not provided";
+  return zh[key] || key || "未填";
+}
+
 function buildUserPayload(body) {
   const locale = resolveReportLocale(body);
   const isEn = locale === "en";
@@ -867,6 +887,7 @@ function buildUserPayload(body) {
   });
   const competitionLine = competitionDensityLabel(competitionDensity, locale);
   const structuredActivityText = formatStructuredActivities(structuredActivities, locale);
+  const budgetLine = budgetPostureLabel(budget, locale);
   let extra = "";
   if (supplementary.length > 0) {
     if (isEn) {
@@ -890,7 +911,7 @@ function buildUserPayload(body) {
 [Usual residence / main education region — internal context only] ${residenceRegion || na}
 [Competition density] ${competitionLine}
 [Target scope] U.S. undergraduate (bachelor's)
-[Tuition / budget posture] ${budget || na}
+[Tuition / budget posture] ${budgetLine || na}
 [Testing strategy] ${testing || na}${
       testing === "will_submit" ? `\nSAT: ${satScore || na}\nACT: ${actScore || na}` : ""
     }
@@ -917,7 +938,7 @@ function buildUserPayload(body) {
 【常驻地区/主要受教育地区（仅作申请环境上下文）】${residenceRegion || "未填"}
 【竞争密度】${competitionLine}
 【目标范围】美国本科
-【学费/经济】${budget || "未填"}
+【学费/经济】${budgetLine || "未填"}
 【标化策略】${testing || "未填"}${testing === "will_submit" ? `\nSAT: ${satScore || "未填"}\nACT: ${actScore || "未填"}` : ""}
 
 【高中体系】${highSchoolSystem || "未填"}

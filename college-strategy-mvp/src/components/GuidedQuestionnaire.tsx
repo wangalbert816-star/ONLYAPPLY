@@ -76,6 +76,8 @@ function identityFeedback(form: FormState, t: Translate): string | null {
 function budgetFeedback(form: FormState, t: Translate): string | null {
   if (!form.budget) return null;
   if (form.budget === "full_pay") return t("wizard.s1.budget.fbFull");
+  if (form.budget === "high_budget") return t("wizard.s1.budget.fbHigh");
+  if (form.budget === "budget_cap") return t("wizard.s1.budget.fbCap");
   if (form.budget === "need_aid") return t("wizard.s1.budget.fbAid");
   return t("wizard.s1.budget.fbUnsure");
 }
@@ -140,6 +142,8 @@ function labelBudget(form: FormState, t: Translate): string {
   if (!form.budget) return "";
   const m: Record<string, string> = {
     full_pay: "form.opt.budgetFull",
+    high_budget: "form.opt.budgetHigh",
+    budget_cap: "form.opt.budgetCap",
     need_aid: "form.opt.budgetAid",
     unsure: "form.opt.budgetUnsure",
   };
@@ -405,6 +409,8 @@ export function GuidedStep1({ form, update, t }: { form: FormState; update: Upda
           >
             <option value="">{t("form.opt.choose")}</option>
             <option value="full_pay">{t("form.opt.budgetFull")}</option>
+            <option value="high_budget">{t("form.opt.budgetHigh")}</option>
+            <option value="budget_cap">{t("form.opt.budgetCap")}</option>
             <option value="need_aid">{t("form.opt.budgetAid")}</option>
             <option value="unsure">{t("form.opt.budgetUnsure")}</option>
           </select>
