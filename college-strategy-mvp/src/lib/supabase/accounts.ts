@@ -1,7 +1,7 @@
 import type { Locale } from "../../i18n/strings";
 import type { FormState, ReportPayload, SupplementaryNote } from "../../types";
 import { getEffectiveIntake } from "../intakeTerm";
-import { getSupabase } from "./client";
+import { getSupabase, getSupabaseWithAccessToken } from "./client";
 
 export type SavedApplicationRow = {
   id: string;
@@ -155,13 +155,13 @@ export type SaveSessionInput = {
   title?: string;
 };
 
-export async function saveUserSession(input: SaveSessionInput): Promise<{ applicationId: string; reportId: string }> {
-  const sb = getSupabase();
+export async function saveUserSession(input: SaveSessionInput, accessToken?: string): Promise<{ applicationId: string; reportId: string }> {
+  const sb = accessToken ? getSupabaseWithAccessToken(accessToken) : getSupabase();
   if (!sb) throw new Error("Supabase not configured");
 
   const {
     data: { user },
-  } = await sb.auth.getUser();
+  } = accessToken ? await sb.auth.getUser(accessToken) : await sb.auth.getUser();
   if (!user) throw new Error("Not signed in");
 
   const now = new Date().toISOString();

@@ -262,6 +262,7 @@ export default function App() {
       formState: FormState;
       reportPayload: ReportPayload;
       applicationId?: string | null;
+      accessToken?: string | null;
     }): Promise<{
       ok: boolean;
       applicationId: string | null;
@@ -276,7 +277,7 @@ export default function App() {
           locale,
           report: payload.reportPayload,
           supplementaryNotes: mergeSupplementaryNotes(answeredGapSupplementaryRef.current, profileFiveSupplementaryRef.current),
-        });
+        }, payload.accessToken ?? undefined);
         setCurrentApplicationId(applicationId);
         setCurrentReportId(reportId);
         clearPendingSave();
@@ -316,7 +317,7 @@ export default function App() {
         try {
           let appId = currentApplicationId;
           if (!appId) {
-            const saved = await persistToCloud({ formState: form, reportPayload: report });
+            const saved = await persistToCloud({ formState: form, reportPayload: report, accessToken });
             if (!saved.ok || !saved.applicationId) return;
             appId = saved.applicationId;
           }
@@ -372,7 +373,7 @@ export default function App() {
       let repId = currentReportId;
 
       if (!appId || !repId) {
-        const saved = await persistToCloud({ formState: form, reportPayload: report });
+        const saved = await persistToCloud({ formState: form, reportPayload: report, accessToken });
         if (!saved.ok || !saved.applicationId || !saved.reportId) return;
         appId = saved.applicationId;
         repId = saved.reportId;
