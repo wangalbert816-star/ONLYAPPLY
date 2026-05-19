@@ -384,6 +384,13 @@
   border-bottom: 1px dashed #e2e8f0;
 }
 
+.report-improve-lead {
+  margin: 0 0 0.65rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #64748b;
+}
+
 .subh {
   font-size: 0.85rem;
   margin: 0.5rem 0 0.35rem;

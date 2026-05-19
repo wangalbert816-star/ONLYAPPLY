@@ -3,6 +3,7 @@ import type { Locale } from "../i18n/strings";
 import { buildBiggestGapBlock, buildOverallVerdict, pickWeakestDimension } from "./decisionReport";
 import { buildFiveDimensionProfile, type ProfileDimension, type ProfileDimensionKey } from "./fiveDimensionProfile";
 import { getEffectiveIntake } from "./intakeTerm";
+import { getImprovementPlanLabels, getIntakeHorizon } from "./intakeHorizon";
 import { splitTopReferenceSchools } from "./ultraSelectiveSchools";
 
 export type PdfKeyValue = { label: string; value: string };
@@ -290,17 +291,18 @@ export function buildPdfReportModel(
   });
 
   const plan = report.improvement_plan;
+  const planLabels = getImprovementPlanLabels(getIntakeHorizon(intakeLabel), locale);
   const actions: PdfActionSection[] = [
     {
-      title: locale === "en" ? "This week" : "本周",
+      title: planLabels.week,
       items: normalizePlanItems(plan?.this_week ?? [], unlocked ? 6 : 2),
     },
     {
-      title: locale === "en" ? "This month" : "本月",
+      title: planLabels.month,
       items: unlocked ? normalizePlanItems(plan?.this_month ?? [], 6) : [],
     },
     {
-      title: locale === "en" ? "Before submit" : "提交前",
+      title: planLabels.before,
       items: unlocked ? normalizePlanItems(plan?.before_submitting ?? [], 6) : [],
     },
   ].filter((s) => s.items.length > 0);

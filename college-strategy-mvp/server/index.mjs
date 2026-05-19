@@ -7,6 +7,12 @@ import cors from "cors";
 import OpenAI from "openai";
 import Stripe from "stripe";
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
+import {
+  buildImprovementPersonalizationHints,
+  getIntakeHorizon,
+  improvementPlanPromptBlock,
+  improvementPlanUserContextLine,
+} from "./intakeHorizon.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // 始终从项目根目录加载 .env（避免从别的 cwd 启动 node 时读不到 OPENAI_BASE_URL，误连 OpenAI 官方导致 401）
@@ -522,6 +528,9 @@ const SYSTEM_PROMPT_ZH = `你是一位资深美国本科升学顾问（10年+经
 
 【顾问感】
 - 先判断信息是否足够；不足则在 information_gaps 列出需补充问题（0-6条）。
+- executive_summary 是「整体结论」：3-5 条，每条必须引用至少 1 个问卷具体事实（主申专业、GPA 描述、标化策略/分数、活动摘要、预算、选校风格、入学季等）；第一条必须是针对该生的一句话判断（≤90 字）。
+- 禁止 executive_summary 套话：不要无依据地写「整体画像偏平衡型」「不是缺乏野心」「Top 30–50 主战场」等；若提学校区间，必须说明依据（如课程、活动、标化、预算）。
+- executive_summary 与 reach/match/safety 的理由不得矛盾；可概括档位逻辑，但不要重复粘贴每校理由。
 - 若用户消息末含有【用户补充说明】区块：必须结合其更新 reach/match/safety 的入档理由与风险表述；information_gaps 中已被充分覆盖的点应删除或合并；禁止输出与补充说明明显矛盾的内容。
 - 用户补充说明是跨轮次已确认事实：若用户已说明不考/不提交 SAT、ACT，不得再追问对应考试；若已提供 TOEFL/IELTS/Duolingo 等语言成绩或说明无需语言成绩，不得再追问“是否有语言成绩”，只能在必要时追问更具体的未覆盖细节。
 - 至少3处明确引用用户问卷中的具体字段（预算/身份/标化/专业/偏好/活动）；若有补充说明，至少1处明确引用补充中的事实。
@@ -581,6 +590,9 @@ const SYSTEM_PROMPT_EN = `You are a senior U.S. undergraduate admissions counsel
 
 【Counselor stance】
 - First judge whether information is sufficient; if not, list 0–6 concrete follow-ups in information_gaps.
+- executive_summary is the overall advisor call: 3–5 bullets; each must cite at least one concrete questionnaire fact (major, GPA notes, testing policy/scores, activities, budget, list posture, intake). Bullet 1 must be one student-specific sentence (≤90 chars).
+- Do NOT use generic executive_summary lines (“balanced profile,” “not lacking ambition,” “Top 30–50 battlefield”) without tying them to this student’s facts.
+- executive_summary must not contradict reach/match/safety rationales.
 - If the user message ends with a [User supplementary notes] block: you MUST revise reach/match/safety rationales and risks accordingly; remove or merge gap items that are fully addressed; never contradict those notes.
 - Supplementary notes are confirmed facts across refreshes: if the user already said they will not take/submit SAT or ACT, do not ask about that test again; if they already provided TOEFL/IELTS/Duolingo or said no language score is needed, do not ask whether a language score exists again. Only ask for narrower missing details that are not covered.
 - Reference at least 3 specific questionnaire fields (budget/identity/testing/major/preferences/activities). If supplementary notes exist, reference at least one concrete fact from them.
@@ -643,6 +655,8 @@ const UC_SYSTEM_APPEND_ZH = `
 若问卷显示西部偏好、或文字中出现 UC/加州大学/UCLA/Berkeley 等，必须在 JSON 根级增加 "uc_analysis" 对象（与 reach/match/safety 的 9 校名单分开）：
 - 主名单 9 校应尽量为非 UC 的美国本科院校；不要把 UC 校区塞进主名单凑数。
 - uc_analysis 按用户背景划分校区（每档 2–3 所，按竞争度与专业匹配，禁止固定「前二+中间四+后三」模板）。
+- 禁止对所有人默认 Reach=Berkeley+UCLA：只有专业/活动/课程证据强匹配时才把 Berkeley 或 UCLA 放入冲刺；保守型名单或证据薄时，冲刺应优先 UCSB/UCI/UCSD 等更贴近方向的校区，Berkeley/UCLA 可降为 Match 或仅在 overview 中作「名气参考」说明。
+- 每条校区行的 why 必须引用用户问卷中的具体事实（专业、活动、GPA 描述、选校风格），不得 9 校理由雷同。
 - 必须强调 UC 本科录取 test-blind：SAT/ACT 不参与录取决定。
 - 说明所有 UC 共用一套 UC Application 与 4 篇 PIQ。
 "uc_analysis" 结构：
@@ -665,6 +679,8 @@ const UC_SYSTEM_APPEND_EN = `
 If the questionnaire shows West Coast preference or mentions UC / University of California / UCLA / Berkeley, etc., add a root-level "uc_analysis" object (separate from the main 9-school reach/match/safety list):
 - The main 9-school list should prefer non-UC U.S. bachelor's institutions; do not pad the main list with UC campuses.
 - In uc_analysis, tier 2–3 campuses each based on the user's profile (not a fixed "top 2 + middle 4 + bottom 3" template).
+- Do NOT default Reach to Berkeley+UCLA for every profile. Only place Berkeley or UCLA in Reach when major/activity/course evidence strongly supports it; for conservative lists or thin evidence, prefer UCSB/UCI/UCSD as Reach and discuss Berkeley/UCLA as optional reference only in overview if needed.
+- Each campus row's why must cite specific questionnaire facts; no copy-paste rationales across campuses.
 - State clearly that UC undergraduate admission is test-blind (SAT/ACT not used in admission decisions).
 - Note one shared UC Application and four PIQs for all campuses.
 "uc_analysis" schema:
@@ -701,8 +717,9 @@ function resolveReportLocale(body) {
   return body && body.locale === "en" ? "en" : "zh";
 }
 
-function systemPromptForLocale(locale, includeUc = false) {
-  const base = locale === "en" ? SYSTEM_PROMPT_EN : SYSTEM_PROMPT_ZH;
+function systemPromptForLocale(locale, includeUc = false, horizon = "unknown") {
+  let base = locale === "en" ? SYSTEM_PROMPT_EN : SYSTEM_PROMPT_ZH;
+  base += improvementPlanPromptBlock(horizon, locale);
   if (!includeUc) return base;
   return base + (locale === "en" ? UC_SYSTEM_APPEND_EN : UC_SYSTEM_APPEND_ZH);
 }
@@ -1023,6 +1040,10 @@ function budgetPostureLabel(value, locale) {
 function buildUserPayload(body, includeUc = false) {
   const locale = resolveReportLocale(body);
   const isEn = locale === "en";
+  const intakeRaw = String(body?.intakeTerm || "").trim();
+  const planHorizon = getIntakeHorizon(intakeRaw);
+  const planHorizonLine = improvementPlanUserContextLine(planHorizon, intakeRaw, locale);
+  const planPersonalizationHints = buildImprovementPersonalizationHints(body, locale);
   const {
     intakeTerm,
     applicantIdentity,
@@ -1072,6 +1093,7 @@ function buildUserPayload(body, includeUc = false) {
     return `Generate a JSON report from the following questionnaire (strictly follow the system schema; exactly 3 schools per tier).
 
 [Intake term] ${intakeTerm || na}
+${planHorizonLine}
 [Applicant identity] ${applicantIdentity || na}
 [Citizenship / passport region — internal context only] ${citizenship || na}
 [Usual residence / main education region — internal context only] ${residenceRegion || na}
@@ -1097,12 +1119,13 @@ function buildUserPayload(body, includeUc = false) {
       includeUc
         ? "\n\n[UC intent] User shows interest in the University of California system. Output uc_analysis per system instructions; keep the main 9-school list mostly non-UC."
         : ""
-    }${extra}`;
+    }${planPersonalizationHints}${extra}`;
   }
 
   return `请基于以下问卷生成 JSON 报告（严格遵守 system 的结构与每档3所的数量）。
 
 【申请入学季】${intakeTerm || "未填"}
+${planHorizonLine}
 【申请身份】${applicantIdentity || "未填"}
 【国籍/护照地区（仅作申请环境上下文）】${citizenship || "未填"}
 【常驻地区/主要受教育地区（仅作申请环境上下文）】${residenceRegion || "未填"}
@@ -1124,7 +1147,7 @@ function buildUserPayload(body, includeUc = false) {
     includeUc
       ? "\n\n【UC 意向】用户表现出加州大学（UC）申请意向。请按 system 说明输出 uc_analysis；主名单 9 校尽量为非 UC 美国本科院校。"
       : ""
-  }${extra}`;
+  }${planPersonalizationHints}${extra}`;
 }
 
 /**
@@ -1327,13 +1350,15 @@ async function generateLlmJsonWithConfig(cfg, { messages, maxTokens, logTag }) {
 
 async function generateReportWithConfig(cfg, body) {
   const locale = resolveReportLocale(body);
-  const userContent = buildUserPayload(body, false);
+  const planHorizon = getIntakeHorizon(String(body?.intakeTerm || ""));
+  const includeUc = wantsUcFromBody(body);
+  const userContent = buildUserPayload(body, includeUc);
   const maxTokens = COMPLETION_MAX_TOKENS > 0 ? COMPLETION_MAX_TOKENS : 0;
   return generateLlmJsonWithConfig(cfg, {
     logTag: "api/report",
     maxTokens,
     messages: [
-      { role: "system", content: systemPromptForLocale(locale, false) },
+      { role: "system", content: systemPromptForLocale(locale, includeUc, planHorizon) },
       { role: "user", content: userContent },
     ],
   });

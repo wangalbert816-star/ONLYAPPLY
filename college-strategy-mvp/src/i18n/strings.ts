@@ -467,11 +467,18 @@ merge(zhFlat, {
     risksMit: "缓解：",
     risksLockSub: "解锁后查看影响分析与缓解动作全文",
     improveTitle: "信息补充建议",
-    improvePreview: " · 本周仅预览前 2 条",
+    improvePreview: " · 首段仅预览前 2 条",
+    improveLeadMid:
+      "按你的入学季与问卷内容，以下为分阶段建议；含与主申专业挂钩的活动/竞赛/项目方向（非赛事导购清单）。",
+    improveLeadLong:
+      "按你的专业、活动与入学季，以下为长线建议：含可积累的活动/竞赛/项目路径，并说明可验证产出与为何有助于你的选校档位。",
+    improveLeadUrgent:
+      "临近申请：优先深化与呈现已有活动；仅在活动偏少时才会建议 1 条可快速启动的补强路径。",
+    improveLeadUnknown: "按你的入学季，以下为分阶段建议；若你已在申请年级，请以官网当年截止日为准核对。",
     week: "本周",
     month: "本月",
     before: "提交前",
-    weekMore: "还有 {n} 条本周建议 · 解锁后全部展示",
+    weekMore: "还有 {n} 条建议 · 解锁后全部展示",
     monthLock: "{n} 条「本月」行动已生成 ·",
     monthLockBold: "解锁后逐条查看",
     beforeLock: "{n} 条「提交前」核对与补强 ·",
@@ -1158,11 +1165,19 @@ merge(enFlat, {
     risksMit: "Mitigate:",
     risksLockSub: "Unlock for full impact & mitigation text",
     improveTitle: "Information to clarify next",
-    improvePreview: " · This week: first 2 in preview",
+    improvePreview: " · First section: 2 items in preview",
+    improveLeadMid:
+      "Phased steps from your intake, including major-linked activity/contest/project paths—not a contest shopping list.",
+    improveLeadLong:
+      "Long-range build steps with verifiable activity/contest/project ideas tied to your major and school tiers.",
+    improveLeadUrgent:
+      "Application season is near: deepen and document what you already do; new contests only if your profile is thin.",
+    improveLeadUnknown:
+      "Phased suggestions for your intake; if you are already in application year, verify deadlines on official sites.",
     week: "This week",
     month: "This month",
     before: "Before submitting",
-    weekMore: "{n} more this-week items · unlock to see all",
+    weekMore: "{n} more items in this section · unlock to see all",
     monthLock: "{n} “this month” actions generated · ",
     monthLockBold: "unlock for full list",
     beforeLock: "{n} “before submit” checks · ",

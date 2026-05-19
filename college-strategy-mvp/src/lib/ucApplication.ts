@@ -1,5 +1,6 @@
 import type { FormState, ReportPayload, SchoolRow, SchoolTier, UcAnalysis } from "../types";
 import type { Locale } from "../i18n/strings";
+import { getCampusDef, pickUcCampusPortfolio, type UcCampusKey } from "./ucCampusPortfolio";
 
 const UC_KEYWORD_RE =
   /\buc\b|university of california|加州大学|ucla|berkeley|uc berkeley|ucsd|uc davis|uc irvine|uci|ucsb|uc santa barbara|uc santa cruz|ucsc|uc riverside|ucr|uc merced|ucm/i;
@@ -42,16 +43,117 @@ function campusRow(
   };
 }
 
-/** 本地兜底：LLM 未返回 uc_analysis 时，仍可按用户背景展示 UC 专区结构 */
+function campusDisplayName(key: UcCampusKey, locale: Locale): string {
+  const def = getCampusDef(key);
+  if (!def) return key;
+  return locale === "en" ? def.en : def.zh;
+}
+
+function buildCampusWhy(
+  key: UcCampusKey,
+  tier: SchoolTier,
+  form: FormState,
+  locale: Locale,
+  fitScore: number,
+): { why: string; risks: string[]; verify: string[]; signals: string[] } {
+  const isEn = locale === "en";
+  const major = form.majorPrimary.trim() || (isEn ? "your intended direction" : "你的主申方向");
+  const name = campusDisplayName(key, locale);
+  const fitNote =
+    fitScore >= 0.55
+      ? isEn
+        ? "strong major-direction overlap"
+        : "与主申方向重合度较高"
+      : fitScore >= 0.35
+        ? isEn
+          ? "partial fit—needs clearer evidence"
+          : "部分匹配—需用课程/活动补足证据"
+        : isEn
+          ? "weaker direct fit—treat as portfolio coverage or exploratory"
+          : "直接匹配度一般—更像组合覆盖或探索型选项";
+
+  const tierWhy =
+    tier === "reach"
+      ? isEn
+        ? `As a reach campus for ${major}, ${name} is highly selective; ${fitNote}.`
+        : `作为「${major}」方向的冲刺校，${name} 选择性很高；${fitNote}。`
+      : tier === "match"
+        ? isEn
+          ? `As a match campus for ${major}, ${name} is a more realistic main target; ${fitNote}.`
+          : `作为「${major}」方向的稳妥主战场之一，${name} 相对更现实；${fitNote}。`
+        : isEn
+          ? `As a safety floor for your UC portfolio, ${name} helps reduce all-UC-reject risk; ${fitNote}.`
+          : `作为 UC 组合的保底档，${name} 有助于降低全军覆没风险；${fitNote}。`;
+
+  const risksByKey: Partial<Record<UcCampusKey, string[]>> = isEn
+    ? {
+        berkeley: ["Capacity-constrained majors may be screened", "International/OOS competition is intense"],
+        ucla: ["Very high selectivity; narrative must be specific", "Popular majors may add screening"],
+        ucsd: ["College-within-campus choice matters for STEM", "Still selective despite being Match tier"],
+        ucsb: ["Strong in sciences—less ideal if you need urban internship density"],
+        uci: ["CS/business paths can be competitive", "Verify major school within UCI"],
+        ucdavis: ["Campus town environment—check dealbreakers", "Some majors are more capacity-limited"],
+        ucsc: ["Smaller brand than top UCs—still needs strong PIQs", "Check major availability"],
+        ucr: ["Not a free admit—still needs coherent PIQs", "Aid/net cost varies by profile"],
+        ucmerced: ["Newer campus—verify major depth vs your goals", "Geography may not fit everyone"],
+      }
+    : {
+        berkeley: ["热门专业可能名额紧张/筛选", "国际生/州外竞争密度高"],
+        ucla: ["选择性很高；叙事必须具体", "热门方向可能有额外筛选"],
+        ucsd: ["STEM 需选对学院", "作为「稳」档仍有不小选择性"],
+        ucsb: ["理工强—若依赖大城市实习需核对", "部分专业竞争不低"],
+        uci: ["CS/商科等路径竞争不低", "需核对专业所属学院"],
+        ucdavis: ["校园环境偏小镇—核对底线", "部分专业名额仍有限"],
+        ucsc: ["品牌弱于头部 UC—PIQ 仍要扎实", "核对专业开放情况"],
+        ucr: ["并非「随便进」—仍需完整 PIQ", "费用/奖助因家庭而异"],
+        ucmerced: ["建校较新—核对专业深度", "地理位置不一定适合所有人"],
+      };
+
+  const verifyCommon = isEn
+    ? ["Confirm major/college policy on the official site", "Do not treat SAT/ACT as a UC admit lever"]
+    : ["核对官网当年专业/学院政策", "勿将 SAT/ACT 当作 UC 录取策略"];
+
+  const verifyExtra: Partial<Record<UcCampusKey, string[]>> = isEn
+    ? {
+        berkeley: ["Map A-G or equivalent rigor to your major"],
+        ucla: ["Align PIQs with one activity spine"],
+        ucsd: ["Map UCSD college to your major"],
+        uci: ["Check if major is in a screened school"],
+      }
+    : {
+        berkeley: ["核对 A-G/课程 rigor 与专业是否一致"],
+        ucla: ["PIQ 与活动主线对齐"],
+        ucsd: ["核对 UCSD 学院与专业对应关系"],
+        uci: ["核对是否属于需筛选的学院/专业"],
+      };
+
+  return {
+    why: tierWhy,
+    risks: risksByKey[key] ?? (isEn ? ["Selectivity still meaningful at this tier"] : ["该档位仍有选择性"]),
+    verify: [...verifyCommon, ...(verifyExtra[key] ?? [])],
+    signals: isEn
+      ? [`Major: ${major}`, `Fit signal: ${fitNote}`]
+      : [`主申：${major}`, `匹配度：${fitNote}`],
+  };
+}
+
+/** 本地兜底：LLM 未返回 uc_analysis 时，按问卷规则选校区（非固定 Berkeley+UCLA） */
 export function buildUcAnalysisFallback(form: FormState, locale: Locale): UcAnalysis {
   const isEn = locale === "en";
   const major = form.majorPrimary.trim() || (isEn ? "your intended direction" : "你的主申方向");
-  const risk = form.riskStyle || "balanced";
   const gpaThin = form.gpa.trim().length < 40;
+  const picks = pickUcCampusPortfolio(form);
 
-  const overview = isEn
-    ? `You indicated interest in the UC system. Below is a campus portfolio based on your questionnaire—not a fixed "top 2 + middle 4 + bottom 3" template. UC admission is holistic and test-blind: SAT/ACT are not used in admission decisions.`
-    : `你已表现出对加州大学（UC）系统的申请意向。以下是结合你问卷信息整理的「校区组合」建议，不是固定的「前二 + 中间四 + 后三」模板；各校录取为 holistic review，且录取决定不看 SAT/ACT。`;
+  const reachNames = picks.filter((p) => p.tier === "reach").map((p) => campusDisplayName(p.campus.key, locale));
+  let overview = isEn
+    ? `You showed interest in the UC system. Campus tiers below are chosen from your major (${major}), list posture, and activity/GPA snapshot—not a default "Berkeley + UCLA reach for everyone" template. UC admission is holistic and test-blind.`
+    : `你已表现出 UC 申请意向。下方校区分档依据你的主申专业（${major}）、选校风格与成绩/活动快照生成，不是默认「人人冲刺 Berkeley + UCLA」；录取为 holistic review 且 test-blind。`;
+
+  if (reachNames.length > 0 && !reachNames.some((n) => /berkeley|ucla|伯克利/i.test(n))) {
+    overview += isEn
+      ? ` Reach tier emphasizes ${reachNames.join(" and ")} based on fit—not automatically the two highest brand names.`
+      : ` 冲刺档为 ${reachNames.join("、")} 等与你方向更贴近的校区，而非机械套用品牌最高的两所。`;
+  }
 
   const testBlindNote = isEn
     ? "University of California undergraduate admission is test-blind: SAT/ACT scores are not considered in admission decisions. Scores you entered may still matter for non-UC schools or your own planning only."
@@ -61,88 +163,24 @@ export function buildUcAnalysisFallback(form: FormState, locale: Locale): UcAnal
     ? "All UC campuses share one UC Application and four PIQs (Personal Insight Questions). Tier labels below are campus-selection strategy, not separate applications."
     : "所有 UC 校区共用一套 UC Application 与 4 篇 PIQ（Personal Insight Questions）。下面的冲/稳/保是「选哪些校区」，不是 6 份独立申请。";
 
-  const reachWhy = isEn
-    ? `As a reach campus for ${major}, competition is very high; fit must be argued with coursework and activities, not test scores.`
-    : `作为「${major}」方向的冲刺校区，竞争极强；需要用课程与活动证据支撑匹配，而不是标化分数。`;
+  const reach: SchoolRow[] = [];
+  const match: SchoolRow[] = [];
+  const safety: SchoolRow[] = [];
 
-  const matchWhy = isEn
-    ? `More realistic main battlefield for ${major} given your current profile snapshot.`
-    : `结合你目前画像，作为「${major}」方向更现实的主战场之一。`;
-
-  const safetyWhy = isEn
-    ? `Helps reduce all-UC-reject risk while still aligning with ${major} or exploratory paths.`
-    : `有助于降低「UC 全军覆没」风险，同时仍与「${major}」或探索型路径有一定关联。`;
-
-  const reach: SchoolRow[] = [
-    campusRow(
-      isEn ? "UC Berkeley" : "UC Berkeley（伯克利）",
-      "reach",
-      reachWhy,
-      isEn
-        ? ["Extremely selective; many majors are capacity-constrained", "International/OOS competition density is high"]
-        : ["整体选择性极高；不少热门专业名额紧张", "国际生/州外竞争密度高"],
-      isEn
-        ? ["Confirm major/college policy on the official site", "Map A-G or equivalent rigor", "Do not plan on SAT for UC admission"]
-        : ["核对官网当年专业/学院政策", "核对 A-G 或等效课程 rigor", "勿将 SAT 当作 UC 录取策略"],
-      isEn ? [`Major direction: ${major}`] : [`主申方向：${major}`],
-    ),
-    campusRow(
-      isEn ? "UCLA" : "UCLA",
-      "reach",
-      reachWhy,
-      isEn
-        ? ["Very high selectivity; narrative must be specific", "Popular majors may be screened"]
-        : ["选择性很高；叙事必须具体", "热门专业可能有筛选"],
-      isEn
-        ? ["Check PIQ themes vs your activity spine", "Verify major selection rules"]
-        : ["核对 PIQ 与活动主线是否一致", "核对专业选择规则"],
-      isEn ? [`List risk posture: ${risk}`] : [`名单风格：${risk}`],
-    ),
-  ];
-
-  const match: SchoolRow[] = [
-    campusRow(
-      isEn ? "UC San Diego" : "UC San Diego（UCSD）",
-      "match",
-      matchWhy,
-      isEn ? ["Strong STEM/humanities mix—pick colleges carefully"] : ["理工与人文资源都强—需选对学院"],
-      isEn ? ["Confirm college within UCSD for your major"] : ["核对 UCSD 内与专业对应的学院"],
-      isEn ? ["Activities should support one clear thread"] : ["活动宜有一条清晰主线"],
-    ),
-    campusRow(
-      isEn ? "UC Davis" : "UC Davis（戴维斯）",
-      "match",
-      matchWhy,
-      isEn ? ["Good fit for many applied/life-science directions"] : ["对不少应用/生命科学方向较友好"],
-      isEn ? ["Check campus environment vs your dealbreakers"] : ["核对校园环境是否符合你的底线"],
-      gpaThin
-        ? isEn
-          ? ["GPA narrative needs more detail in PIQs"]
-          : ["GPA 说明偏薄时，PIQ 需补足学术证据"]
-        : isEn
-          ? ["Leverage rigor in transcript notes"]
-          : ["在成绩说明中体现课程强度"],
-    ),
-  ];
-
-  const safety: SchoolRow[] = [
-    campusRow(
-      isEn ? "UC Riverside" : "UC Riverside（河滨）",
-      "safety",
-      safetyWhy,
-      isEn ? ["Still selective, but more achievable as a floor"] : ["仍有选择性，但更适合作为保底档"],
-      isEn ? ["Confirm major availability"] : ["核对专业是否开放"],
-      isEn ? ["Keep one PIQ on long-term commitment"] : ["建议 1 篇 PIQ 写长期投入"],
-    ),
-    campusRow(
-      isEn ? "UC Merced" : "UC Merced（默塞德）",
-      "safety",
-      safetyWhy,
-      isEn ? ["Often used to broaden UC portfolio coverage"] : ["常用于扩大 UC 组合覆盖面"],
-      isEn ? ["Verify housing/campus fit"] : ["核对住宿与校园适配"],
-      isEn ? ["Same 4 PIQs for all campuses"] : ["与其他校区共用 4 篇 PIQ"],
-    ),
-  ];
+  for (const pick of picks) {
+    const copy = buildCampusWhy(pick.campus.key, pick.tier, form, locale, pick.fitScore);
+    const row = campusRow(
+      campusDisplayName(pick.campus.key, locale),
+      pick.tier,
+      copy.why,
+      copy.risks,
+      copy.verify,
+      copy.signals,
+    );
+    if (pick.tier === "reach") reach.push(row);
+    else if (pick.tier === "match") match.push(row);
+    else safety.push(row);
+  }
 
   const checklist = isEn
     ? [
@@ -151,6 +189,9 @@ export function buildUcAnalysisFallback(form: FormState, locale: Locale): UcAnal
         "Plan four distinct PIQs (not four versions of the same story)",
         "No recommendation letters for standard UC undergraduate application",
         "Check each campus major/college policy on the official site",
+        reach.length
+          ? `Your reach campuses (${reach.map((r) => r.school).join(", ")}) need major-specific evidence—not generic prestige chasing`
+          : "Pick reach campuses where your major evidence is strongest",
       ]
     : [
         "UC 录取不看 SAT/ACT，勿把提分当作冲 UC 的策略",
@@ -158,6 +199,9 @@ export function buildUcAnalysisFallback(form: FormState, locale: Locale): UcAnal
         "规划 4 篇互不重复的 PIQ，不要写成四遍同一活动",
         "标准 UC 本科申请一般不需要推荐信",
         "逐校核对专业/学院政策（以官网当年为准）",
+        reach.length
+          ? `冲刺校（${reach.map((r) => r.school).join("、")}）需有专业证据支撑，而非只看名气`
+          : "冲刺校应选与你专业证据最匹配者",
       ];
 
   const piqDirections = isEn

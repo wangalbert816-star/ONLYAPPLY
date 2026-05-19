@@ -18,6 +18,7 @@ import { ReportDownloadButton } from "./components/ReportDownloadButton";
 import { ReportPdfDocument } from "./components/pdf/ReportPdfDocument";
 import { LegalLinks } from "./components/LegalLinks";
 import { getEffectiveIntake } from "./lib/intakeTerm";
+import { getImprovementPlanLabels, getIntakeHorizon } from "./lib/intakeHorizon";
 import { splitTopReferenceSchools } from "./lib/ultraSelectiveSchools";
 import { resolveUcAnalysis } from "./lib/ucApplication";
 import { UcStrategySection } from "./components/UcStrategySection";
@@ -284,8 +285,26 @@ export function ReportView({
   const [inviteInput, setInviteInput] = useState("");
   const pdfSourceRef = useRef<HTMLDivElement>(null);
   const intakeLabel = useMemo(() => getEffectiveIntake(form) || t("report.title"), [form, t]);
+  const planHorizon = useMemo(() => getIntakeHorizon(getEffectiveIntake(form)), [form]);
+  const planLabels = useMemo(
+    () => getImprovementPlanLabels(planHorizon, locale),
+    [planHorizon, locale],
+  );
+  const improveLead = useMemo(() => {
+    if (planHorizon === "urgent") return t("report.improveLeadUrgent");
+    if (planHorizon === "mid") return t("report.improveLeadMid");
+    if (planHorizon === "long") return t("report.improveLeadLong");
+    if (planHorizon === "unknown") return t("report.improveLeadUnknown");
+    return null;
+  }, [planHorizon, t]);
   const profileFive = useMemo(() => buildFiveDimensionProfile(form, locale), [form, locale]);
-  const verdict = useMemo(() => buildOverallVerdict(form, profileFive, locale), [form, profileFive, locale]);
+  const verdict = useMemo(
+    () =>
+      buildOverallVerdict(form, profileFive, locale, {
+        executiveLead: report.executive_summary?.[0] ?? null,
+      }),
+    [form, profileFive, locale, report.executive_summary],
+  );
   const biggestGap = useMemo(() => buildBiggestGapBlock(profileFive, locale), [profileFive, locale]);
   const tone = getPaywallTone();
   const copy = locale === "zh" ? PAYWALL_PACKS[tone] : EN_PAYWALL[tone];
@@ -704,7 +723,8 @@ export function ReportView({
           {t("report.improveTitle")}
           {!unlocked && <span className="inline-hint">{t("report.improvePreview")}</span>}
         </h2>
-        <h3 className="subh">{t("report.week")}</h3>
+        {improveLead ? <p className="report-improve-lead">{improveLead}</p> : null}
+        <h3 className="subh">{planLabels.week}</h3>
         <ul>
           {tw.slice(0, lockedWeekItems).map((item, i) => (
             <li key={i}>{item}</li>
@@ -713,7 +733,7 @@ export function ReportView({
         {!unlocked && tw.length > 1 && (
           <p className="lock-inline">{t("report.weekMore", { n: tw.length - 1 })}</p>
         )}
-        <h3 className="subh">{t("report.month")}</h3>
+        <h3 className="subh">{planLabels.month}</h3>
         {unlocked ? (
           <ul>
             {tm.map((item, i) => (
@@ -729,7 +749,7 @@ export function ReportView({
             <strong>{t("report.monthLockBold")}</strong>
           </p>
         )}
-        <h3 className="subh">{t("report.before")}</h3>
+        <h3 className="subh">{planLabels.before}</h3>
         {unlocked ? (
           <ul>
             {bs.map((item, i) => (
