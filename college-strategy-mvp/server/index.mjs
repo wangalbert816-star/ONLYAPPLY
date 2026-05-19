@@ -1263,8 +1263,8 @@ function parseModelJsonContent(raw) {
   }
 }
 
-/** 报告生成优先主配置；Ollama 解析失败时可回退火山方舟 */
-function reportConfigsToTry() {
+/** LLM 优先主配置；主通道为 Ollama 且 JSON 解析失败时可回退火山方舟 */
+function llmConfigsToTry() {
   const primary = resolveLLMConfig();
   if ("error" in primary) return primary;
   const list = [primary];
@@ -1275,20 +1275,13 @@ function reportConfigsToTry() {
   return list;
 }
 
-async function callReportLlmOnce(client, { model, provider, locale, userContent }) {
-  const requestBody = {
-    model,
-    temperature: 0.35,
-    messages: [
-      { role: "system", content: systemPromptForLocale(locale, false) },
-      { role: "user", content: userContent },
-    ],
-  };
+async function callLlmJsonOnce(client, { model, provider, messages, maxTokens }) {
+  const requestBody = { model, temperature: 0.35, messages };
   if (provider !== "ollama") {
     requestBody.response_format = { type: "json_object" };
   }
-  if (COMPLETION_MAX_TOKENS > 0) {
-    requestBody.max_tokens = COMPLETION_MAX_TOKENS;
+  if (maxTokens > 0) {
+    requestBody.max_tokens = maxTokens;
   }
 
   const completion = await client.chat.completions.create(requestBody);
@@ -1301,10 +1294,8 @@ async function callReportLlmOnce(client, { model, provider, locale, userContent 
   return parseModelJsonContent(messageContent);
 }
 
-async function generateReportWithConfig(cfg, body) {
+async function generateLlmJsonWithConfig(cfg, { messages, maxTokens, logTag }) {
   const { key, baseURL, model, region, provider } = cfg;
-  const locale = resolveReportLocale(body);
-  const userContent = buildUserPayload(body, false);
   const client = new OpenAI({
     apiKey: key,
     ...(baseURL ? { baseURL } : {}),
@@ -1316,14 +1307,14 @@ async function generateReportWithConfig(cfg, body) {
   let lastErr;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const parsed = await callReportLlmOnce(client, { model, provider, locale, userContent });
+      const parsed = await callLlmJsonOnce(client, { model, provider, messages, maxTokens });
       return { parsed, llmMs: Date.now() - t0, region, provider, model };
     } catch (e) {
       lastErr = e;
       const code = e && typeof e === "object" && "code" in e ? e.code : "";
       if (code === "invalid_json" || code === "empty_content") {
         console.warn(
-          `[api/report] parse_retry attempt=${attempt + 1} provider=${provider} model=${model}`,
+          `[${logTag}] parse_retry attempt=${attempt + 1} provider=${provider} model=${model}`,
           e instanceof Error ? e.message : e,
         );
         continue;
@@ -1332,6 +1323,42 @@ async function generateReportWithConfig(cfg, body) {
     }
   }
   throw lastErr;
+}
+
+async function generateReportWithConfig(cfg, body) {
+  const locale = resolveReportLocale(body);
+  const userContent = buildUserPayload(body, false);
+  const maxTokens = COMPLETION_MAX_TOKENS > 0 ? COMPLETION_MAX_TOKENS : 0;
+  return generateLlmJsonWithConfig(cfg, {
+    logTag: "api/report",
+    maxTokens,
+    messages: [
+      { role: "system", content: systemPromptForLocale(locale, false) },
+      { role: "user", content: userContent },
+    ],
+  });
+}
+
+async function generateEssayAnalysisWithConfig(cfg, promptInput) {
+  const { locale, draft, formState, reportPayload, strategy } = promptInput;
+  const maxTokens = COMPLETION_MAX_TOKENS > 0 ? Math.min(COMPLETION_MAX_TOKENS, 1800) : 0;
+  return generateLlmJsonWithConfig(cfg, {
+    logTag: "api/essay/analyze",
+    maxTokens,
+    messages: [
+      {
+        role: "system",
+        content:
+          locale === "en"
+            ? "Return only valid JSON. Do not write the student's essay for them."
+            : "只返回合法 JSON。不要代写学生文书成稿。",
+      },
+      {
+        role: "user",
+        content: buildEssayAnalysisPrompt({ locale, draft, formState, reportPayload, strategy }),
+      },
+    ],
+  });
 }
 
 function finalizeReportPayload(parsed, body) {
@@ -1347,7 +1374,7 @@ function finalizeReportPayload(parsed, body) {
 }
 
 app.post("/api/report", async (req, res) => {
-  const configs = reportConfigsToTry();
+  const configs = llmConfigsToTry();
   if ("error" in configs) {
     console.error("[api/report] llm_config", configs.error);
     return res.status(500).json({ error: IS_PROD ? "report_service_unavailable" : configs.error });
@@ -1561,10 +1588,10 @@ ${safeDraft}
 }
 
 app.post("/api/essay/analyze", async (req, res) => {
-  const cfg = resolveLLMConfig();
-  if ("error" in cfg) {
-    console.error("[api/essay/analyze] llm_config", cfg.error);
-    return res.status(500).json({ error: IS_PROD ? "essay_service_unavailable" : cfg.error });
+  const configs = llmConfigsToTry();
+  if ("error" in configs) {
+    console.error("[api/essay/analyze] llm_config", configs.error);
+    return res.status(500).json({ error: IS_PROD ? "essay_service_unavailable" : configs.error });
   }
 
   const authHeader = req.headers.authorization || "";
@@ -1622,101 +1649,80 @@ app.post("/api/essay/analyze", async (req, res) => {
     return res.status(402).json({ error: "essay_analysis_locked" });
   }
 
-  const { key, baseURL, model, region, provider } = cfg;
-  try {
-    const client = new OpenAI({
-      apiKey: key,
-      ...(baseURL ? { baseURL } : {}),
-      timeout: LLM_TIMEOUT_MS,
-      maxRetries: LLM_MAX_RETRIES,
-    });
+  const promptInput = {
+    locale,
+    draft,
+    formState: application.form_state,
+    reportPayload: rep.report_payload,
+    strategy: req.body?.strategy,
+  };
 
-    const requestBody = {
-      model,
-      temperature: 0.35,
-      messages: [
-        {
-          role: "system",
-          content:
-            locale === "en"
-              ? "Return only valid JSON. Do not write the student's essay for them."
-              : "只返回合法 JSON。不要代写学生文书成稿。",
-        },
-        {
-          role: "user",
-          content: buildEssayAnalysisPrompt({
-            locale,
-            draft,
-            formState: application.form_state,
-            reportPayload: rep.report_payload,
-            strategy: req.body?.strategy,
-          }),
-        },
-      ],
-    };
-    if (provider !== "ollama") requestBody.response_format = { type: "json_object" };
-    if (COMPLETION_MAX_TOKENS > 0) requestBody.max_tokens = Math.min(COMPLETION_MAX_TOKENS, 1800);
-
-    const tLlm = Date.now();
-    const completion = await client.chat.completions.create(requestBody);
-    const llmMs = Date.now() - tLlm;
-    console.log(`[api/essay/analyze] llm_ms=${llmMs} model=${model}`);
-
-    const messageContent = completion.choices[0]?.message?.content;
-    if (!messageContent) return res.status(502).json({ error: "essay_analysis_empty" });
-    let parsed;
+  let lastErr = null;
+  for (let i = 0; i < configs.length; i++) {
+    const cfg = configs[i];
+    const { region, provider, model } = cfg;
     try {
-      parsed = JSON.parse(messageContent);
+      const { parsed, llmMs } = await generateEssayAnalysisWithConfig(cfg, promptInput);
+      console.log(`[api/essay/analyze] llm_ms=${llmMs} model=${model} provider=${provider}`);
+
+      const analysis = normalizeEssayAnalysis(parsed, locale);
+      const now = new Date().toISOString();
+      const { error: draftSaveErr } = await db.from("essay_drafts").upsert(
+        {
+          user_id: subject.id,
+          application_id: rep.application_id,
+          report_id: rep.id,
+          draft_text: draft,
+          updated_at: now,
+        },
+        { onConflict: "user_id,report_id" },
+      );
+      if (draftSaveErr) {
+        console.error("[api/essay/analyze] draft_save", draftSaveErr);
+      }
+
+      const { data: savedAnalysis, error: analysisSaveErr } = await db
+        .from("essay_analyses")
+        .insert({
+          user_id: subject.id,
+          application_id: rep.application_id,
+          report_id: rep.id,
+          draft_text: draft,
+          analysis_payload: analysis,
+        })
+        .select("id,created_at")
+        .single();
+      if (analysisSaveErr) {
+        console.error("[api/essay/analyze] analysis_save", analysisSaveErr);
+      }
+
+      return res
+        .setHeader("X-LLM-Duration-Ms", String(llmMs))
+        .setHeader("X-LLM-Region", region)
+        .setHeader("X-LLM-Provider", provider)
+        .json({
+          ...analysis,
+          id: savedAnalysis?.id ?? undefined,
+          created_at: savedAnalysis?.created_at ?? undefined,
+        });
     } catch (e) {
-      console.error("[api/essay/analyze] invalid_json", e);
-      return res.status(502).json({ error: IS_PROD ? "essay_analysis_failed" : "模型返回非合法 JSON" });
-    }
-
-    const analysis = normalizeEssayAnalysis(parsed, locale);
-    const now = new Date().toISOString();
-    const { error: draftSaveErr } = await db.from("essay_drafts").upsert(
-      {
-        user_id: subject.id,
-        application_id: rep.application_id,
-        report_id: rep.id,
-        draft_text: draft,
-        updated_at: now,
-      },
-      { onConflict: "user_id,report_id" },
-    );
-    if (draftSaveErr) {
-      console.error("[api/essay/analyze] draft_save", draftSaveErr);
-    }
-
-    const { data: savedAnalysis, error: analysisSaveErr } = await db
-      .from("essay_analyses")
-      .insert({
-        user_id: subject.id,
-        application_id: rep.application_id,
-        report_id: rep.id,
-        draft_text: draft,
-        analysis_payload: analysis,
-      })
-      .select("id,created_at")
-      .single();
-    if (analysisSaveErr) {
-      console.error("[api/essay/analyze] analysis_save", analysisSaveErr);
-    }
-
-    return res
-      .setHeader("X-LLM-Duration-Ms", String(llmMs))
-      .setHeader("X-LLM-Region", region)
-      .setHeader("X-LLM-Provider", provider)
-      .json({
-        ...analysis,
-        id: savedAnalysis?.id ?? undefined,
-        created_at: savedAnalysis?.created_at ?? undefined,
+      lastErr = e;
+      const code = e && typeof e === "object" && "code" in e ? e.code : "";
+      const msg = e instanceof Error ? e.message : String(e);
+      const retryable = code === "invalid_json" || code === "empty_content";
+      if (retryable && i < configs.length - 1) {
+        console.warn(`[api/essay/analyze] fallback provider=${configs[i + 1].provider} after ${provider} failed:`, msg);
+        continue;
+      }
+      console.error("[api/essay/analyze] analysis_error", msg);
+      return res.status(retryable ? 502 : 500).json({
+        error: IS_PROD ? "essay_analysis_failed" : msg,
       });
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    console.error("[api/essay/analyze] analysis_error", msg);
-    return res.status(500).json({ error: IS_PROD ? "essay_analysis_failed" : msg });
+    }
   }
+
+  const msg = lastErr instanceof Error ? lastErr.message : String(lastErr || "essay_analysis_failed");
+  return res.status(502).json({ error: IS_PROD ? "essay_analysis_failed" : msg });
 });
 
 function isValidConsultEmail(s) {
