@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useAuth } from "../auth/AuthContext";
 import { useLanguage } from "../i18n/LanguageContext";
 import { apiUrl } from "../lib/apiBase";
 import "./ExpertConsultSection.css";
@@ -8,10 +9,13 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type Props = {
   gapCount: number;
+  applicationId?: string | null;
+  reportId?: string | null;
 };
 
-export function ExpertConsultSection({ gapCount }: Props) {
-  const { t } = useLanguage();
+export function ExpertConsultSection({ gapCount, applicationId = null, reportId = null }: Props) {
+  const { t, locale } = useLanguage();
+  const { session } = useAuth();
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [wechat, setWechat] = useState("");
@@ -74,12 +78,18 @@ export function ExpertConsultSection({ gapCount }: Props) {
     setSubmitting(true);
     setError(null);
     try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
       const res = await fetch(apiUrl("/api/consult-lead"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           email: em,
           wechat: wechat.trim() || undefined,
+          locale,
+          source: "report_advisor_support",
+          applicationId: applicationId || undefined,
+          reportId: reportId || undefined,
         }),
       });
       const raw = await res.text();

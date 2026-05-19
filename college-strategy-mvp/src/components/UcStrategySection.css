@@ -1,0 +1,93 @@
+.uc-strategy {
+  border-left: 3px solid var(--accent, #2563eb);
+}
+
+.uc-strategy__eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted, #64748b);
+}
+
+.uc-strategy__lead {
+  margin: 0.5rem 0 1rem;
+  color: var(--text-secondary, #475569);
+  line-height: 1.55;
+}
+
+.uc-strategy__app-note {
+  margin: 0 0 1.25rem;
+  font-size: 0.92rem;
+  color: var(--text-secondary, #475569);
+}
+
+.uc-strategy-callout {
+  margin: 0 0 1.25rem;
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+}
+
+.uc-strategy-callout strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: #0c4a6e;
+}
+
+.uc-strategy-callout p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: #0f172a;
+}
+
+.uc-strategy-tier {
+  margin-bottom: 1.25rem;
+}
+
+.uc-strategy-tier__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.uc-strategy-table-wrap table {
+  font-size: 0.9rem;
+}
+
+.uc-strategy-subblock {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border, #e2e8f0);
+}
+
+.uc-strategy-subblock h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.uc-strategy-subblock ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.uc-strategy-subblock li {
+  margin-bottom: 0.35rem;
+  line-height: 1.45;
+}
+
+.uc-strategy-lock {
+  margin: 0.5rem 0 0;
+  font-size: 0.88rem;
+  color: var(--muted, #64748b);
+}
+
+.uc-strategy-lock--block {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+}

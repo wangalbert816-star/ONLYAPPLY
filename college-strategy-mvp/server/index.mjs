@@ -569,12 +569,113 @@ Field names for safety rows must be: school, why_safety_for_you, key_fit_signals
 Field names for reach rows must be: school, why_reach_for_you, key_fit_signals, key_risks, verification_focus
 `;
 
+const UC_KEYWORD_RE =
+  /\buc\b|university of california|加州大学|ucla|berkeley|uc berkeley|ucsd|uc davis|uc irvine|uci|ucsb|uc santa barbara|uc santa cruz|ucsc|uc riverside|ucr|uc merced|ucm/i;
+
+const UC_SYSTEM_APPEND_ZH = `
+
+【加州大学 UC 专区 — 当用户有 UC 意向时必须输出】
+若问卷显示西部偏好、或文字中出现 UC/加州大学/UCLA/Berkeley 等，必须在 JSON 根级增加 "uc_analysis" 对象（与 reach/match/safety 的 9 校名单分开）：
+- 主名单 9 校应尽量为非 UC 的美国本科院校；不要把 UC 校区塞进主名单凑数。
+- uc_analysis 按用户背景划分校区（每档 2–3 所，按竞争度与专业匹配，禁止固定「前二+中间四+后三」模板）。
+- 必须强调 UC 本科录取 test-blind：SAT/ACT 不参与录取决定。
+- 说明所有 UC 共用一套 UC Application 与 4 篇 PIQ。
+"uc_analysis" 结构：
+{
+  "overview": "2-4句总览",
+  "test_blind_note": "test-blind 说明",
+  "application_note": "一套申请+4 PIQ",
+  "reach": [同主名单 school 行结构，why_reach_for_you],
+  "match": [why_match_for_you],
+  "safety": [why_safety_for_you],
+  "checklist": ["4-6条"],
+  "piq_directions": ["4条"],
+  "information_gaps": ["0-4条"]
+}
+每档 2–3 所；校区名互不重复；勿把 MIT 等非 UC 校写入 uc_analysis。`;
+
+const UC_SYSTEM_APPEND_EN = `
+
+【University of California (UC) block — required when the user shows UC intent】
+If the questionnaire shows West Coast preference or mentions UC / University of California / UCLA / Berkeley, etc., add a root-level "uc_analysis" object (separate from the main 9-school reach/match/safety list):
+- The main 9-school list should prefer non-UC U.S. bachelor's institutions; do not pad the main list with UC campuses.
+- In uc_analysis, tier 2–3 campuses each based on the user's profile (not a fixed "top 2 + middle 4 + bottom 3" template).
+- State clearly that UC undergraduate admission is test-blind (SAT/ACT not used in admission decisions).
+- Note one shared UC Application and four PIQs for all campuses.
+"uc_analysis" schema:
+{
+  "overview": "2-4 sentences",
+  "test_blind_note": "test-blind note",
+  "application_note": "one app + 4 PIQs",
+  "reach": [same row shape as main list, why_reach_for_you],
+  "match": [why_match_for_you],
+  "safety": [why_safety_for_you],
+  "checklist": ["4-6 items"],
+  "piq_directions": ["4 items"],
+  "information_gaps": ["0-4 items"]
+}
+2–3 campuses per tier; unique campus names; no non-UC schools in uc_analysis.`;
+
+function wantsUcFromBody(body) {
+  const geo = body?.geoPrefs;
+  if (Array.isArray(geo) && geo.includes("west")) return true;
+  const blob = [
+    body?.majorPrimary,
+    body?.majorSecondary,
+    body?.dealbreakers,
+    body?.activities,
+    body?.residenceRegion,
+    body?.citizenship,
+  ]
+    .join(" ")
+    .toLowerCase();
+  return UC_KEYWORD_RE.test(blob);
+}
+
 function resolveReportLocale(body) {
   return body && body.locale === "en" ? "en" : "zh";
 }
 
-function systemPromptForLocale(locale) {
-  return locale === "en" ? SYSTEM_PROMPT_EN : SYSTEM_PROMPT_ZH;
+function systemPromptForLocale(locale, includeUc = false) {
+  const base = locale === "en" ? SYSTEM_PROMPT_EN : SYSTEM_PROMPT_ZH;
+  if (!includeUc) return base;
+  return base + (locale === "en" ? UC_SYSTEM_APPEND_EN : UC_SYSTEM_APPEND_ZH);
+}
+
+function normalizeUcSchoolRows(rows, tier) {
+  if (!Array.isArray(rows)) return [];
+  const whyKey =
+    tier === "reach" ? "why_reach_for_you" : tier === "match" ? "why_match_for_you" : "why_safety_for_you";
+  return rows
+    .filter((r) => r && typeof r === "object" && String(r.school || "").trim())
+    .slice(0, 3)
+    .map((r) => ({
+      school: String(r.school).trim(),
+      [whyKey]: String(r[whyKey] || "").trim(),
+      key_fit_signals: Array.isArray(r.key_fit_signals) ? r.key_fit_signals.map(String) : [],
+      key_risks: Array.isArray(r.key_risks) ? r.key_risks.map(String) : [],
+      verification_focus: Array.isArray(r.verification_focus) ? r.verification_focus.map(String) : [],
+    }));
+}
+
+function normalizeUcAnalysis(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const o = /** @type {Record<string, unknown>} */ (raw);
+  const reach = normalizeUcSchoolRows(o.reach, "reach");
+  const match = normalizeUcSchoolRows(o.match, "match");
+  const safety = normalizeUcSchoolRows(o.safety, "safety");
+  if (reach.length + match.length + safety.length === 0) return null;
+  return {
+    overview: String(o.overview || "").trim(),
+    test_blind_note: String(o.test_blind_note || "").trim(),
+    application_note: String(o.application_note || "").trim(),
+    reach,
+    match,
+    safety,
+    checklist: Array.isArray(o.checklist) ? o.checklist.map(String).filter(Boolean) : [],
+    piq_directions: Array.isArray(o.piq_directions) ? o.piq_directions.map(String).filter(Boolean) : [],
+    information_gaps: Array.isArray(o.information_gaps) ? o.information_gaps.map(String).filter(Boolean) : [],
+  };
 }
 
 function tryBuildChinaArkConfig() {
@@ -854,7 +955,7 @@ function budgetPostureLabel(value, locale) {
   return zh[key] || key || "未填";
 }
 
-function buildUserPayload(body) {
+function buildUserPayload(body, includeUc = false) {
   const locale = resolveReportLocale(body);
   const isEn = locale === "en";
   const {
@@ -927,7 +1028,11 @@ function buildUserPayload(body) {
       structuredActivityText ? `\n[Structured activity / competition details]\n${structuredActivityText}` : ""
     }
 [List risk posture] ${riskStyle || na}
-[Hard dealbreakers] ${dealbreakers || none}${extra}`;
+[Hard dealbreakers] ${dealbreakers || none}${
+      includeUc
+        ? "\n\n[UC intent] User shows interest in the University of California system. Output uc_analysis per system instructions; keep the main 9-school list mostly non-UC."
+        : ""
+    }${extra}`;
   }
 
   return `请基于以下问卷生成 JSON 报告（严格遵守 system 的结构与每档3所的数量）。
@@ -950,7 +1055,11 @@ function buildUserPayload(body) {
 
 【活动/奖项摘要】${activities || "未提供"}${structuredActivityText ? `\n【活动/竞赛细节】\n${structuredActivityText}` : ""}
 【选校风格】${riskStyle || "未填"}
-【绝对不能接受】${dealbreakers || "无"}${extra}`;
+【绝对不能接受】${dealbreakers || "无"}${
+    includeUc
+      ? "\n\n【UC 意向】用户表现出加州大学（UC）申请意向。请按 system 说明输出 uc_analysis；主名单 9 校尽量为非 UC 美国本科院校。"
+      : ""
+  }${extra}`;
 }
 
 /**
@@ -1058,94 +1167,188 @@ function validateRealisticReach(parsed) {
   return { ok: true };
 }
 
-app.post("/api/report", async (req, res) => {
-  const cfg = resolveLLMConfig();
-  if ("error" in cfg) {
-    console.error("[api/report] llm_config", cfg.error);
-    return res.status(500).json({ error: IS_PROD ? "report_service_unavailable" : cfg.error });
+/** 从模型原文提取 JSON（兼容 Markdown 围栏与前后缀文字） */
+function parseModelJsonContent(raw) {
+  let s = String(raw ?? "").trim();
+  if (!s) {
+    const err = new Error("模型返回空内容");
+    err.code = "invalid_json";
+    throw err;
   }
-  const { key, baseURL, model, isArk, region, provider } = cfg;
-
+  const fenced = s.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/im);
+  if (fenced) s = fenced[1].trim();
+  else if (s.startsWith("```")) {
+    s = s.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+  }
   try {
-    const client = new OpenAI({
-      apiKey: key,
-      ...(baseURL ? { baseURL } : {}),
-      timeout: LLM_TIMEOUT_MS,
-      maxRetries: LLM_MAX_RETRIES,
-    });
-    const locale = resolveReportLocale(req.body || {});
-    const userContent = buildUserPayload(req.body || {});
-
-    const tLlm = Date.now();
-    const requestBody = {
-      model,
-      temperature: 0.4,
-      messages: [
-        { role: "system", content: systemPromptForLocale(locale) },
-        { role: "user", content: userContent },
-      ],
-    };
-    if (provider !== "ollama") {
-      requestBody.response_format = { type: "json_object" };
+    return JSON.parse(s);
+  } catch {
+    const start = s.indexOf("{");
+    const end = s.lastIndexOf("}");
+    if (start >= 0 && end > start) {
+      try {
+        return JSON.parse(s.slice(start, end + 1));
+      } catch {
+        /* fall through */
+      }
     }
-    if (COMPLETION_MAX_TOKENS > 0) {
-      requestBody.max_tokens = COMPLETION_MAX_TOKENS;
-    }
-
-    const completion = await client.chat.completions.create(requestBody);
-    const llmMs = Date.now() - tLlm;
-    console.log(`[api/report] llm_ms=${llmMs} model=${model}`);
-
-    const messageContent = completion.choices[0]?.message?.content;
-    if (!messageContent) {
-      return res.status(502).json({ error: "模型未返回内容" });
-    }
-
-    let parsed;
-    try {
-      parsed = JSON.parse(messageContent);
-    } catch (e) {
-      console.error("[api/report] invalid_json", e);
-      return res.status(502).json({
-        error: IS_PROD ? "report_generation_failed" : "模型返回非合法 JSON",
-      });
-    }
-
-    const uniq = validateSchoolUniqueness(parsed);
-    if (!uniq.ok) {
-      console.warn("[api/report] school_list_invalid:", uniq.reason);
-      return res.status(502).json({
-        error: `校名单未满足去重规则，请重新点击生成。（${uniq.reason}）`,
-      });
-    }
-
-    const realisticReach = validateRealisticReach(parsed);
-    if (!realisticReach.ok) {
-      console.warn("[api/report] realistic_reach_invalid:", realisticReach.reason);
-      return res.status(502).json({
-        error: `冲刺名单未满足「3 所现实可冲」规则，请重新点击生成。（${realisticReach.reason}）`,
-      });
-    }
-
-    return res
-      .setHeader("X-LLM-Duration-Ms", String(llmMs))
-      .setHeader("X-LLM-Region", region)
-      .setHeader("X-LLM-Provider", provider)
-      .json(parsed);
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    console.error("[api/report] generation_error", msg);
-    let hint = "";
-    if (/401|Incorrect API key/i.test(msg)) {
-      hint =
-        region === "cn" || isArk
-          ? " 当前为中国火山方舟（北京网关）。若仍 401：核对 ARK_API_KEY、ep- 接入点与地域；改 .env 后重启 npm run dev。"
-          : provider === "ollama"
-            ? " 当前为 Ollama（OpenAI 兼容）。若仍 401：在 ollama.com/settings/keys 核对 key；云端须 US_OPENAI_BASE_URL=https://ollama.com/v1（或设 OLLAMA_API_KEY）；本地一般为 http://127.0.0.1:11434/v1 且 api_key 可填 ollama。"
-            : " 当前为 OpenAI 兼容接口。若仍 401：核对 US_OPENAI_API_KEY（或 sk- 的 OPENAI_API_KEY）与 US_OPENAI_BASE_URL；改 .env 后重启。";
-    }
-    return res.status(500).json({ error: IS_PROD ? "report_generation_failed" : msg + hint });
+    const err = new Error(`模型返回非合法 JSON（约 ${s.length} 字符，可能被截断）`);
+    err.code = "invalid_json";
+    throw err;
   }
+}
+
+/** 报告生成优先主配置；Ollama 解析失败时可回退火山方舟 */
+function reportConfigsToTry() {
+  const primary = resolveLLMConfig();
+  if ("error" in primary) return primary;
+  const list = [primary];
+  if (primary.provider === "ollama") {
+    const cn = tryBuildChinaArkConfig();
+    if (cn) list.push(cn);
+  }
+  return list;
+}
+
+async function callReportLlmOnce(client, { model, provider, locale, userContent }) {
+  const requestBody = {
+    model,
+    temperature: 0.35,
+    messages: [
+      { role: "system", content: systemPromptForLocale(locale, false) },
+      { role: "user", content: userContent },
+    ],
+  };
+  if (provider !== "ollama") {
+    requestBody.response_format = { type: "json_object" };
+  }
+  if (COMPLETION_MAX_TOKENS > 0) {
+    requestBody.max_tokens = COMPLETION_MAX_TOKENS;
+  }
+
+  const completion = await client.chat.completions.create(requestBody);
+  const messageContent = completion.choices[0]?.message?.content;
+  if (!messageContent || !String(messageContent).trim()) {
+    const err = new Error("模型未返回内容");
+    err.code = "empty_content";
+    throw err;
+  }
+  return parseModelJsonContent(messageContent);
+}
+
+async function generateReportWithConfig(cfg, body) {
+  const { key, baseURL, model, region, provider } = cfg;
+  const locale = resolveReportLocale(body);
+  const userContent = buildUserPayload(body, false);
+  const client = new OpenAI({
+    apiKey: key,
+    ...(baseURL ? { baseURL } : {}),
+    timeout: LLM_TIMEOUT_MS,
+    maxRetries: LLM_MAX_RETRIES,
+  });
+
+  const t0 = Date.now();
+  let lastErr;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const parsed = await callReportLlmOnce(client, { model, provider, locale, userContent });
+      return { parsed, llmMs: Date.now() - t0, region, provider, model };
+    } catch (e) {
+      lastErr = e;
+      const code = e && typeof e === "object" && "code" in e ? e.code : "";
+      if (code === "invalid_json" || code === "empty_content") {
+        console.warn(
+          `[api/report] parse_retry attempt=${attempt + 1} provider=${provider} model=${model}`,
+          e instanceof Error ? e.message : e,
+        );
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw lastErr;
+}
+
+function finalizeReportPayload(parsed, body) {
+  const includeUc = wantsUcFromBody(body);
+  if (includeUc) {
+    const uc = normalizeUcAnalysis(parsed.uc_analysis);
+    if (uc) parsed.uc_analysis = uc;
+    else delete parsed.uc_analysis;
+  } else {
+    delete parsed.uc_analysis;
+  }
+  return parsed;
+}
+
+app.post("/api/report", async (req, res) => {
+  const configs = reportConfigsToTry();
+  if ("error" in configs) {
+    console.error("[api/report] llm_config", configs.error);
+    return res.status(500).json({ error: IS_PROD ? "report_service_unavailable" : configs.error });
+  }
+
+  const body = req.body || {};
+  let lastErr = null;
+
+  for (let i = 0; i < configs.length; i++) {
+    const cfg = configs[i];
+    const { key, baseURL, model, isArk, region, provider } = cfg;
+    try {
+      const { parsed, llmMs } = await generateReportWithConfig(cfg, body);
+      console.log(`[api/report] llm_ms=${llmMs} model=${model} provider=${provider}`);
+
+      const uniq = validateSchoolUniqueness(parsed);
+      if (!uniq.ok) {
+        console.warn("[api/report] school_list_invalid:", uniq.reason);
+        return res.status(502).json({
+          error: `校名单未满足去重规则，请重新点击生成。（${uniq.reason}）`,
+        });
+      }
+
+      const realisticReach = validateRealisticReach(parsed);
+      if (!realisticReach.ok) {
+        console.warn("[api/report] realistic_reach_invalid:", realisticReach.reason);
+        return res.status(502).json({
+          error: `冲刺名单未满足「3 所现实可冲」规则，请重新点击生成。（${realisticReach.reason}）`,
+        });
+      }
+
+      return res
+        .setHeader("X-LLM-Duration-Ms", String(llmMs))
+        .setHeader("X-LLM-Region", region)
+        .setHeader("X-LLM-Provider", provider)
+        .json(finalizeReportPayload(parsed, body));
+    } catch (e) {
+      lastErr = e;
+      const code = e && typeof e === "object" && "code" in e ? e.code : "";
+      const msg = e instanceof Error ? e.message : String(e);
+      const retryable = code === "invalid_json" || code === "empty_content";
+      if (retryable && i < configs.length - 1) {
+        console.warn(`[api/report] fallback provider=${configs[i + 1].provider} after ${provider} failed:`, msg);
+        continue;
+      }
+      console.error("[api/report] generation_error", msg);
+      let hint = "";
+      if (/401|Incorrect API key/i.test(msg)) {
+        hint =
+          region === "cn" || isArk
+            ? " 当前为中国火山方舟（北京网关）。若仍 401：核对 ARK_API_KEY、ep- 接入点与地域；改 .env 后重启 npm run dev。"
+            : provider === "ollama"
+              ? " 当前为 Ollama（OpenAI 兼容）。若仍 401：在 ollama.com/settings/keys 核对 key；云端须 US_OPENAI_BASE_URL=https://ollama.com/v1（或设 OLLAMA_API_KEY）；本地一般为 http://127.0.0.1:11434/v1 且 api_key 可填 ollama。"
+              : " 当前为 OpenAI 兼容接口。若仍 401：核对 US_OPENAI_API_KEY（或 sk- 的 OPENAI_API_KEY）与 US_OPENAI_BASE_URL；改 .env 后重启。";
+      }
+      if (retryable && configs.length === 1) {
+        hint += " 可在 .env 设置 LLM_REGION=cn 使用火山方舟，或增大 COMPLETION_MAX_TOKENS。";
+      }
+      return res.status(retryable ? 502 : 500).json({
+        error: IS_PROD ? "report_generation_failed" : msg + hint,
+      });
+    }
+  }
+
+  const msg = lastErr instanceof Error ? lastErr.message : String(lastErr || "report_generation_failed");
+  return res.status(502).json({ error: IS_PROD ? "report_generation_failed" : msg });
 });
 
 function normalizeEssayAnalysis(raw, locale) {
@@ -1455,6 +1658,11 @@ function isValidConsultEmail(s) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 }
 
+function bearerToken(req) {
+  const authHeader = req.headers.authorization || "";
+  return authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+}
+
 /** 默认：项目根 data/expert-consult-leads.jsonl；可用 CONSULT_LEADS_FILE 覆盖 */
 const DEFAULT_EXPERT_CONSULT_LEADS = path.join(__dirname, "..", "data", "expert-consult-leads.jsonl");
 
@@ -1501,13 +1709,50 @@ function appendConsultLeadRecord(record) {
 app.post("/api/consult-lead", (req, res) => {
   const email = String(req.body?.email || "").trim();
   const wechat = String(req.body?.wechat || "").trim().slice(0, 64);
+  const locale = req.body?.locale === "en" ? "en" : "zh";
+  const source = String(req.body?.source || "report_advisor_support").trim().slice(0, 80) || "report_advisor_support";
   if (!email || !isValidConsultEmail(email)) {
     return res.status(400).json({ error: "请提供有效邮箱地址" });
   }
-  const record = { email, wechat: wechat || null, at: new Date().toISOString() };
-  console.log("[consult-lead]", JSON.stringify(record));
-  appendConsultLeadRecord(record);
-  return res.json({ ok: true });
+  void (async () => {
+    const admin = supabaseAdmin();
+    const token = bearerToken(req);
+    let userId = null;
+    if (admin && token) {
+      const { data: userData, error: userErr } = await admin.auth.getUser(token);
+      if (!userErr && userData?.user?.id) userId = userData.user.id;
+    }
+
+    const applicationId = userId ? String(req.body?.applicationId || "").trim() || null : null;
+    const reportId = userId ? String(req.body?.reportId || "").trim() || null : null;
+    const record = {
+      user_id: userId,
+      application_id: applicationId,
+      report_id: reportId,
+      email,
+      wechat: wechat || null,
+      locale,
+      source,
+    };
+    console.log("[consult-lead]", JSON.stringify({ email, wechat: wechat || null, locale, source, userId, applicationId, reportId }));
+
+    if (admin) {
+      const { error } = await admin.from("expert_consult_leads").insert(record);
+      if (error) {
+        console.error("[consult-lead] supabase insert failed:", error.message);
+        if (IS_PROD) return res.status(500).json({ error: "lead_save_failed" });
+      } else {
+        return res.json({ ok: true });
+      }
+    }
+
+    appendConsultLeadRecord({ email, wechat: wechat || null, locale, source, userId, applicationId, reportId, at: new Date().toISOString() });
+    return res.json({ ok: true, fallback: true });
+  })().catch((e) => {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[consult-lead] unexpected failure:", msg);
+    return res.status(500).json({ error: IS_PROD ? "lead_save_failed" : msg });
+  });
 });
 
 app.get("/api/health", (_req, res) => {

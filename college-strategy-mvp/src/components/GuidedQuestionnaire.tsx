@@ -18,6 +18,25 @@ export type GuideTouch = {
 
 type Updater = <K extends keyof FormState>(key: K, value: FormState[K]) => void;
 
+const MAJOR_PRESET_KEYS = ["cs", "business", "engineering", "bio", "social", "arts", "policy", "undecided"] as const;
+const DEALBREAKER_PRESET_KEYS = ["none", "cold", "rural", "religious", "majorLimits", "transferLimits", "cost", "safety"] as const;
+
+function splitPresetList(value: string): string[] {
+  return value
+    .split(/[，,、;；\n]+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function toggleDealbreakerPreset(current: string, label: string, noneLabel: string): string {
+  const trimmed = current.trim();
+  if (label === noneLabel) return trimmed === noneLabel ? "" : noneLabel;
+
+  const parts = splitPresetList(current).filter((part) => part !== noneLabel);
+  const next = parts.includes(label) ? parts.filter((part) => part !== label) : [...parts, label];
+  return next.join("、");
+}
+
 function createActivityItem(): ActivityItem {
   const id =
     typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -596,6 +615,30 @@ export function GuidedStep2({
           <p className="field-why" id="gw-s2-major">
             {t("wizard.s2.major.why")}
           </p>
+          <div className="major-preset-group" aria-label={t("wizard.s2.major.presetLabel")}>
+            <p className="major-preset-group__label">{t("wizard.s2.major.presetLabel")}</p>
+            <div className="major-preset-group__options">
+              {MAJOR_PRESET_KEYS.map((key) => {
+                const label = t(`wizard.s2.major.presets.${key}`);
+                const selected = form.majorPrimary.trim() === label;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    className={`major-preset${selected ? " major-preset--selected" : ""}`}
+                    aria-pressed={selected}
+                    onClick={() => {
+                      update("majorPrimary", label);
+                      markTouch("s2_major");
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <p className="field-sub-label">{t("wizard.s2.major.customLabel")}</p>
           <input
             id="major"
             className="input-modern"
@@ -634,6 +677,16 @@ export function GuidedStep2({
             onChange={(e) => update("majorSecondary", e.target.value)}
             onBlur={() => markTouch("s2_major2")}
           />
+          <button
+            type="button"
+            className="field-skip-btn"
+            onClick={() => {
+              update("majorSecondary", "");
+              markTouch("s2_major2");
+            }}
+          >
+            {t("wizard.s2.major2.skip")}
+          </button>
           {major2Ok && (
             <p className="field-feedback">
               {form.majorSecondary.trim() ? t("wizard.s2.major2.fb") : t("wizard.s2.major2.fbSkip")}
@@ -772,6 +825,16 @@ export function GuidedStep3({
           onBlur={() => markTouch("s3_actv")}
         />
         <small>{form.activities.length}/600</small>
+        <button
+          type="button"
+          className="field-skip-btn"
+          onClick={() => {
+            update("activities", "");
+            markTouch("s3_actv");
+          }}
+        >
+          {t("wizard.s3.activities.skip")}
+        </button>
         {actvTouched && (
           <p className="field-feedback">
             {form.activities.trim() ? t("wizard.s3.activities.fb") : t("wizard.s3.activities.fbEmpty")}
@@ -970,6 +1033,34 @@ export function GuidedStep3({
           <p className="field-why" id="gw-s3-deal">
             {t("wizard.s3.deal.why")}
           </p>
+          <div className="major-preset-group" aria-label={t("wizard.s3.deal.presetLabel")}>
+            <p className="major-preset-group__label">{t("wizard.s3.deal.presetLabel")}</p>
+            <div className="major-preset-group__options">
+              {DEALBREAKER_PRESET_KEYS.map((key) => {
+                const label = t(`wizard.s3.deal.presets.${key}`);
+                const selected =
+                  key === "none"
+                    ? form.dealbreakers.trim() === label
+                    : splitPresetList(form.dealbreakers).includes(label);
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    className={`major-preset${selected ? " major-preset--selected" : ""}`}
+                    aria-pressed={selected}
+                    onClick={() => {
+                      const noneLabel = t("wizard.s3.deal.presets.none");
+                      update("dealbreakers", toggleDealbreakerPreset(form.dealbreakers, label, noneLabel));
+                      markTouch("s3_deal");
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <p className="field-sub-label">{t("wizard.s3.deal.customLabel")}</p>
           <input
             id="deal"
             className="input-modern"
@@ -981,6 +1072,16 @@ export function GuidedStep3({
             onChange={(e) => update("dealbreakers", e.target.value)}
             onBlur={() => markTouch("s3_deal")}
           />
+          <button
+            type="button"
+            className="field-skip-btn"
+            onClick={() => {
+              update("dealbreakers", t("wizard.s3.deal.presets.none"));
+              markTouch("s3_deal");
+            }}
+          >
+            {t("wizard.s3.deal.skip")}
+          </button>
           {guideTouch.s3_deal && (
             <p className="field-feedback">
               {form.dealbreakers.trim() ? t("wizard.s3.deal.fb") : t("wizard.s3.deal.fbSkip")}

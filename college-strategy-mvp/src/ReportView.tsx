@@ -19,6 +19,8 @@ import { ReportPdfDocument } from "./components/pdf/ReportPdfDocument";
 import { LegalLinks } from "./components/LegalLinks";
 import { getEffectiveIntake } from "./lib/intakeTerm";
 import { splitTopReferenceSchools } from "./lib/ultraSelectiveSchools";
+import { resolveUcAnalysis } from "./lib/ucApplication";
+import { UcStrategySection } from "./components/UcStrategySection";
 
 export type { PaywallCopy, PaywallTone } from "./types";
 
@@ -213,6 +215,8 @@ function PreviewLockedCell({ label }: { label: string }) {
 interface ReportViewProps {
   report: ReportPayload;
   form: FormState;
+  applicationId?: string | null;
+  reportId?: string | null;
   unlocked: boolean;
   onUnlock: () => void;
   onReset: () => void;
@@ -246,6 +250,8 @@ interface ReportViewProps {
 export function ReportView({
   report,
   form,
+  applicationId = null,
+  reportId = null,
   unlocked,
   onUnlock,
   onReset,
@@ -305,6 +311,7 @@ export function ReportView({
     ? report.executive_summary ?? []
     : (report.executive_summary ?? []).slice(0, 1);
   const previewGapCount = Math.min(2, report.information_gaps?.length ?? 0);
+  const ucAnalysis = useMemo(() => resolveUcAnalysis(report, form, locale), [report, form, locale]);
 
   return (
     <div className={`app report-view${reportRefreshing ? " report-view--busy" : ""}`}>
@@ -600,6 +607,9 @@ export function ReportView({
           </section>
         );
       })}
+          {ucAnalysis && (
+            <UcStrategySection uc={ucAnalysis} t={t} unlocked={unlocked} />
+          )}
         </ReportPathStep>
 
         <ReportPathStep step={5} id="report-step-action" title={t("report.decision.step5Title")} lead={t("report.decision.step5Lead")} bare>
@@ -658,7 +668,7 @@ export function ReportView({
           </section>
         )}
 
-        <ExpertConsultSection gapCount={report.information_gaps?.length ?? 0} />
+        <ExpertConsultSection gapCount={report.information_gaps?.length ?? 0} applicationId={applicationId} reportId={reportId} />
 
       <section className="card report-block report-path-appendix__card">
         <h2>

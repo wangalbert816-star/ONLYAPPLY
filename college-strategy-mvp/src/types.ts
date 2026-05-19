@@ -96,6 +96,19 @@ export interface PaywallCopy {
   footerText: string;
 }
 
+/** 加州大学（UC）系统专用分析块 */
+export interface UcAnalysis {
+  overview: string;
+  test_blind_note: string;
+  application_note: string;
+  reach: SchoolRow[];
+  match: SchoolRow[];
+  safety: SchoolRow[];
+  checklist: string[];
+  piq_directions: string[];
+  information_gaps: string[];
+}
+
 export interface ReportPayload {
   executive_summary: string[];
   information_gaps: string[];
@@ -109,6 +122,8 @@ export interface ReportPayload {
     before_submitting: string[];
   };
   strategy_notes: string[];
+  /** 当用户有 UC 申请意向时由模型生成；缺失时前端可兜底 */
+  uc_analysis?: UcAnalysis | null;
 }
 
 export type SchoolTier = "reach" | "match" | "safety";

@@ -250,6 +250,20 @@ function parseActish(s: string): number | null {
   return null;
 }
 
+function scoreFromCurve(value: number, points: Array<[number, number]>): number {
+  const sorted = [...points].sort((a, b) => a[0] - b[0]);
+  if (value <= sorted[0][0]) return sorted[0][1];
+  for (let i = 1; i < sorted.length; i += 1) {
+    const [x2, y2] = sorted[i];
+    const [x1, y1] = sorted[i - 1];
+    if (value <= x2) {
+      const ratio = (value - x1) / (x2 - x1);
+      return y1 + ratio * (y2 - y1);
+    }
+  }
+  return sorted[sorted.length - 1][1];
+}
+
 function scoreTesting(form: FormState): number {
   if (!form.testing) return 36;
   if (form.testing === "test_optional") {
@@ -259,20 +273,37 @@ function scoreTesting(form: FormState): number {
   }
   const has = Boolean(form.satScore.trim() || form.actScore.trim());
   if (!has) return 42;
-  let s = 64;
   const sat = parseSatish(form.satScore);
   const act = parseActish(form.actScore);
+  const candidates: number[] = [];
   if (sat != null) {
-    if (sat >= 1520) s += 18;
-    else if (sat >= 1450) s += 12;
-    else if (sat >= 1380) s += 6;
+    candidates.push(
+      scoreFromCurve(sat, [
+        [400, 40],
+        [1100, 54],
+        [1250, 62],
+        [1380, 70],
+        [1450, 78],
+        [1520, 86],
+        [1600, 93],
+      ]),
+    );
   }
   if (act != null) {
-    if (act >= 34) s += 16;
-    else if (act >= 31) s += 10;
-    else if (act >= 28) s += 5;
+    candidates.push(
+      scoreFromCurve(act, [
+        [10, 40],
+        [22, 54],
+        [25, 62],
+        [28, 70],
+        [31, 78],
+        [34, 86],
+        [36, 93],
+      ]),
+    );
   }
-  return Math.min(93, Math.max(40, s));
+  if (candidates.length === 0) return 50;
+  return Math.min(93, Math.max(40, Math.round(Math.max(...candidates))));
 }
 
 function scoreActivities(form: FormState): number {

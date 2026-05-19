@@ -887,6 +887,8 @@ export default function App() {
       <ReportView
         report={report}
         form={form}
+        applicationId={currentApplicationId}
+        reportId={currentReportId}
         unlocked={reportUnlocked}
         authConfigured={authConfigured}
         isAuthenticated={Boolean(user)}
