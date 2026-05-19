@@ -154,6 +154,19 @@
   font-weight: 400;
 }
 
+.landing-intro-btn {
+  margin-top: 0.55rem;
+  background: #e2e8f0;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.landing-intro-btn:hover:not(:disabled) {
+  background: #cbd5e1;
+  border-color: #94a3b8;
+}
+
 .landing-cta-wrap {
   margin-bottom: 0;
 }
@@ -1226,6 +1239,17 @@ th {
   .btn-secondary:hover:not(:disabled),
   .mini-action:hover:not(:disabled) {
     background: #1a2538;
+  }
+
+  .landing-intro-btn {
+    background: #334155;
+    color: #f1f5f9;
+    border-color: #475569;
+  }
+
+  .landing-intro-btn:hover:not(:disabled) {
+    background: #475569;
+    border-color: #64748b;
   }
 
   .form-live-summary,

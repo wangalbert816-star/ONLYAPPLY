@@ -9,6 +9,7 @@ import { BrandLogo } from "./components/BrandLogo";
 import { FormLiveSummary, GuidedStep1, GuidedStep2, GuidedStep3, type GuideTouch } from "./components/GuidedQuestionnaire";
 import { FullscreenLogoMarquee } from "./components/FullscreenLogoMarquee";
 import { BrandStoryOverlay } from "./components/BrandStoryOverlay";
+import { ProductIntroPage } from "./components/ProductIntroPage";
 import { useLanguage } from "./i18n/LanguageContext";
 import { useAuth } from "./auth/AuthContext";
 import { AuthModal } from "./components/auth/AuthModal";
@@ -181,7 +182,7 @@ export default function App() {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormState>(initialForm);
   const [guideTouch, setGuideTouch] = useState<GuideTouch>({});
-  const [view, setView] = useState<"form" | "report" | "account">("form");
+  const [view, setView] = useState<"form" | "report" | "account" | "intro">("form");
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [currentApplicationId, setCurrentApplicationId] = useState<string | null>(null);
   const [currentReportId, setCurrentReportId] = useState<string | null>(null);
@@ -808,6 +809,23 @@ export default function App() {
     await refreshReportWithGapNotes([]);
   }
 
+  if (view === "intro") {
+    return withChrome(
+      <ProductIntroPage
+        onBack={() => {
+          setView("form");
+          setFlowStarted(false);
+        }}
+        onStart={() => {
+          setApplicationHubOpen(false);
+          setFlowStarted(true);
+          setView("form");
+          queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+        }}
+      />,
+    );
+  }
+
   if (view === "account" && user) {
     return withChrome(
       <>
@@ -1000,6 +1018,17 @@ export default function App() {
               }}
             >
               {t("app.welcome.start")}
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary btn-block landing-intro-btn"
+              onClick={() => {
+                setApplicationHubOpen(false);
+                setView("intro");
+                queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+              }}
+            >
+              {t("app.productIntroLink")}
             </button>
             <p className="landing-trust">{t("app.welcome.meta")}</p>
           </div>
