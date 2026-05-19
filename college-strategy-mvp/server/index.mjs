@@ -25,14 +25,69 @@ const app = express();
 const IS_PROD = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL);
 app.use(cors({ origin: true }));
 
+function resolveSiteUrl() {
+  let siteUrl = (process.env.SITE_URL || "").trim().replace(/\/$/, "");
+  if (siteUrl && !/^https?:\/\//i.test(siteUrl)) {
+    siteUrl = `https://${siteUrl}`;
+  }
+  if (!siteUrl && process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    siteUrl = `https://${String(process.env.VERCEL_PROJECT_PRODUCTION_URL).trim().replace(/^https?:\/\//i, "")}`;
+  }
+  if (!siteUrl && process.env.VERCEL_URL) {
+    siteUrl = `https://${String(process.env.VERCEL_URL).trim().replace(/^https?:\/\//i, "")}`;
+  }
+  return siteUrl;
+}
+
 function stripeEnv() {
   const secret = (process.env.STRIPE_SECRET_KEY || "").trim();
   const webhookSecret = (process.env.STRIPE_WEBHOOK_SECRET || "").trim();
   const priceId = (process.env.STRIPE_PRICE_ID || "").trim();
   const essayAnalysisPriceId = (process.env.STRIPE_ESSAY_ANALYSIS_PRICE_ID || "").trim();
   const essaySubscriptionPriceId = (process.env.STRIPE_ESSAY_SUBSCRIPTION_PRICE_ID || "").trim();
-  const siteUrl = (process.env.SITE_URL || "").trim().replace(/\/$/, "");
+  const siteUrl = resolveSiteUrl();
   return { secret, webhookSecret, priceId, essayAnalysisPriceId, essaySubscriptionPriceId, siteUrl };
+}
+
+/** @returns {Promise<{ ok: true, price: import("stripe").Stripe.Price } | { ok: false, code: string, message: string }>} */
+async function validateStripeCheckoutPrice(stripe, priceId) {
+  try {
+    const price = await stripe.prices.retrieve(priceId);
+    if (!price.active) {
+      return { ok: false, code: "stripe_price_inactive", message: "Stripe price is inactive" };
+    }
+    if (price.type !== "one_time") {
+      return {
+        ok: false,
+        code: "stripe_price_not_one_time",
+        message: "Stripe price must be one-time for payment checkout",
+      };
+    }
+    return { ok: true, price };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (/expired api key/i.test(msg)) {
+      return { ok: false, code: "stripe_key_expired", message: msg };
+    }
+    if (/no such price/i.test(msg)) {
+      return { ok: false, code: "stripe_price_invalid", message: msg };
+    }
+    return { ok: false, code: "stripe_price_lookup_failed", message: msg };
+  }
+}
+
+function mapStripeCheckoutError(msg) {
+  if (/no such price/i.test(msg)) return "stripe_price_invalid";
+  if (/invalid url|must be a valid url|fully qualified/i.test(msg)) return "stripe_site_url_invalid";
+  if (/one_time|payment mode/i.test(msg)) return "stripe_price_not_one_time";
+  if (/expired api key/i.test(msg)) return "stripe_key_expired";
+  return IS_PROD ? "stripe_checkout_failed" : msg;
+}
+
+function redactStripeMessage(msg) {
+  return String(msg || "")
+    .replace(/sk_(live|test)_[A-Za-z0-9]+/gi, "sk_$1_***")
+    .slice(0, 200);
 }
 
 function supabaseAdmin() {
@@ -346,6 +401,12 @@ app.post("/api/stripe/create-checkout-session", async (req, res) => {
     return res.status(409).json({ error: "already_unlocked" });
   }
 
+  const priceCheck = await validateStripeCheckoutPrice(stripe, priceId);
+  if (!priceCheck.ok) {
+    console.error("[stripe create-checkout-session] price_check", priceCheck.code, priceCheck.message);
+    return res.status(503).json({ error: priceCheck.code });
+  }
+
   try {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -362,11 +423,15 @@ app.post("/api/stripe/create-checkout-session", async (req, res) => {
       },
     });
 
+    if (!session.url) {
+      console.error("[stripe create-checkout-session] missing session.url", session.id);
+      return res.status(502).json({ error: "stripe_checkout_no_url" });
+    }
     return res.json({ url: session.url, applicationId: rep.application_id, reportId: rep.id });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("[stripe create-checkout-session]", msg);
-    return res.status(500).json({ error: msg });
+    return res.status(500).json({ error: mapStripeCheckoutError(msg) });
   }
 });
 
@@ -1755,22 +1820,43 @@ app.post("/api/consult-lead", (req, res) => {
   });
 });
 
-app.get("/api/health", (_req, res) => {
+app.get("/api/health", async (_req, res) => {
   const cfg = resolveLLMConfig();
   const stripeCheckout = stripeReadyForCheckout();
   const essayAnalysisCheckout = stripeReadyForEssayAnalysisCheckout();
   const stripe = stripeConfigStatus();
-  if ("error" in cfg) {
-    return res.json({ ok: true, llm: false, llmError: cfg.error, stripeCheckout, essayAnalysisCheckout, stripe });
+  const { secret, priceId, siteUrl } = stripeEnv();
+  /** @type {Record<string, unknown>} */
+  const stripeDiagnostics = { siteUrlResolved: siteUrl || null };
+  if (stripeCheckout && secret && priceId) {
+    try {
+      const stripeClient = new Stripe(secret);
+      const check = await validateStripeCheckoutPrice(stripeClient, priceId);
+      stripeDiagnostics.reportPrice = check.ok
+        ? { active: check.price.active, type: check.price.type, currency: check.price.currency }
+        : { error: check.code, message: redactStripeMessage(check.message) };
+    } catch (e) {
+      const raw = e instanceof Error ? e.message : String(e);
+      stripeDiagnostics.reportPrice = {
+        error: /expired api key/i.test(raw) ? "stripe_key_expired" : "stripe_price_lookup_failed",
+        message: redactStripeMessage(raw),
+      };
+    }
   }
-  res.json({
+  const payload = {
     ok: true,
-    llm: true,
-    llmRegion: cfg.region,
-    provider: cfg.provider,
+    llm: !("error" in cfg),
     stripeCheckout,
     essayAnalysisCheckout,
-    stripe,
+    stripe: { ...stripe, diagnostics: stripeDiagnostics },
+  };
+  if ("error" in cfg) {
+    return res.json({ ...payload, llm: false, llmError: cfg.error });
+  }
+  return res.json({
+    ...payload,
+    llmRegion: cfg.region,
+    provider: cfg.provider,
   });
 });
 

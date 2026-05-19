@@ -86,6 +86,15 @@ function translateCheckoutApiError(code: string | undefined, tf: (k: string) => 
   switch (code) {
     case "stripe_checkout_unavailable":
       return tf("report.stripeNotConfigured");
+    case "stripe_price_invalid":
+    case "stripe_price_inactive":
+    case "stripe_price_not_one_time":
+    case "stripe_price_lookup_failed":
+      return tf("report.stripePriceMisconfigured");
+    case "stripe_site_url_invalid":
+      return tf("report.stripeSiteUrlMisconfigured");
+    case "stripe_key_expired":
+      return tf("report.stripeKeyExpired");
     case "auth_required":
     case "invalid_session":
       return tf("report.stripeSignInFirst");

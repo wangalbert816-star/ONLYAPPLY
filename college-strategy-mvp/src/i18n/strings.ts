@@ -596,6 +596,12 @@ merge(zhFlat, {
     stripeCanceled: "你已取消结账，仍可继续在预览模式中浏览内容。",
     stripeSuccessBanner: "支付已成功记录。若没有立刻显示完整版，请几秒后刷新或重新打开本条报告。",
     stripeNotConfigured: "服务端尚未配置 Stripe 或权益表不可用，结账暂时关闭。可将 VITE_ENABLE_STRIPE_CHECKOUT 设为关闭以继续使用演示解锁。",
+    stripePriceMisconfigured:
+      "支付价格配置有误（需在 Stripe 使用「一次性」Price，且与当前密钥同一测试/正式环境）。请联系 support@onlyapply.ai。",
+    stripeSiteUrlMisconfigured:
+      "站点回跳地址（SITE_URL）配置无效。请在 Vercel 将 SITE_URL 设为 https://onlyapply.org 后重新部署。",
+    stripeKeyExpired:
+      "Stripe 密钥已过期或失效。请在 Stripe 控制台生成新的 Secret key，并更新 Vercel 环境变量 STRIPE_SECRET_KEY 后重新部署。",
     stripeSaveFirst: "尚未有可关联支付的已保存报告。请先登录并保存本条报告后再结账。",
     unlockUnavailable: "完整版解锁暂时不可用。请稍后重试，或联系 support@onlyapply.ai。",
     previewPdfLocked: "完整版解锁后可下载完整 PDF",
@@ -1233,6 +1239,12 @@ merge(enFlat, {
     stripeSuccessBanner: "Payment recorded. If the full report doesn’t show yet, refresh in a few seconds or reopen this report.",
     stripeNotConfigured:
       "Checkout isn’t available yet (Stripe server config or entitlements table). Turn off VITE_ENABLE_STRIPE_CHECKOUT to keep the demo unlock.",
+    stripePriceMisconfigured:
+      "Stripe price misconfigured: use a one-time Price in the same test/live mode as your secret key. Contact support@onlyapply.ai.",
+    stripeSiteUrlMisconfigured:
+      "SITE_URL is invalid. Set SITE_URL to https://onlyapply.org in Vercel and redeploy.",
+    stripeKeyExpired:
+      "Your Stripe secret key has expired. Create a new Secret key in Stripe and update STRIPE_SECRET_KEY in Vercel, then redeploy.",
     stripeSaveFirst: "No saved report snapshot to attach the payment to. Save while signed in, then try checkout again.",
     unlockUnavailable: "Full-report unlock is temporarily unavailable. Try again later or contact support@onlyapply.ai.",
     previewPdfLocked: "Unlock the full report to download the complete PDF.",
