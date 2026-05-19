@@ -58,30 +58,81 @@ const zhDocs: Record<LegalDoc, LegalCopy> = {
       {
         title: "我们收集的信息",
         body: [
-          "我们可能收集登录信息、问卷信息、报告内容、补充说明、文书草稿、文书分析结果、分析历史、使用数据、邀请码兑换记录和解锁状态。",
+          "我们可能收集登录信息（邮箱或 Google 登录标识）、问卷信息、报告内容、补充说明、文书草稿、文书分析结果、分析历史、邀请码兑换记录和解锁状态。",
           "问卷可能包含成绩、标化、预算、活动、结构化活动/竞赛、专业偏好、地区偏好、申请底线和其他申请规划相关信息。",
-          "当你回答信息缺口、补充活动或更新申请档案时，这些补充信息可能会被保存到同一份申请档案或报告历史中，用于后续重新生成报告，减少重复提问并提高判断一致性。",
+          "当你回答信息缺口、补充活动或更新申请档案时，这些补充信息可能会被保存到同一份申请档案或报告历史中，用于后续重新生成报告。",
           "文书草稿可能包含你主动输入的个人经历、活动细节、家庭或成长背景等内容。请不要提交你无权提供的他人信息，或不希望系统处理的敏感内容。",
+          "仅当你主动申请专家 1v1 帮助并提交表单时，我们才会收集你自愿留下的邮箱、微信（可选）及来源页面信息。",
+        ],
+      },
+      {
+        title: "信息存储位置与保留期限",
+        body: [
+          "登录并保存后：问卷、报告、补充说明、文书草稿与分析记录保存在 Supabase 数据库（与您的账户绑定）。",
+          "未登录时：生成报告会经我们的服务器实时处理；默认不写入您的云端账户。浏览器可能暂存待保存草稿（约 7 天），清除站点数据即删除。",
+          "付款：我们只保存支付状态、Stripe Checkout 会话标识与权益记录，不保存完整银行卡号。",
+          "在您的账户与相关记录存在期间，我们会继续保存以便提供服务；目前没有自动到期删除所有个人数据的机制。您可通过下文「您的权利」请求删除。",
         ],
       },
       {
         title: "我们如何使用信息",
         body: [
-          "这些信息用于生成和保存报告、保存申请档案和结构化活动、保留补充说明供后续报告使用、保存文书草稿与分析历史、提供登录与解锁功能、改善产品体验、排查错误、防止滥用，以及在你主动留下联系方式时与你沟通。",
-          "我们可能保存支付状态、Stripe Checkout 会话标识、邀请码兑换记录和权益记录，用于确认报告或文书分析是否已解锁。我们不保存完整银行卡号。",
+          "用于生成、展示与保存选校报告；在您补充信息后重新生成；提供文书分析与历史回看；管理登录、邀请码与 Stripe 解锁；在您主动申请专家 1v1 时由 OnlyApply 官方跟进。",
+          "用于改进产品、排查故障与防止滥用。",
+          "我们不会出售、出租或以换取对价的方式向数据经纪人提供您的申请档案；不会向其他用户公开展示您的个人申请内容；当前产品未集成第三方广告或行为画像 SDK。",
         ],
       },
       {
-        title: "AI 与第三方服务",
+        title: "AI 服务（火山引擎方舟）",
         body: [
-          "为生成报告或文书分析，我们可能将必要问卷内容、报告上下文、文书草稿或相关片段发送给 AI 模型服务商或兼容 API 提供方处理。",
-          "我们也可能使用 Supabase、Vercel、Stripe、Google 登录等第三方服务。它们会根据各自隐私政策处理必要数据。",
+          "为生成报告与文书分析，我们的服务器会将提供服务所必需的信息发送至火山引擎方舟（Volcengine Ark）API，包括问卷中的成绩、标化、预算、活动、专业与地区偏好、申请身份与地区上下文；已有报告的结构化内容（文书分析时）；以及您提交的文书草稿片段（受系统长度限制）。",
+          "OnlyApply 不会使用您的申请数据训练我们自有的 AI 模型。通过方舟 API 传输的数据，同时受火山引擎相关服务条款与数据处理说明约束。",
+          "我们不为报告生成之目的，将您的完整申请档案提供给方舟以外的其他 AI 服务商（除非未来产品变更并更新本政策）。",
         ],
       },
       {
-        title: "数据删除",
+        title: "其他基础设施第三方",
         body: [
-          "你可以联系我们请求查询、更正或删除账户相关数据。部分交易、审计或安全记录可能会在法律或合规需要范围内保留。",
+          "Supabase：账户登录与数据库。Vercel：网站与 API 托管。Stripe：支付处理。Google：可选登录方式。",
+          "上述服务仅在运行 OnlyApply 所必需范围内处理数据，各自适用其隐私政策。",
+        ],
+      },
+      {
+        title: "专家 1v1 与留资",
+        body: [
+          "默认情况下，您的申请问卷、报告、文书及登录信息不会提供给任何留资团队、外部升学顾问、合作机构或第三方销售/客服团队。",
+          "仅当您主动点击「获取 1v1 专家建议」等入口并提交联系方式时，我们才会保存您自愿提供的邮箱、微信（可选），以便 OnlyApply 官方工作人员与您联系。",
+          "在该流程中，我们不会因您留资而将完整申请档案（含成绩、活动列表、报告全文等）提供给外部顾问团队或合作方。",
+          "您没有义务使用专家咨询功能；不使用该功能不影响报告生成与其他产品功能。",
+        ],
+      },
+      {
+        title: "未登录使用",
+        body: [
+          "您可以在不登录的情况下填写问卷并生成报告预览。此时问卷与报告结果会经我们的 API 实时转发给火山方舟处理；默认不会写入您的云端账户。",
+          "若需长期保存、解锁完整版、文书分析或跨设备访问，请登录并将报告保存到账户。",
+        ],
+      },
+      {
+        title: "谁能访问您的数据",
+        body: [
+          "您本人：通过登录访问已保存的申请、报告与文书记录（数据库行级安全策略限制为本人）。",
+          "OnlyApply 授权人员：在运维、客服、您主动发起的专家 1v1 跟进、安全与合规所必需范围内可能访问。",
+          "我们不会向其他申请用户或外部留资/顾问团队批量提供您的完整申请档案。",
+        ],
+      },
+      {
+        title: "您的权利",
+        body: [
+          `您可联系 ${SUPPORT_EMAIL} 请求查询、更正或删除与您账户相关的数据（在技术可行且法律允许的范围内）。`,
+          "删除后，部分支付记录、邀请码核销、安全日志或合规备份可能仍需保留一段时间。",
+        ],
+      },
+      {
+        title: "安全提示",
+        body: [
+          "我们采用 HTTPS、数据库访问控制与服务端密钥管理等措施保护数据。没有任何在线服务能保证绝对安全。",
+          "请勿在文书中提交不必要的身份证号、他人敏感信息或您不愿被系统处理的内容。",
         ],
       },
     ],
@@ -161,30 +212,80 @@ const enDocs: Record<LegalDoc, LegalCopy> = {
       {
         title: "Information we collect",
         body: [
-          "We may collect login information, questionnaire inputs, report content, supplementary notes, essay drafts, essay analysis results, analysis history, usage data, invite-code redemption records, and unlock status.",
+          "We may collect login information (email or Google sign-in identifier), questionnaire inputs, report content, supplementary notes, essay drafts, essay analysis results, analysis history, invite-code redemption records, and unlock status.",
           "Questionnaires may include grades, testing, budget, activities, structured activity or competition entries, major interests, region preferences, dealbreakers, and other application-planning information.",
-          "When you answer information gaps, add activities, or update an application profile, those supplementary details may be saved with the same profile or report history and used in later report regeneration to reduce repeated questions and improve consistency.",
-          "Essay drafts may include personal experiences, activity details, family or growth background, and other content you choose to enter. Do not submit another person's information without authorization or sensitive content you do not want processed by the service.",
+          "When you answer information gaps, add activities, or update an application profile, those details may be saved with the same profile or report history for later regeneration.",
+          "Essay drafts may include personal experiences, activity details, family or growth background, and other content you choose to enter. Do not submit another person's information without authorization or sensitive content you do not want processed.",
+          "We collect email and optional WeChat only when you opt in to expert 1:1 support and submit the contact form.",
+        ],
+      },
+      {
+        title: "Where data is stored and how long",
+        body: [
+          "After sign-in and save: questionnaires, reports, notes, essay drafts, and analysis history are stored in Supabase, tied to your account.",
+          "Without sign-in: report generation is processed in real time through our server; by default nothing is written to your cloud account. Your browser may keep a pending draft for up to ~7 days until you clear site data.",
+          "Payments: we store unlock status, Stripe Checkout session identifiers, and entitlement records—not full card numbers.",
+          "We retain data while your account and related records exist to provide the service. There is no automatic expiry deletion today. You may request deletion as described below.",
         ],
       },
       {
         title: "How we use information",
         body: [
-          "We use information to generate and save reports, save application profiles and structured activities, preserve supplementary notes for later report runs, save essay drafts and analysis history, provide login and unlock features, improve product experience, debug issues, prevent abuse, and contact you when you choose to leave contact details.",
-          "We may store payment status, Stripe Checkout session identifiers, invite-code redemption records, and entitlement records to confirm whether reports or essay analyses are unlocked. We do not store full card numbers.",
+          "To generate, display, and save reports; regenerate after you add facts; run essay analysis; manage login, invite codes, and Stripe unlocks; and follow up when you opt in to expert 1:1 support from OnlyApply staff.",
+          "To improve the product, debug issues, and prevent abuse.",
+          "We do not sell or rent your application profile to data brokers; we do not show your profile to other users; and we do not use third-party ad or behavioral-profiling SDKs in the product today.",
         ],
       },
       {
-        title: "AI and third-party services",
+        title: "AI (Volcengine Ark)",
         body: [
-          "To generate reports or essay analysis, we may send necessary questionnaire content, report context, essay drafts, or related excerpts to AI model providers or compatible API providers.",
-          "We may also use Supabase, Vercel, Stripe, Google Sign-In, and other third-party services, which process necessary data under their own privacy policies.",
+          "To generate reports and essay feedback, we send only what is necessary to Volcengine Ark APIs—including questionnaire fields (grades, testing, budget, activities, majors, preferences, identity/region context), structured report JSON when analyzing essays, and essay excerpts (subject to length limits).",
+          "OnlyApply does not train its own models on your application data. Data sent via Ark is also subject to Volcengine's applicable terms and data-processing statements.",
+          "We do not use additional AI vendors for report generation unless we change the product and update this policy.",
         ],
       },
       {
-        title: "Data deletion",
+        title: "Other infrastructure providers",
         body: [
-          "You may contact us to request access, correction, or deletion of account-related data. Some transaction, audit, or security records may be retained where legally or operationally required.",
+          "Supabase (auth and database), Vercel (hosting), Stripe (payments), and optional Google sign-in process data only as needed to run the service, each under its own privacy policy.",
+        ],
+      },
+      {
+        title: "Expert 1:1 and contact requests",
+        body: [
+          "By default, we do not provide your questionnaire, reports, essays, or account details to consult/lead teams, external counselors, partners, or third-party sales teams.",
+          "Only if you opt in to expert 1:1 support and submit email and/or WeChat do we store those voluntary contact details so OnlyApply staff can reach you.",
+          "Opting in does not mean we share your full application profile with external advisors or partners.",
+          "Expert consult is optional and does not affect report generation or other features.",
+        ],
+      },
+      {
+        title: "Use without signing in",
+        body: [
+          "You may complete the questionnaire and generate a preview without signing in. Data passes through our API to Volcengine Ark in real time and is not saved to your cloud account by default.",
+          "To save long-term, unlock the full report, use essay analysis, or access across devices, sign in and save the report to your account.",
+        ],
+      },
+      {
+        title: "Who can access your data",
+        body: [
+          "You: via sign-in to your saved applications, reports, and essays (database row-level security limits access to your account).",
+          "Authorized OnlyApply staff: for operations, support, expert 1:1 follow-up you requested, security, and compliance when necessary.",
+          "We do not bulk-share application profiles with external consult or lead teams.",
+        ],
+      },
+      {
+        title: "Your rights",
+        body: [
+          `You may email ${SUPPORT_EMAIL} to request access, correction, or deletion of account-related data where feasible and permitted by law.`,
+          "Some payment, invite-redemption, security, or compliance records may be retained for a period after deletion.",
+        ],
+      },
+      {
+        title: "Security",
+        body: [
+          "We use HTTPS, database access controls, and server-side secret management. No online service can guarantee absolute security.",
+          "Do not submit unnecessary government IDs, another person's sensitive information, or content you do not want processed.",
         ],
       },
     ],
@@ -221,9 +322,21 @@ const enDocs: Record<LegalDoc, LegalCopy> = {
 
 const docOrder: LegalDoc[] = ["terms", "privacy", "disclaimer"];
 
-export function LegalLinks({ className = "" }: { className?: string }) {
+type LegalLinksProps = {
+  className?: string;
+  openDoc?: LegalDoc | null;
+  onOpenDocChange?: (doc: LegalDoc | null) => void;
+};
+
+export function LegalLinks({ className = "", openDoc: openDocProp, onOpenDocChange }: LegalLinksProps) {
   const { locale } = useLanguage();
-  const [openDoc, setOpenDoc] = useState<LegalDoc | null>(null);
+  const [internalOpenDoc, setInternalOpenDoc] = useState<LegalDoc | null>(null);
+  const isControlled = openDocProp !== undefined;
+  const openDoc = isControlled ? openDocProp : internalOpenDoc;
+  const setOpenDoc = (doc: LegalDoc | null) => {
+    if (!isControlled) setInternalOpenDoc(doc);
+    onOpenDocChange?.(doc);
+  };
   const docs = locale === "en" ? enDocs : zhDocs;
   const copy = openDoc ? docs[openDoc] : null;
 

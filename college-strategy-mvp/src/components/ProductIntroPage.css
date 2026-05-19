@@ -137,6 +137,30 @@
   margin-bottom: 0.65rem !important;
 }
 
+.intro-section--privacy {
+  border-left: 3px solid #0d9488;
+}
+
+.intro-list--privacy li {
+  margin-bottom: 0.55rem;
+}
+
+.intro-privacy-link {
+  margin-top: 0.35rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #0d9488;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.intro-privacy-link:hover {
+  text-decoration: underline;
+}
+
 .intro-cta {
   margin-top: 1.25rem;
   display: flex;

@@ -182,6 +182,7 @@ export function ExpertConsultSection({ gapCount, applicationId = null, reportId 
                   placeholder={t("report.expertConsult.wechatPlaceholder")}
                 />
               </div>
+              <p className="expert-consult-modal__privacy">{t("report.expertConsult.privacyConsent")}</p>
               {error && <p className="expert-consult-modal__error">{error}</p>}
               <div className="expert-consult-modal__actions">
                 <button type="button" className="btn btn-secondary" onClick={close}>

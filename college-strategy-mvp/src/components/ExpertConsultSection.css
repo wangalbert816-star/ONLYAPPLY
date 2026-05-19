@@ -104,6 +104,13 @@
   color: #94a3b8;
 }
 
+.expert-consult-modal__privacy {
+  margin: 0 0 0.75rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
 .expert-consult-modal__error {
   margin: 0 0 0.5rem;
   font-size: 0.74rem;

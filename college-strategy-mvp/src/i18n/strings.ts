@@ -110,6 +110,17 @@ merge(zhFlat, {
       badge: "脱敏样例",
       note: "完整版会展开更多学校行、核对项与行动表；此处仅展示结构与语气。",
     },
+    privacy: {
+      title: "你的数据如何被保护",
+      lead: "成绩、活动与申请背景属于敏感信息。我们尽量用直白的话说明会存什么、会发给谁、不会做什么。",
+      b1: "用途：仅用于生成报告、保存档案、文书分析与账户解锁，不用于广告，不出售您的申请档案。",
+      b2: "保存：登录并保存后，数据在云端（Supabase）与您的账户绑定；未登录时默认不落库，浏览器可能暂存草稿约 7 天。",
+      b3: "AI：报告与文书分析通过火山引擎方舟（Ark）API 处理；OnlyApply 不用您的数据训练自有模型。",
+      b4: "第三方：托管（Vercel）、数据库与登录（Supabase）、支付（Stripe）、Google 登录仅在运行服务所必需范围内处理数据。",
+      b5: "专家 1v1：除非您主动申请并留下联系方式，我们不会向任何留资或外部顾问团队提供您的客户信息；留资仅由 OnlyApply 官方回访。",
+      b6: "删除：可邮件联系我们请求查询、更正或删除账户相关数据（见页脚联系方式）。",
+      policyLink: "阅读完整《隐私政策》",
+    },
     startCta: "开始填写问卷",
   },
   steps: {
@@ -597,6 +608,8 @@ merge(zhFlat, {
       errNetworkHint:
         "请在项目根目录执行 npm run dev，确保终端里同时有 Vite 与 API；.env 里的 PORT 需与 API 启动日志一致（例如 8788）。若只用「预览」页面，也需另开终端运行 node server/index.mjs。",
       errBadResponse: "服务器返回了非 JSON 内容，请查看 API 终端是否有报错。",
+      privacyConsent:
+        "提交即表示您希望 OnlyApply 官方就专家 1v1 与您联系。我们不会向外部顾问团队提供您的申请档案；详见《隐私政策》。",
     },
     refresh: {
       optimizing: "正在根据新增信息重新分析…",
@@ -783,6 +796,17 @@ merge(enFlat, {
     sample: {
       badge: "Sample",
       note: "The full report adds more rows, checklists, and timelines; this shows tone and layout only.",
+    },
+    privacy: {
+      title: "How we protect your data",
+      lead: "Grades, activities, and application background are sensitive. Here is what we store, who processes it, and what we do not do.",
+      b1: "Purpose: only to generate reports, save your profile, run essay feedback, and manage unlocks—not for ads, and we do not sell your application profile.",
+      b2: "Storage: after sign-in and save, data lives in the cloud (Supabase) tied to your account; without sign-in, nothing is saved to the cloud by default; your browser may keep a draft for ~7 days.",
+      b3: "AI: reports and essay analysis are processed via Volcengine Ark APIs; OnlyApply does not train its own models on your data.",
+      b4: "Infrastructure: Vercel (hosting), Supabase (auth/database), Stripe (payments), and Google sign-in process data only as needed to run the service.",
+      b5: "Expert 1:1: unless you opt in and leave contact details, we do not give your information to consult or external advisor teams; OnlyApply staff follow up only when you ask.",
+      b6: "Deletion: email us to request access, correction, or deletion of account-related data (see footer contact).",
+      policyLink: "Read the full Privacy Policy",
     },
     startCta: "Start questionnaire",
   },
@@ -1278,6 +1302,8 @@ merge(enFlat, {
       errNetworkHint:
         "Run npm run dev from the project root so both Vite and the API start; PORT in .env must match the API port in the terminal (e.g. 8788). If you only use preview, also run node server/index.mjs in another terminal.",
       errBadResponse: "The server returned non-JSON—check the API terminal for errors.",
+      privacyConsent:
+        "By submitting, you ask OnlyApply to contact you about expert 1:1 support. We do not share your application profile with external advisor teams. See our Privacy Policy.",
     },
     refresh: {
       optimizing: "Re-analyzing with the new details…",

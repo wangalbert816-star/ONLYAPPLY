@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { BrandLogo } from "./BrandLogo";
 import { LegalLinks } from "./LegalLinks";
 import { SampleReportShowcase } from "./SampleReportShowcase";
@@ -11,6 +12,7 @@ type Props = {
 
 export function ProductIntroPage({ onBack, onStart }: Props) {
   const { t, locale } = useLanguage();
+  const [legalOpen, setLegalOpen] = useState<"terms" | "privacy" | "disclaimer" | null>(null);
 
   const steps = [
     { title: t("productIntro.steps.s1Title"), body: t("productIntro.steps.s1Body") },
@@ -27,6 +29,15 @@ export function ProductIntroPage({ onBack, onStart }: Props) {
   ];
 
   const notList = [t("productIntro.not.n1"), t("productIntro.not.n2"), t("productIntro.not.n3")];
+
+  const privacyBullets = [
+    t("productIntro.privacy.b1"),
+    t("productIntro.privacy.b2"),
+    t("productIntro.privacy.b3"),
+    t("productIntro.privacy.b4"),
+    t("productIntro.privacy.b5"),
+    t("productIntro.privacy.b6"),
+  ];
 
   return (
     <div className="app app--intro">
@@ -87,6 +98,19 @@ export function ProductIntroPage({ onBack, onStart }: Props) {
         <SampleReportShowcase locale={locale} t={t} />
       </section>
 
+      <section className="intro-section card intro-section--privacy" aria-labelledby="intro-privacy-title">
+        <h2 id="intro-privacy-title">{t("productIntro.privacy.title")}</h2>
+        <p>{t("productIntro.privacy.lead")}</p>
+        <ul className="intro-list intro-list--privacy">
+          {privacyBullets.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+        <button type="button" className="intro-privacy-link" onClick={() => setLegalOpen("privacy")}>
+          {t("productIntro.privacy.policyLink")}
+        </button>
+      </section>
+
       <div className="intro-cta card">
         <button type="button" className="btn btn-primary btn-block" onClick={onStart}>
           {t("productIntro.startCta")}
@@ -98,7 +122,7 @@ export function ProductIntroPage({ onBack, onStart }: Props) {
 
       <footer className="intro-footer" role="contentinfo">
         <p>{t("app.disclaimer")}</p>
-        <LegalLinks className="intro-footer__legal" />
+        <LegalLinks className="intro-footer__legal" openDoc={legalOpen} onOpenDocChange={setLegalOpen} />
       </footer>
     </div>
   );
