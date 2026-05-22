@@ -4,6 +4,7 @@ import { getEffectiveIntake } from "./lib/intakeTerm";
 import { buildReportApiBody } from "./lib/reportApiBody";
 import { collectHighlightKeys, compareReports, reportDiffIsEmpty } from "./lib/reportDiff";
 import { apiUrl } from "./lib/apiBase";
+import { readApiJson } from "./lib/parseApiResponse";
 import { clearUnlockStorage, readUnlockFromStorage, ReportView, writeUnlockToStorage } from "./ReportView";
 import { BrandLogo } from "./components/BrandLogo";
 import { FormLiveSummary, GuidedStep1, GuidedStep2, GuidedStep3, type GuideTouch } from "./components/GuidedQuestionnaire";
@@ -45,6 +46,8 @@ const initialForm: FormState = {
   structuredActivities: [],
   riskStyle: "",
   dealbreakers: "",
+  highSchoolName: "",
+  campusPreference: "",
 };
 
 const LOADING_TIP_KEYS = ["app.loading.tip0", "app.loading.tip1", "app.loading.tip2", "app.loading.tip3"] as const;
@@ -73,6 +76,12 @@ function translateReportApiError(code: string | undefined, tf: (k: string) => st
     return tf("app.errGenerateTimeout");
   }
   if (
+    normalized.includes("report_generation_failed") ||
+    normalized.includes("report_service_unavailable")
+  ) {
+    return tf("app.errGenerate");
+  }
+  if (
     normalized.includes("llm") ||
     normalized.includes("openai") ||
     normalized.includes("api_key") ||
@@ -81,6 +90,14 @@ function translateReportApiError(code: string | undefined, tf: (k: string) => st
     return tf("app.errGenerateConfig");
   }
   return tf("app.errGenerate");
+}
+
+function translateReportFetchFailure(
+  kind: "gateway" | "invalid_json" | "empty" | undefined,
+  tf: (k: string) => string,
+): string {
+  if (kind === "gateway") return tf("app.errGenerateTimeout");
+  return tf("app.errNetwork");
 }
 
 function translateCheckoutApiError(code: string | undefined, tf: (k: string) => string): string {
@@ -675,7 +692,13 @@ export default function App() {
         body: JSON.stringify(buildReportApiBody(form, existingNotes.length > 0 ? existingNotes : undefined, locale)),
       });
       const llmMs = res.headers.get("X-LLM-Duration-Ms");
-      const data = await res.json();
+      const parsed = await readApiJson(res);
+      if (!parsed.ok) {
+        if (import.meta.env.DEV) console.warn("[report] response_parse_failed", parsed.kind, res.status);
+        setErr(translateReportFetchFailure(parsed.kind, t));
+        return;
+      }
+      const data = parsed.data;
       if (import.meta.env.DEV) {
         const total = Math.round(performance.now() - t0);
         console.debug(
@@ -692,7 +715,7 @@ export default function App() {
       setSubtleRefreshNotice(null);
       answeredGapSupplementaryRef.current = existingNotes;
       profileFiveSupplementaryRef.current = [];
-      const nextReport = data as ReportPayload;
+      const nextReport = data as unknown as ReportPayload;
       setReport(nextReport);
       setView("report");
       setSessionSaved(false);
@@ -719,7 +742,8 @@ export default function App() {
         setReportUnlocked(false);
       }
       queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
-    } catch {
+    } catch (e) {
+      if (import.meta.env.DEV) console.warn("[report] fetch_failed", e);
       setErr(t("app.errNetwork"));
     } finally {
       submitLockRef.current = false;
@@ -764,12 +788,17 @@ export default function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildReportApiBody(form, merged.length > 0 ? merged : undefined, locale)),
       });
-      const data = await res.json();
+      const parsed = await readApiJson(res);
+      if (!parsed.ok) {
+        setRefreshError(translateReportFetchFailure(parsed.kind, t));
+        return;
+      }
+      const data = parsed.data;
       if (!res.ok) {
         setRefreshError(translateReportApiError(typeof data.error === "string" ? data.error : undefined, t));
         return;
       }
-      const next = data as ReportPayload;
+      const next = data as unknown as ReportPayload;
       setReport(next);
       if (user) {
         const saved = await persistToCloud({ formState: form, reportPayload: next });
@@ -796,7 +825,8 @@ export default function App() {
           highlightTimerRef.current = null;
         }, 12000);
       }
-    } catch {
+    } catch (e) {
+      if (import.meta.env.DEV) console.warn("[report] refresh_fetch_failed", e);
       setRefreshError(t("app.errNetwork"));
     } finally {
       refreshLockRef.current = false;

@@ -13,6 +13,10 @@ import {
   improvementPlanPromptBlock,
   improvementPlanUserContextLine,
 } from "./intakeHorizon.mjs";
+import {
+  sanitizeUcAnalysisFromBody,
+  ucAnalysisNeedsFallbackFromBody,
+} from "./ucAnalysisSanitize.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // 始终从项目根目录加载 .env（避免从别的 cwd 启动 node 时读不到 OPENAI_BASE_URL，误连 OpenAI 官方导致 401）
@@ -21,11 +25,25 @@ dotenv.config({ path: path.join(__dirname, "..", ".env") });
 /** 方舟 OpenAI 兼容网关（北京）；地域以控制台为准时可改 ARK_BASE_URL */
 const DEFAULT_ARK_BASE = "https://ark.cn-beijing.volces.com/api/v3";
 
+/** 与 vercel.json functions.maxDuration 对齐；Hobby 上限 300s，Pro 可在控制台提到 800 并设 VERCEL_FUNCTION_MAX_SEC=800 */
+const VERCEL_FUNCTION_MAX_SEC = Number(process.env.VERCEL_FUNCTION_MAX_SEC || 300);
 /** OpenAI SDK 默认 maxRetries=2，超时/5xx 会重试，同一用户操作可能触发多次模型计费与更长等待 */
-const LLM_TIMEOUT_MS = Number(process.env.LLM_TIMEOUT_MS || 120_000);
+const VERCEL_LLM_WALL_MS = (() => {
+  const fromEnv = Number(process.env.VERCEL_LLM_WALL_MS);
+  if (fromEnv > 0) return fromEnv;
+  if (process.env.VERCEL) return Math.max(60_000, VERCEL_FUNCTION_MAX_SEC * 1000 - 15_000);
+  return 0;
+})();
+const LLM_TIMEOUT_MS = (() => {
+  const configured = Number(process.env.LLM_TIMEOUT_MS || 0);
+  if (process.env.VERCEL && VERCEL_LLM_WALL_MS > 0) {
+    return configured > 0 ? Math.min(configured, VERCEL_LLM_WALL_MS) : VERCEL_LLM_WALL_MS;
+  }
+  return configured > 0 ? configured : 120_000;
+})();
 const LLM_MAX_RETRIES = Number(process.env.LLM_MAX_RETRIES ?? 0);
-/** 0 = 不传 max_tokens，由模型默认；否则限制输出长度以缩短极端长文耗时 */
-const COMPLETION_MAX_TOKENS = Number(process.env.COMPLETION_MAX_TOKENS ?? 6000);
+/** 0 = 不传 max_tokens，由模型默认；报告 JSON 较大，默认给足输出避免截断 */
+const COMPLETION_MAX_TOKENS = Number(process.env.COMPLETION_MAX_TOKENS ?? 8192);
 
 const app = express();
 const IS_PROD = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL);
@@ -531,6 +549,7 @@ const SYSTEM_PROMPT_ZH = `你是一位资深美国本科升学顾问（10年+经
 - executive_summary 是「整体结论」：3-5 条，每条必须引用至少 1 个问卷具体事实（主申专业、GPA 描述、标化策略/分数、活动摘要、预算、选校风格、入学季等）；第一条必须是针对该生的一句话判断（≤90 字）。
 - 禁止 executive_summary 套话：不要无依据地写「整体画像偏平衡型」「不是缺乏野心」「Top 30–50 主战场」等；若提学校区间，必须说明依据（如课程、活动、标化、预算）。
 - executive_summary 与 reach/match/safety 的理由不得矛盾；可概括档位逻辑，但不要重复粘贴每校理由。
+- 若 GPA 偏低（如未加权≤3.25、SAT≤1280）或活动几乎为空：禁止写「名单均衡/偏稳/可冲顶校」；须点明活动或成绩短板，且与 UC 分档（若有）一致。
 - 若用户消息末含有【用户补充说明】区块：必须结合其更新 reach/match/safety 的入档理由与风险表述；information_gaps 中已被充分覆盖的点应删除或合并；禁止输出与补充说明明显矛盾的内容。
 - 用户补充说明是跨轮次已确认事实：若用户已说明不考/不提交 SAT、ACT，不得再追问对应考试；若已提供 TOEFL/IELTS/Duolingo 等语言成绩或说明无需语言成绩，不得再追问“是否有语言成绩”，只能在必要时追问更具体的未覆盖细节。
 - 至少3处明确引用用户问卷中的具体字段（预算/身份/标化/专业/偏好/活动）；若有补充说明，至少1处明确引用补充中的事实。
@@ -571,17 +590,24 @@ const SYSTEM_PROMPT_ZH = `你是一位资深美国本科升学顾问（10年+经
 {
   "executive_summary": ["3-5条，每条<=120字"],
   "information_gaps": ["0-6条"],
-  "reach": [{"school":"","why_reach_for_you":"","key_fit_signals":["",""],"key_risks":["",""],"verification_focus":["","",""]}],
-  "match": [同结构，但用 why_match_for_you 字段名与冲一致逻辑：说明为何在「稳」档],
-  "safety": [同结构，字段 why_safety_for_you],
+  "reach": [{"school":"","why_reach_for_you":"","campus_vibe":"","school_differentiator":"","key_fit_signals":["",""],"key_risks":["",""],"verification_focus":["","",""]}],
+  "match": [同结构，why_match_for_you；campus_vibe 与 school_differentiator 必填且各校不同],
+  "safety": [同结构，why_safety_for_you；campus_vibe 与 school_differentiator 必填且各校不同],
   "portfolio_risks": [{"risk_title":"","what_it_means_for_you":"","mitigation":""}],
   "improvement_plan": {"this_week":["3-5条"],"this_month":["4-7条"],"before_submitting":["4-7条"]},
   "strategy_notes": ["3-6条"]
 }
 
-match 每元素字段名必须为：school, why_match_for_you, key_fit_signals, key_risks, verification_focus
-safety 每元素字段名必须为：school, why_safety_for_you, key_fit_signals, key_risks, verification_focus
-reach 每元素字段名必须为：school, why_reach_for_you, key_fit_signals, key_risks, verification_focus
+match 每元素字段名必须为：school, why_match_for_you, campus_vibe, school_differentiator, key_fit_signals, key_risks, verification_focus
+safety 每元素字段名必须为：school, why_safety_for_you, campus_vibe, school_differentiator, key_fit_signals, key_risks, verification_focus
+reach 每元素字段名必须为：school, why_reach_for_you, campus_vibe, school_differentiator, key_fit_signals, key_risks, verification_focus
+
+【每校内容质量】
+- campus_vibe：1 句社区/校园气质（学术型/研究型/社交型/城市资源等），须因校而异。
+- school_differentiator：1 句说明「这所 vs 本档其它学校」的独特点（勿重复）。
+- why_* 控制在 2–3 句或短段；key_* 数组每条独立一条，禁止 9 校复制同一段。
+- improvement_plan 须含可执行项：竞赛/实习/项目/夏校等类型 + 与主申专业挂钩；活动薄弱时优先 1 条可验证主线。
+- 无可靠来源时不要编造高中/地区录取统计；可写入 information_gaps 提醒用户查 CDS。
 `;
 
 const SYSTEM_PROMPT_EN = `You are a senior U.S. undergraduate admissions counselor (10+ years), tone: professional, restrained, and actionable. Produce a school-list strategy from the user's questionnaire.
@@ -593,6 +619,7 @@ const SYSTEM_PROMPT_EN = `You are a senior U.S. undergraduate admissions counsel
 - executive_summary is the overall advisor call: 3–5 bullets; each must cite at least one concrete questionnaire fact (major, GPA notes, testing policy/scores, activities, budget, list posture, intake). Bullet 1 must be one student-specific sentence (≤90 chars).
 - Do NOT use generic executive_summary lines (“balanced profile,” “not lacking ambition,” “Top 30–50 battlefield”) without tying them to this student’s facts.
 - executive_summary must not contradict reach/match/safety rationales.
+- If GPA is weak or activities are thin: do NOT call the list “balanced/stable” or imply flagship reaches are reasonable; name the limiting board explicitly and align with uc_analysis tiers if present.
 - If the user message ends with a [User supplementary notes] block: you MUST revise reach/match/safety rationales and risks accordingly; remove or merge gap items that are fully addressed; never contradict those notes.
 - Supplementary notes are confirmed facts across refreshes: if the user already said they will not take/submit SAT or ACT, do not ask about that test again; if they already provided TOEFL/IELTS/Duolingo or said no language score is needed, do not ask whether a language score exists again. Only ask for narrower missing details that are not covered.
 - Reference at least 3 specific questionnaire fields (budget/identity/testing/major/preferences/activities). If supplementary notes exist, reference at least one concrete fact from them.
@@ -633,17 +660,24 @@ const SYSTEM_PROMPT_EN = `You are a senior U.S. undergraduate admissions counsel
 {
   "executive_summary": ["3-5 bullets, each <=120 characters"],
   "information_gaps": ["0-6 bullets"],
-  "reach": [{"school":"","why_reach_for_you":"","key_fit_signals":["",""],"key_risks":["",""],"verification_focus":["","",""]}],
-  "match": [same shape, but each object uses why_match_for_you and explains why it sits in Match],
-  "safety": [same shape, each object uses why_safety_for_you],
+  "reach": [{"school":"","why_reach_for_you":"","campus_vibe":"","school_differentiator":"","key_fit_signals":["",""],"key_risks":["",""],"verification_focus":["","",""]}],
+  "match": [same shape with why_match_for_you; campus_vibe and school_differentiator required and unique per school],
+  "safety": [same shape with why_safety_for_you; campus_vibe and school_differentiator required and unique per school],
   "portfolio_risks": [{"risk_title":"","what_it_means_for_you":"","mitigation":""}],
   "improvement_plan": {"this_week":["3-5 items"],"this_month":["4-7 items"],"before_submitting":["4-7 items"]},
   "strategy_notes": ["3-6 items"]
 }
 
-Field names for match rows must be: school, why_match_for_you, key_fit_signals, key_risks, verification_focus
-Field names for safety rows must be: school, why_safety_for_you, key_fit_signals, key_risks, verification_focus
-Field names for reach rows must be: school, why_reach_for_you, key_fit_signals, key_risks, verification_focus
+Field names for match rows must be: school, why_match_for_you, campus_vibe, school_differentiator, key_fit_signals, key_risks, verification_focus
+Field names for safety rows must be: school, why_safety_for_you, campus_vibe, school_differentiator, key_fit_signals, key_risks, verification_focus
+Field names for reach rows must be: school, why_reach_for_you, campus_vibe, school_differentiator, key_fit_signals, key_risks, verification_focus
+
+【Per-school quality】
+- campus_vibe: one phrase on community/campus character—must differ by school.
+- school_differentiator: one sentence on how THIS school differs from others in the same tier.
+- Keep why_* concise; key_* items must be distinct bullets, not copy-pasted across schools.
+- improvement_plan: actionable competitions/internships/projects/summer programs tied to major; if activities thin, one verifiable spine first.
+- Do not invent feeder-school stats; use information_gaps for CDS/official data instead.
 `;
 
 const UC_KEYWORD_RE =
@@ -655,8 +689,10 @@ const UC_SYSTEM_APPEND_ZH = `
 若问卷显示西部偏好、或文字中出现 UC/加州大学/UCLA/Berkeley 等，必须在 JSON 根级增加 "uc_analysis" 对象（与 reach/match/safety 的 9 校名单分开）：
 - 主名单 9 校应尽量为非 UC 的美国本科院校；不要把 UC 校区塞进主名单凑数。
 - uc_analysis 按用户背景划分校区（每档 2–3 所，按竞争度与专业匹配，禁止固定「前二+中间四+后三」模板）。
-- 禁止对所有人默认 Reach=Berkeley+UCLA：只有专业/活动/课程证据强匹配时才把 Berkeley 或 UCLA 放入冲刺；保守型名单或证据薄时，冲刺应优先 UCSB/UCI/UCSD 等更贴近方向的校区，Berkeley/UCLA 可降为 Match 或仅在 overview 中作「名气参考」说明。
-- 每条校区行的 why 必须引用用户问卷中的具体事实（专业、活动、GPA 描述、选校风格），不得 9 校理由雷同。
+- 禁止对所有人默认 Reach=Berkeley+UCLA：GPA 偏低（如未加权≤3.25、加权≤3.45、SAT≤1280）或活动几乎为空时，Berkeley/UCLA 不得出现在 reach，只能在 overview 中作「极低概率参考」；中档校区（UCSB/UCI/UCSD 等）不得标为 safety。
+- 禁止错误院系表述：不得写「UCLA Anderson」「Berkeley Haas 商学院」当作普通本科录取路径（Anderson 为研究生商学院；Haas 本科极难且非默认路径）。
+- 禁止弱背景「突破/逆袭/很有可能进 Berkeley/UCLA」类表述；reach 的 why 必须写明主要风险（GPA/活动/专业竞争），不得 9 校理由雷同。
+- 每条校区行的 why 必须引用用户问卷中的具体事实（专业、活动、GPA 描述、选校风格）。
 - 必须强调 UC 本科录取 test-blind：SAT/ACT 不参与录取决定。
 - 说明所有 UC 共用一套 UC Application 与 4 篇 PIQ。
 "uc_analysis" 结构：
@@ -679,7 +715,9 @@ const UC_SYSTEM_APPEND_EN = `
 If the questionnaire shows West Coast preference or mentions UC / University of California / UCLA / Berkeley, etc., add a root-level "uc_analysis" object (separate from the main 9-school reach/match/safety list):
 - The main 9-school list should prefer non-UC U.S. bachelor's institutions; do not pad the main list with UC campuses.
 - In uc_analysis, tier 2–3 campuses each based on the user's profile (not a fixed "top 2 + middle 4 + bottom 3" template).
-- Do NOT default Reach to Berkeley+UCLA for every profile. Only place Berkeley or UCLA in Reach when major/activity/course evidence strongly supports it; for conservative lists or thin evidence, prefer UCSB/UCI/UCSD as Reach and discuss Berkeley/UCLA as optional reference only in overview if needed.
+- Do NOT default Reach to Berkeley+UCLA. If GPA is weak (e.g. UW≤3.25, W≤3.45, SAT≤1280) or activities are thin, Berkeley/UCLA must NOT be in reach—only mention them as ultra-low-probability references in overview. Mid-tier campuses must NOT be labeled safety.
+- Never write "UCLA Anderson" or "Berkeley Haas" as ordinary undergraduate admit paths (Anderson is graduate; Haas undergrad is ultra-selective).
+- No "breakthrough likely" language for weak profiles. Reach rows must state concrete risks (GPA/activities/major competition).
 - Each campus row's why must cite specific questionnaire facts; no copy-paste rationales across campuses.
 - State clearly that UC undergraduate admission is test-blind (SAT/ACT not used in admission decisions).
 - Note one shared UC Application and four PIQs for all campuses.
@@ -724,20 +762,41 @@ function systemPromptForLocale(locale, includeUc = false, horizon = "unknown") {
   return base + (locale === "en" ? UC_SYSTEM_APPEND_EN : UC_SYSTEM_APPEND_ZH);
 }
 
-function normalizeUcSchoolRows(rows, tier) {
-  if (!Array.isArray(rows)) return [];
+function normalizeSchoolRow(r, tier) {
   const whyKey =
     tier === "reach" ? "why_reach_for_you" : tier === "match" ? "why_match_for_you" : "why_safety_for_you";
+  const links = Array.isArray(r.official_links)
+    ? r.official_links
+        .filter((l) => l && typeof l === "object" && String(l.url || "").trim())
+        .slice(0, 6)
+        .map((l) => ({ label: String(l.label || "Link").trim(), url: String(l.url).trim() }))
+    : [];
+  return {
+    school: String(r.school).trim(),
+    [whyKey]: String(r[whyKey] || "").trim(),
+    campus_vibe: String(r.campus_vibe || "").trim(),
+    school_differentiator: String(r.school_differentiator || "").trim(),
+    key_fit_signals: Array.isArray(r.key_fit_signals) ? r.key_fit_signals.map(String) : [],
+    key_risks: Array.isArray(r.key_risks) ? r.key_risks.map(String) : [],
+    verification_focus: Array.isArray(r.verification_focus) ? r.verification_focus.map(String) : [],
+    ...(links.length ? { official_links: links } : {}),
+  };
+}
+
+function normalizeUcSchoolRows(rows, tier) {
+  if (!Array.isArray(rows)) return [];
   return rows
     .filter((r) => r && typeof r === "object" && String(r.school || "").trim())
     .slice(0, 3)
-    .map((r) => ({
-      school: String(r.school).trim(),
-      [whyKey]: String(r[whyKey] || "").trim(),
-      key_fit_signals: Array.isArray(r.key_fit_signals) ? r.key_fit_signals.map(String) : [],
-      key_risks: Array.isArray(r.key_risks) ? r.key_risks.map(String) : [],
-      verification_focus: Array.isArray(r.verification_focus) ? r.verification_focus.map(String) : [],
-    }));
+    .map((r) => normalizeSchoolRow(r, tier));
+}
+
+function normalizeReportSchoolList(rows, tier) {
+  if (!Array.isArray(rows)) return [];
+  return rows
+    .filter((r) => r && typeof r === "object" && String(r.school || "").trim())
+    .slice(0, 3)
+    .map((r) => normalizeSchoolRow(r, tier));
 }
 
 function normalizeUcAnalysis(raw) {
@@ -896,11 +955,12 @@ function resolveLLMConfig() {
     return { error: `无效 LLM_REGION=${region}，请使用 cn | us | auto。` };
   }
 
+  if (us?.provider === "ollama") return us;
   if (us) return us;
   if (cn) return cn;
   return {
     error:
-      "未配置可用 LLM：请配置 OpenAI 兼容端（US_OPENAI_API_KEY / OLLAMA_API_KEY / sk- 的 OPENAI_API_KEY），和/或火山方舟中国（ARK_API_KEY + ep- 接入点）。Ollama 云见 https://ollama.com/v1 + ollama.com/settings/keys。LLM_REGION=cn|us|auto（默认 auto：优先 US 侧，其次中国方舟）。",
+      "未配置可用 LLM：请配置 OpenAI 兼容端（US_OPENAI_API_KEY / OLLAMA_API_KEY / sk- 的 OPENAI_API_KEY），和/或火山方舟中国（ARK_API_KEY + ep- 接入点）。Ollama 云见 https://ollama.com/v1 + ollama.com/settings/keys。LLM_REGION=cn|us|auto（默认 auto：优先 Ollama，其次其它 US 接口，最后中国方舟）。",
   };
 }
 
@@ -1054,6 +1114,7 @@ function buildUserPayload(body, includeUc = false) {
     satScore,
     actScore,
     highSchoolSystem,
+    highSchoolName,
     gpa,
     majorPrimary,
     majorSecondary,
@@ -1063,6 +1124,7 @@ function buildUserPayload(body, includeUc = false) {
     structuredActivities,
     riskStyle,
     dealbreakers,
+    campusPreference,
   } = body || {};
 
   const supplementary = normalizeSupplementaryNotes(body?.supplementary_notes);
@@ -1105,6 +1167,7 @@ ${planHorizonLine}
     }
 
 [High school system] ${highSchoolSystem || na}
+[High school name — for context only; do not invent feeder admit stats] ${highSchoolName || na}
 [GPA / transcript notes] ${gpa || na}
 [Primary major] ${majorPrimary || na}
 [Alternate major] ${majorSecondary || none}
@@ -1115,6 +1178,7 @@ ${planHorizonLine}
       structuredActivityText ? `\n[Structured activity / competition details]\n${structuredActivityText}` : ""
     }
 [List risk posture] ${riskStyle || na}
+[Campus vibe preference] ${campusPreference || na}
 [Hard dealbreakers] ${dealbreakers || none}${
       includeUc
         ? "\n\n[UC intent] User shows interest in the University of California system. Output uc_analysis per system instructions; keep the main 9-school list mostly non-UC."
@@ -1135,6 +1199,7 @@ ${planHorizonLine}
 【标化策略】${testing || "未填"}${testing === "will_submit" ? `\nSAT: ${satScore || "未填"}\nACT: ${actScore || "未填"}` : ""}
 
 【高中体系】${highSchoolSystem || "未填"}
+【就读高中/学校名（仅作语境，勿编造该校录取统计）】${highSchoolName || "未填"}
 【GPA/成绩说明】${gpa || "未填"}
 【主申专业】${majorPrimary || "未填"}
 【备选专业】${majorSecondary || "无"}
@@ -1143,6 +1208,7 @@ ${planHorizonLine}
 
 【活动/奖项摘要】${activities || "未提供"}${structuredActivityText ? `\n【活动/竞赛细节】\n${structuredActivityText}` : ""}
 【选校风格】${riskStyle || "未填"}
+【校园氛围偏好】${campusPreference || "未填"}
 【绝对不能接受】${dealbreakers || "无"}${
     includeUc
       ? "\n\n【UC 意向】用户表现出加州大学（UC）申请意向。请按 system 说明输出 uc_analysis；主名单 9 校尽量为非 UC 美国本科院校。"
@@ -1280,27 +1346,87 @@ function parseModelJsonContent(raw) {
         /* fall through */
       }
     }
+    const salvaged = salvageTruncatedJsonObject(s);
+    if (salvaged) return salvaged;
     const err = new Error(`模型返回非合法 JSON（约 ${s.length} 字符，可能被截断）`);
     err.code = "invalid_json";
     throw err;
   }
 }
 
-/** LLM 优先主配置；主通道为 Ollama 且 JSON 解析失败时可回退火山方舟 */
+/** 输出被 max_tokens 截断时，尝试补齐未闭合的括号（仅作最后手段） */
+function salvageTruncatedJsonObject(raw) {
+  const start = raw.indexOf("{");
+  if (start < 0) return null;
+  let text = raw.slice(start).trimEnd();
+  text = text.replace(/,\s*"[^"]*$/s, "").replace(/,\s*$/s, "");
+  const stack = [];
+  for (const ch of text) {
+    if (ch === "{") stack.push("}");
+    else if (ch === "[") stack.push("]");
+    else if ((ch === "}" || ch === "]") && stack.length) stack.pop();
+  }
+  while (stack.length) text += stack.pop();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function isLlmTimeoutError(e) {
+  const code = e && typeof e === "object" && "code" in e ? String(e.code) : "";
+  const msg = e instanceof Error ? e.message : String(e);
+  return code === "timeout" || /timeout|timed out/i.test(msg);
+}
+
+function isLlmRetryableError(e) {
+  const code = e && typeof e === "object" && "code" in e ? String(e.code) : "";
+  const msg = e instanceof Error ? e.message : String(e);
+  if (code === "invalid_json" || code === "empty_content") return true;
+  return /timeout|timed out|ETIMEDOUT|ECONNRESET|ECONNREFUSED|503|502|socket|fetch failed|aborted/i.test(msg);
+}
+
+/** 是否可切换到下一 LLM：Ollama 优先；Vercel 上超时不再串联方舟，避免平台 maxDuration 杀进程 */
+function canFallbackToNextLlm(e, index, configs) {
+  if (index >= configs.length - 1) return false;
+  if (!isLlmRetryableError(e)) return false;
+  if (process.env.VERCEL && isLlmTimeoutError(e)) return false;
+  return true;
+}
+
+/** Ollama 为主通道；JSON/空内容或（非 Vercel）网络失败时可回退火山方舟 */
 function llmConfigsToTry() {
   const primary = resolveLLMConfig();
   if ("error" in primary) return primary;
-  const list = [primary];
-  if (primary.provider === "ollama") {
-    const cn = tryBuildChinaArkConfig();
-    if (cn) list.push(cn);
-  }
-  return list;
+  const cn = tryBuildChinaArkConfig();
+  if (cn && primary.provider === "ollama") return [primary, cn];
+  return [primary];
+}
+
+function withWallClockTimeout(promise, ms, label) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      const err = new Error(`${label} 超过 ${ms}ms`);
+      err.code = "timeout";
+      reject(err);
+    }, ms);
+    promise
+      .then((value) => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
+  });
 }
 
 async function callLlmJsonOnce(client, { model, provider, messages, maxTokens }) {
   const requestBody = { model, temperature: 0.35, messages };
-  if (provider !== "ollama") {
+  const ollamaJsonOff = (process.env.OLLAMA_JSON_FORMAT || "").toLowerCase() === "0";
+  if (provider !== "ollama" || !ollamaJsonOff) {
     requestBody.response_format = { type: "json_object" };
   }
   if (maxTokens > 0) {
@@ -1308,13 +1434,23 @@ async function callLlmJsonOnce(client, { model, provider, messages, maxTokens })
   }
 
   const completion = await client.chat.completions.create(requestBody);
-  const messageContent = completion.choices[0]?.message?.content;
+  const choice = completion.choices[0];
+  const finishReason = choice?.finish_reason;
+  const messageContent = choice?.message?.content;
   if (!messageContent || !String(messageContent).trim()) {
     const err = new Error("模型未返回内容");
     err.code = "empty_content";
     throw err;
   }
-  return parseModelJsonContent(messageContent);
+  try {
+    return parseModelJsonContent(messageContent);
+  } catch (e) {
+    if (finishReason === "length" && e && typeof e === "object") {
+      e.code = "invalid_json";
+      e.truncated = true;
+    }
+    throw e;
+  }
 }
 
 async function generateLlmJsonWithConfig(cfg, { messages, maxTokens, logTag }) {
@@ -1327,17 +1463,30 @@ async function generateLlmJsonWithConfig(cfg, { messages, maxTokens, logTag }) {
   });
 
   const t0 = Date.now();
+  const parseAttempts = 2;
+  let effectiveMaxTokens = maxTokens;
   let lastErr;
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < parseAttempts; attempt++) {
     try {
-      const parsed = await callLlmJsonOnce(client, { model, provider, messages, maxTokens });
+      const llmCall = callLlmJsonOnce(client, {
+        model,
+        provider,
+        messages,
+        maxTokens: effectiveMaxTokens,
+      });
+      const parsed = process.env.VERCEL
+        ? await withWallClockTimeout(llmCall, VERCEL_LLM_WALL_MS, logTag)
+        : await llmCall;
       return { parsed, llmMs: Date.now() - t0, region, provider, model };
     } catch (e) {
       lastErr = e;
       const code = e && typeof e === "object" && "code" in e ? e.code : "";
       if (code === "invalid_json" || code === "empty_content") {
+        if (attempt === 0 && effectiveMaxTokens > 0) {
+          effectiveMaxTokens = Math.min(Math.round(effectiveMaxTokens * 1.5), 16_384);
+        }
         console.warn(
-          `[${logTag}] parse_retry attempt=${attempt + 1} provider=${provider} model=${model}`,
+          `[${logTag}] parse_retry attempt=${attempt + 1} provider=${provider} model=${model} max_tokens=${effectiveMaxTokens || "default"}`,
           e instanceof Error ? e.message : e,
         );
         continue;
@@ -1348,12 +1497,17 @@ async function generateLlmJsonWithConfig(cfg, { messages, maxTokens, logTag }) {
   throw lastErr;
 }
 
+function reportCompletionMaxTokens() {
+  if (COMPLETION_MAX_TOKENS <= 0) return 0;
+  return COMPLETION_MAX_TOKENS;
+}
+
 async function generateReportWithConfig(cfg, body) {
   const locale = resolveReportLocale(body);
   const planHorizon = getIntakeHorizon(String(body?.intakeTerm || ""));
   const includeUc = wantsUcFromBody(body);
   const userContent = buildUserPayload(body, includeUc);
-  const maxTokens = COMPLETION_MAX_TOKENS > 0 ? COMPLETION_MAX_TOKENS : 0;
+  const maxTokens = reportCompletionMaxTokens();
   return generateLlmJsonWithConfig(cfg, {
     logTag: "api/report",
     maxTokens,
@@ -1387,11 +1541,23 @@ async function generateEssayAnalysisWithConfig(cfg, promptInput) {
 }
 
 function finalizeReportPayload(parsed, body) {
+  parsed.reach = normalizeReportSchoolList(parsed.reach, "reach");
+  parsed.match = normalizeReportSchoolList(parsed.match, "match");
+  parsed.safety = normalizeReportSchoolList(parsed.safety, "safety");
   const includeUc = wantsUcFromBody(body);
   if (includeUc) {
-    const uc = normalizeUcAnalysis(parsed.uc_analysis);
-    if (uc) parsed.uc_analysis = uc;
-    else delete parsed.uc_analysis;
+    let uc = normalizeUcAnalysis(parsed.uc_analysis);
+    if (uc) {
+      uc = sanitizeUcAnalysisFromBody(uc, body);
+      if (ucAnalysisNeedsFallbackFromBody(uc, body)) {
+        console.warn("[api/report] uc_analysis_rejected_using_client_fallback");
+        delete parsed.uc_analysis;
+      } else {
+        parsed.uc_analysis = uc;
+      }
+    } else {
+      delete parsed.uc_analysis;
+    }
   } else {
     delete parsed.uc_analysis;
   }
@@ -1440,8 +1606,7 @@ app.post("/api/report", async (req, res) => {
       lastErr = e;
       const code = e && typeof e === "object" && "code" in e ? e.code : "";
       const msg = e instanceof Error ? e.message : String(e);
-      const retryable = code === "invalid_json" || code === "empty_content";
-      if (retryable && i < configs.length - 1) {
+      if (canFallbackToNextLlm(e, i, configs)) {
         console.warn(`[api/report] fallback provider=${configs[i + 1].provider} after ${provider} failed:`, msg);
         continue;
       }
@@ -1455,6 +1620,7 @@ app.post("/api/report", async (req, res) => {
               ? " 当前为 Ollama（OpenAI 兼容）。若仍 401：在 ollama.com/settings/keys 核对 key；云端须 US_OPENAI_BASE_URL=https://ollama.com/v1（或设 OLLAMA_API_KEY）；本地一般为 http://127.0.0.1:11434/v1 且 api_key 可填 ollama。"
               : " 当前为 OpenAI 兼容接口。若仍 401：核对 US_OPENAI_API_KEY（或 sk- 的 OPENAI_API_KEY）与 US_OPENAI_BASE_URL；改 .env 后重启。";
       }
+      const retryable = isLlmRetryableError(e);
       if (retryable && configs.length === 1) {
         hint += " 可在 .env 设置 LLM_REGION=cn 使用火山方舟，或增大 COMPLETION_MAX_TOKENS。";
       }
@@ -1734,8 +1900,8 @@ app.post("/api/essay/analyze", async (req, res) => {
       lastErr = e;
       const code = e && typeof e === "object" && "code" in e ? e.code : "";
       const msg = e instanceof Error ? e.message : String(e);
-      const retryable = code === "invalid_json" || code === "empty_content";
-      if (retryable && i < configs.length - 1) {
+      const retryable = isLlmRetryableError(e);
+      if (canFallbackToNextLlm(e, i, configs)) {
         console.warn(`[api/essay/analyze] fallback provider=${configs[i + 1].provider} after ${provider} failed:`, msg);
         continue;
       }

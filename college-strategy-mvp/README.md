@@ -144,7 +144,7 @@ npm run preview
 
 **重要限制**
 
-- **报告生成耗时**：`/api/report` 可能超过 **10 秒**。Vercel **Hobby** 对 Serverless 有 **10s** 上限，**极易 504**；请使用 **Pro**（或更高）以便 `vercel.json` 里的 **`maxDuration`: 120** 生效。若仍超时，再改为 300 或优化模型/输出长度。  
+- **报告生成耗时**：`/api/report` 可能需 **1–5 分钟**。`vercel.json` 已设 **`maxDuration`: 300**（Hobby 上限；**Pro** 可在控制台与 `VERCEL_FUNCTION_MAX_SEC` 提到最高 **800**）。若仍超时，请优化模型/输出长度或改用 Workflows / 自建 API。  
 - **专家咨询留资**：在 Vercel 上默认写入 **`/tmp`** 下 jsonl（实例间不持久）。正式运营请接 **外部存储 / Webhook**，或设置 `CONSULT_LEADS_FILE` 指向你可写的路径（若使用支持持久卷的平台）。  
 - **Stripe Webhook**：以后接支付时，Webhook URL 为 **`https://<你的域名>/api/stripe/webhook`**，且需在 Stripe 与 Vercel 环境变量中配置 `STRIPE_WEBHOOK_SECRET` 等（见上文 Stripe 小节）。
 

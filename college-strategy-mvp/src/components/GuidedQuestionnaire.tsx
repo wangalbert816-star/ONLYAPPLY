@@ -577,6 +577,27 @@ export function GuidedStep2({
     ),
   );
 
+  blocks.push(
+    fieldWrap(
+      "s2-hsname",
+      <>
+        <p className="field-question" id="gq-s2-hsname">
+          {t("wizard.s2.hsName.q")}
+        </p>
+        <p className="field-why" id="gw-s2-hsname">
+          {t("wizard.s2.hsName.why")}
+        </p>
+        <input
+          id="hsname"
+          className="input-modern"
+          type="text"
+          value={form.highSchoolName}
+          onChange={(e) => update("highSchoolName", e.target.value)}
+        />
+      </>,
+    ),
+  );
+
   if (hsOk) {
     blocks.push(
       fieldWrap(
@@ -986,6 +1007,32 @@ export function GuidedStep3({
             </button>
           </div>
         </details>
+      </>,
+    ),
+  );
+
+  blocks.push(
+    fieldWrap(
+      "s3-campus",
+      <>
+        <p className="field-question" id="gq-s3-campus">
+          {t("wizard.s3.campusPref.q")}
+        </p>
+        <p className="field-why" id="gw-s3-campus">
+          {t("wizard.s3.campusPref.why")}
+        </p>
+        <select
+          className="select-modern"
+          value={form.campusPreference}
+          onChange={(e) => update("campusPreference", e.target.value as FormState["campusPreference"])}
+        >
+          <option value="">{t("form.opt.choose")}</option>
+          <option value="academic">{t("form.opt.campusAcademic")}</option>
+          <option value="balanced_social">{t("form.opt.campusBalanced")}</option>
+          <option value="social">{t("form.opt.campusSocial")}</option>
+          <option value="research">{t("form.opt.campusResearch")}</option>
+          <option value="any">{t("form.opt.campusAny")}</option>
+        </select>
       </>,
     ),
   );

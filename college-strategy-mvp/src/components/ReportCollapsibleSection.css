@@ -1,0 +1,42 @@
+.report-collapse {
+  border: 1px solid var(--border, #e8e4df);
+  border-radius: 12px;
+  background: var(--card-bg, #fff);
+  margin-bottom: 0.75rem;
+}
+
+.report-collapse__trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  color: inherit;
+}
+
+.report-collapse__chevron {
+  flex-shrink: 0;
+  opacity: 0.65;
+  width: 1rem;
+}
+
+.report-collapse__lead {
+  margin: 0 1rem 0.5rem;
+  font-size: 0.92rem;
+  color: var(--muted, #5c5a56);
+  line-height: 1.5;
+}
+
+.report-collapse__body {
+  padding: 0 1rem 1rem;
+}
+
+.report-collapse__body[hidden] {
+  display: none;
+}

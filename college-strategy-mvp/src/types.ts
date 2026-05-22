@@ -4,6 +4,9 @@ export type Testing = "test_optional" | "will_submit";
 export type SchoolSize = "small" | "medium" | "large" | "any";
 export type RiskStyle = "conservative" | "balanced" | "aggressive";
 
+/** 校园社区气质偏好（可选） */
+export type CampusPreference = "academic" | "balanced_social" | "social" | "research" | "any" | "";
+
 export type GeoPref =
   | "west"
   | "east"
@@ -54,6 +57,8 @@ export interface FormState {
   satScore: string;
   actScore: string;
   highSchoolSystem: string;
+  /** 可选：就读高中/课程体系学校名，用于语境化建议（无数据则不编造统计） */
+  highSchoolName: string;
   gpa: string;
   majorPrimary: string;
   majorSecondary: string;
@@ -63,6 +68,13 @@ export interface FormState {
   structuredActivities?: ActivityItem[];
   riskStyle: RiskStyle | "";
   dealbreakers: string;
+  /** 可选：更偏好的校园氛围 */
+  campusPreference: CampusPreference;
+}
+
+export interface OfficialLink {
+  label: string;
+  url: string;
 }
 
 export interface SchoolRow {
@@ -70,9 +82,14 @@ export interface SchoolRow {
   why_reach_for_you?: string;
   why_match_for_you?: string;
   why_safety_for_you?: string;
+  /** 社区/校园气质（短标签） */
+  campus_vibe?: string;
+  /** 与其它推荐校不同的 1 句要点 */
+  school_differentiator?: string;
   key_fit_signals: string[];
   key_risks: string[];
   verification_focus: string[];
+  official_links?: OfficialLink[];
 }
 
 export interface PortfolioRisk {

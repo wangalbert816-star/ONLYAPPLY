@@ -21,7 +21,12 @@ import { getEffectiveIntake } from "./lib/intakeTerm";
 import { getImprovementPlanLabels, getIntakeHorizon } from "./lib/intakeHorizon";
 import { splitTopReferenceSchools } from "./lib/ultraSelectiveSchools";
 import { resolveUcAnalysis } from "./lib/ucApplication";
+import { enrichReportSchoolRows } from "./lib/schoolOfficialLinks";
 import { UcStrategySection } from "./components/UcStrategySection";
+import { SchoolTierCards } from "./components/SchoolTierCards";
+import { ReportCollapsibleSection } from "./components/ReportCollapsibleSection";
+import { ReportToc } from "./components/ReportToc";
+import { ExportReportCsvButton } from "./components/ExportReportCsvButton";
 
 export type { PaywallCopy, PaywallTone } from "./types";
 
@@ -196,23 +201,6 @@ function StrongHookCard({
   );
 }
 
-function whyCell(row: SchoolRow, tier: "reach" | "match" | "safety"): string {
-  if (tier === "reach") return row.why_reach_for_you || "";
-  if (tier === "match") return row.why_match_for_you || "";
-  return row.why_safety_for_you || "";
-}
-
-function PreviewLockedCell({ label }: { label: string }) {
-  return (
-    <span className="preview-locked-cell">
-      <span className="lock-icon" aria-hidden>
-        🔒
-      </span>
-      {label}
-    </span>
-  );
-}
-
 interface ReportViewProps {
   report: ReportPayload;
   form: FormState;
@@ -321,16 +309,38 @@ export function ReportView({
   const bs = report.improvement_plan?.before_submitting || [];
   const notes = report.strategy_notes || [];
 
-  const lockedSchoolRows = unlocked ? 999 : 1;
-  const schoolSplit = useMemo(() => splitTopReferenceSchools(report, unlocked), [report, unlocked]);
-  const realisticReachUnderfilled = schoolSplit.topReference.length > 0 && schoolSplit.regular.reach.length < 3;
   const lockedRiskCount = unlocked ? risks.length : Math.min(1, risks.length);
   const lockedWeekItems = unlocked ? tw.length : Math.min(1, tw.length);
   const visibleExecutiveSummary = unlocked
     ? report.executive_summary ?? []
     : (report.executive_summary ?? []).slice(0, 1);
   const previewGapCount = Math.min(2, report.information_gaps?.length ?? 0);
-  const ucAnalysis = useMemo(() => resolveUcAnalysis(report, form, locale), [report, form, locale]);
+  const displayReport = useMemo(() => enrichReportSchoolRows(report, locale), [report, locale]);
+  const ucAnalysis = useMemo(() => {
+    const uc = resolveUcAnalysis(report, form, locale);
+    if (!uc) return null;
+    const enriched = enrichReportSchoolRows(
+      { reach: uc.reach, match: uc.match, safety: uc.safety },
+      locale,
+    );
+    return { ...uc, ...enriched };
+  }, [report, form, locale]);
+  const schoolSplit = useMemo(
+    () => splitTopReferenceSchools(displayReport, unlocked),
+    [displayReport, unlocked],
+  );
+  const realisticReachUnderfilled = schoolSplit.topReference.length > 0 && schoolSplit.regular.reach.length < 3;
+  const tocItems = useMemo(() => {
+    const items = [
+      { id: "report-step-verdict", label: t("report.decision.step1Title") },
+      { id: "report-step-gap", label: t("report.decision.step2Title") },
+      { id: "report-step-profile", label: t("report.decision.step3Title") },
+      { id: "report-step-schools", label: t("report.decision.step4Title") },
+      { id: "report-step-action", label: t("report.decision.step5Title") },
+    ];
+    if (ucAnalysis) items.splice(4, 0, { id: "uc-strategy-title", label: t("report.uc.title") });
+    return items;
+  }, [t, ucAnalysis]);
 
   return (
     <div className={`app report-view${reportRefreshing ? " report-view--busy" : ""}`}>
@@ -426,6 +436,15 @@ export function ReportView({
           </h1>
         </div>
         <div className="top-actions__auth">
+          <ExportReportCsvButton
+            report={displayReport}
+            form={form}
+            locale={locale}
+            t={t}
+            uc={ucAnalysis}
+            unlocked={unlocked}
+            intakeLabel={intakeLabel}
+          />
           {isAuthenticated && sessionSaved && unlocked && (
             <ReportDownloadButton sourceRef={pdfSourceRef} intakeLabel={intakeLabel} unlocked={unlocked} />
           )}
@@ -449,6 +468,11 @@ export function ReportView({
       <p className="report-ready">
         {unlocked ? t("report.readyFull") : copy.previewLine}
       </p>
+      {!unlocked && (
+        <p className="report-unlock-includes">{t("report.unlockIncludesCsv")}</p>
+      )}
+
+      <ReportToc items={tocItems} t={t} />
 
       {!unlocked && (
         <div data-no-pdf>
@@ -529,9 +553,11 @@ export function ReportView({
 
         <ReportPathStep step={4} id="report-step-schools" title={t("report.decision.step4Title")} lead={t("report.decision.step4Lead")} bare>
           {schoolSplit.topReference.length > 0 && (
-            <section className="card report-block report-path-step__panel top-reference-card">
-              <p className="top-reference-card__eyebrow">{t("report.topReferenceEyebrow")}</p>
-              <h2>{t("report.topReferenceTitle")}</h2>
+            <ReportCollapsibleSection
+              className="card report-block report-path-step__panel top-reference-card"
+              title={`${t("report.topReferenceEyebrow")} · ${t("report.topReferenceTitle")}`}
+              defaultOpen={false}
+            >
               <p className="top-reference-card__lead">{t("report.topReferenceLead")}</p>
               <ul className="top-reference-list">
                 {schoolSplit.topReference.map(({ row }, i) => (
@@ -542,7 +568,7 @@ export function ReportView({
                 ))}
               </ul>
               <p className="top-reference-card__note">{t("report.topReferenceNote")}</p>
-            </section>
+            </ReportCollapsibleSection>
           )}
           {realisticReachUnderfilled && (
             <section className="card report-block report-path-step__panel realistic-reach-notice">
@@ -551,81 +577,27 @@ export function ReportView({
             </section>
           )}
           {(["reach", "match", "safety"] as const).map((tier) => {
-        const rows = schoolSplit.regular[tier] as SchoolRow[] | undefined;
-        if (!rows?.length) return null;
-        const visible = rows.slice(0, lockedSchoolRows);
-        const lockedCount = unlocked ? 0 : Math.max(0, rows.length - 1);
-        return (
-          <section className="card report-block report-path-step__panel" key={tier}>
-            <h2>
-              {tierTitle(tier)}
-              {!unlocked && lockedCount > 0 && <span className="inline-hint">{t("report.tierMore", { n: lockedCount })}</span>}
-            </h2>
-            {tier === "reach" && <p className="report-table-guide">{t("report.decision.tableGuide")}</p>}
-            <div className="table-wrap report-table-wrap--dense">
-              <table>
-                <thead>
-                  <tr>
-                    <th>{t("report.thSchool")}</th>
-                    <th>{t("report.thWhy")}</th>
-                    <th>{t("report.thSignals")}</th>
-                    <th>{t("report.thRisks")}</th>
-                    <th>{t("report.thVerify")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visible.map((row, i) => {
-                    const hot = highlightSchoolKeys.has(row.school.trim().toLowerCase());
-                    return (
-                    <tr key={i} className={hot ? "school-row-highlight" : undefined}>
-                      <td>{row.school}</td>
-                      <td>{clampCellText(whyCell(row, tier), unlocked ? 118 : 72)}</td>
-                      {unlocked ? (
-                        <>
-                          <td>
-                            {(row.key_fit_signals || []).map((x, j) => (
-                              <div key={j}>{clampCellText(x, 88)}</div>
-                            ))}
-                          </td>
-                          <td>
-                            {(row.key_risks || []).map((x, j) => (
-                              <div key={j}>{clampCellText(x, 88)}</div>
-                            ))}
-                          </td>
-                          <td>
-                            {(row.verification_focus || []).map((x, j) => (
-                              <div key={j}>{clampCellText(x, 88)}</div>
-                            ))}
-                          </td>
-                        </>
-                      ) : (
-                        <>
-                          <td><PreviewLockedCell label={t("report.previewTableSignalsLocked")} /></td>
-                          <td><PreviewLockedCell label={t("report.previewTableRisksLocked")} /></td>
-                          <td><PreviewLockedCell label={t("report.previewTableVerifyLocked")} /></td>
-                        </>
-                      )}
-                    </tr>
-                    );
-                  })}
-                  {!unlocked &&
-                    rows.slice(1).map((_, i) => (
-                      <tr key={`lock-${i}`} className="row-locked">
-                        <td colSpan={5}>
-                          <span className="lock-icon" aria-hidden>
-                            🔒
-                          </span>
-                          {t("report.lockRow", { n: i + 2 })}
-                          <span className="lock-sub">{t("report.lockRowSub")}</span>
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        );
-      })}
+            const rows = schoolSplit.regular[tier] as SchoolRow[] | undefined;
+            if (!rows?.length) return null;
+            return (
+              <ReportCollapsibleSection
+                key={tier}
+                className="card report-block report-path-step__panel"
+                title={tierTitle(tier)}
+                defaultOpen={tier === "reach"}
+              >
+                {tier === "reach" && <p className="report-table-guide">{t("report.decision.tableGuide")}</p>}
+                <SchoolTierCards
+                  tier={tier}
+                  rows={rows}
+                  t={t}
+                  unlocked={unlocked}
+                  highlightSchoolKeys={highlightSchoolKeys}
+                  hideHeading
+                />
+              </ReportCollapsibleSection>
+            );
+          })}
           {ucAnalysis && (
             <UcStrategySection uc={ucAnalysis} t={t} unlocked={unlocked} />
           )}
@@ -689,102 +661,123 @@ export function ReportView({
 
         <ExpertConsultSection gapCount={report.information_gaps?.length ?? 0} applicationId={applicationId} reportId={reportId} />
 
-      <section className="card report-block report-path-appendix__card">
-        <h2>
-          {t("report.risksTitle")}
-          {!unlocked && risks.length > 2 && <span className="inline-hint">{t("report.risksPreview")}</span>}
-        </h2>
-        <ul>
-          {risks.slice(0, lockedRiskCount).map((r, i) => (
-            <li key={i}>
-              <strong>{r.risk_title}</strong>：{r.what_it_means_for_you}
-              {unlocked && (
-                <>
-                  {" "}
-                  <em>{t("report.risksMit")}</em>
-                  {r.mitigation}
-                </>
-              )}
-              {!unlocked && <span className="lock-sub">{t("report.previewRiskMitigationLocked")}</span>}
-            </li>
-          ))}
-          {!unlocked &&
-            risks.slice(1).map((r, i) => (
-              <li key={`rlock-${i}`} className="li-locked">
-                <strong>{r.risk_title}</strong>
-                <span className="lock-sub">{t("report.risksLockSub")}</span>
+      {risks.length > 0 && (
+        <ReportCollapsibleSection
+          className="card report-block report-path-appendix__card"
+          title={
+            <>
+              {t("report.risksTitle")}
+              {!unlocked && risks.length > 2 && <span className="inline-hint">{t("report.risksPreview")}</span>}
+            </>
+          }
+          defaultOpen={false}
+        >
+          <ul>
+            {risks.slice(0, lockedRiskCount).map((r, i) => (
+              <li key={i}>
+                <strong>{r.risk_title}</strong>：{r.what_it_means_for_you}
+                {unlocked && (
+                  <>
+                    {" "}
+                    <em>{t("report.risksMit")}</em>
+                    {r.mitigation}
+                  </>
+                )}
+                {!unlocked && <span className="lock-sub">{t("report.previewRiskMitigationLocked")}</span>}
               </li>
             ))}
-        </ul>
-      </section>
+            {!unlocked &&
+              risks.slice(1).map((r, i) => (
+                <li key={`rlock-${i}`} className="li-locked">
+                  <strong>{r.risk_title}</strong>
+                  <span className="lock-sub">{t("report.risksLockSub")}</span>
+                </li>
+              ))}
+          </ul>
+        </ReportCollapsibleSection>
+      )}
 
-      <section className="card report-block">
-        <h2>
-          {t("report.improveTitle")}
-          {!unlocked && <span className="inline-hint">{t("report.improvePreview")}</span>}
-        </h2>
-        {improveLead ? <p className="report-improve-lead">{improveLead}</p> : null}
-        <h3 className="subh">{planLabels.week}</h3>
-        <ul>
-          {tw.slice(0, lockedWeekItems).map((item, i) => (
-            <li key={i}>{item}</li>
-          ))}
-        </ul>
-        {!unlocked && tw.length > 1 && (
-          <p className="lock-inline">{t("report.weekMore", { n: tw.length - 1 })}</p>
-        )}
-        <h3 className="subh">{planLabels.month}</h3>
-        {unlocked ? (
+      {(tw.length > 0 || tm.length > 0 || bs.length > 0) && (
+        <ReportCollapsibleSection
+          className="card report-block report-path-appendix__card"
+          title={
+            <>
+              {t("report.improveTitle")}
+              {!unlocked && <span className="inline-hint">{t("report.improvePreview")}</span>}
+            </>
+          }
+          defaultOpen={false}
+        >
+          {improveLead ? <p className="report-improve-lead">{improveLead}</p> : null}
+          <h3 className="subh">{planLabels.week}</h3>
           <ul>
-            {tm.map((item, i) => (
+            {tw.slice(0, lockedWeekItems).map((item, i) => (
               <li key={i}>{item}</li>
             ))}
           </ul>
-        ) : (
-          <p className="block-locked">
-            <span className="lock-icon" aria-hidden>
-              🔒
-            </span>
-            {t("report.monthLock", { n: tm.length })}
-            <strong>{t("report.monthLockBold")}</strong>
-          </p>
-        )}
-        <h3 className="subh">{planLabels.before}</h3>
-        {unlocked ? (
+          {!unlocked && tw.length > 1 && (
+            <p className="lock-inline">{t("report.weekMore", { n: tw.length - 1 })}</p>
+          )}
+          <h3 className="subh">{planLabels.month}</h3>
+          {unlocked ? (
+            <ul>
+              {tm.map((item, i) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="block-locked">
+              <span className="lock-icon" aria-hidden>
+                🔒
+              </span>
+              {t("report.monthLock", { n: tm.length })}
+              <strong>{t("report.monthLockBold")}</strong>
+            </p>
+          )}
+          <h3 className="subh">{planLabels.before}</h3>
+          {unlocked ? (
+            <ul>
+              {bs.map((item, i) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="block-locked">
+              <span className="lock-icon" aria-hidden>
+                🔒
+              </span>
+              {t("report.beforeLock", { n: bs.length })}
+              <strong>{t("report.beforeLockBold")}</strong>
+            </p>
+          )}
+        </ReportCollapsibleSection>
+      )}
+
+      {notes.length > 0 && (
+        <ReportCollapsibleSection
+          className="card report-block report-path-appendix__card"
+          title={
+            <>
+              {t("report.notesTitle")}
+              {!unlocked && notes.length > 2 && <span className="inline-hint">{t("report.notesPreview")}</span>}
+            </>
+          }
+          defaultOpen={false}
+        >
           <ul>
-            {bs.map((item, i) => (
+            {notes.slice(0, unlocked ? notes.length : Math.min(1, notes.length)).map((item, i) => (
               <li key={i}>{item}</li>
             ))}
+            {!unlocked &&
+              notes.slice(1).map((_, i) => (
+                <li key={`nlock-${i}`} className="li-locked">
+                  {t("report.notesLock", { n: i + 2 })}
+                  <span className="lock-sub">{t("report.notesLockSub")}</span>
+                </li>
+              ))}
           </ul>
-        ) : (
-          <p className="block-locked">
-            <span className="lock-icon" aria-hidden>
-              🔒
-            </span>
-            {t("report.beforeLock", { n: bs.length })}
-            <strong>{t("report.beforeLockBold")}</strong>
-          </p>
-        )}
-      </section>
-
-      <section className="card report-block">
-        <h2>
-          {t("report.notesTitle")}
-          {!unlocked && notes.length > 2 && <span className="inline-hint">{t("report.notesPreview")}</span>}
-        </h2>
-        <ul>
-          {notes.slice(0, unlocked ? notes.length : Math.min(1, notes.length)).map((item, i) => (
-            <li key={i}>{item}</li>
-          ))}
-          {!unlocked &&
-            notes.slice(1).map((_, i) => (
-              <li key={`nlock-${i}`} className="li-locked">
-                {t("report.notesLock", { n: i + 2 })}
-                <span className="lock-sub">{t("report.notesLockSub")}</span>
-              </li>
-            ))}
-        </ul>
-      </section>
+        </ReportCollapsibleSection>
+      )}
 
       </div>
 
@@ -807,6 +800,7 @@ export function ReportView({
             {copy.footerTitle}
           </h2>
           <p className="paywall-footer-text">{copy.footerText}</p>
+          <p className="report-unlock-includes">{t("report.unlockIncludesCsv")}</p>
           <button type="button" className="btn btn-primary btn-block" onClick={onUnlock} disabled={purchaseBusy}>
             {purchaseBusy ? t("report.checkoutOpening") : copy.ctaPrimary}
           </button>

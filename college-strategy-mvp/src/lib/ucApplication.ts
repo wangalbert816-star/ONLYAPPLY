@@ -1,6 +1,8 @@
 import type { FormState, ReportPayload, SchoolRow, SchoolTier, UcAnalysis } from "../types";
 import type { Locale } from "../i18n/strings";
 import { getCampusDef, pickUcCampusPortfolio, type UcCampusKey } from "./ucCampusPortfolio";
+import { isWeakUcProfile } from "./ucProfileStrength";
+import { sanitizeUcAnalysis, ucAnalysisNeedsFallback } from "./ucAnalysisSanitize";
 
 const UC_KEYWORD_RE =
   /\buc\b|university of california|加州大学|ucla|berkeley|uc berkeley|ucsd|uc davis|uc irvine|uci|ucsb|uc santa barbara|uc santa cruz|ucsc|uc riverside|ucr|uc merced|ucm/i;
@@ -72,8 +74,16 @@ function buildCampusWhy(
           ? "weaker direct fit—treat as portfolio coverage or exploratory"
           : "直接匹配度一般—更像组合覆盖或探索型选项";
 
+  const weak = isWeakUcProfile(form);
+  const flagshipReach =
+    (key === "berkeley" || key === "ucla") && tier === "reach" && weak;
+
   const tierWhy =
-    tier === "reach"
+    flagshipReach
+      ? isEn
+        ? `For ${major}, ${name} is at most a very low-probability reference—not a responsible Reach tier given your current GPA/activities.`
+        : `就「${major}」与当前 GPA/活动而言，${name} 最多作极低概率参考，不宜作为负责任的 UC 冲刺档。`
+      : tier === "reach"
       ? isEn
         ? `As a reach campus for ${major}, ${name} is highly selective; ${fitNote}.`
         : `作为「${major}」方向的冲刺校，${name} 选择性很高；${fitNote}。`
@@ -241,7 +251,11 @@ export function buildUcAnalysisFallback(form: FormState, locale: Locale): UcAnal
 
 export function resolveUcAnalysis(report: ReportPayload, form: FormState, locale: Locale): UcAnalysis | null {
   if (!wantsUcAnalysis(form)) return null;
-  if (report.uc_analysis && hasUcCampuses(report.uc_analysis)) return report.uc_analysis;
+  if (report.uc_analysis && hasUcCampuses(report.uc_analysis)) {
+    const sanitized = sanitizeUcAnalysis(report.uc_analysis, form, locale);
+    if (ucAnalysisNeedsFallback(sanitized, form)) return buildUcAnalysisFallback(form, locale);
+    return sanitized;
+  }
   return buildUcAnalysisFallback(form, locale);
 }
 

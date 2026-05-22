@@ -67,6 +67,10 @@ export const wizardZhNested = {
       },
     },
     s2: {
+      hsName: {
+        q: "就读高中/学校名称（可选）",
+        why: "仅用于语境化建议；我们不会编造该校历史录取数据。",
+      },
       hs: {
         q: "你所在的高中体系是？",
         why: "课程体系决定招生官如何理解你的成绩单与课程难度，也影响文书切入点。",
@@ -121,6 +125,10 @@ export const wizardZhNested = {
       },
     },
     s3: {
+      campusPref: {
+        q: "你更偏好哪种校园氛围？（可选）",
+        why: "用于匹配社区气质描述，不会单独决定录取结果。",
+      },
       activities: {
         q: "有没有 1–3 个你投入最深、也能讲清成长的活动或角色？（可简述）",
         why: "活动不是堆量，而是证明「持续投入 + 影响 + 反思」；这会直接影响文书与档位。",
@@ -272,6 +280,10 @@ export const wizardEnNested = {
       },
     },
     s2: {
+      hsName: {
+        q: "High school name (optional)",
+        why: "Context only—we will not invent admit stats for your school.",
+      },
       hs: {
         q: "What high school curriculum/system are you in?",
         why: "Systems change how admissions reads rigor and how we anchor your story credibly.",
@@ -326,6 +338,10 @@ export const wizardEnNested = {
       },
     },
     s3: {
+      campusPref: {
+        q: "Preferred campus vibe (optional)",
+        why: "Helps match community character labels—not a standalone admit factor.",
+      },
       activities: {
         q: "Share 1–3 activities or roles you invested in deeply (brief is fine).",
         why: "Depth + impact + reflection beats volume; this shapes essays and tier credibility.",

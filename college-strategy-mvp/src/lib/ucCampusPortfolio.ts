@@ -1,4 +1,5 @@
 import type { FormState, SchoolTier } from "../types";
+import { allowUcFlagshipReach, assessUcProfileSignals, isWeakUcProfile } from "./ucProfileStrength";
 
 export type UcCampusKey =
   | "berkeley"
@@ -161,7 +162,7 @@ function isAggressiveList(form: FormState): boolean {
 }
 
 function gpaEvidenceThin(form: FormState): boolean {
-  return form.gpa.trim().length < 40;
+  return form.gpa.trim().length < 40 || isWeakUcProfile(form);
 }
 
 function bySelectivityThenFit(a: CampusDef, b: CampusDef, scores: Map<UcCampusKey, number>) {
@@ -184,7 +185,10 @@ export function pickUcCampusPortfolio(form: FormState): UcCampusPick[] {
   const ranked = [...CAMPUSES].sort((a, b) => bySelectivityThenFit(a, b, scores));
   const conservative = isConservativeList(form);
   const aggressive = isAggressiveList(form);
-  const thin = gpaEvidenceThin(form);
+  const signals = assessUcProfileSignals(form);
+  const thin = gpaEvidenceThin(form) || signals.activityThin;
+  const weak = isWeakUcProfile(form, signals);
+  const flagshipOk = allowUcFlagshipReach(form, signals);
 
   const topTier = ranked.filter((c) => c.selectivity <= 1);
   const upperMid = ranked.filter((c) => c.selectivity === 2);
@@ -206,8 +210,26 @@ export function pickUcCampusPortfolio(form: FormState): UcCampusPick[] {
 
   const topFit = bestTop ? scores.get(bestTop.key) ?? 0 : 0;
 
-  if (conservative || thin) {
-    if (bestTop && topFit >= 0.45 && !thin) reach.push(bestTop);
+  if (weak) {
+    if (bestUpper) reach.push(bestUpper);
+    if (secondUpper && !reach.includes(secondUpper) && reach.length < 2) reach.push(secondUpper);
+    if (reach.length === 0 && bestMid) reach.push(bestMid);
+    for (const c of sortByFit(mid)) {
+      if (match.length >= 3) break;
+      if (!reach.includes(c)) match.push(c);
+    }
+    for (const c of sortByFit(upperMid)) {
+      if (match.length >= 3) break;
+      if (!reach.includes(c) && !match.includes(c)) match.push(c);
+    }
+    if (flagshipOk && bestTop && !reach.includes(bestTop) && !match.includes(bestTop)) {
+      match.push(bestTop);
+    }
+    if (flagshipOk && secondTop && secondTop !== bestTop && !reach.includes(secondTop) && !match.includes(secondTop)) {
+      match.push(secondTop);
+    }
+  } else if (conservative || thin) {
+    if (bestTop && topFit >= 0.45 && flagshipOk) reach.push(bestTop);
     if (reach.length < 2 && bestUpper) reach.push(bestUpper);
     if (reach.length === 0 && bestUpper) reach.push(bestUpper);
     if (secondUpper && !reach.includes(secondUpper)) match.push(secondUpper);
@@ -216,14 +238,14 @@ export function pickUcCampusPortfolio(form: FormState): UcCampusPick[] {
       const extra = sortByFit(upperMid).find((c) => !reach.includes(c) && !match.includes(c));
       if (extra) match.push(extra);
     }
-  } else if (aggressive && topFit >= 0.5) {
+  } else if (aggressive && topFit >= 0.5 && flagshipOk) {
     if (bestTop) reach.push(bestTop);
     if (secondTop && scores.get(secondTop.key)! >= 0.4 && reach.length < 2) reach.push(secondTop);
     if (reach.length < 2 && bestUpper && !reach.includes(bestUpper)) reach.push(bestUpper);
     if (bestUpper && !reach.includes(bestUpper)) match.push(bestUpper);
     if (secondUpper && !reach.includes(secondUpper) && !match.includes(secondUpper)) match.push(secondUpper);
   } else {
-    if (bestTop && topFit >= 0.55) reach.push(bestTop);
+    if (bestTop && topFit >= 0.55 && flagshipOk) reach.push(bestTop);
     else if (bestUpper) reach.push(bestUpper);
     if (reach.length < 2) {
       const reach2 =
@@ -244,6 +266,9 @@ export function pickUcCampusPortfolio(form: FormState): UcCampusPick[] {
   for (const c of sortByFit(safetyPool)) {
     if (safety.length >= 2) break;
     if (!reach.includes(c) && !match.includes(c)) safety.push(c);
+  }
+  if (weak) {
+    safety.splice(0, safety.length, ...safety.filter((c) => c.selectivity >= 4));
   }
   if (safety.length < 2) {
     for (const c of sortByFit(safetyPool)) {

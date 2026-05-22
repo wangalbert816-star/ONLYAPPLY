@@ -2,6 +2,7 @@ import type { FormState } from "../types";
 import type { Locale } from "../i18n/strings";
 import type { ProfileDimension, ProfileDimensionKey } from "./fiveDimensionProfile";
 import { getEffectiveIntake } from "./intakeTerm";
+import { isWeakUcProfile } from "./ucProfileStrength";
 
 /** 并列最低分时，优先把「对档位感知更强」的维当作主短板 */
 const WEAK_TIE_ORDER: ProfileDimensionKey[] = ["activities", "essays", "academic", "testing", "strategy"];
@@ -169,11 +170,18 @@ function dimension(dimensions: ProfileDimension[], key: ProfileDimensionKey): Pr
 }
 
 /** 过滤模型返回的过于空泛的「策略总览」首句 */
-function isUsableExecutiveLead(line: string | null | undefined, facts: ProfileFacts): boolean {
+function isUsableExecutiveLead(
+  line: string | null | undefined,
+  facts: ProfileFacts,
+  form?: FormState,
+): boolean {
   const s = String(line ?? "").trim();
   if (s.length < 18 || s.length > 200) return false;
-  const genericZh = /整体画像偏|平衡型 STEM|不是缺乏野心|可把目标校往上抬|宜采用.*策略/i;
-  const genericEn = /balanced.*profile|not lacking ambition|lift targets|generic/i;
+  if (form && isWeakUcProfile(form) && /均衡|偏稳|名单.*稳|较稳|balanced.*stable|stable.*list/i.test(s)) {
+    return false;
+  }
+  const genericZh = /整体画像偏|平衡型 STEM|不是缺乏野心|可把目标校往上抬|宜采用.*策略|名单.*均衡/i;
+  const genericEn = /balanced.*profile|not lacking ambition|lift targets|generic|stable.*list|well.?balanced/i;
   if (genericZh.test(s) || genericEn.test(s)) {
     const hasFact =
       s.includes(facts.major) ||
@@ -372,7 +380,7 @@ export function buildOverallVerdict(
   const weakest = pickWeakestDimension(dimensions);
   const strongest = pickStrongestDimension(dimensions);
   const headline =
-    isUsableExecutiveLead(options?.executiveLead, facts) && options?.executiveLead
+    isUsableExecutiveLead(options?.executiveLead, facts, form) && options?.executiveLead
       ? options.executiveLead.trim()
       : headlineFromProfile(form, dimensions, locale);
   const subline = sublineFromForm(form, weakest, facts, locale);
