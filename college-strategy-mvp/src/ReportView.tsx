@@ -16,7 +16,7 @@ import { ReportPathStep } from "./components/ReportPathStep";
 import { SaveReportBanner } from "./components/auth/SaveReportBanner";
 import { ReportDownloadButton } from "./components/ReportDownloadButton";
 import { ReportExportCsvButton } from "./components/ReportExportCsvButton";
-import { ReportSectionNav, type ReportNavItem } from "./components/ReportSectionNav";
+import { ReportSectionNav } from "./components/ReportSectionNav";
 import { SchoolTierPanel } from "./components/SchoolTierPanel";
 import { ReportCollapsibleSection } from "./components/ReportCollapsibleSection";
 import { ReportPdfDocument } from "./components/pdf/ReportPdfDocument";
