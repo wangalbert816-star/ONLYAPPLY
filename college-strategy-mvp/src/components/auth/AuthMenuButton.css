@@ -28,12 +28,7 @@
   background: rgba(37, 99, 235, 0.06);
 }
 
-.top-actions__auth {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  flex-wrap: wrap;
-}
+/* Report header toolbar — see App.css .top-actions__toolbar */
 
 @media (prefers-color-scheme: dark) {
   .auth-menu-btn:hover {

@@ -1,0 +1,114 @@
+.school-card {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  background: #fff;
+  margin-bottom: 0.75rem;
+}
+
+.school-card--hot {
+  border-color: rgba(234, 88, 12, 0.45);
+  box-shadow: 0 0 0 1px rgba(234, 88, 12, 0.12);
+}
+
+.school-card__trigger {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.school-card__trigger:hover .school-card__name {
+  color: #1d4ed8;
+}
+
+.school-card__chevron {
+  flex-shrink: 0;
+  margin-top: 0.2rem;
+  font-size: 0.85rem;
+  color: #64748b;
+  line-height: 1;
+}
+
+.school-card__name {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.school-card__body {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.school-card__label {
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.school-card__list {
+  margin: 0;
+  padding-left: 1.15rem;
+  font-size: 0.94rem;
+  line-height: 1.55;
+}
+
+.school-card__list li + li {
+  margin-top: 0.25rem;
+}
+
+.school-card__list--risks li {
+  color: #9a3412;
+}
+
+.school-card__block + .school-card__block {
+  margin-top: 0.75rem;
+}
+
+.school-card__link-list {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.85rem;
+}
+
+.school-card__link-list a {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.school-card__lock-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.88rem;
+  color: #64748b;
+}
+
+.school-cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+@media (min-width: 720px) {
+  .school-cards-grid--multi {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+}

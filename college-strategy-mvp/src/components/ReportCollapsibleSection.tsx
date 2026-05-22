@@ -10,7 +10,7 @@ type Props = {
   className?: string;
 };
 
-export function ReportCollapsibleSection({ id, title, lead, defaultOpen = true, children, className }: Props) {
+export function ReportCollapsibleSection({ id, title, lead, defaultOpen = false, children, className }: Props) {
   const autoId = useId();
   const panelId = id ?? autoId;
   const [open, setOpen] = useState(defaultOpen);

@@ -590,24 +590,23 @@ const SYSTEM_PROMPT_ZH = `你是一位资深美国本科升学顾问（10年+经
 {
   "executive_summary": ["3-5条，每条<=120字"],
   "information_gaps": ["0-6条"],
-  "reach": [{"school":"","why_reach_for_you":"","campus_vibe":"","school_differentiator":"","key_fit_signals":["",""],"key_risks":["",""],"verification_focus":["","",""]}],
-  "match": [同结构，why_match_for_you；campus_vibe 与 school_differentiator 必填且各校不同],
-  "safety": [同结构，why_safety_for_you；campus_vibe 与 school_differentiator 必填且各校不同],
+  "reach": [{"school":"","why_reach_for_you":"","key_fit_signals":["",""],"key_risks":["",""],"verification_focus":["","",""]}],
+  "match": [同结构，但用 why_match_for_you 字段名与冲一致逻辑：说明为何在「稳」档],
+  "safety": [同结构，字段 why_safety_for_you],
   "portfolio_risks": [{"risk_title":"","what_it_means_for_you":"","mitigation":""}],
   "improvement_plan": {"this_week":["3-5条"],"this_month":["4-7条"],"before_submitting":["4-7条"]},
   "strategy_notes": ["3-6条"]
 }
 
-match 每元素字段名必须为：school, why_match_for_you, campus_vibe, school_differentiator, key_fit_signals, key_risks, verification_focus
-safety 每元素字段名必须为：school, why_safety_for_you, campus_vibe, school_differentiator, key_fit_signals, key_risks, verification_focus
-reach 每元素字段名必须为：school, why_reach_for_you, campus_vibe, school_differentiator, key_fit_signals, key_risks, verification_focus
+match 每元素字段名必须为：school, why_match_for_you, key_fit_signals, key_risks, verification_focus
+safety 每元素字段名必须为：school, why_safety_for_you, key_fit_signals, key_risks, verification_focus
+reach 每元素字段名必须为：school, why_reach_for_you, key_fit_signals, key_risks, verification_focus
 
-【每校内容质量】
-- campus_vibe：1 句社区/校园气质（学术型/研究型/社交型/城市资源等），须因校而异。
-- school_differentiator：1 句说明「这所 vs 本档其它学校」的独特点（勿重复）。
-- why_* 控制在 2–3 句或短段；key_* 数组每条独立一条，禁止 9 校复制同一段。
-- improvement_plan 须含可执行项：竞赛/实习/项目/夏校等类型 + 与主申专业挂钩；活动薄弱时优先 1 条可验证主线。
-- 无可靠来源时不要编造高中/地区录取统计；可写入 information_gaps 提醒用户查 CDS。
+【每校呈现格式·硬性】
+- why_* 字段：最多 2 句、≤80 字/句；禁止大段堆砌。
+- key_fit_signals、key_risks、verification_focus：各 2–4 条独立要点（短句），禁止与别校逐字重复。
+- 每校至少 1 条该校独有信息（资源/文化/地理实习/专业结构等）；禁止 9 校共用同一段模板。
+- verification_focus 写「去官网查什么」（录取、专业、奖助、课程），勿编造 URL。
 `;
 
 const SYSTEM_PROMPT_EN = `You are a senior U.S. undergraduate admissions counselor (10+ years), tone: professional, restrained, and actionable. Produce a school-list strategy from the user's questionnaire.
@@ -660,24 +659,23 @@ const SYSTEM_PROMPT_EN = `You are a senior U.S. undergraduate admissions counsel
 {
   "executive_summary": ["3-5 bullets, each <=120 characters"],
   "information_gaps": ["0-6 bullets"],
-  "reach": [{"school":"","why_reach_for_you":"","campus_vibe":"","school_differentiator":"","key_fit_signals":["",""],"key_risks":["",""],"verification_focus":["","",""]}],
-  "match": [same shape with why_match_for_you; campus_vibe and school_differentiator required and unique per school],
-  "safety": [same shape with why_safety_for_you; campus_vibe and school_differentiator required and unique per school],
+  "reach": [{"school":"","why_reach_for_you":"","key_fit_signals":["",""],"key_risks":["",""],"verification_focus":["","",""]}],
+  "match": [same shape, but each object uses why_match_for_you and explains why it sits in Match],
+  "safety": [same shape, each object uses why_safety_for_you],
   "portfolio_risks": [{"risk_title":"","what_it_means_for_you":"","mitigation":""}],
   "improvement_plan": {"this_week":["3-5 items"],"this_month":["4-7 items"],"before_submitting":["4-7 items"]},
   "strategy_notes": ["3-6 items"]
 }
 
-Field names for match rows must be: school, why_match_for_you, campus_vibe, school_differentiator, key_fit_signals, key_risks, verification_focus
-Field names for safety rows must be: school, why_safety_for_you, campus_vibe, school_differentiator, key_fit_signals, key_risks, verification_focus
-Field names for reach rows must be: school, why_reach_for_you, campus_vibe, school_differentiator, key_fit_signals, key_risks, verification_focus
+Field names for match rows must be: school, why_match_for_you, key_fit_signals, key_risks, verification_focus
+Field names for safety rows must be: school, why_safety_for_you, key_fit_signals, key_risks, verification_focus
+Field names for reach rows must be: school, why_reach_for_you, key_fit_signals, key_risks, verification_focus
 
-【Per-school quality】
-- campus_vibe: one phrase on community/campus character—must differ by school.
-- school_differentiator: one sentence on how THIS school differs from others in the same tier.
-- Keep why_* concise; key_* items must be distinct bullets, not copy-pasted across schools.
-- improvement_plan: actionable competitions/internships/projects/summer programs tied to major; if activities thin, one verifiable spine first.
-- Do not invent feeder-school stats; use information_gaps for CDS/official data instead.
+【Per-school format — hard】
+- why_* fields: at most 2 sentences, ≤90 characters each; no long paragraphs.
+- key_fit_signals, key_risks, verification_focus: 2–4 distinct short bullets each; never copy-paste the same text across schools.
+- Each school needs at least one campus-specific point (resources, culture, internships/location, major structure); no shared template across all 9.
+- verification_focus: state what to verify on the official site (admission, major, aid, curriculum); do not invent URLs.
 `;
 
 const UC_KEYWORD_RE =
@@ -762,41 +760,20 @@ function systemPromptForLocale(locale, includeUc = false, horizon = "unknown") {
   return base + (locale === "en" ? UC_SYSTEM_APPEND_EN : UC_SYSTEM_APPEND_ZH);
 }
 
-function normalizeSchoolRow(r, tier) {
-  const whyKey =
-    tier === "reach" ? "why_reach_for_you" : tier === "match" ? "why_match_for_you" : "why_safety_for_you";
-  const links = Array.isArray(r.official_links)
-    ? r.official_links
-        .filter((l) => l && typeof l === "object" && String(l.url || "").trim())
-        .slice(0, 6)
-        .map((l) => ({ label: String(l.label || "Link").trim(), url: String(l.url).trim() }))
-    : [];
-  return {
-    school: String(r.school).trim(),
-    [whyKey]: String(r[whyKey] || "").trim(),
-    campus_vibe: String(r.campus_vibe || "").trim(),
-    school_differentiator: String(r.school_differentiator || "").trim(),
-    key_fit_signals: Array.isArray(r.key_fit_signals) ? r.key_fit_signals.map(String) : [],
-    key_risks: Array.isArray(r.key_risks) ? r.key_risks.map(String) : [],
-    verification_focus: Array.isArray(r.verification_focus) ? r.verification_focus.map(String) : [],
-    ...(links.length ? { official_links: links } : {}),
-  };
-}
-
 function normalizeUcSchoolRows(rows, tier) {
   if (!Array.isArray(rows)) return [];
+  const whyKey =
+    tier === "reach" ? "why_reach_for_you" : tier === "match" ? "why_match_for_you" : "why_safety_for_you";
   return rows
     .filter((r) => r && typeof r === "object" && String(r.school || "").trim())
     .slice(0, 3)
-    .map((r) => normalizeSchoolRow(r, tier));
-}
-
-function normalizeReportSchoolList(rows, tier) {
-  if (!Array.isArray(rows)) return [];
-  return rows
-    .filter((r) => r && typeof r === "object" && String(r.school || "").trim())
-    .slice(0, 3)
-    .map((r) => normalizeSchoolRow(r, tier));
+    .map((r) => ({
+      school: String(r.school).trim(),
+      [whyKey]: String(r[whyKey] || "").trim(),
+      key_fit_signals: Array.isArray(r.key_fit_signals) ? r.key_fit_signals.map(String) : [],
+      key_risks: Array.isArray(r.key_risks) ? r.key_risks.map(String) : [],
+      verification_focus: Array.isArray(r.verification_focus) ? r.verification_focus.map(String) : [],
+    }));
 }
 
 function normalizeUcAnalysis(raw) {
@@ -1114,7 +1091,6 @@ function buildUserPayload(body, includeUc = false) {
     satScore,
     actScore,
     highSchoolSystem,
-    highSchoolName,
     gpa,
     majorPrimary,
     majorSecondary,
@@ -1124,7 +1100,6 @@ function buildUserPayload(body, includeUc = false) {
     structuredActivities,
     riskStyle,
     dealbreakers,
-    campusPreference,
   } = body || {};
 
   const supplementary = normalizeSupplementaryNotes(body?.supplementary_notes);
@@ -1167,7 +1142,6 @@ ${planHorizonLine}
     }
 
 [High school system] ${highSchoolSystem || na}
-[High school name — for context only; do not invent feeder admit stats] ${highSchoolName || na}
 [GPA / transcript notes] ${gpa || na}
 [Primary major] ${majorPrimary || na}
 [Alternate major] ${majorSecondary || none}
@@ -1178,7 +1152,6 @@ ${planHorizonLine}
       structuredActivityText ? `\n[Structured activity / competition details]\n${structuredActivityText}` : ""
     }
 [List risk posture] ${riskStyle || na}
-[Campus vibe preference] ${campusPreference || na}
 [Hard dealbreakers] ${dealbreakers || none}${
       includeUc
         ? "\n\n[UC intent] User shows interest in the University of California system. Output uc_analysis per system instructions; keep the main 9-school list mostly non-UC."
@@ -1199,7 +1172,6 @@ ${planHorizonLine}
 【标化策略】${testing || "未填"}${testing === "will_submit" ? `\nSAT: ${satScore || "未填"}\nACT: ${actScore || "未填"}` : ""}
 
 【高中体系】${highSchoolSystem || "未填"}
-【就读高中/学校名（仅作语境，勿编造该校录取统计）】${highSchoolName || "未填"}
 【GPA/成绩说明】${gpa || "未填"}
 【主申专业】${majorPrimary || "未填"}
 【备选专业】${majorSecondary || "无"}
@@ -1208,7 +1180,6 @@ ${planHorizonLine}
 
 【活动/奖项摘要】${activities || "未提供"}${structuredActivityText ? `\n【活动/竞赛细节】\n${structuredActivityText}` : ""}
 【选校风格】${riskStyle || "未填"}
-【校园氛围偏好】${campusPreference || "未填"}
 【绝对不能接受】${dealbreakers || "无"}${
     includeUc
       ? "\n\n【UC 意向】用户表现出加州大学（UC）申请意向。请按 system 说明输出 uc_analysis；主名单 9 校尽量为非 UC 美国本科院校。"
@@ -1541,9 +1512,6 @@ async function generateEssayAnalysisWithConfig(cfg, promptInput) {
 }
 
 function finalizeReportPayload(parsed, body) {
-  parsed.reach = normalizeReportSchoolList(parsed.reach, "reach");
-  parsed.match = normalizeReportSchoolList(parsed.match, "match");
-  parsed.safety = normalizeReportSchoolList(parsed.safety, "safety");
   const includeUc = wantsUcFromBody(body);
   if (includeUc) {
     let uc = normalizeUcAnalysis(parsed.uc_analysis);

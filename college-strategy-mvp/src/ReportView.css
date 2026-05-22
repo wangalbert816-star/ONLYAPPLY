@@ -434,6 +434,10 @@
   position: relative;
 }
 
+.report-main-layout {
+  width: 100%;
+}
+
 .report-view--busy {
   pointer-events: none;
 }
@@ -1033,6 +1037,21 @@
   gap: 0.65rem;
 }
 
+.report-path-step.card .report-path-step__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.report-path-step.card .report-path-step__body > .report-collapse,
+.report-path-step.card .report-path-step__body > .school-tier-panel {
+  margin-bottom: 0;
+}
+
+.report-path-step.card .school-list-intro {
+  margin-top: 0;
+}
+
 .report-path-step__panel {
   margin-bottom: 0;
 }
@@ -1280,6 +1299,25 @@
 
 .report-table-wrap--dense td div:last-child {
   margin-bottom: 0;
+}
+
+.school-list-intro {
+  font-size: 0.85rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0 0 1rem;
+}
+
+.school-card--locked-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+  font-size: 0.85rem;
+  color: #64748b;
 }
 
 /* PDF export: clipped off-screen but still paintable for html2canvas clone */

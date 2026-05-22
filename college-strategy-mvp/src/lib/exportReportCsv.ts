@@ -1,12 +1,11 @@
-import type { FormState, ReportPayload, SchoolRow, SchoolTier, UcAnalysis } from "../types";
+import type { FormState, ReportPayload, SchoolRow, SchoolTier } from "../types";
 import type { Locale } from "../i18n/strings";
+import { getEffectiveIntake } from "./intakeTerm";
+import { resolveUcAnalysis } from "./ucApplication";
+import { getOfficialLinksForSchool, officialLinkLabel } from "./universityOfficialLinks";
+import { splitToBullets } from "./schoolRowDisplay";
 
-function escapeCsvCell(s: string): string {
-  const v = (s || "").replace(/\r?\n/g, " ").replace(/"/g, '""');
-  return /[",\n]/.test(v) ? `"${v}"` : v;
-}
-
-function whyForTier(row: SchoolRow, tier: SchoolTier): string {
+function whyText(row: SchoolRow, tier: SchoolTier): string {
   if (tier === "reach") return row.why_reach_for_you || "";
   if (tier === "match") return row.why_match_for_you || "";
   return row.why_safety_for_you || "";
@@ -14,83 +13,105 @@ function whyForTier(row: SchoolRow, tier: SchoolTier): string {
 
 function tierLabel(tier: SchoolTier, locale: Locale): string {
   if (locale === "en") {
-    return tier === "reach" ? "Reach" : tier === "match" ? "Match" : "Safety";
+    if (tier === "reach") return "Reach";
+    if (tier === "match") return "Match";
+    return "Safety";
   }
-  return tier === "reach" ? "冲刺" : tier === "match" ? "匹配" : "保底";
+  if (tier === "reach") return "冲刺";
+  if (tier === "match") return "匹配";
+  return "保底";
 }
 
-function rowsToCsvLines(
-  rows: SchoolRow[],
+function escCsv(v: string): string {
+  const s = String(v ?? "").replace(/\r?\n/g, " ").trim();
+  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+function rowToCsvLine(cols: string[]): string {
+  return cols.map(escCsv).join(",");
+}
+
+function appendSchoolRows(
+  lines: string[],
   tier: SchoolTier,
+  rows: SchoolRow[],
   locale: Locale,
-  notesCol: string,
-): string[] {
-  return rows.map((row) => {
-    const links = (row.official_links ?? []).map((l) => `${l.label}: ${l.url}`).join(" | ");
-    return [
-      tierLabel(tier, locale),
-      row.school,
-      row.campus_vibe || "",
-      row.school_differentiator || "",
-      whyForTier(row, tier),
-      (row.key_fit_signals || []).join("; "),
-      (row.key_risks || []).join("; "),
-      (row.verification_focus || []).join("; "),
-      links,
-      notesCol,
-    ]
-      .map(escapeCsvCell)
-      .join(",");
-  });
+  listKind: string,
+) {
+  for (const row of rows) {
+    const links = getOfficialLinksForSchool(row.school, locale)
+      .map((l) => `${officialLinkLabel(l, locale)}: ${l.href}`)
+      .join(" | ");
+    lines.push(
+      rowToCsvLine([
+        listKind,
+        tierLabel(tier, locale),
+        row.school,
+        splitToBullets(whyText(row, tier)).join(" · "),
+        (row.key_fit_signals || []).join(" · "),
+        (row.key_risks || []).join(" · "),
+        (row.verification_focus || []).join(" · "),
+        links,
+        "",
+      ]),
+    );
+  }
 }
 
 export function buildReportCsv(
   report: ReportPayload,
   form: FormState,
   locale: Locale,
-  uc: UcAnalysis | null,
   unlocked: boolean,
 ): string {
-  const header =
+  const headers =
     locale === "en"
-      ? "Tier,School,Campus vibe,Differentiator,Why tier,Fit signals,Risks,Verify on official site,Links,Your notes"
-      : "档位,学校,社区气质,差异化要点,入档理由,匹配信号,主要风险,官网核对项,快捷链接,你的备注";
-  const lines = [header];
-  const emptyNotes = "";
+      ? ["List", "Tier", "School", "Why", "Fit signals", "Risks", "Verify on official site", "Official links", "Your notes"]
+      : ["名单", "档位", "学校", "入档理由", "匹配信号", "主要风险", "官网核对项", "官方链接", "你的备注"];
+
+  const lines: string[] = [rowToCsvLine(headers)];
+  const listMain = locale === "en" ? "Main 9 schools" : "主名单 9 校";
 
   if (unlocked) {
     for (const tier of ["reach", "match", "safety"] as const) {
-      lines.push(...rowsToCsvLines(report[tier] ?? [], tier, locale, emptyNotes));
+      appendSchoolRows(lines, tier, report[tier] ?? [], locale, listMain);
     }
+    const uc = resolveUcAnalysis(report, form, locale);
     if (uc) {
+      const listUc = locale === "en" ? "UC campuses" : "UC 校区";
       for (const tier of ["reach", "match", "safety"] as const) {
-        lines.push(...rowsToCsvLines(uc[tier] ?? [], tier, locale, emptyNotes));
+        appendSchoolRows(lines, tier, uc[tier] ?? [], locale, listUc);
       }
     }
   } else {
     for (const tier of ["reach", "match", "safety"] as const) {
-      const preview = (report[tier] ?? []).slice(0, 1);
-      lines.push(...rowsToCsvLines(preview, tier, locale, emptyNotes));
+      const rows = report[tier] ?? [];
+      if (rows[0]) appendSchoolRows(lines, tier, [rows[0]], locale, listMain);
     }
   }
 
-  lines.push("");
-  lines.push(
-    escapeCsvCell(
-      locale === "en"
-        ? `Major: ${form.majorPrimary}; Intake: ${form.intakeTerm}; Export preview=${unlocked ? "full" : "partial"}`
-        : `主申: ${form.majorPrimary}; 入学季: ${form.intakeTerm}; 导出=${unlocked ? "完整" : "预览"}`,
-    ),
-  );
-  return lines.join("\n");
+  const intake = getEffectiveIntake(form);
+  const meta =
+    locale === "en"
+      ? `# OnlyApply export · ${intake || "intake TBD"} · ${unlocked ? "full" : "preview"}`
+      : `# OnlyApply 导出 · ${intake || "入学季待定"} · ${unlocked ? "完整版" : "预览"}`;
+  return `${meta}\n${lines.join("\n")}\n`;
 }
 
-export function downloadCsv(filename: string, content: string) {
-  const blob = new Blob(["\uFEFF" + content], { type: "text/csv;charset=utf-8" });
+export function downloadReportCsv(
+  report: ReportPayload,
+  form: FormState,
+  locale: Locale,
+  unlocked: boolean,
+): void {
+  const csv = buildReportCsv(report, form, locale, unlocked);
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
+  const intake = getEffectiveIntake(form).replace(/\s+/g, "-") || "report";
   a.href = url;
-  a.download = filename;
+  a.download = `onlyapply-school-list-${intake}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
