@@ -18,17 +18,16 @@ export function buildReportApiBody(
     satScore: form.satScore,
     actScore: form.actScore,
     highSchoolSystem: form.highSchoolSystem,
-    highSchoolName: form.highSchoolName,
     gpa: form.gpa,
     majorPrimary: form.majorPrimary,
     majorSecondary: form.majorSecondary,
     schoolSize: form.schoolSize,
+    campusCulturePref: form.campusCulturePref,
     geoPrefs: form.geoPrefs,
     activities: form.activities,
     structuredActivities: form.structuredActivities ?? [],
     riskStyle: form.riskStyle,
     dealbreakers: form.dealbreakers,
-    campusPreference: form.campusPreference,
     locale,
   };
   if (supplementaryNotes && supplementaryNotes.length > 0) {

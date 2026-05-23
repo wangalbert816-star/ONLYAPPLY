@@ -1,10 +1,15 @@
-import type { FormState, ReportPayload, SchoolRow, SchoolTier } from "../types";
+import type { FormState, ReportPayload, SchoolRow, SchoolTier, UcAnalysis } from "../types";
 import type { Locale } from "../i18n/strings";
+import { campusCultureAlignmentNote, campusCulturePrefLabel } from "./campusCulturePref";
 import { buildBiggestGapBlock, buildOverallVerdict, pickWeakestDimension } from "./decisionReport";
+import { enrichSchoolRow } from "./enrichSchoolRow";
 import { buildFiveDimensionProfile, type ProfileDimension, type ProfileDimensionKey } from "./fiveDimensionProfile";
 import { getEffectiveIntake } from "./intakeTerm";
 import { getImprovementPlanLabels, getIntakeHorizon } from "./intakeHorizon";
+import { sanitizeReportProse } from "./reportProseSanitize";
 import { splitTopReferenceSchools } from "./ultraSelectiveSchools";
+import { resolveUcAnalysis } from "./ucApplication";
+import { getOfficialLinksForSchool, officialLinkLabel } from "./universityOfficialLinks";
 
 export type PdfKeyValue = { label: string; value: string };
 
@@ -41,9 +46,24 @@ export type PdfDimensionCard = {
 export type PdfSchoolRow = {
   school: string;
   why: string;
+  campusVibe: string;
+  differentiation: string;
+  contextNote: string;
+  cultureFit: string;
   signals: string[];
   risks: string[];
   verify: string[];
+  officialLinks: string[];
+};
+
+export type PdfUcSection = {
+  overview: string;
+  testBlindNote: string;
+  applicationNote: string;
+  tiers: PdfSchoolTier[];
+  checklist: string[];
+  piqDirections: string[];
+  informationGaps: string[];
 };
 
 export type PdfSchoolTier = {
@@ -79,10 +99,13 @@ export type PdfReportModel = {
   dimensions: PdfDimensionCard[];
   schoolTiers: PdfSchoolTier[];
   topReferenceSchools: PdfSchoolRow[];
+  ucSection: PdfUcSection | null;
   executiveSummary: string[];
   informationGaps: string[];
   portfolioRisks: PdfPortfolioRisk[];
   actions: PdfActionSection[];
+  activityBuild: string[];
+  priorityFrame: string;
   strategyNotes: string[];
   footerNote: string;
 };
@@ -193,7 +216,31 @@ function whyForRow(row: SchoolRow, tier: SchoolTier): string {
   return row.why_safety_for_you || "";
 }
 
-function buildSchoolTiers(report: ReportPayload, locale: Locale, unlocked: boolean): PdfSchoolTier[] {
+function mapLines(items: string[] | undefined, maxEach: number, maxItems: number) {
+  return (items ?? []).slice(0, maxItems).map((x) => clean(x, maxEach)).filter(Boolean);
+}
+
+function rowToPdf(row: SchoolRow, tier: SchoolTier, form: FormState, locale: Locale, unlocked: boolean): PdfSchoolRow {
+  const enriched = enrichSchoolRow(row, form, locale);
+  const links = unlocked
+    ? getOfficialLinksForSchool(enriched.school, locale).map((l) => `${officialLinkLabel(l, locale)}: ${l.href}`)
+    : [];
+  const cultureFit = unlocked ? campusCultureAlignmentNote(form, enriched, locale) || "" : "";
+  return {
+    school: enriched.school,
+    why: clean(whyForRow(enriched, tier), 110),
+    campusVibe: clean(enriched.campus_vibe || "", 96),
+    differentiation: unlocked ? clean(enriched.differentiation || "", 96) : "",
+    contextNote: unlocked ? clean(enriched.context_note || "", 96) : "",
+    cultureFit: cultureFit ? clean(cultureFit, 88) : "",
+    signals: mapLines(enriched.key_fit_signals, 88, 3),
+    risks: mapLines(enriched.key_risks, 88, 3),
+    verify: mapLines(enriched.verification_focus, 88, 3),
+    officialLinks: links.slice(0, 4),
+  };
+}
+
+function buildSchoolTiers(report: ReportPayload, form: FormState, locale: Locale, unlocked: boolean): PdfSchoolTier[] {
   const split = splitTopReferenceSchools(report, unlocked);
   const tierMeta: { tier: SchoolTier; title: string }[] =
     locale === "en"
@@ -208,9 +255,6 @@ function buildSchoolTiers(report: ReportPayload, locale: Locale, unlocked: boole
           { tier: "safety", title: "保底" },
         ];
 
-  const mapLines = (items: string[] | undefined, maxEach: number, maxItems: number) =>
-    (items ?? []).slice(0, maxItems).map((x) => clean(x, maxEach)).filter(Boolean);
-
   return tierMeta
     .map(({ tier, title }) => {
       const rows = split.regular[tier] ?? [];
@@ -218,30 +262,62 @@ function buildSchoolTiers(report: ReportPayload, locale: Locale, unlocked: boole
       return {
         tier,
         title,
-        rows: visible.map((row) => ({
-          school: row.school,
-          why: clean(whyForRow(row, tier), 110),
-          signals: mapLines(row.key_fit_signals, 88, 3),
-          risks: mapLines(row.key_risks, 88, 3),
-          verify: mapLines(row.verification_focus, 88, 3),
-        })),
+        rows: visible.map((row) => rowToPdf(row, tier, form, locale, unlocked)),
       };
     })
     .filter((t) => t.rows.length > 0);
 }
 
-function buildTopReferenceSchools(report: ReportPayload, unlocked: boolean): PdfSchoolRow[] {
+function buildTopReferenceSchools(
+  report: ReportPayload,
+  form: FormState,
+  locale: Locale,
+  unlocked: boolean,
+): PdfSchoolRow[] {
   const split = splitTopReferenceSchools(report, unlocked);
-  const mapLines = (items: string[] | undefined, maxEach: number, maxItems: number) =>
-    (items ?? []).slice(0, maxItems).map((x) => clean(x, maxEach)).filter(Boolean);
+  return split.topReference.map(({ row, tier }) => rowToPdf(row, tier, form, locale, unlocked));
+}
 
-  return split.topReference.map(({ row, tier }) => ({
-    school: row.school,
-    why: clean(whyForRow(row, tier), 110),
-    signals: mapLines(row.key_fit_signals, 88, 2),
-    risks: mapLines(row.key_risks, 88, 2),
-    verify: mapLines(row.verification_focus, 88, 2),
-  }));
+function buildUcPdfSection(
+  uc: UcAnalysis | null,
+  form: FormState,
+  locale: Locale,
+  unlocked: boolean,
+): PdfUcSection | null {
+  if (!uc) return null;
+  const tierMeta: { tier: SchoolTier; title: string }[] =
+    locale === "en"
+      ? [
+          { tier: "reach", title: "UC Reach" },
+          { tier: "match", title: "UC Match" },
+          { tier: "safety", title: "UC Safety" },
+        ]
+      : [
+          { tier: "reach", title: "UC 冲刺" },
+          { tier: "match", title: "UC 匹配" },
+          { tier: "safety", title: "UC 保底" },
+        ];
+  const tiers = tierMeta
+    .map(({ tier, title }) => {
+      const rows = uc[tier] ?? [];
+      const visible = unlocked ? rows : rows.slice(0, 1);
+      return {
+        tier,
+        title,
+        rows: visible.map((row) => rowToPdf(row, tier, form, locale, unlocked)),
+      };
+    })
+    .filter((t) => t.rows.length > 0);
+
+  return {
+    overview: clean(uc.overview, 200),
+    testBlindNote: clean(uc.test_blind_note, 160),
+    applicationNote: clean(uc.application_note, 160),
+    tiers,
+    checklist: unlocked ? (uc.checklist ?? []).map((x) => clean(x, 96)).slice(0, 6) : [],
+    piqDirections: unlocked ? (uc.piq_directions ?? []).map((x) => clean(x, 96)).slice(0, 4) : [],
+    informationGaps: unlocked ? (uc.information_gaps ?? []).map((x) => clean(x, 96)).slice(0, 4) : [],
+  };
 }
 
 function buildProfileRows(form: FormState, locale: Locale): PdfKeyValue[] {
@@ -263,6 +339,12 @@ function buildProfileRows(form: FormState, locale: Locale): PdfKeyValue[] {
     const [z, e] = m[form.riskStyle] ?? ["—", "—"];
     rows.push({ label: zh ? "选校风格" : "Posture", value: zh ? z : e });
   }
+  if (form.campusCulturePref) {
+    rows.push({
+      label: zh ? "社区气质偏好" : "Campus culture",
+      value: campusCulturePrefLabel(form.campusCulturePref, locale),
+    });
+  }
   return rows;
 }
 
@@ -277,10 +359,12 @@ export function buildPdfReportModel(
   unlocked: boolean,
   recipientName?: string | null,
 ): PdfReportModel {
+  const safeReport = sanitizeReportProse(report, locale);
   const dimensions = buildFiveDimensionProfile(form, locale);
   const gap = buildBiggestGapBlock(dimensions, locale);
   const rawVerdict = buildOverallVerdict(form, dimensions, locale);
   const intakeLabel = getEffectiveIntake(form) || (locale === "en" ? "Application cycle" : "入学季");
+  const ucAnalysis = resolveUcAnalysis(safeReport, form, locale);
 
   const generatedAt = new Date().toLocaleString(locale === "en" ? "en-US" : "zh-CN", {
     year: "numeric",
@@ -290,7 +374,7 @@ export function buildPdfReportModel(
     minute: "2-digit",
   });
 
-  const plan = report.improvement_plan;
+  const plan = safeReport.improvement_plan;
   const planLabels = getImprovementPlanLabels(getIntakeHorizon(intakeLabel), locale);
   const actions: PdfActionSection[] = [
     {
@@ -306,6 +390,8 @@ export function buildPdfReportModel(
       items: unlocked ? normalizePlanItems(plan?.before_submitting ?? [], 6) : [],
     },
   ].filter((s) => s.items.length > 0);
+  const activityBuild = unlocked ? normalizePlanItems(plan?.activity_build ?? [], 6) : [];
+  const priorityFrame = unlocked && plan?.priority_frame ? clean(plan.priority_frame, 140) : "";
 
   const gapDim = gap.dimension;
 
@@ -337,11 +423,12 @@ export function buildPdfReportModel(
     },
     radarDimensions: dimensions,
     dimensions: buildDimensionCards(dimensions, locale),
-    schoolTiers: buildSchoolTiers(report, locale, unlocked),
-    topReferenceSchools: buildTopReferenceSchools(report, unlocked),
-    executiveSummary: (report.executive_summary ?? []).map((x) => clean(x, 120)).slice(0, unlocked ? 6 : 2),
-    informationGaps: (report.information_gaps ?? []).map((x) => clean(x, 100)).slice(0, unlocked ? 8 : 3),
-    portfolioRisks: (report.portfolio_risks ?? [])
+    schoolTiers: buildSchoolTiers(safeReport, form, locale, unlocked),
+    topReferenceSchools: buildTopReferenceSchools(safeReport, form, locale, unlocked),
+    ucSection: buildUcPdfSection(ucAnalysis, form, locale, unlocked),
+    executiveSummary: (safeReport.executive_summary ?? []).map((x) => clean(x, 120)).slice(0, unlocked ? 6 : 2),
+    informationGaps: (safeReport.information_gaps ?? []).map((x) => clean(x, 100)).slice(0, unlocked ? 8 : 3),
+    portfolioRisks: (safeReport.portfolio_risks ?? [])
       .slice(0, unlocked ? 5 : 2)
       .map((r) => ({
         title: clean(r.risk_title, 48),
@@ -349,7 +436,9 @@ export function buildPdfReportModel(
         mitigation: clean(r.mitigation, 100),
       })),
     actions,
-    strategyNotes: (report.strategy_notes ?? []).map((x) => clean(x, 100)).slice(0, unlocked ? 5 : 2),
+    activityBuild,
+    priorityFrame,
+    strategyNotes: (safeReport.strategy_notes ?? []).map((x) => clean(x, 100)).slice(0, unlocked ? 5 : 2),
     footerNote:
       locale === "en"
         ? "For planning only. Verify deadlines, costs, and policies on each school's official site."

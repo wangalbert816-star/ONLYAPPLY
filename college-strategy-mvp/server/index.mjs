@@ -17,6 +17,13 @@ import {
   sanitizeUcAnalysisFromBody,
   ucAnalysisNeedsFallbackFromBody,
 } from "./ucAnalysisSanitize.mjs";
+import { sanitizeSchoolRowTextFields, sanitizeUnsourcedStats } from "./admitRateSanitize.mjs";
+import {
+  sanitizeSchoolRowUndergradCopy,
+  sanitizeUndergradSchoolMentions,
+  containsUndergradFacultyErrors,
+} from "./undergradCopySanitize.mjs";
+import { CURATED_OFFICIAL_LINK_SCHOOL_COUNT, formatMajorGuideForPrompt } from "./knowledge/majorActivitySnippets.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // 始终从项目根目录加载 .env（避免从别的 cwd 启动 node 时读不到 OPENAI_BASE_URL，误连 OpenAI 官方导致 401）
@@ -590,23 +597,31 @@ const SYSTEM_PROMPT_ZH = `你是一位资深美国本科升学顾问（10年+经
 {
   "executive_summary": ["3-5条，每条<=120字"],
   "information_gaps": ["0-6条"],
-  "reach": [{"school":"","why_reach_for_you":"","key_fit_signals":["",""],"key_risks":["",""],"verification_focus":["","",""]}],
+  "reach": [{"school":"","why_reach_for_you":"","campus_vibe":"","differentiation":"","context_note":"","key_fit_signals":["",""],"key_risks":["",""],"verification_focus":["","",""]}],
   "match": [同结构，但用 why_match_for_you 字段名与冲一致逻辑：说明为何在「稳」档],
   "safety": [同结构，字段 why_safety_for_you],
   "portfolio_risks": [{"risk_title":"","what_it_means_for_you":"","mitigation":""}],
-  "improvement_plan": {"this_week":["3-5条"],"this_month":["4-7条"],"before_submitting":["4-7条"]},
+  "improvement_plan": {"this_week":["3-5条"],"this_month":["4-7条"],"before_submitting":["4-7条"],"activity_build":["2-5条"],"priority_frame":"一句说明三段优先级"},
   "strategy_notes": ["3-6条"]
 }
 
-match 每元素字段名必须为：school, why_match_for_you, key_fit_signals, key_risks, verification_focus
-safety 每元素字段名必须为：school, why_safety_for_you, key_fit_signals, key_risks, verification_focus
-reach 每元素字段名必须为：school, why_reach_for_you, key_fit_signals, key_risks, verification_focus
+match 每元素字段名必须为：school, why_match_for_you, campus_vibe, differentiation, context_note, key_fit_signals, key_risks, verification_focus
+safety 每元素字段名必须为：school, why_safety_for_you, campus_vibe, differentiation, context_note, key_fit_signals, key_risks, verification_focus
+reach 每元素字段名必须为：school, why_reach_for_you, campus_vibe, differentiation, context_note, key_fit_signals, key_risks, verification_focus
 
 【每校呈现格式·硬性】
 - why_* 字段：最多 2 句、≤80 字/句；禁止大段堆砌。
+- campus_vibe：1 行气质标签 + 1 句说明（学术/社交/研究/体育/城市/乡村等），必须因校而异；须对照用户【校园社区气质偏好】说明匹配点或摩擦点（勿用偏好硬删校、勿写「最适合你」）。
+- differentiation：1 句说明「与同档其它推荐校相比，这所更适合用户的哪一点」；须结合用户社区偏好（学术/平衡/社交派对活跃）解释相对同档其它校的体验差异；禁止 9 校同句。
+- context_note：1–2 句语境化参考（地区/feeder/身份/预算对核对的影响）；禁止编造具体录取率或「你校去年进了几人」；无可靠数据时写「请到官网 CDS 核对」。
 - key_fit_signals、key_risks、verification_focus：各 2–4 条独立要点（短句），禁止与别校逐字重复。
 - 每校至少 1 条该校独有信息（资源/文化/地理实习/专业结构等）；禁止 9 校共用同一段模板。
-- verification_focus 写「去官网查什么」（录取、专业、奖助、课程），勿编造 URL。
+- verification_focus 写「去官网查什么」（录取、专业、奖助、课程），勿编造 URL；禁止写「核实 Anderson/Wharton/Sloan/Booth/Haas/Kellogg」等研究生商学院名称——本科请写 undergraduate admissions / 本科招生与专业目录。
+
+【improvement_plan · 活动建设】
+- activity_build：2–5 条可验证的活动/竞赛/项目/实习方向（含类型+如何验证成果）；若活动偏弱必须写「先补 1 条可验证主线」。
+- priority_frame：一句说明 this_week / this_month / before_submitting 在当前入学季下的优先级含义。
+- 禁止空泛「多参加活动」；每条须挂钩用户专业或现有活动线索。
 `;
 
 const SYSTEM_PROMPT_EN = `You are a senior U.S. undergraduate admissions counselor (10+ years), tone: professional, restrained, and actionable. Produce a school-list strategy from the user's questionnaire.
@@ -659,23 +674,31 @@ const SYSTEM_PROMPT_EN = `You are a senior U.S. undergraduate admissions counsel
 {
   "executive_summary": ["3-5 bullets, each <=120 characters"],
   "information_gaps": ["0-6 bullets"],
-  "reach": [{"school":"","why_reach_for_you":"","key_fit_signals":["",""],"key_risks":["",""],"verification_focus":["","",""]}],
+  "reach": [{"school":"","why_reach_for_you":"","campus_vibe":"","differentiation":"","context_note":"","key_fit_signals":["",""],"key_risks":["",""],"verification_focus":["","",""]}],
   "match": [same shape, but each object uses why_match_for_you and explains why it sits in Match],
   "safety": [same shape, each object uses why_safety_for_you],
   "portfolio_risks": [{"risk_title":"","what_it_means_for_you":"","mitigation":""}],
-  "improvement_plan": {"this_week":["3-5 items"],"this_month":["4-7 items"],"before_submitting":["4-7 items"]},
+  "improvement_plan": {"this_week":["3-5 items"],"this_month":["4-7 items"],"before_submitting":["4-7 items"],"activity_build":["2-5 items"],"priority_frame":"one sentence on bucket priority"},
   "strategy_notes": ["3-6 items"]
 }
 
-Field names for match rows must be: school, why_match_for_you, key_fit_signals, key_risks, verification_focus
-Field names for safety rows must be: school, why_safety_for_you, key_fit_signals, key_risks, verification_focus
-Field names for reach rows must be: school, why_reach_for_you, key_fit_signals, key_risks, verification_focus
+Field names for match rows must be: school, why_match_for_you, campus_vibe, differentiation, context_note, key_fit_signals, key_risks, verification_focus
+Field names for safety rows must be: school, why_safety_for_you, campus_vibe, differentiation, context_note, key_fit_signals, key_risks, verification_focus
+Field names for reach rows must be: school, why_reach_for_you, campus_vibe, differentiation, context_note, key_fit_signals, key_risks, verification_focus
 
 【Per-school format — hard】
 - why_* fields: at most 2 sentences, ≤90 characters each; no long paragraphs.
+- campus_vibe: one vibe tag + one sentence; must differ by school; address fit vs user's campus community preference (academic / balanced / active social-party)—note alignment or friction; never hard-filter or claim "best fit."
+- differentiation: one sentence vs other schools in the same tier; include community vibe vs user preference where relevant; never reuse across all 9.
+- context_note: region/feeder/identity/budget verification; NEVER invent admit rates; if no data, say confirm on official CDS.
 - key_fit_signals, key_risks, verification_focus: 2–4 distinct short bullets each; never copy-paste the same text across schools.
 - Each school needs at least one campus-specific point (resources, culture, internships/location, major structure); no shared template across all 9.
-- verification_focus: state what to verify on the official site (admission, major, aid, curriculum); do not invent URLs.
+- verification_focus: state what to verify on the official site (admission, major, aid, curriculum); do not invent URLs. Never say "verify Anderson/Wharton/Sloan/Booth/Haas/Kellogg" or treat grad business schools as default undergrad paths—use undergraduate admissions pages.
+
+【improvement_plan · activity build】
+- activity_build: 2–5 verifiable activity/competition/project/internship directions; if activities are thin, lead with one verifiable thread.
+- priority_frame: one sentence on bucket priority for this intake horizon.
+- Ban vague "do more activities"; tie each item to major or existing activity thread.
 `;
 
 const UC_KEYWORD_RE =
@@ -688,10 +711,11 @@ const UC_SYSTEM_APPEND_ZH = `
 - 主名单 9 校应尽量为非 UC 的美国本科院校；不要把 UC 校区塞进主名单凑数。
 - uc_analysis 按用户背景划分校区（每档 2–3 所，按竞争度与专业匹配，禁止固定「前二+中间四+后三」模板）。
 - 禁止对所有人默认 Reach=Berkeley+UCLA：GPA 偏低（如未加权≤3.25、加权≤3.45、SAT≤1280）或活动几乎为空时，Berkeley/UCLA 不得出现在 reach，只能在 overview 中作「极低概率参考」；中档校区（UCSB/UCI/UCSD 等）不得标为 safety。
-- 禁止错误院系表述：不得写「UCLA Anderson」「Berkeley Haas 商学院」当作普通本科录取路径（Anderson 为研究生商学院；Haas 本科极难且非默认路径）。
+- 禁止错误院系表述：不得将 Anderson、Wharton、Sloan、Booth、Kellogg、Fuqua、Tuck、Tepper、HBS、GSB、SOM、CBS 等研究生商学院当作普通本科录取路径；Haas/Stern/Ross/Marshall/McCombs 等本科商科极难且非默认路径。
 - 禁止弱背景「突破/逆袭/很有可能进 Berkeley/UCLA」类表述；reach 的 why 必须写明主要风险（GPA/活动/专业竞争），不得 9 校理由雷同。
 - 每条校区行的 why 必须引用用户问卷中的具体事实（专业、活动、GPA 描述、选校风格）。
 - 必须强调 UC 本科录取 test-blind：SAT/ACT 不参与录取决定。
+- 禁止在 uc_analysis 任一校区的 key_risks、verification_focus、information_gaps 中写「未提交/无 SAT/ACT」「标化 optional 视为信息缺口」等——这对 UC 不专业且错误；标化仅可在 test_blind_note 或 checklist 中说明「勿把 SAT 当 UC 策略」。
 - 说明所有 UC 共用一套 UC Application 与 4 篇 PIQ。
 "uc_analysis" 结构：
 {
@@ -714,10 +738,11 @@ If the questionnaire shows West Coast preference or mentions UC / University of 
 - The main 9-school list should prefer non-UC U.S. bachelor's institutions; do not pad the main list with UC campuses.
 - In uc_analysis, tier 2–3 campuses each based on the user's profile (not a fixed "top 2 + middle 4 + bottom 3" template).
 - Do NOT default Reach to Berkeley+UCLA. If GPA is weak (e.g. UW≤3.25, W≤3.45, SAT≤1280) or activities are thin, Berkeley/UCLA must NOT be in reach—only mention them as ultra-low-probability references in overview. Mid-tier campuses must NOT be labeled safety.
-- Never write "UCLA Anderson" or "Berkeley Haas" as ordinary undergraduate admit paths (Anderson is graduate; Haas undergrad is ultra-selective).
+- Never write grad business schools (Anderson, Wharton, Sloan, Booth, Kellogg, Fuqua, Tuck, Tepper, HBS, GSB, SOM, CBS) as ordinary undergraduate admit paths. Haas/Stern/Ross/Marshall/McCombs undergrad business is ultra-selective—not a default path.
 - No "breakthrough likely" language for weak profiles. Reach rows must state concrete risks (GPA/activities/major competition).
 - Each campus row's why must cite specific questionnaire facts; no copy-paste rationales across campuses.
 - State clearly that UC undergraduate admission is test-blind (SAT/ACT not used in admission decisions).
+- Never list missing SAT/ACT or "test-optional" as a UC key_risk, verification item, or information_gap—unprofessional and incorrect for UC. Mention test-blind only in test_blind_note or checklist ("do not use SAT as a UC lever").
 - Note one shared UC Application and four PIQs for all campuses.
 "uc_analysis" schema:
 {
@@ -760,28 +785,67 @@ function systemPromptForLocale(locale, includeUc = false, horizon = "unknown") {
   return base + (locale === "en" ? UC_SYSTEM_APPEND_EN : UC_SYSTEM_APPEND_ZH);
 }
 
-function normalizeUcSchoolRows(rows, tier) {
-  if (!Array.isArray(rows)) return [];
+function normalizeSchoolRowFields(r, tier, locale = "zh") {
+  if (!r || typeof r !== "object") return null;
   const whyKey =
     tier === "reach" ? "why_reach_for_you" : tier === "match" ? "why_match_for_you" : "why_safety_for_you";
-  return rows
-    .filter((r) => r && typeof r === "object" && String(r.school || "").trim())
-    .slice(0, 3)
-    .map((r) => ({
-      school: String(r.school).trim(),
+  const school = String(r.school || "").trim();
+  if (!school) return null;
+  const base = sanitizeSchoolRowTextFields(
+    {
+      school,
       [whyKey]: String(r[whyKey] || "").trim(),
+      campus_vibe: String(r.campus_vibe || "").trim(),
+      differentiation: String(r.differentiation || "").trim(),
+      context_note: String(r.context_note || "").trim(),
       key_fit_signals: Array.isArray(r.key_fit_signals) ? r.key_fit_signals.map(String) : [],
       key_risks: Array.isArray(r.key_risks) ? r.key_risks.map(String) : [],
       verification_focus: Array.isArray(r.verification_focus) ? r.verification_focus.map(String) : [],
-    }));
+    },
+    locale,
+  );
+  return sanitizeSchoolRowUndergradCopy(base, tier, locale);
 }
 
-function normalizeUcAnalysis(raw) {
+function normalizeUcSchoolRows(rows, tier, locale = "zh") {
+  if (!Array.isArray(rows)) return [];
+  return rows
+    .map((r) => normalizeSchoolRowFields(r, tier, locale))
+    .filter(Boolean)
+    .slice(0, 3);
+}
+
+function normalizeImprovementPlan(raw) {
+  if (!raw || typeof raw !== "object") {
+    return { this_week: [], this_month: [], before_submitting: [], activity_build: [], priority_frame: "" };
+  }
+  const o = /** @type {Record<string, unknown>} */ (raw);
+  return {
+    this_week: Array.isArray(o.this_week) ? o.this_week.map(String).filter(Boolean) : [],
+    this_month: Array.isArray(o.this_month) ? o.this_month.map(String).filter(Boolean) : [],
+    before_submitting: Array.isArray(o.before_submitting) ? o.before_submitting.map(String).filter(Boolean) : [],
+    activity_build: Array.isArray(o.activity_build) ? o.activity_build.map(String).filter(Boolean) : [],
+    priority_frame: String(o.priority_frame || "").trim(),
+  };
+}
+
+function normalizeMainSchoolTiers(parsed, locale = "zh") {
+  for (const tier of ["reach", "match", "safety"]) {
+    const rows = parsed[tier];
+    if (!Array.isArray(rows)) {
+      parsed[tier] = [];
+      continue;
+    }
+    parsed[tier] = rows.map((r) => normalizeSchoolRowFields(r, tier, locale)).filter(Boolean).slice(0, 3);
+  }
+}
+
+function normalizeUcAnalysis(raw, locale = "zh") {
   if (!raw || typeof raw !== "object") return null;
   const o = /** @type {Record<string, unknown>} */ (raw);
-  const reach = normalizeUcSchoolRows(o.reach, "reach");
-  const match = normalizeUcSchoolRows(o.match, "match");
-  const safety = normalizeUcSchoolRows(o.safety, "safety");
+  const reach = normalizeUcSchoolRows(o.reach, "reach", locale);
+  const match = normalizeUcSchoolRows(o.match, "match", locale);
+  const safety = normalizeUcSchoolRows(o.safety, "safety", locale);
   if (reach.length + match.length + safety.length === 0) return null;
   return {
     overview: String(o.overview || "").trim(),
@@ -1074,6 +1138,47 @@ function budgetPostureLabel(value, locale) {
   return zh[key] || key || "未填";
 }
 
+function campusCulturePrefLabel(pref, locale) {
+  const key = String(pref || "").trim();
+  if (!key) return locale === "en" ? "Not provided" : "未填";
+  const en = {
+    academic: "Academic / research-oriented",
+    balanced: "Balanced academic & social",
+    social: "Active social / party-friendly campus life",
+    any: "No strong preference",
+  };
+  const zh = {
+    academic: "学术 / 研究导向",
+    balanced: "学业与社交平衡",
+    social: "社交 / 派对氛围活跃",
+    any: "没有强烈偏好",
+  };
+  const table = locale === "en" ? en : zh;
+  return table[key] || key;
+}
+
+function campusCultureAnalysisHint(pref, locale) {
+  const key = String(pref || "").trim();
+  if (!key || key === "any") {
+    return locale === "en"
+      ? "Describe each school's vibe objectively; no strong user culture preference to filter on."
+      : "用户无强烈社区气质偏好——仍须客观描述每校气质，勿按偏好硬筛。";
+  }
+  if (key === "academic") {
+    return locale === "en"
+      ? "User prefers academic quiet / research depth—highlight study culture; flag party-heavy or distraction-prone campuses as friction."
+      : "用户偏好学术安静/研究深度——突出学习文化；社交派对极活跃的校须写可能摩擦。";
+  }
+  if (key === "social") {
+    return locale === "en"
+      ? "User prefers active social / party-friendly culture—highlight clubs, athletics, Greek life, city/weekend life where accurate; flag overly quiet campuses."
+      : "用户偏好社交/派对氛围——突出社团、体育、城市周末生活（准确描述）；过安静学术的校须写可能不合。";
+  }
+  return locale === "en"
+    ? "User wants balance—compare peers on both rigor and social life, not rankings alone."
+    : "用户要学业与社交平衡——同档校须同时比较课业强度与社交生活。";
+}
+
 function buildUserPayload(body, includeUc = false) {
   const locale = resolveReportLocale(body);
   const isEn = locale === "en";
@@ -1081,6 +1186,10 @@ function buildUserPayload(body, includeUc = false) {
   const planHorizon = getIntakeHorizon(intakeRaw);
   const planHorizonLine = improvementPlanUserContextLine(planHorizon, intakeRaw, locale);
   const planPersonalizationHints = buildImprovementPersonalizationHints(body, locale);
+  const majorGuideBlock = formatMajorGuideForPrompt(body, locale);
+  const officialLinksHint = isEn
+    ? `\n\n[Official links policy] ${CURATED_OFFICIAL_LINK_SCHOOL_COUNT}+ schools have curated admissions/aid/CDS URLs in product; verification_focus must map to checkable topics (aid, CDS, major capacity)—never invent admit rates or feeder stats without a source.`
+    : `\n\n【官网链接策略】产品内维护 ${CURATED_OFFICIAL_LINK_SCHOOL_COUNT}+ 所院校的招生/奖助/CDS 链接；verification_focus 须对应可核对主题（奖助、CDS、专业容量），禁止编造录取率或 feeder 统计。`;
   const {
     intakeTerm,
     applicantIdentity,
@@ -1095,6 +1204,7 @@ function buildUserPayload(body, includeUc = false) {
     majorPrimary,
     majorSecondary,
     schoolSize,
+    campusCulturePref,
     geoPrefs,
     activities,
     structuredActivities,
@@ -1112,6 +1222,7 @@ function buildUserPayload(body, includeUc = false) {
   const competitionLine = competitionDensityLabel(competitionDensity, locale);
   const structuredActivityText = formatStructuredActivities(structuredActivities, locale);
   const budgetLine = budgetPostureLabel(budget, locale);
+  const cultureLine = campusCultureAnalysisHint(campusCulturePref, locale);
   let extra = "";
   if (supplementary.length > 0) {
     if (isEn) {
@@ -1146,6 +1257,8 @@ ${planHorizonLine}
 [Primary major] ${majorPrimary || na}
 [Alternate major] ${majorSecondary || none}
 [Campus size preference] ${schoolSize || na}
+[Campus community vibe preference] ${campusCulturePrefLabel(campusCulturePref, locale)}
+[Culture preference — analysis instruction] ${cultureLine}
 [Geography preferences] ${geoStr}
 
 [Activities / awards summary] ${activities || na}${
@@ -1156,7 +1269,7 @@ ${planHorizonLine}
       includeUc
         ? "\n\n[UC intent] User shows interest in the University of California system. Output uc_analysis per system instructions; keep the main 9-school list mostly non-UC."
         : ""
-    }${planPersonalizationHints}${extra}`;
+    }${planPersonalizationHints}${majorGuideBlock}${officialLinksHint}${extra}`;
   }
 
   return `请基于以下问卷生成 JSON 报告（严格遵守 system 的结构与每档3所的数量）。
@@ -1176,6 +1289,8 @@ ${planHorizonLine}
 【主申专业】${majorPrimary || "未填"}
 【备选专业】${majorSecondary || "无"}
 【校园规模偏好】${schoolSize || "未填"}
+【校园社区气质偏好】${campusCulturePrefLabel(campusCulturePref, locale)}
+【社区偏好 · 分析要求】${cultureLine}
 【地理偏好】${Array.isArray(geoPrefs) ? geoPrefs.join("、") : geoPrefs || "未填"}
 
 【活动/奖项摘要】${activities || "未提供"}${structuredActivityText ? `\n【活动/竞赛细节】\n${structuredActivityText}` : ""}
@@ -1184,7 +1299,7 @@ ${planHorizonLine}
     includeUc
       ? "\n\n【UC 意向】用户表现出加州大学（UC）申请意向。请按 system 说明输出 uc_analysis；主名单 9 校尽量为非 UC 美国本科院校。"
       : ""
-  }${planPersonalizationHints}${extra}`;
+  }${planPersonalizationHints}${majorGuideBlock}${officialLinksHint}${extra}`;
 }
 
 /**
@@ -1512,11 +1627,42 @@ async function generateEssayAnalysisWithConfig(cfg, promptInput) {
 }
 
 function finalizeReportPayload(parsed, body) {
+  const locale = resolveReportLocale(body);
+  normalizeMainSchoolTiers(parsed, locale);
+  if (parsed.improvement_plan) {
+    parsed.improvement_plan = normalizeImprovementPlan(parsed.improvement_plan);
+  }
+  const cleanProse = (t) =>
+    sanitizeUndergradSchoolMentions(sanitizeUnsourcedStats(String(t || ""), locale), "", locale);
+  if (Array.isArray(parsed.executive_summary)) {
+    parsed.executive_summary = parsed.executive_summary.map(cleanProse).filter(Boolean);
+  }
+  if (Array.isArray(parsed.information_gaps)) {
+    parsed.information_gaps = parsed.information_gaps.map(cleanProse).filter(Boolean);
+  }
+  if (Array.isArray(parsed.strategy_notes)) {
+    parsed.strategy_notes = parsed.strategy_notes.map(cleanProse).filter(Boolean);
+  }
+  if (Array.isArray(parsed.portfolio_risks)) {
+    parsed.portfolio_risks = parsed.portfolio_risks.map((r) => ({
+      ...r,
+      risk_title: cleanProse(r.risk_title),
+      what_it_means_for_you: cleanProse(r.what_it_means_for_you),
+      mitigation: cleanProse(r.mitigation),
+    }));
+  }
+  if (parsed.improvement_plan && typeof parsed.improvement_plan === "object") {
+    const ip = parsed.improvement_plan;
+    for (const key of ["this_week", "this_month", "before_submitting", "activity_build"]) {
+      if (Array.isArray(ip[key])) ip[key] = ip[key].map(cleanProse).filter(Boolean);
+    }
+    if (ip.priority_frame) ip.priority_frame = cleanProse(ip.priority_frame);
+  }
   const includeUc = wantsUcFromBody(body);
   if (includeUc) {
-    let uc = normalizeUcAnalysis(parsed.uc_analysis);
+    let uc = normalizeUcAnalysis(parsed.uc_analysis, locale);
     if (uc) {
-      uc = sanitizeUcAnalysisFromBody(uc, body);
+      uc = sanitizeUcAnalysisFromBody(uc, body, locale);
       if (ucAnalysisNeedsFallbackFromBody(uc, body)) {
         console.warn("[api/report] uc_analysis_rejected_using_client_fallback");
         delete parsed.uc_analysis;

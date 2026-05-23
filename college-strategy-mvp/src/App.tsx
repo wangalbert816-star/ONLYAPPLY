@@ -41,13 +41,12 @@ const initialForm: FormState = {
   majorPrimary: "",
   majorSecondary: "",
   schoolSize: "",
+  campusCulturePref: "",
   geoPrefs: [],
   activities: "",
   structuredActivities: [],
   riskStyle: "",
   dealbreakers: "",
-  highSchoolName: "",
-  campusPreference: "",
 };
 
 const LOADING_TIP_KEYS = ["app.loading.tip0", "app.loading.tip1", "app.loading.tip2", "app.loading.tip3"] as const;
@@ -142,6 +141,7 @@ function validateStep(step: number, f: FormState, tr: (path: string) => string):
     if (!f.gpa.trim()) return tr("validation.gpa");
     if (!f.majorPrimary.trim()) return tr("validation.major");
     if (!f.schoolSize) return tr("validation.schoolSize");
+    if (!f.campusCulturePref) return tr("validation.campusCulture");
     if (f.geoPrefs.length === 0) return tr("validation.geo");
   }
   if (step === 3) {
@@ -809,7 +809,7 @@ export default function App() {
       } else {
         writePendingSave({ form, locale, report: next, supplementaryNotes: merged, reportUnlocked });
       }
-      const diff = compareReports(prev, next);
+      const diff = compareReports(prev, next, { prevForm: form, nextForm: form, locale });
       if (reportDiffIsEmpty(diff)) {
         setReportDiff(null);
         setHighlightSchoolKeys(new Set());

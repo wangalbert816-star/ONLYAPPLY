@@ -1,23 +1,18 @@
 import type { FormState, SchoolRow, SchoolTier, UcAnalysis } from "../types";
 import type { Locale } from "../i18n/strings";
 import type { UcCampusKey } from "./ucCampusPortfolio";
+import { ucCampusKeyFromSchool, ucCampusSelectivity } from "./ucCampusSelectivity";
 import {
   allowUcFlagshipReach,
   assessUcProfileSignals,
   isWeakUcProfile,
 } from "./ucProfileStrength";
-
-const CAMPUS_PATTERNS: Array<{ key: UcCampusKey; re: RegExp }> = [
-  { key: "berkeley", re: /berkeley|伯克利/i },
-  { key: "ucla", re: /\bucla\b|洛杉矶分校/i },
-  { key: "ucsd", re: /uc\s*san\s*diego|ucsd|圣地亚哥/i },
-  { key: "ucsb", re: /uc\s*santa\s*barbara|ucsb|圣巴巴拉/i },
-  { key: "uci", re: /uc\s*irvine|uci|尔湾/i },
-  { key: "ucdavis", re: /uc\s*davis|戴维斯/i },
-  { key: "ucsc", re: /uc\s*santa\s*cruz|ucsc|圣克鲁斯/i },
-  { key: "ucr", re: /uc\s*riverside|ucr|河滨/i },
-  { key: "ucmerced", re: /uc\s*merced|默塞德/i },
-];
+import {
+  sanitizeSchoolRowUndergradCopy,
+  sanitizeUndergradSchoolMentions,
+  containsUndergradFacultyErrors,
+} from "./undergradCopySanitize";
+import { filterUcTestBlindBullets, sanitizeUcTestBlindCopy } from "./ucTestBlindCopySanitize";
 
 /** selectivity 1–2 不宜作弱档案的「保底」 */
 const NOT_TRUE_SAFETY_KEYS = new Set<UcCampusKey>([
@@ -31,18 +26,153 @@ const NOT_TRUE_SAFETY_KEYS = new Set<UcCampusKey>([
 ]);
 
 function schoolToCampusKey(school: string): UcCampusKey | null {
-  for (const { key, re } of CAMPUS_PATTERNS) {
-    if (re.test(school)) return key;
-  }
-  return null;
+  return ucCampusKeyFromSchool(school);
 }
 
-function cleanCampusCopy(text: string, locale: Locale, weak: boolean): string {
+function tierIndex(tier: SchoolTier): number {
+  if (tier === "reach") return 0;
+  if (tier === "match") return 1;
+  return 2;
+}
+
+type Entry = { row: SchoolRow; tier: SchoolTier };
+
+function demoteEasierCampusesWithinTier(entries: Entry[], locale: Locale, notes: string[]) {
+  for (const tier of ["reach", "match", "safety"] as const) {
+    const inTier = entries
+      .filter((e) => e.tier === tier)
+      .sort((a, b) => ucCampusSelectivity(a.row.school) - ucCampusSelectivity(b.row.school));
+    if (inTier.length < 2) continue;
+    const hardestSel = ucCampusSelectivity(inTier[0]!.row.school);
+    for (let k = 1; k < inTier.length; k++) {
+      const e = inTier[k]!;
+      const sel = ucCampusSelectivity(e.row.school);
+      if (sel - hardestSel < 2) continue;
+      const down: SchoolTier | null = tier === "reach" ? "match" : tier === "match" ? "safety" : null;
+      if (!down) continue;
+      e.row = moveRowToTier(e.row, e.tier, down);
+      e.tier = down;
+      notes.push(
+        locale === "en"
+          ? `${e.row.school} moved to ${down} (less selective than other ${tier} campuses).`
+          : `已将 ${e.row.school} 调整为${down === "match" ? "匹配" : "保底"}档（在同档中选择性更低）。`,
+      );
+    }
+  }
+}
+
+function whyKeyForTier(tier: SchoolTier): keyof SchoolRow {
+  if (tier === "reach") return "why_reach_for_you";
+  if (tier === "match") return "why_match_for_you";
+  return "why_safety_for_you";
+}
+
+function moveRowToTier(row: SchoolRow, from: SchoolTier, to: SchoolTier): SchoolRow {
+  if (from === to) return row;
+  const why =
+    String(row.why_reach_for_you || "") ||
+    String(row.why_match_for_you || "") ||
+    String(row.why_safety_for_you || "");
+  const next: SchoolRow = { ...row };
+  delete next.why_reach_for_you;
+  delete next.why_match_for_you;
+  delete next.why_safety_for_you;
+  const key = whyKeyForTier(to);
+  if (key === "why_reach_for_you") next.why_reach_for_you = why;
+  else if (key === "why_match_for_you") next.why_match_for_you = why;
+  else next.why_safety_for_you = why;
+  return next;
+}
+
+function alignTierLanguage(text: string, tier: SchoolTier, locale: Locale): string {
   let s = text;
-  s = s.replace(/UCLA\s+Anderson(\s+School)?/gi, locale === "en" ? "UCLA undergraduate majors" : "UCLA 本科相关专业");
-  s = s.replace(/Anderson\s+School/gi, locale === "en" ? "undergraduate programs" : "本科项目");
-  s = s.replace(/Haas\s+School\s+of\s+Business/gi, locale === "en" ? "Berkeley business-related majors" : "Berkeley 商科相关本科方向");
-  s = s.replace(/商学院(?:研究生院)?/g, locale === "en" ? "undergraduate path" : "本科路径");
+  if (tier === "reach") {
+    s = s.replace(/匹配档|稳妥主战场|match\s*tier/gi, locale === "en" ? "reach tier" : "冲刺档");
+  } else if (tier === "match") {
+    s = s.replace(
+      /冲刺层|冲刺档|reach\s*层|reach\s*tier|\bUC\s*reach\b|\bUC\s*冲刺\b/gi,
+      locale === "en" ? "match tier" : "匹配档",
+    );
+  } else {
+    s = s.replace(/冲刺层|reach\s*层/gi, locale === "en" ? "safety tier" : "保底档");
+  }
+  return s.trim();
+}
+
+function fixSelectivityTierInversions(
+  reach: SchoolRow[],
+  match: SchoolRow[],
+  safety: SchoolRow[],
+  locale: Locale,
+  flagshipOk: boolean,
+): { reach: SchoolRow[]; match: SchoolRow[]; safety: SchoolRow[]; notes: string[] } {
+  const notes: string[] = [];
+  const entries: Entry[] = [
+    ...reach.map((row) => ({ row, tier: "reach" as const })),
+    ...match.map((row) => ({ row, tier: "match" as const })),
+    ...safety.map((row) => ({ row, tier: "safety" as const })),
+  ];
+
+  let changed = true;
+  let guard = 0;
+  while (changed && guard < 12) {
+    changed = false;
+    guard += 1;
+    for (let i = 0; i < entries.length; i++) {
+      for (let j = 0; j < entries.length; j++) {
+        if (i === j) continue;
+        const harder = entries[i]!;
+        const easier = entries[j]!;
+        const selHard = ucCampusSelectivity(harder.row.school);
+        const selEasy = ucCampusSelectivity(easier.row.school);
+        if (selHard >= selEasy || selHard >= 90 || selEasy >= 90) continue;
+        if (tierIndex(harder.tier) <= tierIndex(easier.tier)) continue;
+
+        const hardKey = schoolToCampusKey(harder.row.school);
+        const blockFlagshipReach =
+          !flagshipOk && (hardKey === "berkeley" || hardKey === "ucla");
+
+        if (blockFlagshipReach) {
+          const down = harder.tier;
+          easier.row = moveRowToTier(easier.row, easier.tier, down);
+          easier.tier = down;
+          notes.push(
+            locale === "en"
+              ? `${easier.row.school} moved to ${down}—cannot rank above ${harder.row.school} while flagship campuses stay out of Reach.`
+              : `已将 ${easier.row.school} 调整为${down === "match" ? "匹配" : "保底"}档：在顶校不作冲刺时，不应把更易录校区标在更高档。`,
+          );
+        } else {
+          const up = easier.tier;
+          harder.row = moveRowToTier(harder.row, harder.tier, up);
+          harder.tier = up;
+          notes.push(
+            locale === "en"
+              ? `${harder.row.school} tier adjusted to ${up} (more selective than ${easier.row.school}).`
+              : `已将 ${harder.row.school} 调整为${up === "reach" ? "冲刺" : up === "match" ? "匹配" : "保底"}档（录取难度高于 ${easier.row.school}）。`,
+          );
+        }
+        changed = true;
+      }
+    }
+  }
+
+  demoteEasierCampusesWithinTier(entries, locale, notes);
+
+  const outReach: SchoolRow[] = [];
+  const outMatch: SchoolRow[] = [];
+  const outSafety: SchoolRow[] = [];
+  for (const e of entries) {
+    const row = e.row;
+    if (e.tier === "reach") outReach.push(row);
+    else if (e.tier === "match") outMatch.push(row);
+    else outSafety.push(row);
+  }
+  return { reach: outReach, match: outMatch, safety: outSafety, notes };
+}
+
+function cleanCampusCopy(text: string, school: string, locale: Locale, weak: boolean, tier: SchoolTier): string {
+  let s = sanitizeUndergradSchoolMentions(text, school, locale);
+  s = sanitizeUcTestBlindCopy(s, locale);
   if (weak) {
     s = s.replace(
       /很有可能|突破|逆袭|仍有机会冲刺|award.*breakthrough/gi,
@@ -50,19 +180,31 @@ function cleanCampusCopy(text: string, locale: Locale, weak: boolean): string {
     );
     s = s.replace(/匹配度较高|strong fit/gi, locale === "en" ? "needs much stronger evidence" : "仍需大幅补强证据");
   }
-  return s.trim();
+  return alignTierLanguage(s.trim(), tier, locale);
 }
 
 function sanitizeRow(row: SchoolRow, tier: SchoolTier, locale: Locale, weak: boolean): SchoolRow {
+  const base = sanitizeSchoolRowUndergradCopy(row, tier, locale);
   const whyKey =
     tier === "reach" ? "why_reach_for_you" : tier === "match" ? "why_match_for_you" : "why_safety_for_you";
-  const why = cleanCampusCopy(String(row[whyKey] || ""), locale, weak);
+  const school = row.school || "";
+  const clean = (t: string, fieldTier: SchoolTier = tier) =>
+    cleanCampusCopy(String(t || ""), school, locale, weak, fieldTier);
   return {
-    ...row,
-    [whyKey]: why,
-    key_risks: (row.key_risks ?? []).map((r) => cleanCampusCopy(r, locale, weak)),
-    key_fit_signals: row.key_fit_signals ?? [],
-    verification_focus: row.verification_focus ?? [],
+    ...base,
+    [whyKey]: clean(String(base[whyKey] || "")),
+    key_risks: filterUcTestBlindBullets(
+      (base.key_risks ?? []).map((r) => clean(r)),
+      locale,
+    ),
+    key_fit_signals: (base.key_fit_signals ?? []).map((r) => clean(r)),
+    verification_focus: filterUcTestBlindBullets(
+      (base.verification_focus ?? []).map((r) => clean(r)),
+      locale,
+    ),
+    campus_vibe: base.campus_vibe ? clean(base.campus_vibe) : base.campus_vibe,
+    differentiation: base.differentiation ? clean(base.differentiation) : base.differentiation,
+    context_note: base.context_note ? clean(base.context_note) : base.context_note,
   };
 }
 
@@ -90,29 +232,15 @@ function rebalanceTiers(
   const flagshipOk = allowUcFlagshipReach(form, signals);
   const notes: string[] = [];
 
-  let r = reach.map((row) => sanitizeRow(row, "reach", locale, weak));
-  let m = match.map((row) => sanitizeRow(row, "match", locale, weak));
-  let s = safety.map((row) => sanitizeRow(row, "safety", locale, weak));
+  let r = [...reach];
+  let m = [...match];
+  let s = [...safety];
 
   const demote = (from: SchoolRow[], to: SchoolRow[], row: SchoolRow) => {
     const i = from.findIndex((x) => x.school === row.school);
     if (i >= 0) from.splice(i, 1);
     if (!to.some((x) => x.school === row.school)) to.push(row);
   };
-
-  if (!flagshipOk) {
-    for (const item of [...r]) {
-      const key = schoolToCampusKey(item.school);
-      if (key === "berkeley" || key === "ucla") {
-        demote(r, m, item);
-        notes.push(
-          locale === "en"
-            ? `${item.school} moved out of Reach—GPA/activities do not support a flagship UC stretch tier.`
-            : `已将 ${item.school} 移出冲刺档：以当前成绩/活动，不宜作 UC 顶校冲刺。`,
-        );
-      }
-    }
-  }
 
   if (weak) {
     for (const item of [...s]) {
@@ -128,8 +256,43 @@ function rebalanceTiers(
     }
   }
 
+  let fixed = fixSelectivityTierInversions(r, m, s, locale, flagshipOk);
+  r = fixed.reach;
+  m = fixed.match;
+  s = fixed.safety;
+  notes.push(...fixed.notes);
+
+  if (!flagshipOk) {
+    for (const item of [...r]) {
+      const key = schoolToCampusKey(item.school);
+      if (key === "berkeley" || key === "ucla") {
+        demote(r, m, item);
+        notes.push(
+          locale === "en"
+            ? `${item.school} moved out of Reach—GPA/activities do not support a flagship UC stretch tier.`
+            : `已将 ${item.school} 移出冲刺档：以当前成绩/活动，不宜作 UC 顶校冲刺。`,
+        );
+      }
+    }
+    fixed = fixSelectivityTierInversions(r, m, s, locale, flagshipOk);
+    r = fixed.reach;
+    m = fixed.match;
+    s = fixed.safety;
+    notes.push(...fixed.notes);
+  }
+
   if (r.length === 0 && m.length > 0) {
-    r.push(m.shift()!);
+    const sorted = [...m].sort(
+      (a, b) => ucCampusSelectivity(a.school) - ucCampusSelectivity(b.school),
+    );
+    const pick =
+      sorted.find((row) => {
+        const key = schoolToCampusKey(row.school);
+        if (!flagshipOk && (key === "berkeley" || key === "ucla")) return false;
+        return true;
+      }) ?? sorted[0]!;
+    const idx = m.findIndex((x) => x.school === pick.school);
+    if (idx >= 0) r.push(m.splice(idx, 1)[0]!);
   }
   if (s.length === 0 && m.length > 0) {
     const key = schoolToCampusKey(m[m.length - 1]!.school);
@@ -137,6 +300,15 @@ function rebalanceTiers(
       s.push(m.pop()!);
     }
   }
+
+  fixed = fixSelectivityTierInversions(r, m, s, locale, flagshipOk);
+  r = fixed.reach;
+  m = fixed.match;
+  s = fixed.safety;
+
+  r = r.map((row) => sanitizeRow(row, "reach", locale, weak));
+  m = m.map((row) => sanitizeRow(row, "match", locale, weak));
+  s = s.map((row) => sanitizeRow(row, "safety", locale, weak));
 
   r = dedupeRows(r).slice(0, 3);
   m = dedupeRows(m).slice(0, 3);
@@ -146,13 +318,11 @@ function rebalanceTiers(
 }
 
 export function ucAnalysisNeedsFallback(uc: UcAnalysis, form: FormState): boolean {
+  const blob = JSON.stringify(uc);
+  if (containsUndergradFacultyErrors(blob)) return true;
   if (!isWeakUcProfile(form)) return false;
   const reachKeys = (uc.reach ?? []).map((r) => schoolToCampusKey(r.school)).filter(Boolean);
   if (reachKeys.includes("berkeley") && reachKeys.includes("ucla")) return true;
-  const blob = (uc.reach ?? [])
-    .map((r) => `${r.school} ${r.why_reach_for_you}`)
-    .join(" ");
-  if (/Anderson|Haas.*商学院|突破.*Berkeley|Berkeley.*突破/i.test(blob)) return true;
   return false;
 }
 
@@ -193,6 +363,6 @@ export function sanitizeUcAnalysis(uc: UcAnalysis, form: FormState, locale: Loca
     application_note: uc.application_note,
     checklist: uc.checklist,
     piq_directions: uc.piq_directions,
-    information_gaps: uc.information_gaps,
+    information_gaps: filterUcTestBlindBullets(uc.information_gaps, locale),
   };
 }

@@ -1,6 +1,9 @@
 import type { FormState, ReportPayload, SchoolRow, SchoolTier } from "../types";
 import type { Locale } from "../i18n/strings";
+import { campusCultureAlignmentNote } from "./campusCulturePref";
+import { enrichSchoolRow } from "./enrichSchoolRow";
 import { getEffectiveIntake } from "./intakeTerm";
+import { sanitizeReportProse } from "./reportProseSanitize";
 import { resolveUcAnalysis } from "./ucApplication";
 import { getOfficialLinksForSchool, officialLinkLabel } from "./universityOfficialLinks";
 import { splitToBullets } from "./schoolRowDisplay";
@@ -36,23 +39,31 @@ function appendSchoolRows(
   lines: string[],
   tier: SchoolTier,
   rows: SchoolRow[],
+  form: FormState,
   locale: Locale,
   listKind: string,
+  unlocked: boolean,
 ) {
   for (const row of rows) {
-    const links = getOfficialLinksForSchool(row.school, locale)
+    const enriched = enrichSchoolRow(row, form, locale);
+    const links = getOfficialLinksForSchool(enriched.school, locale)
       .map((l) => `${officialLinkLabel(l, locale)}: ${l.href}`)
       .join(" | ");
+    const cultureFit = unlocked ? campusCultureAlignmentNote(form, enriched, locale) || "" : "";
     lines.push(
       rowToCsvLine([
         listKind,
         tierLabel(tier, locale),
-        row.school,
-        splitToBullets(whyText(row, tier)).join(" · "),
-        (row.key_fit_signals || []).join(" · "),
-        (row.key_risks || []).join(" · "),
-        (row.verification_focus || []).join(" · "),
-        links,
+        enriched.school,
+        splitToBullets(whyText(enriched, tier)).join(" · "),
+        enriched.campus_vibe || "",
+        unlocked ? enriched.differentiation || "" : "",
+        unlocked ? enriched.context_note || "" : "",
+        (enriched.key_fit_signals || []).join(" · "),
+        (enriched.key_risks || []).join(" · "),
+        (enriched.verification_focus || []).join(" · "),
+        unlocked ? links : "",
+        cultureFit,
         "",
       ]),
     );
@@ -67,27 +78,28 @@ export function buildReportCsv(
 ): string {
   const headers =
     locale === "en"
-      ? ["List", "Tier", "School", "Why", "Fit signals", "Risks", "Verify on official site", "Official links", "Your notes"]
-      : ["名单", "档位", "学校", "入档理由", "匹配信号", "主要风险", "官网核对项", "官方链接", "你的备注"];
+      ? ["List", "Tier", "School", "Why", "Campus vibe", "Differentiation", "Context note", "Fit signals", "Risks", "Verify on official site", "Official links", "Culture fit note", "Your notes"]
+      : ["名单", "档位", "学校", "入档理由", "校园气质", "校际差异", "语境参考", "匹配信号", "主要风险", "官网核对项", "官方链接", "社区偏好对照", "你的备注"];
 
   const lines: string[] = [rowToCsvLine(headers)];
   const listMain = locale === "en" ? "Main 9 schools" : "主名单 9 校";
+  const safeReport = sanitizeReportProse(report, locale);
 
   if (unlocked) {
     for (const tier of ["reach", "match", "safety"] as const) {
-      appendSchoolRows(lines, tier, report[tier] ?? [], locale, listMain);
+      appendSchoolRows(lines, tier, safeReport[tier] ?? [], form, locale, listMain, unlocked);
     }
-    const uc = resolveUcAnalysis(report, form, locale);
+    const uc = resolveUcAnalysis(safeReport, form, locale);
     if (uc) {
       const listUc = locale === "en" ? "UC campuses" : "UC 校区";
       for (const tier of ["reach", "match", "safety"] as const) {
-        appendSchoolRows(lines, tier, uc[tier] ?? [], locale, listUc);
+        appendSchoolRows(lines, tier, uc[tier] ?? [], form, locale, listUc, unlocked);
       }
     }
   } else {
     for (const tier of ["reach", "match", "safety"] as const) {
-      const rows = report[tier] ?? [];
-      if (rows[0]) appendSchoolRows(lines, tier, [rows[0]], locale, listMain);
+      const rows = safeReport[tier] ?? [];
+      if (rows[0]) appendSchoolRows(lines, tier, [rows[0]], form, locale, listMain, unlocked);
     }
   }
 

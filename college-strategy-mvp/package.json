@@ -14,7 +14,8 @@
     "start": "node server/index.mjs",
     "preview": "vite preview",
     "knockout-logos": "node scripts/knockout-logo-backgrounds.mjs",
-    "build:onlyapply-logo": "node scripts/build-onlyapply-brand-logo.mjs"
+    "build:onlyapply-logo": "node scripts/build-onlyapply-brand-logo.mjs",
+    "test:data": "node scripts/test-data-quality.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",

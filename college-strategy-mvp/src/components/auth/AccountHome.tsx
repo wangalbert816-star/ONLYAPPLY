@@ -21,7 +21,7 @@ import { isInviteCodesEnabled } from "../../lib/inviteCodes";
 import { formatSupabaseError } from "../../lib/supabase/errors";
 import { buildBiggestGapBlock, buildOverallVerdict } from "../../lib/decisionReport";
 import { buildFiveDimensionProfile, type ProfileDimensionKey } from "../../lib/fiveDimensionProfile";
-import type { ActivityItem, FormState, ReportPayload, SupplementaryNote } from "../../types";
+import type { ActivityItem, FormState, GeoPref, ReportPayload, SupplementaryNote } from "../../types";
 import { BrandLogo } from "../BrandLogo";
 import "./AccountHome.css";
 
@@ -65,7 +65,7 @@ function compactText(value: string, max = 96) {
   return clean.length > max ? `${clean.slice(0, max - 1)}…` : clean;
 }
 
-function optionLabel(kind: "identity" | "budget" | "testing" | "size" | "risk" | "geo", value: string, locale: "zh" | "en") {
+function optionLabel(kind: "identity" | "budget" | "testing" | "size" | "culture" | "risk" | "geo", value: string, locale: "zh" | "en") {
   const zh = {
     identity: { intl: "国际生", us_citizen: "美国身份", other: "其他身份" },
     budget: {
@@ -77,6 +77,12 @@ function optionLabel(kind: "identity" | "budget" | "testing" | "size" | "risk" |
     },
     testing: { test_optional: "Test-Optional / 暂不提交", will_submit: "计划提交 SAT / ACT" },
     size: { small: "小型校园", medium: "中等规模", large: "大型校园", any: "都可以" },
+    culture: {
+      academic: "学术 / 研究导向",
+      balanced: "学业与社交平衡",
+      social: "社交 / 派对氛围活跃",
+      any: "没有强烈偏好",
+    },
     risk: { conservative: "偏保守", balanced: "平衡", aggressive: "偏进取" },
     geo: { west: "西海岸", east: "东海岸", south: "南部", midwest: "中西部", great_lakes: "五大湖", any: "不限地区" },
   };
@@ -91,11 +97,23 @@ function optionLabel(kind: "identity" | "budget" | "testing" | "size" | "risk" |
     },
     testing: { test_optional: "Test-optional / not submitting", will_submit: "Planning to submit SAT / ACT" },
     size: { small: "Small campus", medium: "Medium campus", large: "Large campus", any: "Any size" },
+    culture: {
+      academic: "Academic / research-oriented",
+      balanced: "Balanced academic & social",
+      social: "Active social / party-friendly",
+      any: "No strong preference",
+    },
     risk: { conservative: "Conservative", balanced: "Balanced", aggressive: "Aggressive" },
     geo: { west: "West", east: "East", south: "South", midwest: "Midwest", great_lakes: "Great Lakes", any: "Any region" },
   };
   const table = locale === "en" ? en : zh;
   return (table[kind] as Record<string, string>)[value] ?? value;
+}
+
+function toggleGeo(prefs: GeoPref[], g: GeoPref): GeoPref[] {
+  if (g === "any") return prefs.includes("any") ? [] : ["any"];
+  const without = prefs.filter((x) => x !== "any");
+  return without.includes(g) ? without.filter((x) => x !== g) : [...without, g];
 }
 
 function buildApplicationInfoItems(form: FormState, locale: "zh" | "en", t: ReturnType<typeof useLanguage>["t"]) {
@@ -121,7 +139,7 @@ function buildApplicationInfoItems(form: FormState, locale: "zh" | "en", t: Retu
     { label: t("auth.accountInfoEnvironment"), value: compactText([form.citizenship ?? "", form.residenceRegion ?? ""].filter(Boolean).join(" / ")) },
     { label: t("auth.accountInfoBudget"), value: form.budget ? optionLabel("budget", form.budget, locale) : "" },
     { label: t("auth.accountInfoActivities"), value: compactText(form.activities) },
-    { label: t("auth.accountInfoPreferences"), value: compactText([form.schoolSize ? optionLabel("size", form.schoolSize, locale) : "", geo].filter(Boolean).join(" · ")) },
+    { label: t("auth.accountInfoPreferences"), value: compactText([form.schoolSize ? optionLabel("size", form.schoolSize, locale) : "", form.campusCulturePref ? optionLabel("culture", form.campusCulturePref, locale) : "", geo].filter(Boolean).join(" · ")) },
     { label: t("auth.accountInfoRisk"), value: form.riskStyle ? optionLabel("risk", form.riskStyle, locale) : "" },
     { label: t("auth.accountInfoDealbreakers"), value: compactText(form.dealbreakers) },
   ].filter((item) => item.value);
@@ -1089,6 +1107,49 @@ export function AccountHome({
                           <option value="aggressive">{t("form.opt.riskAgg")}</option>
                         </select>
                       </label>
+                      <label>
+                        <span>{t("wizard.s2.size.q")}</span>
+                        <select
+                          value={profileDraft.schoolSize}
+                          onChange={(e) => updateProfileDraft("schoolSize", e.target.value as FormState["schoolSize"])}
+                        >
+                          <option value="">{t("form.opt.choose")}</option>
+                          <option value="small">{t("form.opt.sizeS")}</option>
+                          <option value="medium">{t("form.opt.sizeM")}</option>
+                          <option value="large">{t("form.opt.sizeL")}</option>
+                          <option value="any">{t("form.opt.sizeAny")}</option>
+                        </select>
+                      </label>
+                      <label>
+                        <span>{t("wizard.s2.culture.q")}</span>
+                        <select
+                          value={profileDraft.campusCulturePref}
+                          onChange={(e) =>
+                            updateProfileDraft("campusCulturePref", e.target.value as FormState["campusCulturePref"])
+                          }
+                        >
+                          <option value="">{t("form.opt.choose")}</option>
+                          <option value="academic">{t("form.opt.campusAcademic")}</option>
+                          <option value="balanced">{t("form.opt.campusBalanced")}</option>
+                          <option value="social">{t("form.opt.campusSocial")}</option>
+                          <option value="any">{t("form.opt.campusAny")}</option>
+                        </select>
+                      </label>
+                    </div>
+                    <div className="account-profile-editor__full account-profile-editor__geo">
+                      <span>{t("wizard.s2.geo.q")}</span>
+                      <div className="account-profile-editor__geo-grid">
+                        {(["west", "east", "south", "midwest", "great_lakes", "any"] as const).map((g) => (
+                          <label key={g} className="account-profile-editor__geo-item">
+                            <input
+                              type="checkbox"
+                              checked={profileDraft.geoPrefs.includes(g)}
+                              onChange={() => updateProfileDraft("geoPrefs", toggleGeo(profileDraft.geoPrefs, g))}
+                            />
+                            {t(`geo.${g}`)}
+                          </label>
+                        ))}
+                      </div>
                     </div>
                     <label className="account-profile-editor__full">
                       <span>{t("form.deal")}</span>

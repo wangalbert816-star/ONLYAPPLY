@@ -1,0 +1,48 @@
+.report-major-guide__note {
+  margin: 0.45rem 0 0;
+  font-size: 0.78rem;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.report-improve-priority {
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e40af;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.report-improve-panel__activity-title {
+  margin-top: 0.25rem;
+}
+
+.report-improve-activity-list {
+  margin: 0 0 1rem;
+  padding-left: 1.15rem;
+  font-size: 0.94rem;
+  line-height: 1.55;
+}
+
+.report-improve-activity-list li + li {
+  margin-top: 0.35rem;
+}
+
+.school-card__list--context li {
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.report-diff-dimensions {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.88rem;
+}
+
+.gaps-card__dimension-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  color: #64748b;
+}

@@ -1,4 +1,4 @@
-import type { SchoolRow, SchoolTier, UcAnalysis } from "../types";
+import type { FormState, SchoolRow, SchoolTier, UcAnalysis } from "../types";
 import type { Translate } from "../i18n/LanguageContext";
 import { useLanguage } from "../i18n/LanguageContext";
 import { ReportCollapsibleSection } from "./ReportCollapsibleSection";
@@ -7,6 +7,7 @@ import "./UcStrategySection.css";
 
 type Props = {
   uc: UcAnalysis;
+  form: FormState;
   t: Translate;
   unlocked: boolean;
 };
@@ -20,11 +21,13 @@ function tierTitle(tier: SchoolTier, t: Translate): string {
 function UcTierBlock({
   tier,
   rows,
+  form,
   t,
   unlocked,
 }: {
   tier: SchoolTier;
   rows: SchoolRow[];
+  form: FormState;
   t: Translate;
   unlocked: boolean;
 }) {
@@ -48,14 +51,14 @@ function UcTierBlock({
     >
       <div className="school-cards-grid">
         {visible.map((row, i) => (
-          <SchoolStrategyCard key={`${row.school}-${i}`} row={row} tier={tier} locale={locale} unlocked={unlocked} />
+          <SchoolStrategyCard key={`${row.school}-${i}`} row={row} tier={tier} locale={locale} form={form} unlocked={unlocked} />
         ))}
       </div>
     </ReportCollapsibleSection>
   );
 }
 
-export function UcStrategySection({ uc, t, unlocked }: Props) {
+export function UcStrategySection({ uc, form, t, unlocked }: Props) {
   return (
     <ReportCollapsibleSection
       id="report-uc-block"
@@ -73,9 +76,9 @@ export function UcStrategySection({ uc, t, unlocked }: Props) {
 
       <p className="uc-strategy__app-note">{uc.application_note}</p>
 
-      <UcTierBlock tier="reach" rows={uc.reach} t={t} unlocked={unlocked} />
-      <UcTierBlock tier="match" rows={uc.match} t={t} unlocked={unlocked} />
-      <UcTierBlock tier="safety" rows={uc.safety} t={t} unlocked={unlocked} />
+      <UcTierBlock tier="reach" rows={uc.reach} form={form} t={t} unlocked={unlocked} />
+      <UcTierBlock tier="match" rows={uc.match} form={form} t={t} unlocked={unlocked} />
+      <UcTierBlock tier="safety" rows={uc.safety} form={form} t={t} unlocked={unlocked} />
 
       {unlocked ? (
         <>

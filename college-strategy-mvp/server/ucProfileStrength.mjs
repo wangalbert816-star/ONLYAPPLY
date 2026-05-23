@@ -1,7 +1,4 @@
-const CAMPUS_PATTERNS = [
-  ["berkeley", /berkeley|伯克利/i],
-  ["ucla", /\bucla\b|洛杉矶分校/i],
-];
+import { ucCampusKeyFromSchool } from "./ucCampusSelectivity.mjs";
 
 function parseGpaNumbers(gpaText) {
   const t = String(gpaText || "").trim();
@@ -65,16 +62,5 @@ export function isWeakUcProfile(body, signals = assessUcProfileSignals(body)) {
 }
 
 export function schoolToCampusKey(school) {
-  const s = String(school || "");
-  for (const [key, re] of CAMPUS_PATTERNS) {
-    if (re.test(s)) return key;
-  }
-  if (/uc\s*san\s*diego|ucsd/i.test(s)) return "ucsd";
-  if (/uc\s*santa\s*barbara|ucsb/i.test(s)) return "ucsb";
-  if (/uc\s*irvine|uci/i.test(s)) return "uci";
-  if (/uc\s*davis/i.test(s)) return "ucdavis";
-  if (/uc\s*santa\s*cruz|ucsc/i.test(s)) return "ucsc";
-  if (/uc\s*riverside|ucr/i.test(s)) return "ucr";
-  if (/uc\s*merced/i.test(s)) return "ucmerced";
-  return null;
+  return ucCampusKeyFromSchool(school);
 }

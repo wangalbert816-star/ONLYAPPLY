@@ -1,4 +1,4 @@
-import type { SchoolRow, SchoolTier } from "../types";
+import type { FormState, SchoolRow, SchoolTier } from "../types";
 import type { Translate } from "../i18n/LanguageContext";
 import { useLanguage } from "../i18n/LanguageContext";
 import { ReportCollapsibleSection } from "./ReportCollapsibleSection";
@@ -13,6 +13,7 @@ type Props = {
   tierTitle: string;
   guide?: string;
   defaultOpen?: boolean;
+  form: FormState;
   t: Translate;
 };
 
@@ -25,6 +26,7 @@ export function SchoolTierPanel({
   tierTitle,
   guide,
   defaultOpen = false,
+  form,
   t,
 }: Props) {
   const { locale } = useLanguage();
@@ -55,6 +57,7 @@ export function SchoolTierPanel({
             row={row}
             tier={tier}
             locale={locale}
+            form={form}
             unlocked={unlocked}
             highlighted={highlightSchoolKeys.has(row.school.trim().toLowerCase())}
           />

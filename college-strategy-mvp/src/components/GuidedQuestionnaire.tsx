@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { ActivityItem, FormState, GeoPref } from "../types";
+import type { ActivityItem, CampusCulturePref, FormState, GeoPref } from "../types";
 import type { Translate } from "../i18n/LanguageContext";
 import {
   getEffectiveIntake,
@@ -129,6 +129,26 @@ function sizeFeedback(form: FormState, t: Translate): string | null {
   return t("wizard.s2.size.fbAny");
 }
 
+function cultureFeedback(form: FormState, t: Translate): string | null {
+  const v = form.campusCulturePref;
+  if (!v) return null;
+  if (v === "academic") return t("wizard.s2.culture.fbAcademic");
+  if (v === "balanced") return t("wizard.s2.culture.fbBalanced");
+  if (v === "social") return t("wizard.s2.culture.fbSocial");
+  return t("wizard.s2.culture.fbAny");
+}
+
+function labelCampusCulture(form: FormState, t: Translate): string {
+  if (!form.campusCulturePref) return "";
+  const m: Record<string, string> = {
+    academic: "form.opt.campusAcademic",
+    balanced: "form.opt.campusBalanced",
+    social: "form.opt.campusSocial",
+    any: "form.opt.campusAny",
+  };
+  return t(m[form.campusCulturePref] ?? "");
+}
+
 function riskFeedback(form: FormState, t: Translate): string | null {
   if (!form.riskStyle) return null;
   if (form.riskStyle === "conservative") return t("wizard.s3.risk.fbCon");
@@ -216,6 +236,7 @@ export function FormLiveSummary({ form, t }: { form: FormState; t: Translate }) 
   if (form.majorPrimary.trim()) lines.push(t("wizard.summary.major", { v: form.majorPrimary.trim() }));
   if (form.majorSecondary.trim()) lines.push(t("wizard.summary.major2", { v: form.majorSecondary.trim() }));
   if (form.schoolSize) lines.push(t("wizard.summary.size", { v: labelSchoolSize(form, t) }));
+  if (form.campusCulturePref) lines.push(t("wizard.summary.culture", { v: labelCampusCulture(form, t) }));
   if (form.geoPrefs.length) {
     const geo = form.geoPrefs.map((g) => t(`geo.${g}`)).join("、");
     lines.push(t("wizard.summary.geo", { v: geo }));
@@ -541,6 +562,7 @@ export function GuidedStep2({
   const majorOk = Boolean(guideTouch.s2_major && form.majorPrimary.trim());
   const major2Ok = Boolean(guideTouch.s2_major2);
   const sizeOk = Boolean(form.schoolSize);
+  const cultureOk = Boolean(form.campusCulturePref);
 
   const blocks: ReactNode[] = [];
 
@@ -573,27 +595,6 @@ export function GuidedStep2({
           const fb = hsFeedback(form, t);
           return fb ? <p className="field-feedback">{fb}</p> : null;
         })()}
-      </>,
-    ),
-  );
-
-  blocks.push(
-    fieldWrap(
-      "s2-hsname",
-      <>
-        <p className="field-question" id="gq-s2-hsname">
-          {t("wizard.s2.hsName.q")}
-        </p>
-        <p className="field-why" id="gw-s2-hsname">
-          {t("wizard.s2.hsName.why")}
-        </p>
-        <input
-          id="hsname"
-          className="input-modern"
-          type="text"
-          value={form.highSchoolName}
-          onChange={(e) => update("highSchoolName", e.target.value)}
-        />
       </>,
     ),
   );
@@ -752,6 +753,39 @@ export function GuidedStep2({
   }
 
   if (hsOk && gpaOk && majorOk && major2Ok && sizeOk) {
+    blocks.push(
+      fieldWrap(
+        "s2-culture",
+        <>
+          <p className="field-question" id="gq-s2-culture">
+            {t("wizard.s2.culture.q")}
+          </p>
+          <p className="field-why" id="gw-s2-culture">
+            {t("wizard.s2.culture.why")}
+          </p>
+          <select
+            className="select-modern"
+            aria-labelledby="gq-s2-culture"
+            aria-describedby="gw-s2-culture"
+            value={form.campusCulturePref}
+            onChange={(e) => update("campusCulturePref", e.target.value as CampusCulturePref)}
+          >
+            <option value="">{t("form.opt.choose")}</option>
+            <option value="academic">{t("form.opt.campusAcademic")}</option>
+            <option value="balanced">{t("form.opt.campusBalanced")}</option>
+            <option value="social">{t("form.opt.campusSocial")}</option>
+            <option value="any">{t("form.opt.campusAny")}</option>
+          </select>
+          {(() => {
+            const fb = cultureFeedback(form, t);
+            return fb ? <p className="field-feedback">{fb}</p> : null;
+          })()}
+        </>,
+      ),
+    );
+  }
+
+  if (hsOk && gpaOk && majorOk && major2Ok && sizeOk && cultureOk) {
     blocks.push(
       fieldWrap(
         "s2-geo",
@@ -1007,32 +1041,6 @@ export function GuidedStep3({
             </button>
           </div>
         </details>
-      </>,
-    ),
-  );
-
-  blocks.push(
-    fieldWrap(
-      "s3-campus",
-      <>
-        <p className="field-question" id="gq-s3-campus">
-          {t("wizard.s3.campusPref.q")}
-        </p>
-        <p className="field-why" id="gw-s3-campus">
-          {t("wizard.s3.campusPref.why")}
-        </p>
-        <select
-          className="select-modern"
-          value={form.campusPreference}
-          onChange={(e) => update("campusPreference", e.target.value as FormState["campusPreference"])}
-        >
-          <option value="">{t("form.opt.choose")}</option>
-          <option value="academic">{t("form.opt.campusAcademic")}</option>
-          <option value="balanced_social">{t("form.opt.campusBalanced")}</option>
-          <option value="social">{t("form.opt.campusSocial")}</option>
-          <option value="research">{t("form.opt.campusResearch")}</option>
-          <option value="any">{t("form.opt.campusAny")}</option>
-        </select>
       </>,
     ),
   );

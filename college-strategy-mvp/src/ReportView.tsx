@@ -19,6 +19,9 @@ import { ReportExportCsvButton } from "./components/ReportExportCsvButton";
 import { ReportSectionNav } from "./components/ReportSectionNav";
 import { SchoolTierPanel } from "./components/SchoolTierPanel";
 import { ReportCollapsibleSection } from "./components/ReportCollapsibleSection";
+import { ReportImprovementPanel } from "./components/ReportImprovementPanel";
+import { sanitizeReportProse } from "./lib/reportProseSanitize";
+import "./components/ReportImprovementPanel.css";
 import { ReportPdfDocument } from "./components/pdf/ReportPdfDocument";
 import { LegalLinks } from "./components/LegalLinks";
 import { getEffectiveIntake } from "./lib/intakeTerm";
@@ -269,6 +272,7 @@ export function ReportView({
   onRedeemInviteCode,
 }: ReportViewProps) {
   const { t, locale } = useLanguage();
+  const safeReport = useMemo(() => sanitizeReportProse(report, locale), [report, locale]);
   const [inviteInput, setInviteInput] = useState("");
   const pdfSourceRef = useRef<HTMLDivElement>(null);
   const intakeLabel = useMemo(() => getEffectiveIntake(form) || t("report.title"), [form, t]);
@@ -288,9 +292,9 @@ export function ReportView({
   const verdict = useMemo(
     () =>
       buildOverallVerdict(form, profileFive, locale, {
-        executiveLead: report.executive_summary?.[0] ?? null,
+        executiveLead: safeReport.executive_summary?.[0] ?? null,
       }),
-    [form, profileFive, locale, report.executive_summary],
+    [form, profileFive, locale, safeReport.executive_summary],
   );
   const biggestGap = useMemo(() => buildBiggestGapBlock(profileFive, locale), [profileFive, locale]);
   const tone = getPaywallTone();
@@ -302,22 +306,20 @@ export function ReportView({
 
   const inviteModeOnly = inviteCodesEnabled && !stripeCheckoutEnabled;
 
-  const risks = report.portfolio_risks || [];
-  const tw = report.improvement_plan?.this_week || [];
-  const tm = report.improvement_plan?.this_month || [];
-  const bs = report.improvement_plan?.before_submitting || [];
-  const notes = report.strategy_notes || [];
+  const risks = safeReport.portfolio_risks || [];
+  const tw = safeReport.improvement_plan?.this_week || [];
+  const notes = safeReport.strategy_notes || [];
 
   const lockedSchoolRows = unlocked ? 999 : 1;
-  const schoolSplit = useMemo(() => splitTopReferenceSchools(report, unlocked), [report, unlocked]);
+  const schoolSplit = useMemo(() => splitTopReferenceSchools(safeReport, unlocked), [safeReport, unlocked]);
   const realisticReachUnderfilled = schoolSplit.topReference.length > 0 && schoolSplit.regular.reach.length < 3;
   const lockedRiskCount = unlocked ? risks.length : Math.min(1, risks.length);
   const lockedWeekItems = unlocked ? tw.length : Math.min(1, tw.length);
   const visibleExecutiveSummary = unlocked
-    ? report.executive_summary ?? []
-    : (report.executive_summary ?? []).slice(0, 1);
-  const previewGapCount = Math.min(2, report.information_gaps?.length ?? 0);
-  const ucAnalysis = useMemo(() => resolveUcAnalysis(report, form, locale), [report, form, locale]);
+    ? safeReport.executive_summary ?? []
+    : (safeReport.executive_summary ?? []).slice(0, 1);
+  const previewGapCount = Math.min(2, safeReport.information_gaps?.length ?? 0);
+  const ucAnalysis = useMemo(() => resolveUcAnalysis(safeReport, form, locale), [safeReport, form, locale]);
 
   const sectionNavItems = useMemo(
     () => [
@@ -411,6 +413,21 @@ export function ReportView({
               </ul>
             </>
           )}
+          {reportDiff.executiveSummaryChanged && (
+            <p className="report-diff-exec">{t("report.diff.execChanged")}</p>
+          )}
+          {reportDiff.dimensionChanges.length > 0 && (
+            <>
+              <p className="report-diff-section-label">{t("report.diff.sectionDimensions")}</p>
+              <ul className="report-diff-dimensions">
+                {reportDiff.dimensionChanges.map((d) => (
+                  <li key={d.key}>
+                    {t("report.diff.dimensionLine", { label: d.label, before: d.before, after: d.after })}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </section>
       )}
 
@@ -424,7 +441,7 @@ export function ReportView({
         </div>
         <div className="top-actions__toolbar" role="toolbar" aria-label={t("report.title")}>
           <div className="top-actions__toolbar-primary">
-            <ReportExportCsvButton report={report} form={form} unlocked={unlocked} />
+            <ReportExportCsvButton report={safeReport} form={form} unlocked={unlocked} />
             {isAuthenticated && sessionSaved && unlocked && (
               <ReportDownloadButton sourceRef={pdfSourceRef} intakeLabel={intakeLabel} unlocked={unlocked} />
             )}
@@ -454,7 +471,7 @@ export function ReportView({
 
       {!unlocked && (
         <div data-no-pdf>
-          <StrongHookCard report={report} tone={tone} lead={copy.hookLead} />
+          <StrongHookCard report={safeReport} tone={tone} lead={copy.hookLead} />
 
           <section className="card paywall-guide" aria-labelledby="paywall-guide-title">
             <p className="paywall-eyebrow">{copy.eyebrow}</p>
@@ -557,6 +574,9 @@ export function ReportView({
             </section>
           )}
           <p className="school-list-intro">{t("report.schoolListCardLead")}</p>
+          <p className="report-data-policy" role="note">
+            {t("report.dataPolicy")}
+          </p>
           {(["reach", "match", "safety"] as const).map((tier) => (
             <SchoolTierPanel
               key={tier}
@@ -568,11 +588,12 @@ export function ReportView({
               tierTitle={tierTitle(tier)}
               guide={tier === "reach" ? t("report.decision.tableGuide") : undefined}
               defaultOpen={false}
+              form={form}
               t={t}
             />
           ))}
           {ucAnalysis && (
-            <UcStrategySection uc={ucAnalysis} t={t} unlocked={unlocked} />
+            <UcStrategySection uc={ucAnalysis} form={form} t={t} unlocked={unlocked} />
           )}
         </ReportPathStep>
 
@@ -580,7 +601,7 @@ export function ReportView({
           {unlocked ? (
             <>
               <InformationGapsInteractive
-                gaps={report.information_gaps ?? []}
+                gaps={safeReport.information_gaps ?? []}
                 onRegenerate={onRefreshReportWithGaps}
                 isRegenerating={reportRefreshing}
                 embedded
@@ -590,20 +611,20 @@ export function ReportView({
           ) : (
             <section className="card report-block report-path-step__panel preview-gaps-card" id="report-section-gaps">
               <p className="paywall-eyebrow">{t("report.previewGapsEyebrow")}</p>
-              <h2>{t("report.previewGapsTitle", { n: report.information_gaps?.length ?? 0 })}</h2>
+              <h2>{t("report.previewGapsTitle", { n: safeReport.information_gaps?.length ?? 0 })}</h2>
               <p className="preview-gaps-card__lead">{t("report.previewGapsLead")}</p>
-              {(report.information_gaps ?? []).slice(0, previewGapCount).map((gap, i) => (
+              {(safeReport.information_gaps ?? []).slice(0, previewGapCount).map((gap, i) => (
                 <p key={i} className="preview-gap-line">
                   <strong>{t("report.previewGapLabel", { n: i + 1 })}</strong>
                   {clampCellText(gap, 88)}
                 </p>
               ))}
-              {(report.information_gaps?.length ?? 0) > previewGapCount && (
+              {(safeReport.information_gaps?.length ?? 0) > previewGapCount && (
                 <p className="block-locked">
                   <span className="lock-icon" aria-hidden>
                     🔒
                   </span>
-                  {t("report.previewGapsLocked", { n: (report.information_gaps?.length ?? 0) - previewGapCount })}
+                  {t("report.previewGapsLocked", { n: (safeReport.information_gaps?.length ?? 0) - previewGapCount })}
                 </p>
               )}
             </section>
@@ -632,7 +653,7 @@ export function ReportView({
           </section>
         )}
 
-        <ExpertConsultSection gapCount={report.information_gaps?.length ?? 0} applicationId={applicationId} reportId={reportId} />
+        <ExpertConsultSection gapCount={safeReport.information_gaps?.length ?? 0} applicationId={applicationId} reportId={reportId} />
 
       <ReportCollapsibleSection
         id="report-appendix-risks"
@@ -669,58 +690,16 @@ export function ReportView({
         </ul>
       </ReportCollapsibleSection>
 
-      <ReportCollapsibleSection
-        id="report-appendix-improve"
-        title={
-          <>
-            {t("report.improveTitle")}
-            {!unlocked && <span className="inline-hint">{t("report.improvePreview")}</span>}
-          </>
-        }
-        defaultOpen={false}
-        className="report-block"
-      >
-        {improveLead ? <p className="report-improve-lead">{improveLead}</p> : null}
-        <h3 className="subh">{planLabels.week}</h3>
-        <ul>
-          {tw.slice(0, lockedWeekItems).map((item, i) => (
-            <li key={i}>{item}</li>
-          ))}
-        </ul>
-        {!unlocked && tw.length > 1 && <p className="lock-inline">{t("report.weekMore", { n: tw.length - 1 })}</p>}
-        <h3 className="subh">{planLabels.month}</h3>
-        {unlocked ? (
-          <ul>
-            {tm.map((item, i) => (
-              <li key={i}>{item}</li>
-            ))}
-          </ul>
-        ) : (
-          <p className="block-locked">
-            <span className="lock-icon" aria-hidden>
-              🔒
-            </span>
-            {t("report.monthLock", { n: tm.length })}
-            <strong>{t("report.monthLockBold")}</strong>
-          </p>
-        )}
-        <h3 className="subh">{planLabels.before}</h3>
-        {unlocked ? (
-          <ul>
-            {bs.map((item, i) => (
-              <li key={i}>{item}</li>
-            ))}
-          </ul>
-        ) : (
-          <p className="block-locked">
-            <span className="lock-icon" aria-hidden>
-              🔒
-            </span>
-            {t("report.beforeLock", { n: bs.length })}
-            <strong>{t("report.beforeLockBold")}</strong>
-          </p>
-        )}
-      </ReportCollapsibleSection>
+      <ReportImprovementPanel
+        report={safeReport}
+        form={form}
+        locale={locale}
+        unlocked={unlocked}
+        planLabels={planLabels}
+        improveLead={improveLead}
+        lockedWeekItems={lockedWeekItems}
+        t={t}
+      />
 
       <ReportCollapsibleSection
         id="report-appendix-notes"
@@ -757,7 +736,7 @@ export function ReportView({
       <div ref={pdfSourceRef} className="report-pdf-export-root" aria-hidden>
         <ReportPdfDocument
           form={form}
-          report={report}
+          report={safeReport}
           locale={locale}
           unlocked={unlocked}
           recipientName={pdfRecipientName}

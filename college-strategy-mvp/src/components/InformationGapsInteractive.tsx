@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import type { SupplementaryNote } from "../types";
 import { useLanguage } from "../i18n/LanguageContext";
 import { buildGapTasks, stableGapsSignature } from "../lib/gapTaskMeta";
+import { gapDimensionHint } from "../lib/gapDimensionHints";
 import "./InformationGapsInteractive.css";
 
 const STORAGE_PREFIX = "college_strategy_gaps_completion_v1_";
@@ -257,6 +258,9 @@ export function InformationGapsInteractive({
                     <strong>{t("report.gapsInteractive.impactTitle")}</strong>
                     {task.impactIfMissing}
                   </p>
+                  {gapDimensionHint(task.rawLine, locale) && (
+                    <p className="gaps-card__dimension-hint">{gapDimensionHint(task.rawLine, locale)}</p>
+                  )}
                   {!filled && (
                     <p className="gaps-card__preview">
                       <strong>{t("report.gapsInteractive.modelNote")}</strong>

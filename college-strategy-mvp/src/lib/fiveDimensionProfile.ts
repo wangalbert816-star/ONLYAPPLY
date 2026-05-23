@@ -339,6 +339,7 @@ function scoreStrategy(form: FormState): number {
   if (form.geoPrefs.length >= 3) s += 4;
   if (form.dealbreakers.trim().length > 3) s += 8;
   if (form.schoolSize) s += 5;
+  if (form.campusCulturePref) s += 4;
   return Math.min(90, Math.max(36, s));
 }
 

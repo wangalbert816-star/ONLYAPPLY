@@ -673,3 +673,64 @@
 .report-pdf-export-host .pdf-doc {
   box-shadow: none;
 }
+
+.pdf-school-block {
+  margin: 0.55rem 0 0.85rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.pdf-school-block__name {
+  margin: 0 0 0.35rem;
+  font-weight: 700;
+  font-size: 10.5pt;
+  color: #0f172a;
+}
+
+.pdf-school-block__meta {
+  margin: 0.2rem 0;
+  font-size: 9pt;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.pdf-school-block__culture {
+  margin: 0.25rem 0 0.45rem;
+  padding: 0.35rem 0.5rem;
+  font-size: 8.8pt;
+  color: #1e40af;
+  background: #eff6ff;
+  border-radius: 6px;
+}
+
+.pdf-school-links {
+  margin: 0.45rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 8.5pt;
+  color: #2563eb;
+  word-break: break-all;
+}
+
+.pdf-section--uc {
+  border-left: 3px solid #2563eb;
+  padding-left: 0.65rem;
+}
+
+.pdf-uc-callout {
+  margin: 0.5rem 0;
+  padding: 0.55rem 0.65rem;
+  background: #f0f9ff;
+  border-radius: 8px;
+  font-size: 9pt;
+}
+
+.pdf-improve-priority {
+  margin: 0 0 0.65rem;
+  padding: 0.45rem 0.55rem;
+  font-size: 9pt;
+  color: #334155;
+  background: #f8fafc;
+  border-left: 3px solid #64748b;
+}

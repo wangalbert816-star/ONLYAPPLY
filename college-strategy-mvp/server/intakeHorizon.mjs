@@ -149,6 +149,26 @@ function personalizationPromptSuffix(locale, horizon) {
   return base + activityCompetitivenessBlock(horizon, locale);
 }
 
+/** @param {string} pref @param {"zh"|"en"} locale */
+function campusCulturePrefShortLabel(pref, locale) {
+  const key = String(pref || "").trim();
+  if (!key) return "";
+  const en = {
+    academic: "Academic / research-oriented",
+    balanced: "Balanced academic & social",
+    social: "Active social / party-friendly",
+    any: "No strong preference",
+  };
+  const zh = {
+    academic: "学术 / 研究导向",
+    balanced: "学业与社交平衡",
+    social: "社交 / 派对氛围活跃",
+    any: "没有强烈偏好",
+  };
+  const table = locale === "en" ? en : zh;
+  return table[key] || key;
+}
+
 /** @param {Record<string, unknown>} body @param {"zh"|"en"} locale */
 export function buildImprovementPersonalizationHints(body, locale) {
   const isEn = locale === "en";
@@ -173,6 +193,7 @@ export function buildImprovementPersonalizationHints(body, locale) {
   push(isEn ? "- Activities summary: " : "- 活动摘要：", String(body.activities || "").slice(0, 280));
   push(isEn ? "- List posture: " : "- 选校风格：", body.riskStyle);
   push(isEn ? "- Dealbreakers: " : "- 底线：", body.dealbreakers);
+  push(isEn ? "- Campus community vibe: " : "- 社区气质偏好：", campusCulturePrefShortLabel(String(body.campusCulturePref || ""), locale));
   const geo = Array.isArray(body.geoPrefs) ? body.geoPrefs.join(isEn ? ", " : "、") : body.geoPrefs;
   push(isEn ? "- Geography prefs: " : "- 地理偏好：", geo);
 

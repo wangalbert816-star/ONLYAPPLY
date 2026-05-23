@@ -1,7 +1,10 @@
 import type { SchoolRow, SchoolTier } from "../types";
 import type { Translate } from "../i18n/LanguageContext";
-import { getSampleReport } from "../data/sampleReport";
+import { useLanguage } from "../i18n/LanguageContext";
+import { getSampleForm, getSampleReport } from "../data/sampleReport";
 import type { Locale } from "../i18n/strings";
+import { SchoolStrategyCard } from "./SchoolStrategyCard";
+import { UcStrategySection } from "./UcStrategySection";
 import "./SampleReportShowcase.css";
 
 type Props = {
@@ -9,13 +12,18 @@ type Props = {
   t: Translate;
 };
 
-function whyCell(row: SchoolRow, tier: SchoolTier): string {
-  if (tier === "reach") return row.why_reach_for_you || "";
-  if (tier === "match") return row.why_match_for_you || "";
-  return row.why_safety_for_you || "";
-}
-
-function TierBlock({ tier, rows, t }: { tier: SchoolTier; rows: SchoolRow[]; t: Translate }) {
+function TierBlock({
+  tier,
+  rows,
+  form,
+  t,
+}: {
+  tier: SchoolTier;
+  rows: SchoolRow[];
+  form: ReturnType<typeof getSampleForm>;
+  t: Translate;
+}) {
+  const { locale } = useLanguage();
   if (!rows.length) return null;
   const title =
     tier === "reach" ? t("report.tierReach") : tier === "match" ? t("report.tierMatch") : t("report.tierSafety");
@@ -25,25 +33,16 @@ function TierBlock({ tier, rows, t }: { tier: SchoolTier; rows: SchoolRow[]; t: 
       <div className="sample-tier__header">
         <span className="sample-tier__pill">{title}</span>
       </div>
-      <div className="sample-tier__list">
+      <div className="sample-tier__list sample-tier__cards">
         {rows.map((row, i) => (
-          <article key={`${row.school}-${i}`} className="sample-tier__card">
-            <h4 className="sample-tier__school">{row.school}</h4>
-            <div className="sample-tier__grid">
-              <div className="sample-tier__cell sample-tier__cell--why">
-                <span className="sample-tier__label">{t("report.thWhy")}</span>
-                <p>{whyCell(row, tier)}</p>
-              </div>
-              <div className="sample-tier__cell sample-tier__cell--risks">
-                <span className="sample-tier__label">{t("report.thRisks")}</span>
-                <ul className="sample-tier__risk-list">
-                  {(row.key_risks || []).map((risk, j) => (
-                    <li key={j}>{risk}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </article>
+          <SchoolStrategyCard
+            key={`${row.school}-${i}`}
+            row={row}
+            tier={tier}
+            locale={locale}
+            form={form}
+            unlocked
+          />
         ))}
       </div>
     </section>
@@ -62,7 +61,9 @@ function SummaryBlock({ lines }: { lines: string[] }) {
 
 export function SampleReportShowcase({ locale, t }: Props) {
   const report = getSampleReport(locale);
+  const form = getSampleForm(locale);
   const uc = report.uc_analysis;
+  const plan = report.improvement_plan;
 
   return (
     <div className="sample-report-showcase">
@@ -75,20 +76,27 @@ export function SampleReportShowcase({ locale, t }: Props) {
       </section>
 
       <div className="sample-tiers-stack">
-        <TierBlock tier="reach" rows={report.reach || []} t={t} />
-        <TierBlock tier="match" rows={report.match || []} t={t} />
-        <TierBlock tier="safety" rows={report.safety || []} t={t} />
+        <TierBlock tier="reach" rows={report.reach || []} form={form} t={t} />
+        <TierBlock tier="match" rows={report.match || []} form={form} t={t} />
+        <TierBlock tier="safety" rows={report.safety || []} form={form} t={t} />
       </div>
 
       {uc && (
-        <section className="sample-panel sample-panel--uc">
-          <p className="sample-panel__eyebrow">{t("report.uc.eyebrow")}</p>
-          <h3 className="sample-panel__title">{t("report.uc.title")}</h3>
-          <p className="sample-panel__text">{uc.overview}</p>
-          <div className="sample-panel__callout" role="note">
-            <strong>{t("report.uc.testBlindLabel")}</strong>
-            <p>{uc.test_blind_note}</p>
-          </div>
+        <section className="sample-panel sample-panel--uc sample-panel--uc-full">
+          <UcStrategySection uc={uc} form={form} t={t} unlocked />
+        </section>
+      )}
+
+      {(report.portfolio_risks?.length ?? 0) > 0 && (
+        <section className="sample-panel">
+          <h3 className="sample-panel__title">{t("report.risksTitle")}</h3>
+          <ul className="sample-summary-list">
+            {report.portfolio_risks!.map((r, i) => (
+              <li key={i}>
+                <strong>{r.risk_title}</strong> — {r.what_it_means_for_you}
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 
@@ -99,8 +107,21 @@ export function SampleReportShowcase({ locale, t }: Props) {
 
       <section className="sample-panel">
         <h3 className="sample-panel__title">{t("report.improveTitle")}</h3>
+        {plan?.priority_frame ? <p className="sample-panel__priority">{plan.priority_frame}</p> : null}
+        {(plan?.activity_build?.length ?? 0) > 0 && (
+          <>
+            <p className="sample-panel__subhead">{t("report.improveActivityBuildTitle")}</p>
+            <SummaryBlock lines={plan!.activity_build!} />
+          </>
+        )}
         <p className="sample-panel__subhead">{t("report.week")}</p>
-        <SummaryBlock lines={report.improvement_plan?.this_week || []} />
+        <SummaryBlock lines={plan?.this_week || []} />
+        {(plan?.this_month?.length ?? 0) > 0 && (
+          <>
+            <p className="sample-panel__subhead">{t("report.month")}</p>
+            <SummaryBlock lines={plan!.this_month!} />
+          </>
+        )}
       </section>
     </div>
   );

@@ -1,5 +1,31 @@
 import type { Locale } from "../i18n/strings";
-import type { ReportPayload } from "../types";
+import type { FormState, ReportPayload } from "../types";
+
+/** 产品介绍页样例问卷（脱敏） */
+export function getSampleForm(locale: Locale): FormState {
+  return {
+    intakeTerm: locale === "en" ? "2026 Fall" : "2026 秋季",
+    intakeOtherDetail: "",
+    applicantIdentity: "intl",
+    citizenship: locale === "en" ? "China" : "中国",
+    residenceRegion: locale === "en" ? "East Asia" : "东亚",
+    budget: "budget_cap",
+    testing: "will_submit",
+    satScore: "1480",
+    actScore: "",
+    highSchoolSystem: locale === "en" ? "International curriculum" : "国际课程",
+    gpa: "3.85",
+    majorPrimary: locale === "en" ? "Computer Science" : "计算机科学",
+    majorSecondary: "",
+    schoolSize: "large",
+    campusCulturePref: "balanced",
+    geoPrefs: ["west"],
+    activities: locale === "en" ? "CS club, regional hackathon" : "计算机社团、区域黑客松",
+    structuredActivities: [],
+    riskStyle: "balanced",
+    dealbreakers: "",
+  };
+}
 
 /** 脱敏样例报告：用于「产品介绍」页展示，非真实用户数据 */
 export function getSampleReport(locale: Locale): ReportPayload {
@@ -19,6 +45,9 @@ export function getSampleReport(locale: Locale): ReportPayload {
           school: "Sample University A (Reach)",
           why_reach_for_you:
             "Realistic stretch for CS: strong academics, but competition density is high and the major may be screened.",
+          campus_vibe: "Research-heavy · large public with strong STEM labs and grad-school pipeline",
+          differentiation: "Versus other reaches, this one offers more direct CS research access if you can show project depth.",
+          context_note: "Confirm intl aid and direct-admit CS rules on the official CDS—do not rely on unsourced admit rates.",
           key_fit_signals: ["CS direction", "STEM coursework", "Balanced list posture"],
           key_risks: ["Major capacity constraints", "High competition density"],
           verification_focus: ["Direct-admit vs. pre-major", "International aid policy", "Application round"],
@@ -29,6 +58,9 @@ export function getSampleReport(locale: Locale): ReportPayload {
           school: "Sample University B (Match)",
           why_match_for_you:
             "Main battlefield: profile aligns with mid-selective STEM publics; variance remains on essays and rigor narrative.",
+          campus_vibe: "Balanced social-academic · flagship public with active clubs and regional recruiting",
+          differentiation: "Compared with Match #2, stronger in-state/merit aid logic if your budget is capped.",
+          context_note: "Check net price calculator for your residency status; merit rules change by cycle.",
           key_fit_signals: ["Regional fit", "CS + applied math thread"],
           key_risks: ["Essay specificity still thin"],
           verification_focus: ["College within university for CS", "Merit scholarship rules"],
@@ -39,6 +71,9 @@ export function getSampleReport(locale: Locale): ReportPayload {
           school: "Sample University C (Safety)",
           why_safety_for_you:
             "Floor logic: lowers all-reject risk while keeping CS/exploratory pathways open.",
+          campus_vibe: "Teaching-focused · smaller classes, easier to stand out in activities",
+          differentiation: "Unlike other safeties, keeps an exploratory CS/engineering path without ultra-selective screening.",
+          context_note: "Still verify major availability and housing costs on the official site.",
           key_fit_signals: ["Higher admit bandwidth", "Clear CS pathway"],
           key_risks: ["Still verify major availability"],
           verification_focus: ["Net cost after aid", "Housing / campus fit"],
@@ -56,6 +91,11 @@ export function getSampleReport(locale: Locale): ReportPayload {
         this_week: ["Pick one activity and add a verifiable outcome (number, role, timeframe).", "Draft PIQ / essay spine in 3 bullets."],
         this_month: ["Confirm CS major policies for all match/reach schools.", "Align teacher/counselor materials with your activity thread."],
         before_submitting: ["Re-check every school's round, language score, and aid forms."],
+        activity_build: [
+          "Launch one CS-adjacent project with a public repo or demo you can link in activities.",
+          "If contests fit your timeline: USACO bronze track or regional hackathon team role—not as a guarantee, but as verifiable depth.",
+        ],
+        priority_frame: "Near term: document outcomes; this year: deepen one thread; before applying: align list with aid and major policies.",
       },
       strategy_notes: [
         "Sample only — school names are illustrative.",
@@ -116,6 +156,9 @@ export function getSampleReport(locale: Locale): ReportPayload {
         school: "示例大学 A（冲刺）",
         why_reach_for_you:
           "作为 CS 方向的现实可冲：学术基础达标，但竞争密度高，且热门专业可能存在筛选。",
+        campus_vibe: "研究导向 · 大型公立，STEM 实验室与升学通道强",
+        differentiation: "与同档其它冲刺校相比，若你能展示项目深度，这所的研究资源更直接。",
+        context_note: "国际生奖助与 CS 直录政策请以官网 CDS 核对，勿引用未注明来源的录取率。",
         key_fit_signals: ["CS 主线", "STEM 课程", "名单风格偏平衡"],
         key_risks: ["专业名额紧张", "竞争密度高"],
         verification_focus: ["是否 direct-admit", "国际生奖助政策", "申请轮次"],
@@ -126,6 +169,9 @@ export function getSampleReport(locale: Locale): ReportPayload {
         school: "示例大学 B（匹配）",
         why_match_for_you:
           "主战场之一：与中等选择性公立 STEM 项目较匹配；方差主要在文书具体度与课程强度叙事。",
+        campus_vibe: "学业与社交平衡 · 旗舰公立，社团活跃、区域招聘多",
+        differentiation: "若预算有限，这所的州内/merit 逻辑通常比同档另一所更可核对。",
+        context_note: "请用 net price calculator 按你的身份核对净花费；merit 规则每年可能调整。",
         key_fit_signals: ["地区偏好", "CS + 应用数学线索"],
         key_risks: ["文书仍偏泛"],
         verification_focus: ["校内学院/专业对应关系", "Merit 奖学金规则"],
@@ -136,6 +182,9 @@ export function getSampleReport(locale: Locale): ReportPayload {
         school: "示例大学 C（保底）",
         why_safety_for_you:
           "保底逻辑：降低全拒风险，同时仍保留 CS 或相关探索路径。",
+        campus_vibe: "教学导向 · 班级规模较小，活动更容易做出可验证成果",
+        differentiation: "与其它保底校相比，仍保留 CS/工程探索路径且筛选压力较低。",
+        context_note: "仍需核对专业是否开放及住宿费用，以官网当年信息为准。",
         key_fit_signals: ["录取带宽相对更大", "CS 路径清晰"],
         key_risks: ["仍需核对专业是否开放"],
         verification_focus: ["奖助后净花费", "住宿与校园适配"],
@@ -152,6 +201,11 @@ export function getSampleReport(locale: Locale): ReportPayload {
       this_week: ["选一条活动补上可核对结果（数字、角色、时间）。", "用 3 条要点写出 PIQ/文书主线。"],
       this_month: ["逐校核对 CS 专业政策。", "让推荐/活动材料与主线一致。"],
       before_submitting: ["逐校复核轮次、语言成绩与奖助表格。"],
+      activity_build: [
+        "启动一个可公开链接的 CS 相关小项目（仓库/演示），作为活动可验证成果。",
+        "若时间允许：USACO 青铜路线或区域 hackathon 团队角色——强调可验证深度，非录取保证。",
+      ],
+      priority_frame: "近期：补可核对成果；本学年：深化一条主线；申请年：对齐奖助与专业政策。",
     },
     strategy_notes: ["以下为脱敏样例，校名为示意。", "UC 校区录取不看 SAT/ACT（test-blind）。"],
     uc_analysis: {

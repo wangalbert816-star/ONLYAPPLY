@@ -17,6 +17,7 @@ export const wizardZhNested = {
       major: "主修意向：{v}",
       major2: "第二意向：{v}",
       size: "校园规模：{v}",
+      culture: "社区气质：{v}",
       geo: "地区偏好：{v}",
       activities: "活动与角色：{v}",
       activityDetails: "活动细节：已填写 {n} 条",
@@ -67,10 +68,6 @@ export const wizardZhNested = {
       },
     },
     s2: {
-      hsName: {
-        q: "就读高中/学校名称（可选）",
-        why: "仅用于语境化建议；我们不会编造该校历史录取数据。",
-      },
       hs: {
         q: "你所在的高中体系是？",
         why: "课程体系决定招生官如何理解你的成绩单与课程难度，也影响文书切入点。",
@@ -118,6 +115,14 @@ export const wizardZhNested = {
         fbLarge: "明白。大校更需要主动规划路径，我们会把「如何吃到资源」写进验证清单。",
         fbAny: "好。我们会把规模当作可调配因子，而不是硬筛条件。",
       },
+      culture: {
+        q: "你更偏好哪种校园社区气质？",
+        why: "这会进入选校分析：学术安静、社交/派对活跃、或两者平衡——用于解释每校气质是否贴合你，而不是硬删学校。",
+        fbAcademic: "收到。报告会优先对照安静学习、研究深度与课程强度；若某校社交/派对文化很活跃，会写明可能摩擦点。",
+        fbBalanced: "了解。同档学校会同时比较学业强度与社团/社交生活，避免只看排名。",
+        fbSocial: "明白。报告会突出社团、体育、城市与周末社交资源；若某校偏安静学术，会提示是否不合您的期待。",
+        fbAny: "好。我们仍会为每校写清气质，但不按单一偏好筛校。",
+      },
       geo: {
         q: "你对就读地区有没有偏好？（可多选）",
         why: "地区影响气候、实习生态、转学/访学机会与生活成本，也会改变名单结构。",
@@ -125,10 +130,6 @@ export const wizardZhNested = {
       },
     },
     s3: {
-      campusPref: {
-        q: "你更偏好哪种校园氛围？（可选）",
-        why: "用于匹配社区气质描述，不会单独决定录取结果。",
-      },
       activities: {
         q: "有没有 1–3 个你投入最深、也能讲清成长的活动或角色？（可简述）",
         why: "活动不是堆量，而是证明「持续投入 + 影响 + 反思」；这会直接影响文书与档位。",
@@ -230,6 +231,7 @@ export const wizardEnNested = {
       major: "Primary interest: {v}",
       major2: "Secondary interest: {v}",
       size: "Campus size: {v}",
+      culture: "Campus vibe pref: {v}",
       geo: "Region prefs: {v}",
       activities: "Activities: {v}",
       activityDetails: "Activity details: {n} item(s) entered",
@@ -280,10 +282,6 @@ export const wizardEnNested = {
       },
     },
     s2: {
-      hsName: {
-        q: "High school name (optional)",
-        why: "Context only—we will not invent admit stats for your school.",
-      },
       hs: {
         q: "What high school curriculum/system are you in?",
         why: "Systems change how admissions reads rigor and how we anchor your story credibly.",
@@ -331,6 +329,14 @@ export const wizardEnNested = {
         fbLarge: "Got it—large schools need intentional path‑finding; we’ll add verification for “how you’ll use it”.",
         fbAny: "Great—we’ll treat size as a flexible factor, not a hard filter.",
       },
+      culture: {
+        q: "What campus community vibe do you prefer?",
+        why: "This feeds the report: academic quiet, active social/party culture, or balance—used to explain fit, not to hard-filter schools.",
+        fbAcademic: "Received—we’ll weigh study culture and research depth; flag friction if a school is very party-heavy.",
+        fbBalanced: "Understood—we’ll compare peers on both academics and social life, not rankings alone.",
+        fbSocial: "Got it—we’ll highlight clubs, athletics, and weekend/social access; flag if a school feels too quiet.",
+        fbAny: "OK—we’ll still describe each school’s vibe without filtering by one preference.",
+      },
       geo: {
         q: "Any region preferences? (multi‑select)",
         why: "Regions shift climate, internships, cost, and list structure—worth stating early.",
@@ -338,10 +344,6 @@ export const wizardEnNested = {
       },
     },
     s3: {
-      campusPref: {
-        q: "Preferred campus vibe (optional)",
-        why: "Helps match community character labels—not a standalone admit factor.",
-      },
       activities: {
         q: "Share 1–3 activities or roles you invested in deeply (brief is fine).",
         why: "Depth + impact + reflection beats volume; this shapes essays and tier credibility.",
