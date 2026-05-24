@@ -24,6 +24,11 @@ import {
 } from "./undergradCopySanitize.mjs";
 import { sanitizeReportTierDifferentiation } from "./tierDifferentiationSanitize.mjs";
 import { coerceStringArray } from "./coerceStringArray.mjs";
+import {
+  buildValidationRepairMessage,
+  normalizeTopReferenceSchoolRows,
+  validateMainSchoolReport,
+} from "./topReferenceSchools.mjs";
 import { CURATED_OFFICIAL_LINK_SCHOOL_COUNT, formatMajorGuideForPrompt } from "./knowledge/majorActivitySnippets.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -576,13 +581,13 @@ const SYSTEM_PROMPT_ZH = `你是一位资深美国本科升学顾问（10年+经
 - 稳：主战场，总体匹配仍有方差。
 - 保：底线逻辑，解释如何降低全拒风险（非随便一所）。
 
-【顶级彩票校处理】
-- MIT、Stanford、Harvard、Princeton、Yale、Caltech 等极高选择性学校，不得作为常规 reach 推荐，除非用户背景中有非常明确且罕见的全国/国际级证据。
-- 若用户提到这些学校，只能在 strategy_notes 里作为「顶级学校（参考）/理论存在但极高风险」说明；不要把它们写入 reach/match/safety 的 9 校名单。
-- reach 列表应优先选择有现实可解释空间的学校，而不是用品牌名制造不可靠的希望。
-- 注意：即使有顶级学校作为参考，reach 字段仍必须恰好 3 所「现实可冲」学校；顶级参考校不能占用这 3 个名额。
+【顶级彩票校 · top_reference_schools】
+- MIT、Stanford、Harvard、Princeton、Yale、Caltech、Columbia、UPenn、Duke、Brown、Dartmouth、Cornell、UChicago 等极高选择性学校，不得出现在 reach/match/safety 主名单 9 校中。
+- 若用户背景有明确且罕见的全国/国际级证据，可在根级可选字段 top_reference_schools 填 0–2 所（不占 9 校名额）；背景偏弱（GPA/活动明显短板）时必须留空 []，仅在 strategy_notes 中说明顶校仅为理论参考。
+- top_reference_schools 每行字段：school, why_reference_for_you, campus_vibe, context_note, key_fit_signals, key_risks, verification_focus（勿用 why_reach_for_you）。
+- reach 仍须恰好 3 所「现实可冲」学校；顶级参考校不能占用这 3 个名额。
 
-【数量】reach、match、safety 每档恰好 3 所学校（共9所）。其中 reach 的 3 所必须全部是现实可冲学校。
+【数量】reach、match、safety 每档恰好 3 所学校（共9所）。其中 reach 的 3 所必须全部是现实可冲学校。top_reference_schools 另计，0–2 所。
 
 【校名单一性·硬性】
 1. 同一所学校在全报告中只能出现一次：以英文校名字符串为准，reach、match、safety 合并后共 9 条 school 字段，必须 9 个互不相同的校名。
@@ -603,7 +608,8 @@ const SYSTEM_PROMPT_ZH = `你是一位资深美国本科升学顾问（10年+经
   "safety": [同结构，字段 why_safety_for_you],
   "portfolio_risks": [{"risk_title":"","what_it_means_for_you":"","mitigation":""}],
   "improvement_plan": {"this_week":["3-5条"],"this_month":["4-7条"],"before_submitting":["4-7条"],"activity_build":["2-5条"],"priority_frame":"一句说明三段优先级"},
-  "strategy_notes": ["3-6条"]
+  "strategy_notes": ["3-6条"],
+  "top_reference_schools": [{"school":"","why_reference_for_you":"","campus_vibe":"","context_note":"","key_fit_signals":["",""],"key_risks":["",""],"verification_focus":["",""]}]
 }
 
 match 每元素字段名必须为：school, why_match_for_you, campus_vibe, differentiation, context_note, key_fit_signals, key_risks, verification_focus
@@ -654,13 +660,13 @@ const SYSTEM_PROMPT_EN = `You are a senior U.S. undergraduate admissions counsel
 - Match: main battlefield; fit is generally reasonable but variance remains.
 - Safety: true floor logic—explain how it reduces all-reject risk (not a random filler).
 
-【Ultra-selective schools】
-- MIT, Stanford, Harvard, Princeton, Yale, Caltech, and similarly ultra-selective schools must NOT appear in reach/match/safety unless the user has very rare national/international-level evidence that makes the case unusually specific.
-- If the user mentions these schools, discuss them only in strategy_notes as "top schools (reference only) / theoretical but extreme risk"; do not include them in the 9-school list.
-- Reach should mean realistic stretch, not brand-name hope.
-- Important: even if top schools are discussed as reference, the reach field must still contain exactly 3 realistic stretch schools; reference-only top schools cannot occupy those 3 slots.
+【Ultra-selective schools · top_reference_schools】
+- MIT, Stanford, Harvard, Princeton, Yale, Caltech, Columbia, UPenn, Duke, Brown, Dartmouth, Cornell, UChicago, and similarly ultra-selective schools must NOT appear in reach/match/safety.
+- If the user has rare national/international-level evidence, you may add 0–2 schools in the optional root field top_reference_schools (not counted in the 9-school list). For weak profiles (clear GPA/activity limits), leave top_reference_schools empty [] and mention top schools only in strategy_notes as reference-only.
+- Each top_reference_schools row uses: school, why_reference_for_you, campus_vibe, context_note, key_fit_signals, key_risks, verification_focus (not why_reach_for_you).
+- Reach must still contain exactly 3 realistic stretch schools; reference-only top schools cannot occupy those slots.
 
-【Counts】Exactly 3 schools in reach, 3 in match, and 3 in safety (9 total U.S. bachelor's institutions). All 3 reach schools must be realistic stretch choices.
+【Counts】Exactly 3 schools in reach, 3 in match, and 3 in safety (9 total U.S. bachelor's institutions). All 3 reach schools must be realistic stretch choices. top_reference_schools is separate: 0–2 items.
 
 【Unique school list — hard rules】
 1. Each school appears at most once across the whole report: using the English school string, the union of reach+match+safety must be 9 distinct school names.
@@ -681,7 +687,8 @@ const SYSTEM_PROMPT_EN = `You are a senior U.S. undergraduate admissions counsel
   "safety": [same shape, each object uses why_safety_for_you],
   "portfolio_risks": [{"risk_title":"","what_it_means_for_you":"","mitigation":""}],
   "improvement_plan": {"this_week":["3-5 items"],"this_month":["4-7 items"],"before_submitting":["4-7 items"],"activity_build":["2-5 items"],"priority_frame":"one sentence on bucket priority"},
-  "strategy_notes": ["3-6 items"]
+  "strategy_notes": ["3-6 items"],
+  "top_reference_schools": [{"school":"","why_reference_for_you":"","campus_vibe":"","context_note":"","key_fit_signals":["",""],"key_risks":["",""],"verification_focus":["",""]}]
 }
 
 Field names for match rows must be: school, why_match_for_you, campus_vibe, differentiation, context_note, key_fit_signals, key_risks, verification_focus
@@ -1306,108 +1313,49 @@ ${planHorizonLine}
 }
 
 /**
- * 服务端硬校验：9 校互不重复、每档恰好 3 所（不自动改写模型输出，不通过则拒绝返回）。
- * @param {unknown} parsed
- * @returns {{ ok: true } | { ok: false, reason: string }}
+ * 服务端硬校验：主名单 9 校 + top_reference_schools（见 topReferenceSchools.mjs）。
+ * @deprecated 保留别名；请用 validateMainSchoolReport
  */
 function validateSchoolUniqueness(parsed) {
-  if (!parsed || typeof parsed !== "object") {
-    return { ok: false, reason: "根对象无效" };
-  }
-  const o = /** @type {Record<string, unknown>} */ (parsed);
-  const tiers = ["reach", "match", "safety"];
-  const seen = new Set();
-  for (const t of tiers) {
-    const rows = o[t];
-    if (!Array.isArray(rows) || rows.length !== 3) {
-      return {
-        ok: false,
-        reason: `${t} 须恰好 3 所学校，实际为 ${Array.isArray(rows) ? rows.length : "非数组"}`,
-      };
+  return validateMainSchoolReport(parsed, {});
+}
+
+async function generateReportWithConfig(cfg, body) {
+  const locale = resolveReportLocale(body);
+  const planHorizon = getIntakeHorizon(String(body?.intakeTerm || ""));
+  const includeUc = wantsUcFromBody(body);
+  const userContent = buildUserPayload(body, includeUc);
+  const maxTokens = reportCompletionMaxTokens();
+  const baseMessages = [
+    { role: "system", content: systemPromptForLocale(locale, includeUc, planHorizon) },
+    { role: "user", content: userContent },
+  ];
+
+  let messages = baseMessages;
+  let totalMs = 0;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const { parsed, llmMs } = await generateLlmJsonWithConfig(cfg, {
+      logTag: "api/report",
+      maxTokens,
+      messages,
+    });
+    totalMs += llmMs;
+    const validation = validateMainSchoolReport(parsed, body);
+    if (validation.ok) return { parsed, llmMs: totalMs };
+    if (attempt >= 1 || validation.repairable === false) {
+      const err = new Error(validation.reason);
+      err.code = "school_list_invalid";
+      throw err;
     }
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      if (!row || typeof row !== "object") {
-        return { ok: false, reason: `${t}[${i}] 条目无效` };
-      }
-      const name = String(/** @type {Record<string, unknown>} */ (row).school || "").trim();
-      if (!name) {
-        return { ok: false, reason: `${t} 中存在空 school` };
-      }
-      const key = name.toLowerCase();
-      if (seen.has(key)) {
-        return { ok: false, reason: `重复校名：${name}` };
-      }
-      seen.add(key);
-    }
+    console.warn(`[api/report] validation_retry attempt=${attempt + 1}`, validation.reason);
+    messages = [
+      ...baseMessages,
+      { role: "user", content: buildValidationRepairMessage(validation.reason, locale) },
+    ];
   }
-  return { ok: true };
-}
-
-const ULTRA_SELECTIVE_SCHOOLS = [
-  "mit",
-  "massachusetts institute of technology",
-  "stanford",
-  "stanford university",
-  "harvard",
-  "harvard university",
-  "princeton",
-  "princeton university",
-  "yale",
-  "yale university",
-  "caltech",
-  "california institute of technology",
-  "columbia",
-  "columbia university",
-  "university of pennsylvania",
-  "upenn",
-  "penn",
-  "duke",
-  "duke university",
-  "brown",
-  "brown university",
-  "dartmouth",
-  "dartmouth college",
-  "cornell",
-  "cornell university",
-  "university of chicago",
-  "uchicago",
-];
-
-function normalizeSchoolNameForRisk(name) {
-  return String(name || "")
-    .toLowerCase()
-    .replace(/&/g, "and")
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function isUltraSelectiveSchoolName(name) {
-  const normalized = normalizeSchoolNameForRisk(name);
-  if (!normalized) return false;
-  return ULTRA_SELECTIVE_SCHOOLS.some((pattern) => {
-    const p = normalizeSchoolNameForRisk(pattern);
-    return normalized === p || normalized.includes(p);
-  });
-}
-
-function validateRealisticReach(parsed) {
-  const reach = parsed && typeof parsed === "object" ? parsed.reach : null;
-  if (!Array.isArray(reach)) return { ok: false, reason: "reach 不是数组" };
-  const ultra = reach
-    .map((row) => String(row?.school || "").trim())
-    .filter((name) => isUltraSelectiveSchoolName(name));
-  if (ultra.length > 0) {
-    return {
-      ok: false,
-      reason: `reach 包含顶级参考校，不能占用现实可冲名额：${ultra.join(", ")}`,
-    };
-  }
-  if (reach.length !== 3) {
-    return { ok: false, reason: `reach 必须恰好 3 所现实可冲学校，实际为 ${reach.length}` };
-  }
-  return { ok: true };
+  const err = new Error("校名单校验失败");
+  err.code = "school_list_invalid";
+  throw err;
 }
 
 /** 从模型原文提取 JSON（兼容 Markdown 围栏与前后缀文字） */
@@ -1591,22 +1539,6 @@ function reportCompletionMaxTokens() {
   return COMPLETION_MAX_TOKENS;
 }
 
-async function generateReportWithConfig(cfg, body) {
-  const locale = resolveReportLocale(body);
-  const planHorizon = getIntakeHorizon(String(body?.intakeTerm || ""));
-  const includeUc = wantsUcFromBody(body);
-  const userContent = buildUserPayload(body, includeUc);
-  const maxTokens = reportCompletionMaxTokens();
-  return generateLlmJsonWithConfig(cfg, {
-    logTag: "api/report",
-    maxTokens,
-    messages: [
-      { role: "system", content: systemPromptForLocale(locale, includeUc, planHorizon) },
-      { role: "user", content: userContent },
-    ],
-  });
-}
-
 async function generateEssayAnalysisWithConfig(cfg, promptInput) {
   const { locale, draft, formState, reportPayload, strategy } = promptInput;
   const maxTokens = COMPLETION_MAX_TOKENS > 0 ? Math.min(COMPLETION_MAX_TOKENS, 1800) : 0;
@@ -1678,6 +1610,7 @@ function finalizeReportPayload(parsed, body) {
   } else {
     delete parsed.uc_analysis;
   }
+  parsed.top_reference_schools = normalizeTopReferenceSchoolRows(parsed.top_reference_schools, locale);
   return sanitizeReportTierDifferentiation(parsed, locale);
 }
 
@@ -1698,22 +1631,6 @@ app.post("/api/report", async (req, res) => {
       const { parsed, llmMs } = await generateReportWithConfig(cfg, body);
       console.log(`[api/report] llm_ms=${llmMs} model=${model} provider=${provider}`);
 
-      const uniq = validateSchoolUniqueness(parsed);
-      if (!uniq.ok) {
-        console.warn("[api/report] school_list_invalid:", uniq.reason);
-        return res.status(502).json({
-          error: `校名单未满足去重规则，请重新点击生成。（${uniq.reason}）`,
-        });
-      }
-
-      const realisticReach = validateRealisticReach(parsed);
-      if (!realisticReach.ok) {
-        console.warn("[api/report] realistic_reach_invalid:", realisticReach.reason);
-        return res.status(502).json({
-          error: `冲刺名单未满足「3 所现实可冲」规则，请重新点击生成。（${realisticReach.reason}）`,
-        });
-      }
-
       return res
         .setHeader("X-LLM-Duration-Ms", String(llmMs))
         .setHeader("X-LLM-Region", region)
@@ -1728,6 +1645,11 @@ app.post("/api/report", async (req, res) => {
         continue;
       }
       console.error("[api/report] generation_error", msg);
+      if (code === "school_list_invalid") {
+        return res.status(502).json({
+          error: `校名单未通过校验，请重新点击生成。（${msg}）`,
+        });
+      }
       let hint = "";
       if (/401|Incorrect API key/i.test(msg)) {
         hint =

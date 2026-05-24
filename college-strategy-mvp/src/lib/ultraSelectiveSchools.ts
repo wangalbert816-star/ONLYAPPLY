@@ -39,12 +39,18 @@ function normalizeSchoolName(name: string): string {
     .trim();
 }
 
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export function isUltraSelectiveSchool(name: string): boolean {
   const normalized = normalizeSchoolName(name);
   if (!normalized) return false;
   return ULTRA_SELECTIVE_PATTERNS.some((pattern) => {
     const p = normalizeSchoolName(pattern);
-    return normalized === p || normalized.includes(p);
+    if (normalized === p) return true;
+    if (p.includes(" ")) return normalized.includes(p);
+    return new RegExp(`\\b${escapeRegExp(p)}\\b`).test(normalized);
   });
 }
 

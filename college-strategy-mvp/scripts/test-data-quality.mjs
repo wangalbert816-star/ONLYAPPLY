@@ -22,6 +22,13 @@ import {
   sanitizeCrossTierDifferentiation,
   sanitizeReportTierDifferentiation,
 } from "../server/tierDifferentiationSanitize.mjs";
+import {
+  allowsTopReferenceSchools,
+  buildValidationRepairMessage,
+  isUltraSelectiveSchoolName,
+  normalizeTopReferenceSchoolRows,
+  validateMainSchoolReport,
+} from "../server/topReferenceSchools.mjs";
 
 const results = [];
 
@@ -205,6 +212,102 @@ check("cross-tier differentiation fixes UNC reach vs UT Austin match", () => {
   const uncDiff = out.reach[0].differentiation;
   if (/与同档.*UT Austin/i.test(uncDiff)) throw new Error(`still same-tier wording: ${uncDiff}`);
   if (!/匹配档.*UT Austin/i.test(uncDiff)) throw new Error(`expected match tier ref: ${uncDiff}`);
+});
+
+function baseNineSchoolReport(overrides = {}) {
+  return {
+    reach: [
+      { school: "University of North Carolina at Chapel Hill" },
+      { school: "University of Virginia" },
+      { school: "University of Michigan" },
+    ],
+    match: [
+      { school: "University of Texas at Austin" },
+      { school: "University of Wisconsin-Madison" },
+      { school: "Purdue University" },
+    ],
+    safety: [
+      { school: "Pennsylvania State University" },
+      { school: "Ohio State University" },
+      { school: "University of Minnesota" },
+    ],
+    ...overrides,
+  };
+}
+
+const strongBody = {
+  gpa: "UW 3.85 / W 4.2",
+  activities: "National math olympiad training camp; ISEF finalist project on ML; school robotics captain 3 years.",
+};
+
+const weakBody = {
+  gpa: "UW 3.1",
+  activities: "暂无活动",
+};
+
+check("plan B: ultra in reach fails validation (repairable)", () => {
+  const report = baseNineSchoolReport({
+    reach: [
+      { school: "Stanford University" },
+      { school: "University of Virginia" },
+      { school: "University of Michigan" },
+    ],
+  });
+  const v = validateMainSchoolReport(report, strongBody);
+  if (v.ok) throw new Error("expected failure");
+  if (!v.repairable) throw new Error("expected repairable");
+  if (!/Stanford/i.test(v.reason)) throw new Error(v.reason);
+});
+
+check("plan B: valid main nine + top_reference for strong profile", () => {
+  const report = baseNineSchoolReport({
+    top_reference_schools: [{ school: "Stanford University", why_reference_for_you: "ISEF 背景可解释" }],
+  });
+  const v = validateMainSchoolReport(report, strongBody);
+  if (!v.ok) throw new Error(v.reason);
+});
+
+check("plan B: weak profile rejects top_reference_schools", () => {
+  const report = baseNineSchoolReport({
+    top_reference_schools: [{ school: "MIT" }],
+  });
+  const v = validateMainSchoolReport(report, weakBody);
+  if (v.ok) throw new Error("expected weak profile rejection");
+  if (!/不宜/.test(v.reason)) throw new Error(v.reason);
+});
+
+check("plan B: duplicate across main and top_reference fails", () => {
+  const report = baseNineSchoolReport({
+    top_reference_schools: [{ school: "University of North Carolina at Chapel Hill" }],
+  });
+  const v = validateMainSchoolReport(report, strongBody);
+  if (v.ok) throw new Error("expected overlap failure");
+});
+
+check("plan B: normalizeTopReferenceSchoolRows coerces string bullets", () => {
+  const rows = normalizeTopReferenceSchoolRows(
+    [{ school: "Harvard University", key_fit_signals: "national award", why_reach_for_you: "legacy field" }],
+    "zh",
+  );
+  if (rows.length !== 1) throw new Error("expected 1 row");
+  if (!Array.isArray(rows[0].key_fit_signals)) throw new Error("expected array");
+  if (rows[0].why_reference_for_you !== "legacy field") throw new Error(rows[0].why_reference_for_you);
+});
+
+check("plan B: repair message mentions top_reference_schools", () => {
+  const msg = buildValidationRepairMessage("test", "zh");
+  if (!/top_reference_schools/.test(msg)) throw new Error(msg);
+});
+
+check("plan B: isUltraSelectiveSchoolName recognizes MIT", () => {
+  if (!isUltraSelectiveSchoolName("Massachusetts Institute of Technology")) throw new Error("MIT not ultra");
+  if (isUltraSelectiveSchoolName("Purdue University")) throw new Error("Purdue should not be ultra");
+  if (isUltraSelectiveSchoolName("Pennsylvania State University")) throw new Error("Penn State should not be ultra");
+});
+
+check("plan B: allowsTopReferenceSchools strong vs weak", () => {
+  if (!allowsTopReferenceSchools(strongBody)) throw new Error("strong should allow");
+  if (allowsTopReferenceSchools(weakBody)) throw new Error("weak should deny");
 });
 
 let failed = 0;

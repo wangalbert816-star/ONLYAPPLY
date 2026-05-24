@@ -84,6 +84,17 @@ export interface SchoolRow {
   verification_focus: string[];
 }
 
+/** 顶级彩票校参考位（不占主名单 9 校） */
+export interface TopReferenceSchoolRow {
+  school: string;
+  why_reference_for_you?: string;
+  campus_vibe?: string;
+  context_note?: string;
+  key_fit_signals?: string[];
+  key_risks?: string[];
+  verification_focus?: string[];
+}
+
 export interface PortfolioRisk {
   risk_title: string;
   what_it_means_for_you: string;
@@ -135,6 +146,8 @@ export interface ReportPayload {
     priority_frame?: string;
   };
   strategy_notes: string[];
+  /** 顶级彩票校参考（0–2 所，不占 reach/match/safety 名额） */
+  top_reference_schools?: TopReferenceSchoolRow[];
   /** 当用户有 UC 申请意向时由模型生成；缺失时前端可兜底 */
   uc_analysis?: UcAnalysis | null;
 }

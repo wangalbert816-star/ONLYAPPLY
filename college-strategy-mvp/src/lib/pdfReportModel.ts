@@ -7,7 +7,7 @@ import { buildFiveDimensionProfile, type ProfileDimension, type ProfileDimension
 import { getEffectiveIntake } from "./intakeTerm";
 import { getImprovementPlanLabels, getIntakeHorizon } from "./intakeHorizon";
 import { sanitizeReportProse } from "./reportProseSanitize";
-import { splitTopReferenceSchools } from "./ultraSelectiveSchools";
+import { resolveMainListRows, resolveTopReferenceSchools } from "./topReferenceSchools";
 import { resolveUcAnalysis } from "./ucApplication";
 import { getOfficialLinksForSchool, officialLinkLabel } from "./universityOfficialLinks";
 
@@ -241,7 +241,7 @@ function rowToPdf(row: SchoolRow, tier: SchoolTier, form: FormState, locale: Loc
 }
 
 function buildSchoolTiers(report: ReportPayload, form: FormState, locale: Locale, unlocked: boolean): PdfSchoolTier[] {
-  const split = splitTopReferenceSchools(report, unlocked);
+  const main = resolveMainListRows(report);
   const tierMeta: { tier: SchoolTier; title: string }[] =
     locale === "en"
       ? [
@@ -257,7 +257,7 @@ function buildSchoolTiers(report: ReportPayload, form: FormState, locale: Locale
 
   return tierMeta
     .map(({ tier, title }) => {
-      const rows = split.regular[tier] ?? [];
+      const rows = main[tier] ?? [];
       const visible = unlocked ? rows : rows.slice(0, 1);
       return {
         tier,
@@ -274,8 +274,23 @@ function buildTopReferenceSchools(
   locale: Locale,
   unlocked: boolean,
 ): PdfSchoolRow[] {
-  const split = splitTopReferenceSchools(report, unlocked);
-  return split.topReference.map(({ row, tier }) => rowToPdf(row, tier, form, locale, unlocked));
+  return resolveTopReferenceSchools(report).map((row) =>
+    rowToPdf(
+      {
+        school: row.school,
+        why_reach_for_you: row.why_reference_for_you || "",
+        campus_vibe: row.campus_vibe,
+        context_note: row.context_note,
+        key_fit_signals: row.key_fit_signals ?? [],
+        key_risks: row.key_risks ?? [],
+        verification_focus: row.verification_focus ?? [],
+      },
+      "reach",
+      form,
+      locale,
+      unlocked,
+    ),
+  );
 }
 
 function buildUcPdfSection(

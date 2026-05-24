@@ -26,7 +26,7 @@ import { ReportPdfDocument } from "./components/pdf/ReportPdfDocument";
 import { LegalLinks } from "./components/LegalLinks";
 import { getEffectiveIntake } from "./lib/intakeTerm";
 import { getImprovementPlanLabels, getIntakeHorizon } from "./lib/intakeHorizon";
-import { splitTopReferenceSchools } from "./lib/ultraSelectiveSchools";
+import { resolveMainListRows, resolveTopReferenceSchools } from "./lib/topReferenceSchools";
 import { resolveUcAnalysis } from "./lib/ucApplication";
 import { UcStrategySection } from "./components/UcStrategySection";
 
@@ -311,8 +311,9 @@ export function ReportView({
   const notes = safeReport.strategy_notes || [];
 
   const lockedSchoolRows = unlocked ? 999 : 1;
-  const schoolSplit = useMemo(() => splitTopReferenceSchools(safeReport, unlocked), [safeReport, unlocked]);
-  const realisticReachUnderfilled = schoolSplit.topReference.length > 0 && schoolSplit.regular.reach.length < 3;
+  const topReferenceRows = useMemo(() => resolveTopReferenceSchools(safeReport), [safeReport]);
+  const mainListRows = useMemo(() => resolveMainListRows(safeReport), [safeReport]);
+  const realisticReachUnderfilled = topReferenceRows.length > 0 && mainListRows.reach.length < 3;
   const lockedRiskCount = unlocked ? risks.length : Math.min(1, risks.length);
   const lockedWeekItems = unlocked ? tw.length : Math.min(1, tw.length);
   const visibleExecutiveSummary = unlocked
@@ -551,16 +552,20 @@ export function ReportView({
         </ReportPathStep>
 
         <ReportPathStep step={4} id="report-step-schools" title={t("report.decision.step4Title")} lead={t("report.decision.step4Lead")}>
-          {schoolSplit.topReference.length > 0 && (
+          {topReferenceRows.length > 0 && (
             <section className="card report-block report-path-step__panel top-reference-card">
               <p className="top-reference-card__eyebrow">{t("report.topReferenceEyebrow")}</p>
               <h2>{t("report.topReferenceTitle")}</h2>
               <p className="top-reference-card__lead">{t("report.topReferenceLead")}</p>
               <ul className="top-reference-list">
-                {schoolSplit.topReference.map(({ row }, i) => (
+                {topReferenceRows.map((row, i) => (
                   <li key={`${row.school}-${i}`}>
                     <strong>{row.school}</strong>
-                    <span>{t("report.topReferenceRisk")}</span>
+                    {row.why_reference_for_you ? (
+                      <p className="top-reference-list__why">{row.why_reference_for_you}</p>
+                    ) : (
+                      <span>{t("report.topReferenceRisk")}</span>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -581,7 +586,7 @@ export function ReportView({
             <SchoolTierPanel
               key={tier}
               tier={tier}
-              rows={(schoolSplit.regular[tier] as SchoolRow[]) ?? []}
+              rows={(mainListRows[tier] as SchoolRow[]) ?? []}
               unlocked={unlocked}
               highlightSchoolKeys={highlightSchoolKeys}
               lockedSchoolRows={lockedSchoolRows}
