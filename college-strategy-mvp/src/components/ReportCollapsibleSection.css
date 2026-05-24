@@ -2,6 +2,7 @@
   border: 1px solid var(--border, rgba(15, 23, 42, 0.1));
   border-radius: 12px;
   background: var(--card-bg, #fff);
+  color: #0f172a;
   margin-bottom: 0.75rem;
 }
 
@@ -16,7 +17,7 @@
   text-align: left;
   cursor: pointer;
   font: inherit;
-  color: inherit;
+  color: #0f172a;
 }
 
 .report-collapse__trigger:hover {
@@ -32,18 +33,20 @@
 .report-collapse__title {
   font-weight: 650;
   font-size: 1.05rem;
+  color: #0f172a;
 }
 
 .report-collapse__lead {
   margin: 0 1rem 0.75rem;
   padding-left: 1.75rem;
-  color: var(--muted, #64748b);
+  color: #64748b;
   font-size: 0.92rem;
   line-height: 1.5;
 }
 
 .report-collapse__body {
   padding: 0 1rem 1rem;
+  color: #334155;
 }
 
 .report-collapse__body[hidden] {

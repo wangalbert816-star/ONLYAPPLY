@@ -3,6 +3,7 @@
   border-radius: 12px;
   padding: 1rem 1.1rem;
   background: #fff;
+  color: #0f172a;
   margin-bottom: 0.75rem;
 }
 
@@ -23,7 +24,7 @@
   text-align: left;
   cursor: pointer;
   font: inherit;
-  color: inherit;
+  color: #0f172a;
 }
 
 .school-card__trigger:hover .school-card__name {
@@ -43,6 +44,7 @@
   font-size: 1.05rem;
   font-weight: 650;
   line-height: 1.35;
+  color: #0f172a;
 }
 
 .school-card__vibe {
@@ -76,6 +78,11 @@
   padding-left: 1.15rem;
   font-size: 0.94rem;
   line-height: 1.55;
+  color: #334155;
+}
+
+.school-card__list li {
+  color: #334155;
 }
 
 .school-card__list li + li {
@@ -102,6 +109,7 @@
 .school-card__link-list a {
   font-size: 0.9rem;
   font-weight: 500;
+  color: #1d4ed8;
 }
 
 .school-card__diff-text {
@@ -198,4 +206,73 @@
   font-size: 0.88rem;
   line-height: 1.5;
   color: #334155;
+}
+
+@media (prefers-color-scheme: dark) {
+  .school-card {
+    background: #ffffff;
+    color: #0f172a;
+    border-color: rgba(148, 163, 184, 0.45);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+  }
+
+  .school-card .school-card__name,
+  .school-card .school-card__trigger {
+    color: #0f172a;
+  }
+
+  .school-card .school-card__label,
+  .school-card .school-card__chevron,
+  .school-card .school-card__lock-hint {
+    color: #64748b;
+  }
+
+  .school-card p,
+  .school-card li,
+  .school-card .school-card__diff-text,
+  .school-card .school-card__culture-fit,
+  .school-card .school-card__verify-item > span {
+    color: #334155;
+  }
+
+  .school-card .school-card__label {
+    color: #64748b;
+  }
+
+  .school-card .school-card__trigger:hover .school-card__name {
+    color: #2563eb;
+  }
+
+  .school-card .school-card__list--risks li {
+    color: #9a3412;
+  }
+
+  .school-card .school-card__link-list a,
+  .school-card .school-card__verify-link {
+    color: #1d4ed8;
+  }
+
+  .school-card .school-card__vibe {
+    background: #f1f5f9;
+    color: #334155;
+  }
+
+  .school-card .school-card__verify-item {
+    border-bottom-color: rgba(15, 23, 42, 0.08);
+  }
+
+  .report-major-guide {
+    background: #f8fafc;
+    border-color: rgba(15, 23, 42, 0.1);
+    color: #334155;
+  }
+
+  .report-major-guide__title {
+    color: #1e293b;
+  }
+
+  .report-major-guide__list li,
+  .report-major-guide__note {
+    color: #475569;
+  }
 }

@@ -1637,6 +1637,12 @@
     color: #cbd5e1;
   }
 
+  .report-view .school-card--locked-row {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    color: #475569;
+  }
+
   .block-locked {
     background: rgba(251, 191, 36, 0.1);
     border-color: rgba(251, 191, 36, 0.36);
@@ -1701,5 +1707,63 @@
   .profile-five-preview-bar span {
     background: linear-gradient(90deg, #93c5fd 0%, #3b82f6 72%, #2563eb 100%);
     box-shadow: 0 0 12px rgba(59, 130, 246, 0.38);
+  }
+}
+
+/* Light-surface islands: keep readable text when global report dark mode sets muted fg on p/li */
+@media (prefers-color-scheme: dark) {
+  .report-view .report-collapse__body p,
+  .report-view .report-collapse__body li,
+  .report-view .report-collapse ul li,
+  .report-view .report-improve-panel ul li,
+  .report-view .report-improve-activity-list li {
+    color: #334155;
+  }
+
+  .report-view .report-improve-panel .subh,
+  .report-view .report-collapse__body .subh,
+  .report-view .report-major-guide__title {
+    color: #1e293b;
+  }
+
+  .report-view .report-improve-lead,
+  .report-view .report-major-guide__note {
+    color: #64748b;
+  }
+
+  .report-view .report-improve-priority {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e3a8a;
+  }
+
+  .report-view .report-major-guide {
+    background: #f8fafc;
+    border-color: rgba(15, 23, 42, 0.1);
+  }
+
+  .report-view .report-major-guide__list li {
+    color: #334155;
+  }
+
+  .report-view .report-collapse .block-locked {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #475569;
+  }
+
+  .report-view .report-collapse .lock-inline {
+    color: #b45309;
+  }
+
+  .report-view .report-data-policy {
+    background: rgba(37, 99, 235, 0.08);
+    border-color: rgba(37, 99, 235, 0.2);
+    color: #334155;
+  }
+
+  .report-view .report-collapse strong,
+  .report-view .school-card strong {
+    color: #1e293b;
   }
 }
