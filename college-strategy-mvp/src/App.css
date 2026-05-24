@@ -640,6 +640,22 @@
   padding: 0.52rem 0.78rem;
 }
 
+.activity-export {
+  margin-top: 0.65rem;
+}
+
+.activity-export .btn {
+  font-size: 0.78rem;
+}
+
+.activity-export__hint {
+  margin: 0.45rem 0 0;
+  color: var(--color-muted, #737373);
+  font-size: 0.74rem;
+  line-height: 1.5;
+  max-width: 42rem;
+}
+
 .activity-card {
   border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 15px;

@@ -10,9 +10,9 @@ export function isIntakePreset(term: string): boolean {
 }
 
 /** 提交报告与摘要展示用：预设取 intakeTerm，「其他」取自定义说明 */
-export function getEffectiveIntake(form: FormState): string {
-  if (form.intakeTerm === INTAKE_OTHER_VALUE) return form.intakeOtherDetail.trim();
-  return form.intakeTerm.trim();
+export function getEffectiveIntake(form: Pick<FormState, "intakeTerm" | "intakeOtherDetail">): string {
+  if (form.intakeTerm === INTAKE_OTHER_VALUE) return (form.intakeOtherDetail ?? "").trim();
+  return (form.intakeTerm ?? "").trim();
 }
 
 export function isIntakeComplete(form: FormState): boolean {

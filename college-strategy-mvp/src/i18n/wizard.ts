@@ -164,6 +164,10 @@ export const wizardZhNested = {
         majorUnsure: "不确定",
         proof: "最能证明你什么",
         proofPh: "如：长期性、领导力、技术深度、同理心",
+        exportCsv: "导出活动 CSV",
+        exportHint:
+          "下载对照表，便于复制到 Common App（通常最多 10 条）或 UC（活动与奖项合计最多 20 条）。非官方导入格式。",
+        exportDisabled: "请先添加至少 1 条活动",
         kindOpt: {
           activity: "活动",
           competition: "竞赛",
@@ -378,6 +382,10 @@ export const wizardEnNested = {
         majorUnsure: "Unsure",
         proof: "What this proves about you",
         proofPh: "e.g. persistence, leadership, technical depth, empathy",
+        exportCsv: "Export activities CSV",
+        exportHint:
+          "Download a reference sheet to copy into Common App (usually up to 10) or UC (up to 20 activities and honors combined). Not an official import.",
+        exportDisabled: "Add at least one activity first",
         kindOpt: {
           activity: "Activity",
           competition: "Competition",

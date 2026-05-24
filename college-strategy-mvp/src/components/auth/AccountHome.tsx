@@ -23,6 +23,7 @@ import { buildBiggestGapBlock, buildOverallVerdict } from "../../lib/decisionRep
 import { buildFiveDimensionProfile, type ProfileDimensionKey } from "../../lib/fiveDimensionProfile";
 import type { ActivityItem, FormState, GeoPref, ReportPayload, SupplementaryNote } from "../../types";
 import { BrandLogo } from "../BrandLogo";
+import { ExportActivitiesCsvButton } from "../ExportActivitiesCsvButton";
 import "./AccountHome.css";
 
 type Props = {
@@ -1347,6 +1348,11 @@ export function AccountHome({
               <button type="button" className="btn btn-secondary" onClick={addActivityDraft}>
                 {t("wizard.s3.activities.add")}
               </button>
+              <ExportActivitiesCsvButton
+                activities={activityDraft}
+                form={currentApp?.form_state}
+                showHint={false}
+              />
               <button type="button" className="btn btn-secondary" onClick={() => setActivityEditorOpen((v) => !v)}>
                 {activityEditorOpen ? t("auth.accountActivityCollapse") : t("auth.accountActivityEdit")}
               </button>

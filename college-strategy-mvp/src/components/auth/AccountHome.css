@@ -457,6 +457,10 @@
   gap: 0.55rem;
 }
 
+.account-activity-card__actions .activity-export {
+  margin-top: 0;
+}
+
 .account-activity-item__head {
   justify-content: space-between;
   margin-bottom: 0.7rem;

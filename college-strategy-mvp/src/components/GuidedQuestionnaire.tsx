@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { ActivityItem, CampusCulturePref, FormState, GeoPref } from "../types";
 import type { Translate } from "../i18n/LanguageContext";
+import { ExportActivitiesCsvButton } from "./ExportActivitiesCsvButton";
 import {
   getEffectiveIntake,
   INTAKE_OTHER_VALUE,
@@ -1039,6 +1040,7 @@ export function GuidedStep3({
             <button type="button" className="activity-builder__add" onClick={addActivity}>
               {t("wizard.s3.activities.add")}
             </button>
+            <ExportActivitiesCsvButton activities={structuredActivities} form={form} />
           </div>
         </details>
       </>,
