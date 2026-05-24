@@ -1638,9 +1638,9 @@
   }
 
   .report-view .school-card--locked-row {
-    background: #f1f5f9;
-    border-color: #94a3b8;
-    color: #475569;
+    background: #1b2740;
+    border-color: #475569;
+    color: #94a3b8;
   }
 
   .block-locked {
@@ -1710,60 +1710,45 @@
   }
 }
 
-/* Light-surface islands: keep readable text when global report dark mode sets muted fg on p/li */
+/* Report nested content — native dark surfaces (not white cards) */
 @media (prefers-color-scheme: dark) {
   .report-view .report-collapse__body p,
   .report-view .report-collapse__body li,
   .report-view .report-collapse ul li,
   .report-view .report-improve-panel ul li,
   .report-view .report-improve-activity-list li {
-    color: #334155;
+    color: #cbd5e1;
   }
 
   .report-view .report-improve-panel .subh,
   .report-view .report-collapse__body .subh,
   .report-view .report-major-guide__title {
-    color: #1e293b;
+    color: #f1f5f9;
   }
 
   .report-view .report-improve-lead,
   .report-view .report-major-guide__note {
-    color: #64748b;
-  }
-
-  .report-view .report-improve-priority {
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
-    color: #1e3a8a;
-  }
-
-  .report-view .report-major-guide {
-    background: #f8fafc;
-    border-color: rgba(15, 23, 42, 0.1);
-  }
-
-  .report-view .report-major-guide__list li {
-    color: #334155;
+    color: #94a3b8;
   }
 
   .report-view .report-collapse .block-locked {
-    background: #f8fafc;
-    border-color: #cbd5e1;
-    color: #475569;
+    background: rgba(251, 191, 36, 0.1);
+    border-color: rgba(251, 191, 36, 0.36);
+    color: #fde68a;
   }
 
   .report-view .report-collapse .lock-inline {
-    color: #b45309;
+    color: #fbbf24;
   }
 
   .report-view .report-data-policy {
-    background: rgba(37, 99, 235, 0.08);
-    border-color: rgba(37, 99, 235, 0.2);
-    color: #334155;
+    background: rgba(96, 165, 250, 0.1);
+    border-color: rgba(96, 165, 250, 0.28);
+    color: #cbd5e1;
   }
 
   .report-view .report-collapse strong,
   .report-view .school-card strong {
-    color: #1e293b;
+    color: #f1f5f9;
   }
 }

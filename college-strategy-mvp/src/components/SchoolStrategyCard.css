@@ -210,69 +210,86 @@
 
 @media (prefers-color-scheme: dark) {
   .school-card {
-    background: #ffffff;
-    color: #0f172a;
-    border-color: rgba(148, 163, 184, 0.45);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+    background: #151e2f;
+    color: #e5e7eb;
+    border-color: #334155;
+    box-shadow: none;
   }
 
   .school-card .school-card__name,
   .school-card .school-card__trigger {
-    color: #0f172a;
+    color: #f1f5f9;
   }
 
   .school-card .school-card__label,
   .school-card .school-card__chevron,
   .school-card .school-card__lock-hint {
-    color: #64748b;
+    color: #94a3b8;
   }
 
   .school-card p,
   .school-card li,
   .school-card .school-card__diff-text,
   .school-card .school-card__culture-fit,
-  .school-card .school-card__verify-item > span {
-    color: #334155;
+  .school-card .school-card__verify-item > span,
+  .school-card .school-card__list--context li {
+    color: #cbd5e1;
   }
 
   .school-card .school-card__label {
-    color: #64748b;
+    color: #94a3b8;
   }
 
   .school-card .school-card__trigger:hover .school-card__name {
-    color: #2563eb;
+    color: #93c5fd;
   }
 
   .school-card .school-card__list--risks li {
-    color: #9a3412;
+    color: #fdba74;
   }
 
   .school-card .school-card__link-list a,
   .school-card .school-card__verify-link {
-    color: #1d4ed8;
+    color: #93c5fd;
   }
 
   .school-card .school-card__vibe {
-    background: #f1f5f9;
-    color: #334155;
+    background: rgba(96, 165, 250, 0.14);
+    border: 1px solid rgba(96, 165, 250, 0.28);
+    color: #bfdbfe;
+  }
+
+  .school-card .school-card__body {
+    border-top-color: #334155;
   }
 
   .school-card .school-card__verify-item {
-    border-bottom-color: rgba(15, 23, 42, 0.08);
+    border-bottom-color: #273449;
+  }
+
+  .school-card--hot {
+    border-color: rgba(251, 146, 60, 0.45);
+    box-shadow: 0 0 0 1px rgba(251, 146, 60, 0.18);
+  }
+
+  .report-data-policy {
+    background: rgba(96, 165, 250, 0.1);
+    border-color: rgba(96, 165, 250, 0.28);
+    color: #cbd5e1;
   }
 
   .report-major-guide {
-    background: #f8fafc;
-    border-color: rgba(15, 23, 42, 0.1);
-    color: #334155;
+    background: #1b2740;
+    border-color: #334155;
+    color: #cbd5e1;
   }
 
   .report-major-guide__title {
-    color: #1e293b;
+    color: #f1f5f9;
   }
 
   .report-major-guide__list li,
   .report-major-guide__note {
-    color: #475569;
+    color: #94a3b8;
   }
 }

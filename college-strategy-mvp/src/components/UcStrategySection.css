@@ -94,50 +94,30 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  .report-view .report-collapse {
-    background: #ffffff;
-    color: #334155;
-    border-color: rgba(148, 163, 184, 0.42);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.24);
+  .uc-strategy__eyebrow {
+    color: #94a3b8;
   }
 
-  .report-view .report-collapse__trigger,
-  .report-view .report-collapse__title {
-    color: #0f172a;
+  .uc-strategy__app-note {
+    color: #cbd5e1;
   }
 
-  .report-view .report-collapse__chevron,
-  .report-view .report-collapse__lead {
-    color: #64748b;
+  .uc-strategy-callout {
+    background: rgba(59, 130, 246, 0.12);
+    border-color: rgba(96, 165, 250, 0.35);
   }
 
-  .report-view .report-collapse .report-collapse {
-    background: #f8fafc;
-    box-shadow: none;
-    border-color: rgba(148, 163, 184, 0.32);
+  .uc-strategy-callout strong {
+    color: #bfdbfe;
   }
 
-  .report-view .uc-strategy__eyebrow,
-  .report-view .uc-strategy__app-note {
-    color: #475569;
+  .uc-strategy-callout p {
+    color: #cbd5e1;
   }
 
-  .report-view .uc-strategy-callout {
-    background: #eff6ff;
-    border-color: #93c5fd;
-  }
-
-  .report-view .uc-strategy-callout strong {
-    color: #1e3a8a;
-  }
-
-  .report-view .uc-strategy-callout p {
-    color: #1e293b;
-  }
-
-  .report-view .uc-strategy-lock--block {
-    background: #f8fafc;
-    border-color: #cbd5e1;
-    color: #475569;
+  .uc-strategy-lock--block {
+    background: #1b2740;
+    border-color: #475569;
+    color: #94a3b8;
   }
 }
