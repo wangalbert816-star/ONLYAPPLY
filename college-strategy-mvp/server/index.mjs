@@ -23,6 +23,7 @@ import {
   sanitizeUndergradSchoolMentions,
 } from "./undergradCopySanitize.mjs";
 import { sanitizeReportTierDifferentiation } from "./tierDifferentiationSanitize.mjs";
+import { coerceStringArray } from "./coerceStringArray.mjs";
 import { CURATED_OFFICIAL_LINK_SCHOOL_COUNT, formatMajorGuideForPrompt } from "./knowledge/majorActivitySnippets.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -800,9 +801,9 @@ function normalizeSchoolRowFields(r, tier, locale = "zh") {
       campus_vibe: String(r.campus_vibe || "").trim(),
       differentiation: String(r.differentiation || "").trim(),
       context_note: String(r.context_note || "").trim(),
-      key_fit_signals: Array.isArray(r.key_fit_signals) ? r.key_fit_signals.map(String) : [],
-      key_risks: Array.isArray(r.key_risks) ? r.key_risks.map(String) : [],
-      verification_focus: Array.isArray(r.verification_focus) ? r.verification_focus.map(String) : [],
+      key_fit_signals: coerceStringArray(r.key_fit_signals),
+      key_risks: coerceStringArray(r.key_risks),
+      verification_focus: coerceStringArray(r.verification_focus),
     },
     locale,
   );

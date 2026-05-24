@@ -183,6 +183,18 @@ check("McCombs sanitize is idempotent (no nested duplication)", () => {
   if (once !== twice) throw new Error(`not idempotent: ${once} -> ${twice}`);
 });
 
+check("tier sanitize tolerates string key_fit_signals", () => {
+  const report = {
+    reach: [{ school: "UNC", key_fit_signals: "GPA 3.6 符合" }],
+    match: [],
+    safety: [],
+  };
+  const out = sanitizeReportTierDifferentiation(report, "zh");
+  if (!Array.isArray(out.reach[0].key_fit_signals) || out.reach[0].key_fit_signals.length !== 1) {
+    throw new Error(JSON.stringify(out.reach[0].key_fit_signals));
+  }
+});
+
 check("cross-tier differentiation fixes UNC reach vs UT Austin match", () => {
   const report = {
     reach: [{ school: "University of North Carolina at Chapel Hill", differentiation: "与同档的 UT Austin 相比，UNC 社区更紧密。" }],

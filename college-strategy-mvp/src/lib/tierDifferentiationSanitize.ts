@@ -1,5 +1,6 @@
 import type { ReportPayload, SchoolRow, SchoolTier } from "../types";
 import type { Locale } from "../i18n/strings";
+import { coerceStringArray } from "./coerceStringArray";
 import { normalizeSchoolNameInput, schoolNameLookupVariants } from "./schoolNameResolve";
 
 type SchoolTierEntry = {
@@ -133,16 +134,22 @@ function sanitizeRowTierCopy(
     differentiation: clean(row.differentiation),
     campus_vibe: clean(row.campus_vibe),
     context_note: clean(row.context_note),
-    key_fit_signals: (row.key_fit_signals ?? []).map((x) => clean(x) ?? x),
-    key_risks: (row.key_risks ?? []).map((x) => clean(x) ?? x),
-    verification_focus: (row.verification_focus ?? []).map((x) => clean(x) ?? x),
+    key_fit_signals: coerceStringArray(row.key_fit_signals).map((x) => clean(x) ?? x),
+    key_risks: coerceStringArray(row.key_risks).map((x) => clean(x) ?? x),
+    verification_focus: coerceStringArray(row.verification_focus).map((x) => clean(x) ?? x),
   };
 }
 
 /** 全报告：修正主名单 9 校跨档「同档」矛盾 */
 export function sanitizeReportTierDifferentiation(report: ReportPayload, locale: Locale): ReportPayload {
-  const reach = (report.reach ?? []).map((r) => sanitizeRowTierCopy(r, "reach", report, locale));
-  const match = (report.match ?? []).map((r) => sanitizeRowTierCopy(r, "match", report, locale));
-  const safety = (report.safety ?? []).map((r) => sanitizeRowTierCopy(r, "safety", report, locale));
+  const reach = (Array.isArray(report.reach) ? report.reach : []).map((r) =>
+    sanitizeRowTierCopy(r, "reach", report, locale),
+  );
+  const match = (Array.isArray(report.match) ? report.match : []).map((r) =>
+    sanitizeRowTierCopy(r, "match", report, locale),
+  );
+  const safety = (Array.isArray(report.safety) ? report.safety : []).map((r) =>
+    sanitizeRowTierCopy(r, "safety", report, locale),
+  );
   return { ...report, reach, match, safety };
 }

@@ -1,3 +1,5 @@
+import { coerceStringArray } from "./coerceStringArray.mjs";
+
 const UNSOURCED_PATTERNS = [
   /\b\d{1,2}(\.\d+)?%\s*(的?\s*)?(录取率|acceptance\s+rate|admit\s+rate|admission\s+rate)/gi,
   /(录取率|acceptance\s+rate|admit\s+rate)[^.\n]{0,24}\d{1,2}(\.\d+)?%/gi,
@@ -31,9 +33,9 @@ export function sanitizeSchoolRowTextFields(row, locale) {
     if (typeof out[key] === "string") out[key] = sanitizeUnsourcedStats(out[key], locale);
   }
   for (const arrKey of ["key_risks", "key_fit_signals", "verification_focus"]) {
-    if (Array.isArray(out[arrKey])) {
-      out[arrKey] = out[arrKey].map((x) => sanitizeUnsourcedStats(String(x), locale)).filter(Boolean);
-    }
+    out[arrKey] = coerceStringArray(out[arrKey])
+      .map((x) => sanitizeUnsourcedStats(String(x), locale))
+      .filter(Boolean);
   }
   return out;
 }

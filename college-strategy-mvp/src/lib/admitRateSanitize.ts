@@ -1,4 +1,6 @@
 /** 移除或替换无来源的录取率/「你校进了几人」类表述（第三期 #30–31） */
+import { coerceStringArray } from "./coerceStringArray";
+
 const UNSOURCED_PATTERNS: RegExp[] = [
   /\b\d{1,2}(\.\d+)?%\s*(的?\s*)?(录取率|acceptance\s+rate|admit\s+rate|admission\s+rate)/gi,
   /(录取率|acceptance\s+rate|admit\s+rate)[^.\n]{0,24}\d{1,2}(\.\d+)?%/gi,
@@ -49,10 +51,10 @@ export function sanitizeSchoolRowTextFields<T extends Record<string, unknown>>(r
     }
   }
   for (const arrKey of ["key_risks", "key_fit_signals", "verification_focus"] as const) {
-    const arr = out[arrKey];
-    if (Array.isArray(arr)) {
-      (out as Record<string, string[]>)[arrKey] = arr.map((x) => sanitizeUnsourcedStats(String(x), locale)).filter(Boolean);
-    }
+    const coerced = coerceStringArray(out[arrKey]);
+    (out as Record<string, string[]>)[arrKey] = coerced
+      .map((x) => sanitizeUnsourcedStats(String(x), locale))
+      .filter(Boolean);
   }
   return out;
 }

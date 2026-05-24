@@ -1,4 +1,5 @@
 import { normalizeSchoolNameInput, schoolNameLookupVariants } from "./schoolNameResolve.mjs";
+import { coerceStringArray } from "./coerceStringArray.mjs";
 
 function escapeRegExp(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -102,17 +103,17 @@ function sanitizeRowTierCopy(row, tier, report, locale) {
     differentiation: clean(row.differentiation),
     campus_vibe: clean(row.campus_vibe),
     context_note: clean(row.context_note),
-    key_fit_signals: (row.key_fit_signals || []).map((x) => clean(x) ?? x),
-    key_risks: (row.key_risks || []).map((x) => clean(x) ?? x),
-    verification_focus: (row.verification_focus || []).map((x) => clean(x) ?? x),
+    key_fit_signals: coerceStringArray(row.key_fit_signals).map((x) => clean(x) ?? x),
+    key_risks: coerceStringArray(row.key_risks).map((x) => clean(x) ?? x),
+    verification_focus: coerceStringArray(row.verification_focus).map((x) => clean(x) ?? x),
   };
 }
 
 export function sanitizeReportTierDifferentiation(report, locale = "zh") {
   return {
     ...report,
-    reach: (report.reach || []).map((r) => sanitizeRowTierCopy(r, "reach", report, locale)),
-    match: (report.match || []).map((r) => sanitizeRowTierCopy(r, "match", report, locale)),
-    safety: (report.safety || []).map((r) => sanitizeRowTierCopy(r, "safety", report, locale)),
+    reach: (Array.isArray(report.reach) ? report.reach : []).map((r) => sanitizeRowTierCopy(r, "reach", report, locale)),
+    match: (Array.isArray(report.match) ? report.match : []).map((r) => sanitizeRowTierCopy(r, "match", report, locale)),
+    safety: (Array.isArray(report.safety) ? report.safety : []).map((r) => sanitizeRowTierCopy(r, "safety", report, locale)),
   };
 }
