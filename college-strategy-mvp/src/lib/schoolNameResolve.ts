@@ -44,6 +44,10 @@ const ALIAS_RULES: Array<{ re: RegExp; aliases: string[] }> = [
   { re: /university of southern california|^usc$|南加州大学/i, aliases: ["USC", "Southern California"] },
   { re: /university of texas at austin|\but\s*austin\b|德州奥斯汀/i, aliases: ["UT Austin", "Texas at Austin"] },
   {
+    re: /university of north carolina(?:\s+at\s+)?chapel\s*hill|\bunc\b|北卡罗来纳|教堂山/i,
+    aliases: ["UNC", "UNC Chapel Hill", "North Carolina Chapel Hill"],
+  },
+  {
     re: /georgia institute of technology|^georgia tech$|\bgt\b|佐治亚理工/i,
     aliases: ["Georgia Tech", "Georgia Institute of Technology"],
   },

@@ -45,7 +45,7 @@ function appendSchoolRows(
   unlocked: boolean,
 ) {
   for (const row of rows) {
-    const enriched = enrichSchoolRow(row, form, locale);
+    const enriched = enrichSchoolRow(row, form, locale, tier);
     const links = getOfficialLinksForSchool(enriched.school, locale)
       .map((l) => `${officialLinkLabel(l, locale)}: ${l.href}`)
       .join(" | ");

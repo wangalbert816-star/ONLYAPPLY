@@ -221,7 +221,7 @@ function mapLines(items: string[] | undefined, maxEach: number, maxItems: number
 }
 
 function rowToPdf(row: SchoolRow, tier: SchoolTier, form: FormState, locale: Locale, unlocked: boolean): PdfSchoolRow {
-  const enriched = enrichSchoolRow(row, form, locale);
+  const enriched = enrichSchoolRow(row, form, locale, tier);
   const links = unlocked
     ? getOfficialLinksForSchool(enriched.school, locale).map((l) => `${officialLinkLabel(l, locale)}: ${l.href}`)
     : [];

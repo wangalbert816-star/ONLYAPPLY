@@ -1,4 +1,4 @@
-import type { FormState, SchoolRow } from "../types";
+import type { FormState, SchoolRow, SchoolTier } from "../types";
 import type { Locale } from "../i18n/strings";
 import { sanitizeSchoolRowTextFields } from "./admitRateSanitize";
 import { sanitizeSchoolRowUndergradCopy } from "./undergradCopySanitize";
@@ -31,7 +31,7 @@ function userFacingGeoSizeHint(form: FormState, locale: Locale): string | null {
 }
 
 /** 合并 LLM 输出、申请者语境与本地 curated 片段（第二/三期） */
-export function enrichSchoolRow(row: SchoolRow, form: FormState, locale: Locale): SchoolRow {
+export function enrichSchoolRow(row: SchoolRow, form: FormState, locale: Locale, tier: SchoolTier = "match"): SchoolRow {
   const campus_vibe = (row.campus_vibe || "").trim() || snippetCampusVibe(row.school, locale) || undefined;
   const snippetCtx = snippetContextNote(row.school, locale);
   const applicantBullets = buildApplicantContextBullets(form, row.school, locale);
@@ -66,7 +66,7 @@ export function enrichSchoolRow(row: SchoolRow, form: FormState, locale: Locale)
       key_risks: (sanitized.key_risks as string[]) ?? merged.key_risks,
       verification_focus: (sanitized.verification_focus as string[]) ?? merged.verification_focus,
     },
-    "match",
+    tier,
     locale,
   );
   return facultySafe;

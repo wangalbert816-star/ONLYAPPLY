@@ -11,7 +11,9 @@ function pick(rule: ReplacementRule, locale: Locale): string {
 function applyRules(text: string, rules: ReplacementRule[], locale: Locale): string {
   let s = text;
   for (const rule of rules) {
-    s = s.replace(rule.pattern, pick(rule, locale));
+    const rep = pick(rule, locale);
+    if (rep && s.includes(rep)) continue;
+    s = s.replace(rule.pattern, rep);
   }
   return s.replace(/\s{2,}/g, " ").trim();
 }
@@ -169,8 +171,18 @@ const SCHOOL_GRAD_RULES: Array<{ schoolMatch: RegExp; replacements: ReplacementR
     replacements: [
       {
         pattern: /McCombs(\s+School(\s+of\s+Business)?)?/gi,
-        zh: "UT Austin 本科商科相关方向（McCombs 本科极难且非默认路径）",
-        en: "UT Austin business-related undergraduate paths (McCombs undergrad is ultra-selective—not a default path)",
+        zh: "UT Austin 本科商科/经济相关方向（本科商学院名额极难，非默认路径）",
+        en: "UT Austin business/econ-related undergraduate paths (undergrad business is ultra-selective—not a default path)",
+      },
+    ],
+  },
+  {
+    schoolMatch: /north carolina|unc\b|chapel hill|北卡|教堂山/i,
+    replacements: [
+      {
+        pattern: /Kenan[- ]Flagler(\s+Business\s+School)?/gi,
+        zh: "UNC 本科商科/经济相关方向（本科商学院名额极难，非默认路径）",
+        en: "UNC business/econ-related undergraduate paths (undergrad business is ultra-selective—not a default path)",
       },
     ],
   },

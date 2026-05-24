@@ -1,4 +1,5 @@
 import type { ReportPayload } from "../types";
+import { sanitizeReportTierDifferentiation } from "./tierDifferentiationSanitize";
 import type { Locale } from "../i18n/strings";
 import { sanitizeUnsourcedStats } from "./admitRateSanitize";
 import { sanitizeUndergradSchoolMentions } from "./undergradCopySanitize";
@@ -34,12 +35,15 @@ export function sanitizeReportProse(report: ReportPayload, locale: Locale): Repo
     };
   }
 
-  return {
-    ...report,
-    executive_summary,
-    information_gaps,
-    strategy_notes,
-    portfolio_risks,
-    improvement_plan,
-  };
+  return sanitizeReportTierDifferentiation(
+    {
+      ...report,
+      executive_summary,
+      information_gaps,
+      strategy_notes,
+      portfolio_risks,
+      improvement_plan,
+    },
+    locale,
+  );
 }

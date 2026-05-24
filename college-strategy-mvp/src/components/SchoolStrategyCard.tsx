@@ -34,7 +34,7 @@ function sectionLabel(
     verify: "官网核对",
     links: "官方链接",
     vibe: "校园气质",
-    diff: "与同档其它校的差异",
+    diff: "与其它推荐校的差异",
     context: "语境化参考",
     cultureFit: "与你的社区偏好",
   };
@@ -54,7 +54,7 @@ function sectionLabel(
 
 export function SchoolStrategyCard({ row, tier, locale, form, unlocked, highlighted }: Props) {
   const [open, setOpen] = useState(false);
-  const enriched = enrichSchoolRow(row, form, locale);
+  const enriched = enrichSchoolRow(row, form, locale, tier);
   const whyBullets = splitToBullets(whyText(enriched, tier), 4);
   const signals = splitToBullets(enriched.key_fit_signals, 4);
   const risks = splitToBullets(enriched.key_risks, 4);

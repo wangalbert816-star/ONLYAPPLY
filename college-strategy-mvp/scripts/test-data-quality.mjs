@@ -18,6 +18,10 @@ import {
 } from "../server/ucTestBlindCopySanitize.mjs";
 import { ucCampusKeyFromSchool, ucCampusSelectivity } from "../server/ucCampusSelectivity.mjs";
 import { sanitizeUcAnalysisFromBody } from "../server/ucAnalysisSanitize.mjs";
+import {
+  sanitizeCrossTierDifferentiation,
+  sanitizeReportTierDifferentiation,
+} from "../server/tierDifferentiationSanitize.mjs";
 
 const results = [];
 
@@ -167,6 +171,28 @@ check("filterUcTestBlindBullets removes SAT-only risks", () => {
   );
   if (out.length !== 2) throw new Error(`expected 2 items, got ${out.length}: ${JSON.stringify(out)}`);
   if (out.some((x) => /SAT|信息缺口/i.test(x))) throw new Error(out.join(" | "));
+});
+
+check("McCombs sanitize is idempotent (no nested duplication)", () => {
+  const raw = "GPA 符合 McCombs School of Business 要求";
+  const once = sanitizeUndergradSchoolMentions(raw, "University of Texas at Austin", "zh");
+  const twice = sanitizeUndergradSchoolMentions(once, "University of Texas at Austin", "zh");
+  if (/McCombs.*McCombs|本科极难.*本科极难.*本科极难/i.test(twice)) {
+    throw new Error(`nested duplication: ${twice}`);
+  }
+  if (once !== twice) throw new Error(`not idempotent: ${once} -> ${twice}`);
+});
+
+check("cross-tier differentiation fixes UNC reach vs UT Austin match", () => {
+  const report = {
+    reach: [{ school: "University of North Carolina at Chapel Hill", differentiation: "与同档的 UT Austin 相比，UNC 社区更紧密。" }],
+    match: [{ school: "University of Texas at Austin", differentiation: "与同档其它校相比学费更低。" }],
+    safety: [],
+  };
+  const out = sanitizeReportTierDifferentiation(report, "zh");
+  const uncDiff = out.reach[0].differentiation;
+  if (/与同档.*UT Austin/i.test(uncDiff)) throw new Error(`still same-tier wording: ${uncDiff}`);
+  if (!/匹配档.*UT Austin/i.test(uncDiff)) throw new Error(`expected match tier ref: ${uncDiff}`);
 });
 
 let failed = 0;

@@ -21,8 +21,8 @@ import { sanitizeSchoolRowTextFields, sanitizeUnsourcedStats } from "./admitRate
 import {
   sanitizeSchoolRowUndergradCopy,
   sanitizeUndergradSchoolMentions,
-  containsUndergradFacultyErrors,
 } from "./undergradCopySanitize.mjs";
+import { sanitizeReportTierDifferentiation } from "./tierDifferentiationSanitize.mjs";
 import { CURATED_OFFICIAL_LINK_SCHOOL_COUNT, formatMajorGuideForPrompt } from "./knowledge/majorActivitySnippets.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -613,6 +613,7 @@ reach 每元素字段名必须为：school, why_reach_for_you, campus_vibe, diff
 - why_* 字段：最多 2 句、≤80 字/句；禁止大段堆砌。
 - campus_vibe：1 行气质标签 + 1 句说明（学术/社交/研究/体育/城市/乡村等），必须因校而异；须对照用户【校园社区气质偏好】说明匹配点或摩擦点（勿用偏好硬删校、勿写「最适合你」）。
 - differentiation：1 句说明「与同档其它推荐校相比，这所更适合用户的哪一点」；须结合用户社区偏好（学术/平衡/社交派对活跃）解释相对同档其它校的体验差异；禁止 9 校同句。
+- differentiation 禁止把名单其它档位（如 Match 校）称作「同档」；跨档比较须写清对方在你名单中的档位（如「相较匹配档的 UT Austin」）。
 - context_note：1–2 句语境化参考（地区/feeder/身份/预算对核对的影响）；禁止编造具体录取率或「你校去年进了几人」；无可靠数据时写「请到官网 CDS 核对」。
 - key_fit_signals、key_risks、verification_focus：各 2–4 条独立要点（短句），禁止与别校逐字重复。
 - 每校至少 1 条该校独有信息（资源/文化/地理实习/专业结构等）；禁止 9 校共用同一段模板。
@@ -690,6 +691,7 @@ Field names for reach rows must be: school, why_reach_for_you, campus_vibe, diff
 - why_* fields: at most 2 sentences, ≤90 characters each; no long paragraphs.
 - campus_vibe: one vibe tag + one sentence; must differ by school; address fit vs user's campus community preference (academic / balanced / active social-party)—note alignment or friction; never hard-filter or claim "best fit."
 - differentiation: one sentence vs other schools in the same tier; include community vibe vs user preference where relevant; never reuse across all 9.
+- Never call a school in another list tier (e.g. Match) "same tier" when writing Reach row differentiation—name the other tier explicitly.
 - context_note: region/feeder/identity/budget verification; NEVER invent admit rates; if no data, say confirm on official CDS.
 - key_fit_signals, key_risks, verification_focus: 2–4 distinct short bullets each; never copy-paste the same text across schools.
 - Each school needs at least one campus-specific point (resources, culture, internships/location, major structure); no shared template across all 9.
@@ -1675,7 +1677,7 @@ function finalizeReportPayload(parsed, body) {
   } else {
     delete parsed.uc_analysis;
   }
-  return parsed;
+  return sanitizeReportTierDifferentiation(parsed, locale);
 }
 
 app.post("/api/report", async (req, res) => {
