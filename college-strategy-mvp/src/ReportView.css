@@ -1601,8 +1601,13 @@
   }
 
   .top-reference-card {
-    background: linear-gradient(180deg, rgba(251, 191, 36, 0.14) 0%, rgba(17, 24, 39, 0.96) 62%);
-    border-color: rgba(251, 191, 36, 0.42);
+    background: #151e2f;
+    border-color: rgba(251, 191, 36, 0.35);
+    border-left: 3px solid #fbbf24;
+  }
+
+  .top-reference-card h2 {
+    color: #f8fafc;
   }
 
   .top-reference-card__eyebrow,
@@ -1612,21 +1617,23 @@
   }
 
   .top-reference-list li {
-    background: rgba(15, 23, 42, 0.62);
-    border-color: rgba(251, 191, 36, 0.26);
+    background: #1b2740;
+    border-color: rgba(251, 191, 36, 0.28);
   }
 
   .top-reference-list strong {
     color: #f8fafc;
   }
 
-  .top-reference-list span {
-    color: #fbbf24;
+  .top-reference-list span,
+  .top-reference-list__why {
+    color: #cbd5e1;
   }
 
   .realistic-reach-notice {
-    background: linear-gradient(180deg, rgba(96, 165, 250, 0.14) 0%, rgba(17, 24, 39, 0.96) 62%);
+    background: #151e2f;
     border-color: rgba(96, 165, 250, 0.35);
+    border-left: 3px solid #60a5fa;
   }
 
   .realistic-reach-notice h2 {
@@ -1750,5 +1757,9 @@
   .report-view .report-collapse strong,
   .report-view .school-card strong {
     color: #f1f5f9;
+  }
+
+  .report-view .school-list-intro {
+    color: #94a3b8;
   }
 }

@@ -1,0 +1,81 @@
+.school-tier-panel.report-collapse {
+  border-left-width: 3px;
+  border-left-style: solid;
+}
+
+.school-tier-panel--reach.report-collapse {
+  border-left-color: #f59e0b;
+}
+
+.school-tier-panel--match.report-collapse {
+  border-left-color: #3b82f6;
+}
+
+.school-tier-panel--safety.report-collapse {
+  border-left-color: #10b981;
+}
+
+.school-tier-panel--reach .report-collapse__trigger {
+  background: rgba(251, 191, 36, 0.08);
+}
+
+.school-tier-panel--match .report-collapse__trigger {
+  background: rgba(59, 130, 246, 0.06);
+}
+
+.school-tier-panel--safety .report-collapse__trigger {
+  background: rgba(16, 185, 129, 0.06);
+}
+
+.school-tier-panel .school-cards-grid .school-card:last-child {
+  margin-bottom: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .school-tier-panel.report-collapse {
+    background: #151e2f;
+    border-color: #334155;
+    box-shadow: none;
+  }
+
+  .school-tier-panel--reach.report-collapse {
+    border-left-color: #fbbf24;
+  }
+
+  .school-tier-panel--match.report-collapse {
+    border-left-color: #60a5fa;
+  }
+
+  .school-tier-panel--safety.report-collapse {
+    border-left-color: #34d399;
+  }
+
+  .school-tier-panel--reach .report-collapse__trigger {
+    background: rgba(251, 191, 36, 0.1);
+  }
+
+  .school-tier-panel--match .report-collapse__trigger {
+    background: rgba(96, 165, 250, 0.1);
+  }
+
+  .school-tier-panel--safety .report-collapse__trigger {
+    background: rgba(52, 211, 153, 0.1);
+  }
+
+  .school-tier-panel--reach .report-collapse__title {
+    color: #fde68a;
+  }
+
+  .school-tier-panel--match .report-collapse__title {
+    color: #bfdbfe;
+  }
+
+  .school-tier-panel--safety .report-collapse__title {
+    color: #a7f3d0;
+  }
+
+  .school-tier-panel .school-card {
+    background: #1b2740;
+    border-color: #3b4a63;
+  }
+}

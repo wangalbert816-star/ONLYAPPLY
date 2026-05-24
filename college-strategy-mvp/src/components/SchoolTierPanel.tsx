@@ -3,6 +3,7 @@ import type { Translate } from "../i18n/LanguageContext";
 import { useLanguage } from "../i18n/LanguageContext";
 import { ReportCollapsibleSection } from "./ReportCollapsibleSection";
 import { SchoolStrategyCard } from "./SchoolStrategyCard";
+import "./SchoolTierPanel.css";
 
 type Props = {
   tier: SchoolTier;
@@ -48,7 +49,7 @@ export function SchoolTierPanel({
       }
       lead={guide}
       defaultOpen={defaultOpen}
-      className="school-tier-panel"
+      className={`school-tier-panel school-tier-panel--${tier}`}
     >
       <div className="school-cards-grid">
         {visible.map((row, i) => (
