@@ -24,6 +24,8 @@ import { buildFiveDimensionProfile, type ProfileDimensionKey } from "../../lib/f
 import type { ActivityItem, FormState, GeoPref, ReportPayload, SupplementaryNote } from "../../types";
 import { BrandLogo } from "../BrandLogo";
 import { ExportActivitiesCsvButton } from "../ExportActivitiesCsvButton";
+import { AccountReportSnapshot } from "./AccountReportSnapshot";
+import { AccountExpertPanel } from "./AccountExpertPanel";
 import "./AccountHome.css";
 
 type Props = {
@@ -400,6 +402,10 @@ export function AccountHome({
       nextStep: gap.dimension.suggest,
     };
   }, [currentApp, locale]);
+  const fiveProfile = useMemo(
+    () => (currentApp ? buildFiveDimensionProfile(currentApp.form_state, locale) : []),
+    [currentApp, locale],
+  );
   const applicationInfoItems = useMemo(
     () => (currentApp ? buildApplicationInfoItems(currentApp.form_state, locale, t) : []),
     [currentApp, locale, t],
@@ -909,7 +915,8 @@ export function AccountHome({
   }
 
   return (
-    <div className="app account-home">
+    <div className="app app--account account-home">
+      <div className="account-home__shell">
       <header className="account-home__head">
         <BrandLogo />
         <div className="account-home__head-actions">
@@ -925,7 +932,7 @@ export function AccountHome({
         </div>
       </header>
 
-      <section className="card report-block account-dashboard">
+        <section className="account-dashboard">
         <div className="account-home__intro">
           <div>
             <p className="account-home__eyebrow">{t("auth.accountControlCenter")}</p>
@@ -935,38 +942,65 @@ export function AccountHome({
           {user?.email && <p className="account-home__email">{user.email}</p>}
         </div>
 
-        <section className="account-status-card" aria-labelledby="account-status-title">
-          <div className="account-status-card__head">
+        <section className="account-hero" aria-labelledby="account-status-title">
+          <div className="account-hero__head">
             <div>
-              <p className="account-status-card__kicker">{t("auth.accountStatusKicker")}</p>
+              <p className="account-hero__kicker">{t("auth.accountStatusKicker")}</p>
               <h2 id="account-status-title">{currentApp?.title ?? t("auth.accountNoCurrentTitle")}</h2>
-              {currentApp && <p className="account-status-card__basis">{t("auth.accountStatusBasis")}</p>}
+              {currentApp && latestReport && (
+                <p className="account-hero__meta">
+                  {t("auth.accountHeroUpdated", {
+                    date: formatDate(latestReport.created_at),
+                    n: currentApp.report_count ?? 0,
+                  })}
+                </p>
+              )}
+              {currentApp && !latestReport && <p className="account-hero__meta">{t("auth.accountStatusBasis")}</p>}
             </div>
-            <span className="account-status-card__badge">
+            <span className="account-hero__badge">
               {latestReport ? t("auth.accountStatusActive") : t("auth.accountStatusNeedsReport")}
             </span>
           </div>
 
           {status ? (
             <>
-              <div className="account-status-grid">
-                <div className="account-status-metric account-status-metric--wide">
-                  <span>{t("auth.accountPosition")}</span>
-                  <strong>{status.position}</strong>
-                  <small>{t("auth.accountConservativeNote")}</small>
+              <p className="account-hero__position">{status.position}</p>
+              <div className="account-hero__main">
+                <div className="account-hero__panel">
+                  <div className="account-hero__insight">
+                    <p className="account-hero__weakness-label">{t("auth.accountWeakness")}</p>
+                    <p className="account-hero__weakness">{status.weakness}</p>
+                    {status.weaknessDetail && <p className="account-hero__weakness-detail">{status.weaknessDetail}</p>}
+                  </div>
+                  {status.nextStep && <p className="account-hero__next">{status.nextStep}</p>}
+                  <div className="account-hero__actions">
+                    {currentApp && latestReport ? (
+                      <button type="button" className="btn btn-primary" onClick={() => openReport(currentApp, latestReport)}>
+                        {t("auth.accountOpenLatestReport")}
+                      </button>
+                    ) : (
+                      <button type="button" className="btn btn-primary account-home__new" onClick={handlePrimaryContinue}>
+                        {t("auth.accountContinueOptimize")}
+                      </button>
+                    )}
+                    {currentApp && latestReport && (
+                      <button type="button" className="btn btn-secondary" onClick={handlePrimaryContinue}>
+                        {t("auth.accountContinueOptimize")}
+                      </button>
+                    )}
+                  </div>
+                  <p className="account-hero__hint">{t("auth.accountAccuracyHint")}</p>
                 </div>
-                <div className="account-status-metric">
-                  <span>{t("auth.accountWeakness")}</span>
-                  <strong>{status.weakness}</strong>
-                  <small>{status.weaknessDetail}</small>
-                </div>
-                <div className="account-status-metric">
-                  <span>{t("auth.accountUpdatedLabel")}</span>
-                  <strong>{formatDate(latestReport?.created_at ?? currentApp?.updated_at ?? null)}</strong>
-                  <small>{t("auth.accountReportCount", { n: currentApp?.report_count ?? 0 })}</small>
-                </div>
+
+                {latestReport && fiveProfile.length > 0 ? (
+                  <AccountReportSnapshot report={latestReport.report_payload} dimensions={fiveProfile} t={t} />
+                ) : (
+                  <aside className="account-hero__snapshot-placeholder" aria-hidden>
+                    <p>{t("auth.accountStatusNeedsReport")}</p>
+                  </aside>
+                )}
               </div>
-              <p className="account-status-card__next">{status.nextStep}</p>
+
               <details className="account-info-evidence">
                 <summary>{t("auth.accountInfoToggle")}</summary>
                 <p className="account-info-evidence__lead">{t("auth.accountInfoLead")}</p>
@@ -1176,21 +1210,17 @@ export function AccountHome({
           ) : (
             <p className="account-home__empty">{loading ? t("auth.accountLoading") : t("auth.accountEmpty")}</p>
           )}
-
-          <div className="account-status-card__actions">
-            <p className="account-status-card__action-hint">{t("auth.accountAccuracyHint")}</p>
-            <button type="button" className="btn btn-primary account-home__new" onClick={handlePrimaryContinue}>
-              {t("auth.accountContinueOptimize")}
-            </button>
-            {currentApp && latestReport && (
-              <button type="button" className="btn btn-secondary" onClick={() => openReport(currentApp, latestReport)}>
-                {t("auth.accountOpenLatestReport")}
-              </button>
-            )}
-          </div>
         </section>
 
-        {currentApp && (
+        <div className="account-dashboard__workspace">
+          <div className="account-dashboard__workspace-side">
+            <AccountExpertPanel
+              gapCount={latestReport?.report_payload?.information_gaps?.length ?? 0}
+              applicationId={currentApp?.id ?? null}
+              reportId={latestReport?.id ?? null}
+              userEmail={user?.email ?? null}
+            />
+            {currentApp && (
           <section className="account-activity-card" aria-labelledby="account-activity-title">
             <div className="account-activity-card__head">
               <div>
@@ -1361,7 +1391,8 @@ export function AccountHome({
               </button>
             </div>
           </section>
-        )}
+            )}
+          </div>
 
         <section className="account-essay-card" aria-labelledby="account-essay-title">
           <div className="account-essay-card__head">
@@ -1584,6 +1615,7 @@ export function AccountHome({
             <p className="account-home__muted">{t("auth.accountEssayEmpty")}</p>
           )}
         </section>
+        </div>
 
         {err && <p className="account-home__err">{err}</p>}
         {loading && <p className="account-home__muted">{t("auth.accountLoading")}</p>}
@@ -1668,7 +1700,8 @@ export function AccountHome({
           );
           })}
         </ul>
-      </section>
+        </section>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,185 @@
+.account-expert-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.14), transparent 18rem),
+    linear-gradient(165deg, #ffffff 0%, #f0f7ff 55%, #f8fafc 100%);
+  box-shadow: 0 16px 42px rgba(15, 23, 42, 0.07);
+  padding: 1.05rem 1.1rem 1.15rem;
+}
+
+.account-expert-panel__kicker {
+  margin: 0 0 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #2563eb;
+}
+
+.account-expert-panel__title,
+.account-expert-panel__name {
+  margin: 0 0 0.45rem;
+  font-size: clamp(1.05rem, 1.5vw, 1.22rem);
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.account-expert-panel__lead,
+.account-expert-panel__bio,
+.account-expert-panel__risk {
+  margin: 0 0 0.65rem;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: #475569;
+}
+
+.account-expert-panel__risk {
+  padding: 0.55rem 0.65rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  color: #334155;
+}
+
+.account-expert-panel__benefits {
+  margin: 0 0 0.9rem;
+  padding: 0 0 0 1.1rem;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: #334155;
+}
+
+.account-expert-panel__benefits li + li {
+  margin-top: 0.35rem;
+}
+
+.account-expert-panel__cta {
+  width: 100%;
+  box-shadow: 0 14px 32px rgba(37, 99, 235, 0.22);
+}
+
+.account-expert-panel__email {
+  margin: 0.75rem 0 0;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.account-expert-panel__email a {
+  color: #2563eb;
+  font-weight: 650;
+  word-break: break-all;
+}
+
+.account-expert-panel__assigned {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.account-expert-panel__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2563eb 0%, #60a5fa 100%);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.25rem;
+}
+
+.account-expert-panel__role {
+  margin: 0 0 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.account-expert-panel__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 0.65rem;
+  padding: 0;
+  list-style: none;
+}
+
+.account-expert-panel__tags li {
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
+.account-expert-panel__contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.55rem;
+}
+
+.account-expert-panel__contact-link,
+.account-expert-panel__contact-line {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #475569;
+  word-break: break-all;
+}
+
+.account-expert-panel__contact-link {
+  color: #2563eb;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.account-expert-panel__contact-link:hover {
+  text-decoration: underline;
+}
+
+@media (min-width: 960px) {
+  .account-expert-panel {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .account-expert-panel {
+    background:
+      radial-gradient(circle at top left, rgba(59, 130, 246, 0.18), transparent 18rem),
+      linear-gradient(165deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.82) 100%);
+    border-color: rgba(96, 165, 250, 0.2);
+  }
+
+  .account-expert-panel__title,
+  .account-expert-panel__name {
+    color: #e2e8f0;
+  }
+
+  .account-expert-panel__lead,
+  .account-expert-panel__bio,
+  .account-expert-panel__benefits,
+  .account-expert-panel__contact-line {
+    color: #cbd5e1;
+  }
+
+  .account-expert-panel__risk {
+    background: rgba(15, 23, 42, 0.55);
+    border-color: rgba(148, 163, 184, 0.14);
+    color: #e2e8f0;
+  }
+}

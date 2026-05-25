@@ -9,6 +9,34 @@
   background-color: transparent;
 }
 
+.app.app--account {
+  --account-pad-x: clamp(1rem, 3vw, 2rem);
+  --account-shell-max: min(68rem, calc(100vw - 2 * var(--account-pad-x)));
+  --account-top-chrome: clamp(4.25rem, 9vh, 5.25rem);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--account-shell-max);
+  margin-left: auto;
+  margin-right: auto;
+  padding-top: var(--account-top-chrome);
+  padding-left: var(--account-pad-x);
+  padding-right: var(--account-pad-x);
+  padding-bottom: calc(2.75rem + var(--brand-wall-strip-height, 13rem) + var(--app-disclaimer-h, 3.25rem));
+}
+
+@media (min-width: 960px) {
+  .app.app--account {
+    --account-shell-max: min(80rem, calc(100vw - 3rem));
+    --account-pad-x: clamp(1.25rem, 2.5vw, 2.5rem);
+  }
+}
+
+@media (min-width: 1280px) {
+  .app.app--account {
+    --account-shell-max: min(88rem, calc(100vw - 4rem));
+  }
+}
+
 .app--landing {
   --landing-pad-x: clamp(1rem, 4.5vw, 1.75rem);
   --landing-shell-max: min(52rem, calc(100vw - 2 * var(--landing-pad-x)));
