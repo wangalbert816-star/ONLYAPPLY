@@ -71,6 +71,12 @@ merge(zhFlat, {
     errGenerateConfig: "报告服务暂时不可用。请稍后重试；如果仍失败，请联系 support@onlyapply.ai。",
     errNetwork: "暂时连不上生成服务。请检查网络并刷新重试；如果连续失败，请联系 support@onlyapply.ai。",
     productIntroLink: "产品介绍",
+    expertConsult: {
+      cta: "获取专家1v1咨询",
+      modalTitle: "专家 1v1 咨询",
+      modalLead: "请通过以下邮箱联系我们：",
+      close: "关闭",
+    },
   },
   productIntro: {
     back: "← 返回首页",
@@ -785,6 +791,12 @@ merge(enFlat, {
     errGenerateConfig: "The report service is temporarily unavailable. Please try again later or contact support@onlyapply.ai.",
     errNetwork: "We couldn’t reach the report service. Check your connection, refresh, and try again; if it keeps failing, contact support@onlyapply.ai.",
     productIntroLink: "How it works",
+    expertConsult: {
+      cta: "book a live 1:1 free 30 min consultation",
+      modalTitle: "1:1 expert consultation",
+      modalLead: "Contact us at:",
+      close: "Close",
+    },
   },
   productIntro: {
     back: "← Back to home",

@@ -154,8 +154,12 @@
   font-weight: 400;
 }
 
-.landing-intro-btn {
+.landing-intro-btn,
+.landing-consult-btn {
   margin-top: 0.55rem;
+}
+
+.landing-intro-btn {
   background: #e2e8f0;
   color: #0f172a;
   border: 1px solid #cbd5e1;

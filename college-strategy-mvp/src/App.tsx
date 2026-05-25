@@ -11,6 +11,7 @@ import { FormLiveSummary, GuidedStep1, GuidedStep2, GuidedStep3, type GuideTouch
 import { FullscreenLogoMarquee } from "./components/FullscreenLogoMarquee";
 import { BrandStoryOverlay } from "./components/BrandStoryOverlay";
 import { ProductIntroPage } from "./components/ProductIntroPage";
+import { ExpertConsultContactModal } from "./components/ExpertConsultContactModal";
 import { useLanguage } from "./i18n/LanguageContext";
 import { useAuth } from "./auth/AuthContext";
 import { AuthModal } from "./components/auth/AuthModal";
@@ -221,6 +222,7 @@ export default function App() {
   const applicationHubTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [applicationHubOpen, setApplicationHubOpen] = useState(false);
   const [brandStoryOpen, setBrandStoryOpen] = useState(false);
+  const [expertConsultModalOpen, setExpertConsultModalOpen] = useState(false);
 
   const openApplicationHub = useCallback((e: MouseEvent<HTMLElement>) => {
     applicationHubTriggerRef.current = e.currentTarget as HTMLButtonElement;
@@ -1060,6 +1062,13 @@ export default function App() {
             >
               {t("app.productIntroLink")}
             </button>
+            <button
+              type="button"
+              className="btn btn-primary btn-block btn-cta-landing landing-consult-btn"
+              onClick={() => setExpertConsultModalOpen(true)}
+            >
+              {t("app.expertConsult.cta")}
+            </button>
             <p className="landing-trust">{t("app.welcome.meta")}</p>
           </div>
 
@@ -1095,6 +1104,8 @@ export default function App() {
             queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
           }}
         />
+
+        <ExpertConsultContactModal open={expertConsultModalOpen} onClose={() => setExpertConsultModalOpen(false)} />
 
         <footer className="app-disclaimer-fixed" role="contentinfo">
           <p>{t("app.disclaimer")}</p>

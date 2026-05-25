@@ -84,6 +84,23 @@
   color: #0f172a;
 }
 
+.expert-consult-modal__email {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.45;
+  word-break: break-all;
+}
+
+.expert-consult-modal__email a {
+  color: #1d4ed8;
+  text-decoration: none;
+}
+
+.expert-consult-modal__email a:hover {
+  text-decoration: underline;
+}
+
 .expert-consult-modal__lead {
   margin: 0 0 0.85rem;
   font-size: 0.78rem;
