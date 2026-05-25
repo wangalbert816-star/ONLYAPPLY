@@ -755,7 +755,7 @@ merge(enFlat, {
       chip2: "Grades & geography",
       chip3: "Style & activities (optional)",
       meta: "~3 min · Try without signing up",
-      start: "Start",
+      start: "See My Chance",
       s1t: "Identity & constraints",
       s1d: "Term, applicant type, budget & testing—how we slice tiers.",
       s2t: "Academics & intent",
