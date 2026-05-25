@@ -17,6 +17,37 @@
   box-sizing: border-box;
 }
 
+@media (min-width: 1280px) {
+  .landing-product-intro {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.35rem 1.5rem;
+    align-items: start;
+  }
+
+  .landing-product-intro__heading {
+    grid-column: 1 / -1;
+    text-align: center;
+    margin-bottom: 0.35rem;
+    font-size: 0.8125rem;
+  }
+
+  .landing-product-intro .intro-section {
+    margin-bottom: 0;
+    height: 100%;
+  }
+
+  .landing-product-intro .intro-section:has(.sample-report-showcase),
+  .landing-product-intro .intro-section--privacy,
+  .landing-product-intro .intro-cta {
+    grid-column: 1 / -1;
+  }
+
+  .landing-product-intro .intro-section h2 {
+    font-size: 1.05rem;
+  }
+}
+
 .intro-header {
   display: flex;
   align-items: center;

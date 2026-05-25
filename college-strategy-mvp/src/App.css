@@ -12,7 +12,7 @@
 .app--landing {
   --landing-pad-x: clamp(1rem, 4.5vw, 1.75rem);
   --landing-shell-max: min(52rem, calc(100vw - 2 * var(--landing-pad-x)));
-  --landing-copy-max: min(40rem, 100%);
+  --landing-copy-max: 100%;
   /* 固定顶栏高度 + 与 hero 的额外呼吸间距 */
   --landing-top-chrome: clamp(4.5rem, 10vh, 5.5rem);
   --landing-below-chrome: clamp(1.5rem, 4vh, 2.25rem);
@@ -77,7 +77,7 @@
 
 .landing-hero-fold .landing-sheet {
   width: 100%;
-  max-width: var(--landing-copy-max);
+  max-width: var(--landing-copy-max, 100%);
   margin-left: auto;
   margin-right: auto;
 }
@@ -89,6 +89,7 @@
   margin-top: clamp(1.5rem, 4vh, 2.5rem);
   padding-top: 0.25rem;
   scroll-margin-top: 5.5rem;
+  box-sizing: border-box;
 }
 
 .landing-product-intro__heading {
@@ -1410,8 +1411,8 @@ th {
 
 @media (min-width: 640px) {
   .app--landing {
-    --landing-shell-max: min(56rem, calc(100vw - 2 * var(--landing-pad-x)));
-    --landing-copy-max: min(44rem, 100%);
+    --landing-shell-max: min(62rem, calc(100vw - 2 * var(--landing-pad-x)));
+    --landing-copy-max: 100%;
     --landing-below-chrome: clamp(1.75rem, 4.5vh, 2.75rem);
   }
 
@@ -1435,12 +1436,12 @@ th {
   .app--landing .landing-lead {
     margin-left: auto;
     margin-right: auto;
-    max-width: min(38em, 100%);
+    max-width: min(44em, 100%);
   }
 
   .app--landing .landing-cta-wrap,
   .app--landing .app-links-entry-wrap {
-    max-width: min(36rem, 100%);
+    max-width: min(28rem, 100%);
     margin-left: auto;
     margin-right: auto;
     width: 100%;
@@ -1461,7 +1462,7 @@ th {
   }
 
   .app-disclaimer-fixed p {
-    max-width: min(56rem, calc(100vw - 2rem));
+    max-width: min(62rem, calc(100vw - 2rem));
     margin-left: auto;
     margin-right: auto;
   }
@@ -1469,20 +1470,105 @@ th {
 
 @media (min-width: 960px) {
   .app--landing {
-    --landing-shell-max: min(60rem, 92vw);
-    --landing-pad-x: clamp(1.5rem, 4vw, 2.5rem);
+    --landing-shell-max: min(76rem, calc(100vw - 3rem));
+    --landing-copy-max: 100%;
+    --landing-pad-x: clamp(1.5rem, 3vw, 2.5rem);
   }
 
   .app-top-chrome--with-consult {
-    width: min(60rem, calc(100vw - 2rem));
+    width: min(76rem, calc(100vw - 2rem));
+  }
+
+  .app--landing .landing-lead {
+    max-width: min(50em, 100%);
+  }
+
+  .app--landing .landing-cta-wrap,
+  .app--landing .app-links-entry-wrap {
+    max-width: min(32rem, 100%);
   }
 
   .landing-title__l1 {
-    font-size: clamp(2.1rem, 3.2vw, 2.65rem);
+    font-size: clamp(2.1rem, 3.2vw, 2.75rem);
   }
 
   .landing-title__l2 {
-    font-size: clamp(1.25rem, 2vw, 1.55rem);
+    font-size: clamp(1.25rem, 2vw, 1.6rem);
+  }
+}
+
+@media (min-width: 1280px) {
+  .app--landing {
+    --landing-shell-max: min(88rem, calc(100vw - 4rem));
+    --landing-copy-max: 100%;
+    --landing-below-chrome: clamp(2.25rem, 5vh, 3.5rem);
+    --landing-top-chrome: clamp(5.25rem, 7vh, 6.25rem);
+  }
+
+  .app--landing::before {
+    width: min(100vw, 88rem);
+  }
+
+  .landing-hero-fold {
+    padding-top: clamp(0.5rem, 2vh, 1.5rem);
+    padding-bottom: clamp(2.75rem, 6vh, 4.5rem);
+  }
+
+  @media (min-height: 720px) {
+    .landing-hero-fold {
+      min-height: min(calc(100vh - var(--app-disclaimer-h, 3.25rem) - 6rem), 880px);
+      justify-content: center;
+    }
+  }
+
+  .landing-hero-marquee-wrap {
+    margin-top: clamp(1.75rem, 4.5vh, 2.5rem);
+    margin-bottom: clamp(1.5rem, 4vh, 2.25rem);
+  }
+
+  .app--landing .landing-hero-marquee.university-logo-marquee--colored {
+    --logo-size: clamp(72px, 4.5vw, 88px);
+    --logo-gap: clamp(1.75rem, 2.5vw, 2.5rem);
+  }
+
+  .app--landing .landing-lead {
+    max-width: min(56em, 100%);
+    font-size: clamp(1.08rem, 1.1vw, 1.2rem);
+  }
+
+  .app--landing .landing-cta-wrap,
+  .app--landing .app-links-entry-wrap {
+    max-width: min(36rem, 100%);
+  }
+
+  .app-top-chrome--with-consult {
+    width: min(88rem, calc(100vw - 3rem));
+  }
+
+  .app-top-chrome__consult {
+    max-width: min(32rem, 100%);
+  }
+
+  .landing-product-intro {
+    margin-top: clamp(2rem, 5vh, 3.5rem);
+  }
+
+  .app-disclaimer-fixed p {
+    max-width: min(88rem, calc(100vw - 3rem));
+  }
+}
+
+@media (min-width: 1536px) {
+  .app--landing {
+    --landing-shell-max: min(96rem, calc(100vw - 5rem));
+  }
+
+  .app-top-chrome--with-consult {
+    width: min(96rem, calc(100vw - 4rem));
+  }
+
+  .app-disclaimer-fixed p {
+    max-width: min(96rem, calc(100vw - 4rem));
   }
 }
 

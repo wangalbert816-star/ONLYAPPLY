@@ -793,7 +793,7 @@ merge(enFlat, {
     errNetwork: "We couldn’t reach the report service. Check your connection, refresh, and try again; if it keeps failing, contact support@onlyapply.ai.",
     productIntroLink: "How it works",
     expertConsult: {
-      cta: "book a live 1:1 free 30 min consultation",
+      cta: "Book a live 1:1 free 30 min consultation",
       ctaTop: "Free 1:1 consult",
       modalTitle: "1:1 expert consultation",
       modalLead: "Contact us at:",
