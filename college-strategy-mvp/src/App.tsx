@@ -12,6 +12,7 @@ import { FullscreenLogoMarquee } from "./components/FullscreenLogoMarquee";
 import { UniversityLogoMarquee } from "./components/UniversityLogoMarquee";
 import { BrandStoryOverlay } from "./components/BrandStoryOverlay";
 import { ProductIntroPage } from "./components/ProductIntroPage";
+import { LandingHeroPreview } from "./components/LandingHeroPreview";
 import { ProductIntroContent } from "./components/ProductIntroContent";
 import { ExpertConsultContactModal } from "./components/ExpertConsultContactModal";
 import { useLanguage } from "./i18n/LanguageContext";
@@ -1047,69 +1048,82 @@ export default function App() {
       <div className="app app--landing">
         <div className="landing-hero-fold">
         <div className="landing-sheet">
-          <header className="landing-hero">
-            <button
-              type="button"
-              className="landing-logo-button"
-              onClick={() => setBrandStoryOpen(true)}
-              aria-label="了解 OnlyApply"
-            >
-              <BrandLogo className="landing-logo" />
-            </button>
-            <div className="landing-copy">
-              <h1 className="landing-title">
-                <span className="landing-title__l1">{t("app.hero.titleLine1")}</span>
-                <span className="landing-title__l2">{t("app.hero.titleLine2")}</span>
-              </h1>
-              <p className="landing-lead">{t("app.hero.lead")}</p>
+          <div className="landing-hero-stage">
+            <div className="landing-hero-grid">
+              <header className="landing-hero landing-hero-main">
+                <button
+                  type="button"
+                  className="landing-logo-button"
+                  onClick={() => setBrandStoryOpen(true)}
+                  aria-label="了解 OnlyApply"
+                >
+                  <BrandLogo className="landing-logo" />
+                </button>
+                <p className="landing-social-proof">{t("app.hero.socialProof")}</p>
+                <div className="landing-copy">
+                  <h1 className="landing-title">
+                    <span className="landing-title__l1">{t("app.hero.titleLine1")}</span>
+                    <span className="landing-title__l2">{t("app.hero.titleLine2")}</span>
+                  </h1>
+                  <p className="landing-lead">{t("app.hero.lead")}</p>
+                </div>
+
+                <div className="landing-hero-preview-mobile">
+                  <LandingHeroPreview />
+                </div>
+
+                <div className="landing-cta-wrap">
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-block btn-cta-landing landing-cta-primary"
+                    onClick={() => {
+                      setApplicationHubOpen(false);
+                      setFlowStarted(true);
+                      queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+                    }}
+                  >
+                    {t("app.welcome.start")}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-block landing-intro-btn"
+                    onClick={() => {
+                      setApplicationHubOpen(false);
+                      document.getElementById("landing-product-intro")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }}
+                  >
+                    {t("app.productIntroLink")}
+                  </button>
+                  <p className="landing-trust">{t("app.welcome.meta")}</p>
+                </div>
+
+                <div className="app-links-entry-wrap landing-hero-main__links">
+                  <button
+                    ref={applicationHubTriggerRef}
+                    type="button"
+                    className="app-links-entry"
+                    aria-expanded={applicationHubOpen}
+                    aria-controls="application-hub-dialog"
+                    onClick={(e) => openApplicationHub(e)}
+                  >
+                    {t("appLinks.entry")}
+                  </button>
+                </div>
+              </header>
+
+              <div className="landing-hero-visual">
+                <LandingHeroPreview />
+              </div>
             </div>
-          </header>
 
-          <div
-            className={
-              landingMarqueeVisible ? "landing-hero-marquee-wrap" : "landing-hero-marquee-wrap landing-hero-marquee-wrap--hidden"
-            }
-            aria-hidden={!landingMarqueeVisible}
-          >
-            <UniversityLogoMarquee colored className="landing-hero-marquee" durationSec={100} />
-          </div>
-
-          <div className="landing-cta-wrap">
-            <button
-              type="button"
-              className="btn btn-primary btn-block btn-cta-landing"
-              onClick={() => {
-                setApplicationHubOpen(false);
-                setFlowStarted(true);
-                queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
-              }}
+            <div
+              className={
+                landingMarqueeVisible ? "landing-hero-marquee-wrap" : "landing-hero-marquee-wrap landing-hero-marquee-wrap--hidden"
+              }
+              aria-hidden={!landingMarqueeVisible}
             >
-              {t("app.welcome.start")}
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary btn-block landing-intro-btn"
-              onClick={() => {
-                setApplicationHubOpen(false);
-                document.getElementById("landing-product-intro")?.scrollIntoView({ behavior: "smooth", block: "start" });
-              }}
-            >
-              {t("app.productIntroLink")}
-            </button>
-            <p className="landing-trust">{t("app.welcome.meta")}</p>
-          </div>
-
-          <div className="app-links-entry-wrap">
-            <button
-              ref={applicationHubTriggerRef}
-              type="button"
-              className="app-links-entry"
-              aria-expanded={applicationHubOpen}
-              aria-controls="application-hub-dialog"
-              onClick={(e) => openApplicationHub(e)}
-            >
-              {t("appLinks.entry")}
-            </button>
+              <UniversityLogoMarquee colored className="landing-hero-marquee" durationSec={100} />
+            </div>
           </div>
         </div>
         </div>
