@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useLanguage } from "../../i18n/LanguageContext";
 import { getAssignedExpert, type AssignedExpert } from "../../lib/assignedExpert";
+import { isCalendlyBookingEnabled, requestExpertConsult } from "../../lib/expertConsultBooking";
 import { SUPPORT_EMAIL } from "../../lib/support";
 import { ExpertConsultLeadDialog } from "../ExpertConsultLeadDialog";
 import "./AccountExpertPanel.css";
@@ -19,7 +20,15 @@ function expertInitials(name: string) {
   return `${parts[0][0] ?? ""}${parts[parts.length - 1][0] ?? ""}`.toUpperCase();
 }
 
-function AssignedExpertCard({ expert, onContact }: { expert: AssignedExpert; onContact: () => void }) {
+function AssignedExpertCard({
+  expert,
+  onContact,
+  showCalendlyHint,
+}: {
+  expert: AssignedExpert;
+  onContact: () => void;
+  showCalendlyHint: boolean;
+}) {
   const { t } = useLanguage();
 
   return (
@@ -47,8 +56,9 @@ function AssignedExpertCard({ expert, onContact }: { expert: AssignedExpert; onC
         {expert.wechat && <p className="account-expert-panel__contact-line">{expert.wechat}</p>}
       </div>
       <button type="button" className="btn btn-primary account-expert-panel__cta" onClick={onContact}>
-        {t("auth.accountExpertContact")}
+        {showCalendlyHint ? t("auth.accountExpertBookCalendly") : t("auth.accountExpertContact")}
       </button>
+      {showCalendlyHint && <p className="account-expert-panel__calendly-hint">{t("auth.accountExpertCalendlyHint")}</p>}
     </div>
   );
 }
@@ -57,6 +67,17 @@ export function AccountExpertPanel({ gapCount, applicationId = null, reportId = 
   const { t } = useLanguage();
   const [dialogOpen, setDialogOpen] = useState(false);
   const expert = useMemo(() => getAssignedExpert(), []);
+  const calendlyUrl = expert?.calendlyUrl ?? null;
+  const showCalendlyHint = isCalendlyBookingEnabled(calendlyUrl);
+
+  const openConsult = () => {
+    requestExpertConsult({
+      url: calendlyUrl,
+      email: userEmail,
+      source: expert ? "account_advisor_assigned" : "account_advisor_panel",
+      onFallback: () => setDialogOpen(true),
+    });
+  };
 
   const riskText =
     gapCount > 0
@@ -66,7 +87,7 @@ export function AccountExpertPanel({ gapCount, applicationId = null, reportId = 
   return (
     <aside className="account-expert-panel" aria-labelledby="account-expert-panel-title">
       {expert ? (
-        <AssignedExpertCard expert={expert} onContact={() => setDialogOpen(true)} />
+        <AssignedExpertCard expert={expert} onContact={openConsult} showCalendlyHint={showCalendlyHint} />
       ) : (
         <div className="account-expert-panel__empty">
           <p className="account-expert-panel__kicker">{t("auth.accountExpertKicker")}</p>
@@ -80,13 +101,17 @@ export function AccountExpertPanel({ gapCount, applicationId = null, reportId = 
             <li>{t("auth.accountExpertBenefit2")}</li>
             <li>{t("auth.accountExpertBenefit3")}</li>
           </ul>
-          <button type="button" className="btn btn-primary account-expert-panel__cta" onClick={() => setDialogOpen(true)}>
-            {t("app.expertConsult.cta")}
+          <button type="button" className="btn btn-primary account-expert-panel__cta" onClick={openConsult}>
+            {showCalendlyHint ? t("auth.accountExpertBookCalendly") : t("app.expertConsult.cta")}
           </button>
-          <p className="account-expert-panel__email">
-            {t("auth.accountExpertEmailHint")}{" "}
-            <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
-          </p>
+          {showCalendlyHint ? (
+            <p className="account-expert-panel__calendly-hint">{t("auth.accountExpertCalendlyHint")}</p>
+          ) : (
+            <p className="account-expert-panel__email">
+              {t("auth.accountExpertEmailHint")}{" "}
+              <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
+            </p>
+          )}
         </div>
       )}
 

@@ -76,6 +76,13 @@
   word-break: break-all;
 }
 
+.account-expert-panel__calendly-hint {
+  margin: 0.65rem 0 0;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
 .account-expert-panel__assigned {
   display: flex;
   flex-direction: column;

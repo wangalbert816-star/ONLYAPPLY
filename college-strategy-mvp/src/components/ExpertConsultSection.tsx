@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useAuth } from "../auth/AuthContext";
 import { useLanguage } from "../i18n/LanguageContext";
+import { isCalendlyBookingEnabled, requestExpertConsult } from "../lib/expertConsultBooking";
 import { ExpertConsultLeadDialog } from "./ExpertConsultLeadDialog";
 import "./ExpertConsultSection.css";
 
@@ -11,7 +13,17 @@ type Props = {
 
 export function ExpertConsultSection({ gapCount, applicationId = null, reportId = null }: Props) {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
+  const showCalendlyHint = isCalendlyBookingEnabled();
+
+  const openConsult = () => {
+    requestExpertConsult({
+      email: user?.email ?? undefined,
+      source: "report_advisor_support",
+      onFallback: () => setOpen(true),
+    });
+  };
 
   const riskText =
     gapCount > 0
@@ -25,9 +37,10 @@ export function ExpertConsultSection({ gapCount, applicationId = null, reportId 
       </h2>
       <p className="expert-consult__risk">{riskText}</p>
       <p className="expert-consult__guide">{t("report.expertConsult.guide")}</p>
-      <button type="button" className="expert-consult__cta" onClick={() => setOpen(true)}>
-        {t("report.expertConsult.cta")}
+      <button type="button" className="expert-consult__cta" onClick={openConsult}>
+        {showCalendlyHint ? t("report.expertConsult.ctaCalendly") : t("report.expertConsult.cta")}
       </button>
+      {showCalendlyHint && <p className="expert-consult__calendly-hint">{t("report.expertConsult.calendlyHint")}</p>}
       <ExpertConsultLeadDialog
         open={open}
         onClose={() => setOpen(false)}

@@ -25,6 +25,13 @@
   color: #475569;
 }
 
+.expert-consult__calendly-hint {
+  margin: 0.55rem 0 0;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
 .expert-consult__cta {
   width: 100%;
   max-width: 16rem;

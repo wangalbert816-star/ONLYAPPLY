@@ -15,6 +15,7 @@ import { ProductIntroPage } from "./components/ProductIntroPage";
 import { LandingHeroPreview } from "./components/LandingHeroPreview";
 import { LandingScrollStory } from "./components/LandingScrollStory";
 import { ExpertConsultContactModal } from "./components/ExpertConsultContactModal";
+import { requestExpertConsult } from "./lib/expertConsultBooking";
 import { useLanguage } from "./i18n/LanguageContext";
 import { useAuth } from "./auth/AuthContext";
 import { AuthModal } from "./components/auth/AuthModal";
@@ -260,12 +261,21 @@ export default function App() {
       <AuthChromeProvider value={authChromeHandlers}>
         <AppTopChrome
           expertConsultLabel={options?.showExpertConsult ? t("app.expertConsult.cta") : undefined}
-          onExpertConsult={options?.showExpertConsult ? () => setExpertConsultModalOpen(true) : undefined}
+          onExpertConsult={
+            options?.showExpertConsult
+              ? () =>
+                  requestExpertConsult({
+                    email: user?.email ?? undefined,
+                    source: "landing",
+                    onFallback: () => setExpertConsultModalOpen(true),
+                  })
+              : undefined
+          }
         />
         {content}
       </AuthChromeProvider>
     ),
-    [authChromeHandlers, t],
+    [authChromeHandlers, t, user?.email],
   );
 
   const refreshEntitlements = useCallback(async (): Promise<string[]> => {

@@ -5,6 +5,7 @@ export type AssignedExpert = {
   specialties?: string[];
   email?: string;
   wechat?: string;
+  calendlyUrl?: string;
 };
 
 /** Optional JSON in VITE_ASSIGNED_EXPERT for staging assigned-advisor UI. */
@@ -23,6 +24,7 @@ export function getAssignedExpert(): AssignedExpert | null {
           : undefined,
         email: typeof parsed.email === "string" ? parsed.email.trim() : undefined,
         wechat: typeof parsed.wechat === "string" ? parsed.wechat.trim() : undefined,
+        calendlyUrl: typeof parsed.calendlyUrl === "string" ? parsed.calendlyUrl.trim() : undefined,
       };
     }
   } catch {

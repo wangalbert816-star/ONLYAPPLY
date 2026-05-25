@@ -12,6 +12,10 @@ interface ImportMetaEnv {
   readonly VITE_ENABLE_ESSAY_ANALYSIS_CHECKOUT?: string;
   /** "true"：启用邀请码核销（需在 Supabase 部署 schema-invite-codes-v1.sql） */
   readonly VITE_ENABLE_INVITE_CODES?: string;
+  /** Calendly event URL, e.g. https://calendly.com/your-team/30min */
+  readonly VITE_CALENDLY_URL?: string;
+  /** "false" opens Calendly in a new tab instead of the popup widget */
+  readonly VITE_CALENDLY_USE_POPUP?: string;
 }
 
 interface ImportMeta {
