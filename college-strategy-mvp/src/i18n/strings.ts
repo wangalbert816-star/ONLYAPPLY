@@ -734,9 +734,9 @@ merge(zhFlat, wizardZhNested);
 merge(enFlat, {
   app: {
     hero: {
-      titleLine1: "Sort reach, match, and safety before the dream list",
+      titleLine1: "Know where you stand before you apply",
       titleLine2: "Each tier: why it fits · what to verify first",
-      lead: "From your answers, we build a tiered school-strategy draft: reference schools per band, why they might sit there, and risk points to check on each site—so you spend less time building spreadsheets from scratch. This is an AI planning draft, not a prediction; deadlines, international-student rules, and costs are always on each school’s official site.",
+      lead: "Answer a few questions, and we'll help you understand where you stand, which schools make sense for your list, and what steps can make your application stronger.",
     },
     flow: {
       headline: "Questionnaire",
@@ -757,7 +757,7 @@ merge(enFlat, {
       s3d: "Risk posture & activities—so advice fits how you play.",
     },
     disclaimer:
-      "AI-generated planning aid, not an admissions decision. Policies and outcomes live on each school’s site.",
+      "AI-generated planning aid, not an admissions decision. Policies and outcomes live on each school’s site. For more assistance book a free consultation as it is shown in the report.",
     steps: {
       caption: "Step {step} / 3",
       captionMid: " · Continue when ready",
