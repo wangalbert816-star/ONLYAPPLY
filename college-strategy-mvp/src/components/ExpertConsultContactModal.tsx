@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useLanguage } from "../i18n/LanguageContext";
 import "./ExpertConsultSection.css";
 
-export const EXPERT_CONSULT_CONTACT_EMAIL = "wangalbert816@gmail.com";
+export const EXPERT_CONSULT_CONTACT_EMAIL = "onlyapplysupport@gmail.com";
 
 type Props = {
   open: boolean;

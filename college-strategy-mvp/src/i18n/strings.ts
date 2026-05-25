@@ -143,6 +143,43 @@ merge(zhFlat, {
     },
     startCta: "开始填写问卷",
   },
+  landingScroll: {
+    results: {
+      eyebrow: "你的草案长什么样",
+      title1: "冲 / 稳 / 保",
+      title2: "一屏看清档位与理由",
+      lead: "不是梦校清单，而是可核对的分档草案：每校为何在此档、要先查官网什么、还缺哪些信息。",
+      statSchools: "9 校分档",
+      statFive: "五维画像",
+      statIterate: "补充可重分析",
+      schoolsLabel: "样例校（脱敏）",
+    },
+    journey: {
+      eyebrow: "怎么用",
+      title1: "三步",
+      title2: "从问卷到可带走草案",
+      lead: "约 3 分钟填完；先预览结构，再决定是否深入。",
+    },
+    method: {
+      eyebrow: "报告怎么来的",
+      title1: "顾问框架",
+      title2: "+ 模型生成 + 规则校验",
+      lead: "我们把「该写什么」和「模型怎么写」分开，方便你对照官网自己查证。",
+    },
+    sample: {
+      eyebrow: "脱敏样例",
+      title1: "展开看",
+      title2: "完整报告结构",
+    },
+    privacy: {
+      eyebrow: "数据与隐私",
+      title1: "成绩与活动",
+      title2: "我们如何保存与使用",
+    },
+    ctaMidLead: "想先知道你在哪一档？",
+    ctaFinalLead: "约 3 分钟 · 可先不注册试用",
+    notPillPrefix: "不是",
+  },
   steps: {
     1: {
       title: "第 1 步 · 身份与约束",
@@ -876,6 +913,43 @@ merge(enFlat, {
       policyLink: "Read the full Privacy Policy",
     },
     startCta: "Start questionnaire",
+  },
+  landingScroll: {
+    results: {
+      eyebrow: "What you get",
+      title1: "Reach, match, and safety",
+      title2: "in one verifiable view",
+      lead: "Not a dream-school list—a tiered draft with rationales, risks, official-site checks, and clear gaps.",
+      statSchools: "9-school tiers",
+      statFive: "5D profile",
+      statIterate: "Re-run after gaps",
+      schoolsLabel: "Sample schools (anonymized)",
+    },
+    journey: {
+      eyebrow: "How it works",
+      title1: "Three steps",
+      title2: "from intake to your draft",
+      lead: "~3 minutes to complete; preview the structure before you go deeper.",
+    },
+    method: {
+      eyebrow: "Under the hood",
+      title1: "Counselor framing",
+      title2: "+ model output + rule checks",
+      lead: "We separate what should be said from how the model says it—so you can verify on official sites.",
+    },
+    sample: {
+      eyebrow: "Sample report",
+      title1: "See the full",
+      title2: "report structure",
+    },
+    privacy: {
+      eyebrow: "Data & privacy",
+      title1: "Grades and activities",
+      title2: "how we store and use them",
+    },
+    ctaMidLead: "Ready to see where you stand?",
+    ctaFinalLead: "~3 min · Try without signing up",
+    notPillPrefix: "Not",
   },
   steps: {
     1: {

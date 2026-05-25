@@ -13,7 +13,7 @@ import { UniversityLogoMarquee } from "./components/UniversityLogoMarquee";
 import { BrandStoryOverlay } from "./components/BrandStoryOverlay";
 import { ProductIntroPage } from "./components/ProductIntroPage";
 import { LandingHeroPreview } from "./components/LandingHeroPreview";
-import { ProductIntroContent } from "./components/ProductIntroContent";
+import { LandingScrollStory } from "./components/LandingScrollStory";
 import { ExpertConsultContactModal } from "./components/ExpertConsultContactModal";
 import { useLanguage } from "./i18n/LanguageContext";
 import { useAuth } from "./auth/AuthContext";
@@ -1128,9 +1128,8 @@ export default function App() {
         </div>
         </div>
 
-        <ProductIntroContent
+        <LandingScrollStory
           id="landing-product-intro"
-          variant="embedded"
           onStart={() => {
             setApplicationHubOpen(false);
             setFlowStarted(true);

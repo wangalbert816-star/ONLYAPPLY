@@ -149,7 +149,7 @@ function FiveSlide({
   }, [isActive, motionOk]);
 
   return (
-    <div className="landing-hero-preview__panel">
+    <div className="landing-hero-preview__panel landing-hero-preview__panel--five">
       <p className="landing-hero-preview__eyebrow">{t("report.profileFive.title")}</p>
       <div className="landing-hero-preview__radar-wrap">
         <MiniProfileRadar key={animKey} dimensions={dimensions} t={t} animate={isActive && motionOk} />

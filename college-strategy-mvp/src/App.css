@@ -153,6 +153,10 @@
   box-sizing: border-box;
 }
 
+.app--landing .landing-scroll-story {
+  flex: 0 0 auto;
+}
+
 .landing-product-intro__heading {
   margin: 0 0 1rem;
   font-size: 0.75rem;
