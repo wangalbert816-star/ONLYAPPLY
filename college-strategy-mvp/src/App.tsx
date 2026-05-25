@@ -9,8 +9,10 @@ import { clearUnlockStorage, readUnlockFromStorage, ReportView, writeUnlockToSto
 import { BrandLogo } from "./components/BrandLogo";
 import { FormLiveSummary, GuidedStep1, GuidedStep2, GuidedStep3, type GuideTouch } from "./components/GuidedQuestionnaire";
 import { FullscreenLogoMarquee } from "./components/FullscreenLogoMarquee";
+import { UniversityLogoMarquee } from "./components/UniversityLogoMarquee";
 import { BrandStoryOverlay } from "./components/BrandStoryOverlay";
 import { ProductIntroPage } from "./components/ProductIntroPage";
+import { ProductIntroContent } from "./components/ProductIntroContent";
 import { ExpertConsultContactModal } from "./components/ExpertConsultContactModal";
 import { useLanguage } from "./i18n/LanguageContext";
 import { useAuth } from "./auth/AuthContext";
@@ -223,6 +225,7 @@ export default function App() {
   const [applicationHubOpen, setApplicationHubOpen] = useState(false);
   const [brandStoryOpen, setBrandStoryOpen] = useState(false);
   const [expertConsultModalOpen, setExpertConsultModalOpen] = useState(false);
+  const [landingMarqueeVisible, setLandingMarqueeVisible] = useState(true);
 
   const openApplicationHub = useCallback((e: MouseEvent<HTMLElement>) => {
     applicationHubTriggerRef.current = e.currentTarget as HTMLButtonElement;
@@ -252,13 +255,16 @@ export default function App() {
   );
 
   const withChrome = useCallback(
-    (content: ReactNode) => (
+    (content: ReactNode, options?: { showExpertConsult?: boolean }) => (
       <AuthChromeProvider value={authChromeHandlers}>
-        <AppTopChrome />
+        <AppTopChrome
+          expertConsultLabel={options?.showExpertConsult ? t("app.expertConsult.cta") : undefined}
+          onExpertConsult={options?.showExpertConsult ? () => setExpertConsultModalOpen(true) : undefined}
+        />
         {content}
       </AuthChromeProvider>
     ),
-    [authChromeHandlers],
+    [authChromeHandlers, t],
   );
 
   const refreshEntitlements = useCallback(async (): Promise<string[]> => {
@@ -672,6 +678,25 @@ export default function App() {
     setGuideTouch({});
   }, [step]);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    if (flowStarted) {
+      setLandingMarqueeVisible(false);
+      root.removeAttribute("data-landing");
+      root.setAttribute("data-hide-brand-wall", "");
+      return () => root.removeAttribute("data-hide-brand-wall");
+    }
+    root.setAttribute("data-landing", "");
+    root.removeAttribute("data-hide-brand-wall");
+    const onScroll = () => setLandingMarqueeVisible(window.scrollY < 40);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      root.removeAttribute("data-landing");
+    };
+  }, [flowStarted]);
+
   async function submitReport() {
     if (submitLockRef.current) return;
     const e1 = validateStep(1, form, t);
@@ -1020,6 +1045,7 @@ export default function App() {
   if (!flowStarted) {
     return withChrome(
       <div className="app app--landing">
+        <div className="landing-hero-fold">
         <div className="landing-sheet">
           <header className="landing-hero">
             <button
@@ -1039,6 +1065,15 @@ export default function App() {
             </div>
           </header>
 
+          <div
+            className={
+              landingMarqueeVisible ? "landing-hero-marquee-wrap" : "landing-hero-marquee-wrap landing-hero-marquee-wrap--hidden"
+            }
+            aria-hidden={!landingMarqueeVisible}
+          >
+            <UniversityLogoMarquee colored className="landing-hero-marquee" durationSec={100} />
+          </div>
+
           <div className="landing-cta-wrap">
             <button
               type="button"
@@ -1056,18 +1091,10 @@ export default function App() {
               className="btn btn-secondary btn-block landing-intro-btn"
               onClick={() => {
                 setApplicationHubOpen(false);
-                setView("intro");
-                queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+                document.getElementById("landing-product-intro")?.scrollIntoView({ behavior: "smooth", block: "start" });
               }}
             >
               {t("app.productIntroLink")}
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary btn-block btn-cta-landing landing-consult-btn"
-              onClick={() => setExpertConsultModalOpen(true)}
-            >
-              {t("app.expertConsult.cta")}
             </button>
             <p className="landing-trust">{t("app.welcome.meta")}</p>
           </div>
@@ -1085,6 +1112,17 @@ export default function App() {
             </button>
           </div>
         </div>
+        </div>
+
+        <ProductIntroContent
+          id="landing-product-intro"
+          variant="embedded"
+          onStart={() => {
+            setApplicationHubOpen(false);
+            setFlowStarted(true);
+            queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+          }}
+        />
 
         <FullscreenLogoMarquee
           open={applicationHubOpen}
@@ -1118,6 +1156,7 @@ export default function App() {
           onOpenAppLinks={openApplicationHub}
         />
       </div>,
+      { showExpertConsult: true },
     );
   }
 

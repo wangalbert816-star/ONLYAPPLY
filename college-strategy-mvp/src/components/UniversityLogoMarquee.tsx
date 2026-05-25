@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState, type CSSProperties } from "react";
 import amherstLogo from "../assets/logos/amherst.png";
+import babsonLogo from "../assets/logos/babson.png";
 import berkeleyLogo from "../assets/logos/berkeley.png";
 import brownLogo from "../assets/logos/brown.png";
 import columbiaLogo from "../assets/logos/columbia.png";
@@ -31,6 +32,7 @@ export const DEFAULT_MARQUEE_SCHOOLS: MarqueeSchool[] = [
   { id: "berkeley", name: "Berkeley", logoUrl: berkeleyLogo },
   { id: "mit", name: "MIT", logoUrl: mitLogo },
   { id: "amherst", name: "Amherst", logoUrl: amherstLogo },
+  { id: "babson", name: "Babson College", logoUrl: babsonLogo },
 ];
 
 export interface UniversityLogoMarqueeProps {
@@ -38,6 +40,8 @@ export interface UniversityLogoMarqueeProps {
   /** 单圈滚动时长，越大越慢 */
   durationSec?: number;
   className?: string;
+  /** 首页中部：彩色原色 logo，无灰度 */
+  colored?: boolean;
 }
 
 function InitialFallback({ name }: { name: string }) {
@@ -47,8 +51,9 @@ function InitialFallback({ name }: { name: string }) {
 
 export function UniversityLogoMarquee({
   schools = DEFAULT_MARQUEE_SCHOOLS,
-  durationSec = 280,
+  durationSec,
   className = "",
+  colored = false,
 }: UniversityLogoMarqueeProps) {
   const [broken, setBroken] = useState<Record<string, boolean>>({});
 
@@ -56,30 +61,37 @@ export function UniversityLogoMarquee({
     setBroken((prev) => ({ ...prev, [id]: true }));
   }, []);
 
-  const style = { "--marquee-duration": `${durationSec}s` } as CSSProperties;
+  const effectiveDuration = durationSec ?? (colored ? 120 : 280);
+  const style = { "--marquee-duration": `${effectiveDuration}s` } as CSSProperties;
 
   const stripSchools = useMemo(() => repeatMarqueeStrip(schools, 10), [schools]);
 
-  const renderLogo = (school: MarqueeSchool, keySuffix: string) => (
-    <div className="marquee-logo-cell" key={`${school.id}-${keySuffix}`} aria-hidden>
-      <div className="marquee-logo-frame">
-        {broken[school.id] ? (
-          <InitialFallback name={school.name} />
-        ) : (
-          <img
-            src={school.logoUrl}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            draggable={false}
-            onError={() => onImgError(school.id)}
-          />
-        )}
+  const renderLogo = (school: MarqueeSchool, keySuffix: string) => {
+    const wideMark = school.id === "babson";
+    const frameClass = ["marquee-logo-frame", wideMark && "marquee-logo-frame--wide"].filter(Boolean).join(" ");
+    return (
+      <div className="marquee-logo-cell" key={`${school.id}-${keySuffix}`} aria-hidden>
+        <div className={frameClass}>
+          {broken[school.id] ? (
+            <InitialFallback name={school.name} />
+          ) : (
+            <img
+              src={school.logoUrl}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              draggable={false}
+              onError={() => onImgError(school.id)}
+            />
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
-  const rootClass = ["university-logo-marquee", className].filter(Boolean).join(" ");
+  const rootClass = ["university-logo-marquee", colored && "university-logo-marquee--colored", className]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div className={rootClass} style={style} aria-hidden="true">

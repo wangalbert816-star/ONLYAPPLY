@@ -4,6 +4,19 @@
   padding-bottom: 2.5rem;
 }
 
+.landing-product-intro .intro-section {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.landing-product-intro .intro-cta {
+  width: 100%;
+  max-width: min(28rem, 100%);
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+
 .intro-header {
   display: flex;
   align-items: center;

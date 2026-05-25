@@ -42,6 +42,15 @@ html[data-intro] .brand-wall-vignette {
   justify-content: flex-end;
   padding-bottom: max(0.2rem, env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+
+/** 首页中部已有彩色走马灯；填表/滚动后不再显示底部条带 */
+html[data-landing] .brand-wall-bottom-band,
+html[data-hide-brand-wall] .brand-wall-bottom-band {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
 }
 
 /** 表单页底部有固定免责声明：走马灯紧贴免责声明上方 */

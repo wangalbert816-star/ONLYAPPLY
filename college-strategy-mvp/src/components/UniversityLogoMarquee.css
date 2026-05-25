@@ -104,6 +104,49 @@
   background: linear-gradient(270deg, var(--color-bg, #fafafa) 0%, transparent 100%);
 }
 
+.university-logo-marquee--colored {
+  --logo-size: 52px;
+  --logo-gap: 2rem;
+  padding: 0.35rem 0;
+}
+
+.university-logo-marquee--colored .marquee-logo-frame img {
+  width: 88%;
+  height: 88%;
+  opacity: 1;
+  filter: none;
+}
+
+.marquee-logo-frame--wide {
+  width: calc(var(--logo-size, 56px) * 2.35);
+}
+
+.marquee-logo-frame--wide img {
+  width: auto;
+  max-width: 94%;
+  height: 70%;
+  object-fit: contain;
+}
+
+.university-logo-marquee--colored .marquee-logo-frame--wide img {
+  height: 68%;
+}
+
+.university-logo-marquee--colored .marquee-fallback-letter {
+  opacity: 0.7;
+  color: var(--color-primary, #2563eb);
+}
+
+@media (prefers-color-scheme: dark) {
+  .university-logo-marquee--colored .marquee-fade--left {
+    background: linear-gradient(90deg, var(--color-bg, #0b0f17) 0%, transparent 100%);
+  }
+
+  .university-logo-marquee--colored .marquee-fade--right {
+    background: linear-gradient(270deg, var(--color-bg, #0b0f17) 0%, transparent 100%);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .marquee-track {
     animation: none;

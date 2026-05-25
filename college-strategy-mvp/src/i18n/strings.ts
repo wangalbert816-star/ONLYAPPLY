@@ -73,6 +73,7 @@ merge(zhFlat, {
     productIntroLink: "产品介绍",
     expertConsult: {
       cta: "获取专家1v1咨询",
+      ctaTop: "专家 1v1 咨询",
       modalTitle: "专家 1v1 咨询",
       modalLead: "请通过以下邮箱联系我们：",
       close: "关闭",
@@ -793,6 +794,7 @@ merge(enFlat, {
     productIntroLink: "How it works",
     expertConsult: {
       cta: "book a live 1:1 free 30 min consultation",
+      ctaTop: "Free 1:1 consult",
       modalTitle: "1:1 expert consultation",
       modalLead: "Contact us at:",
       close: "Close",
