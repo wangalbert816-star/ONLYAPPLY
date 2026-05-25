@@ -852,7 +852,7 @@ merge(enFlat, {
   steps: {
     1: {
       title: "Step 1 · Identity & constraints",
-      lead: "Budget, identity & testing—how tiers are cut.",
+      lead: "Your background and test scores shape which school tiers are realistic.",
     },
     2: {
       title: "Step 2 · Academics & intent",

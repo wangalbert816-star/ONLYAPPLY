@@ -244,8 +244,8 @@ export const wizardEnNested = {
     },
     s1: {
       intake: {
-        q: "Which application intake are you planning to enter for U.S. undergraduate admission?",
-        why: "Intake drives deadlines and timeline framing; tiers are aligned to that season's rules.",
+        q: "Which year are you going to apply for your college?",
+        why: "The year you plan to apply determines your deadlines and which school data we pull to build your list.",
         fb2027Fall: "Got it—we will align pacing and cutoffs to Fall 2027.",
         fb2028Fall: "Noted—longer runway lets us emphasize buildable evidence over time.",
         fb2029Fall: "Understood—more time means we can spell out milestones you can track.",
@@ -253,7 +253,7 @@ export const wizardEnNested = {
         fbOther: "Understood. Non-standard intakes need school-by-school checks; we will flag uncertainty.",
       },
       identity: {
-        q: "Which applicant identity best describes you for this exercise?",
+        q: "Which applicant category best describes you?",
         why: "Identity affects international policies, aid availability, and how we slice realistic tiers.",
         fbIntl: "Understood. Visa, funding, and aid signals become central—we’ll emphasize verification.",
         fbUs: "Noted. Residency/citizenship changes cost and some program gates—we’ll calibrate tiers accordingly.",
@@ -261,7 +261,7 @@ export const wizardEnNested = {
       },
       environment: {
         q: "Add application-environment context (optional)",
-        why: "Citizenship/passport region and usual residence are used only to estimate applicant-pool competition density. The report will use neutral language, not a simple nationality-equals-difficulty label.",
+        why: "Your country and where you currently live help us estimate how competitive your applicant pool is.",
         fb: "Received. The system will use this as context and express the result as competition density.",
       },
       budget: {

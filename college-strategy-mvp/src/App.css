@@ -453,6 +453,19 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.85rem;
+  align-items: stretch;
+}
+
+.field-score-grid > div {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Equal label band so inputs align when one label wraps (e.g. EN residence field) */
+.field-score-grid .field-sub-label {
+  min-height: 2.75rem;
+  line-height: 1.35;
+  flex-shrink: 0;
 }
 
 .major-preset-group {
