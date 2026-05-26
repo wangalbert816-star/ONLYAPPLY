@@ -717,11 +717,26 @@ export default function App() {
     }
     root.setAttribute("data-landing", "");
     root.removeAttribute("data-hide-brand-wall");
-    const onScroll = () => setLandingMarqueeVisible(window.scrollY < 40);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
+
+    const mq = window.matchMedia("(max-width: 1023px)");
+
+    const updateMarqueeVisibility = () => {
+      if (mq.matches) {
+        setLandingMarqueeVisible(true);
+      } else {
+        setLandingMarqueeVisible(window.scrollY < 40);
+      }
+    };
+
+    updateMarqueeVisibility();
+    window.addEventListener("scroll", updateMarqueeVisibility, { passive: true });
+    mq.addEventListener("change", updateMarqueeVisibility);
+    window.addEventListener("resize", updateMarqueeVisibility);
+
     return () => {
-      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("scroll", updateMarqueeVisibility);
+      mq.removeEventListener("change", updateMarqueeVisibility);
+      window.removeEventListener("resize", updateMarqueeVisibility);
       root.removeAttribute("data-landing");
     };
   }, [flowStarted]);

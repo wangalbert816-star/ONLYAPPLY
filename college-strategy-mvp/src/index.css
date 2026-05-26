@@ -119,6 +119,22 @@ img.onlyapply-logo.landing-header-logo {
   }
 }
 
+/* Landing replica: larger school-logo marquee */
+.landing-hero-marquee.university-logo-marquee--colored {
+  --logo-size: clamp(68px, 5.2vw, 96px);
+  --logo-gap: clamp(1.85rem, 4.2vw, 3rem);
+  --wall-fade: 96px;
+  padding: 0.55rem 0 0.75rem;
+}
+
+/* Landing first screen: marquee band sits at bottom of viewport (lg+) */
+@media (min-width: 1024px) {
+  .landing-first-fold {
+    min-height: 0;
+    padding-bottom: var(--app-disclaimer-h);
+  }
+}
+
 .app-error-fallback {
   box-sizing: border-box;
   min-height: 100dvh;

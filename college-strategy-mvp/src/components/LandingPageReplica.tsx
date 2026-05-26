@@ -152,9 +152,9 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
   ];
 
   return (
-    <div className="min-h-screen bg-white pb-28 text-neutral-900 antialiased">
+    <div className="flex min-h-dvh flex-col bg-white pb-28 text-neutral-900 antialiased">
       {/* —— Sticky nav —— */}
-      <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white">
+      <header className="sticky top-0 z-40 shrink-0 border-b border-neutral-200 bg-white">
         <div className="mx-auto flex min-h-[56px] max-w-[1120px] items-center justify-between gap-4 px-6 py-2.5 sm:min-h-[60px] lg:px-10">
           <button
             type="button"
@@ -203,10 +203,10 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
         </nav>
       </header>
 
-      <main>
-        {/* —— Hero —— */}
-        <section className="mx-auto max-w-[1120px] px-6 pb-16 pt-10 lg:px-10 lg:pb-24 lg:pt-12">
-          <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-2 lg:gap-x-14 lg:gap-y-0">
+      {/* —— First screen (lg+): hero + marquee; marquee flush to viewport bottom —— */}
+      <div className="landing-first-fold lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+          <section className="mx-auto w-full max-w-[1120px] flex-1 px-6 pb-16 pt-10 lg:flex lg:min-h-0 lg:flex-col lg:justify-center lg:px-10 lg:pb-6 lg:pt-6">
+            <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-2 lg:items-center lg:gap-x-14 lg:gap-y-0">
             <div className="min-w-0">
               <p className="mb-4 inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-[12px] font-semibold tracking-wide text-blue-700">
                 {tf("landingReplica.heroBadge")}
@@ -242,25 +242,32 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
               <LandingHeroPreview />
             </div>
           </div>
-        </section>
+          </section>
 
-        {/* —— Social proof strip + marquee (marquee unchanged) —— */}
-        <section className="border-y border-neutral-100 bg-[#f3f4f6] py-8 lg:py-10" aria-label={tf("landingReplica.socialLabel")}>
-          <div className="mx-auto max-w-[1120px] px-6 text-center lg:px-10">
-            <p className="mb-5 text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">{tf("landingReplica.socialLabel")}</p>
-            <div
-              className={
-                landingMarqueeVisible
-                  ? "overflow-hidden opacity-100 max-h-[260px] transition-all duration-700 ease-out"
-                  : "pointer-events-none overflow-hidden opacity-0 max-h-0 transition-all duration-700 ease-out"
-              }
-              aria-hidden={!landingMarqueeVisible}
-            >
-              <UniversityLogoMarquee colored className="landing-hero-marquee" durationSec={100} />
+          {/* Marquee sits on the bottom edge of the first viewport (lg+) */}
+          <section
+            className="shrink-0 border-t border-neutral-100 bg-[#f3f4f6] py-8 lg:py-7"
+            aria-label={tf("landingReplica.socialLabel")}
+          >
+            <div className="mx-auto max-w-[1120px] px-6 text-center lg:px-10">
+              <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500 lg:mb-3">
+                {tf("landingReplica.socialLabel")}
+              </p>
+              <div
+                className={
+                  landingMarqueeVisible
+                    ? "overflow-hidden opacity-100 max-h-[320px] transition-all duration-700 ease-out"
+                    : "pointer-events-none overflow-hidden opacity-0 max-h-0 transition-all duration-700 ease-out"
+                }
+                aria-hidden={!landingMarqueeVisible}
+              >
+                <UniversityLogoMarquee colored className="landing-hero-marquee" durationSec={100} />
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+      </div>
 
+      <main>
         {/* —— Testimonials —— */}
         <section className="mx-auto max-w-[1120px] px-6 py-16 lg:px-10 lg:py-20">
           <div className="grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-6">
