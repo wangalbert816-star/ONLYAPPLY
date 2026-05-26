@@ -316,7 +316,8 @@ export function LandingHeroPreview() {
 
   return (
     <aside
-      className="landing-hero-preview"
+      className="landing-hero-preview notranslate"
+      translate="no"
       aria-label={t("app.hero.previewAria")}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}

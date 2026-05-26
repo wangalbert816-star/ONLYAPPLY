@@ -26,6 +26,7 @@ import { LegalLinks } from "./components/LegalLinks";
 import { saveUserSession, fetchUnlockedApplicationIds, redeemInviteCode } from "./lib/supabase/accounts";
 import { getSupabase } from "./lib/supabase/client";
 import { formatSupabaseError } from "./lib/supabase/errors";
+import { clearFormDraft, readFormDraft, writeFormDraft } from "./lib/formDraft";
 import { clearPendingSave, readPendingSave, writePendingSave } from "./lib/pendingSave";
 import { isEssayAnalysisCheckoutEnabled, isStripeCheckoutEnabled } from "./lib/stripeCheckout";
 import { isInviteCodesEnabled } from "./lib/inviteCodes";
@@ -518,6 +519,23 @@ export default function App() {
     refreshEntitlements,
   ]);
 
+  /** 浏览器整页刷新后恢复问卷草稿（报告 pending 优先） */
+  useEffect(() => {
+    if (readPendingSave()) return;
+    const draft = readFormDraft();
+    if (!draft) return;
+    setForm(draft.form);
+    setStep(draft.step);
+    setFlowStarted(draft.flowStarted);
+    setView("form");
+  }, []);
+
+  /** 问卷进行中自动写入 sessionStorage，避免重载回到落地页 */
+  useEffect(() => {
+    if (!flowStarted || view !== "form") return;
+    writeFormDraft({ form, step, flowStarted });
+  }, [form, step, flowStarted, view]);
+
   /** 刷新页面或邮件 Magic Link 回到本站后，恢复未登录前生成的报告 */
   useEffect(() => {
     const pending = readPendingSave();
@@ -754,6 +772,7 @@ export default function App() {
       answeredGapSupplementaryRef.current = existingNotes;
       profileFiveSupplementaryRef.current = [];
       const nextReport = data as unknown as ReportPayload;
+      clearFormDraft();
       setReport(nextReport);
       setView("report");
       setSessionSaved(false);
@@ -916,6 +935,7 @@ export default function App() {
             setSessionSaved(false);
             setSaveBannerDismissed(false);
             clearPendingSave();
+            clearFormDraft();
           }}
           onEditForm={({ form: f, applicationId, supplementaryNotes, targetStep }) => {
             setForm(f);
@@ -1020,6 +1040,7 @@ export default function App() {
           setSessionSaved(false);
           setSaveBannerDismissed(false);
           clearPendingSave();
+          clearFormDraft();
           setView("form");
           setReport(null);
           setStep(1);
