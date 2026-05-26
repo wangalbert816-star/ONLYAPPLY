@@ -108,7 +108,7 @@ merge(zhFlat, {
     },
     stepsTitle: "怎么用（3 步）",
     steps: {
-      s1Title: "填写问卷（约 3 分钟）",
+      s1Title: "填写问卷",
       s1Body: "身份、成绩、专业、地区偏好、活动与选校风格等——信息越完整，判断越贴近你。",
       s2Title: "查看预览与样例",
       s2Body: "先看到报告结构与判断逻辑；完整版展开 9 校与行动建议（可按需解锁）。",
@@ -979,7 +979,7 @@ merge(enFlat, {
     },
     stepsTitle: "How to use it (3 steps)",
     steps: {
-      s1Title: "Complete the questionnaire (~3 min)",
+      s1Title: "Complete the questionnaire",
       s1Body: "Identity, grades, major, geography, activities, list posture—the fuller the input, the closer the read.",
       s2Title: "Review preview & sample",
       s2Body: "See the structure and logic first; the full version expands nine schools and action items (unlock when ready).",
