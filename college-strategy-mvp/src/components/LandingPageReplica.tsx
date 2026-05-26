@@ -7,6 +7,7 @@ import "./LandingSampleReportPeek.css";
 import { LanguageToggle } from "../i18n/LanguageToggle";
 import { useLanguage } from "../i18n/LanguageContext";
 import { useAuthChrome } from "../auth/AuthChromeContext";
+import type { ReactNode } from "react";
 import type { Locale } from "../i18n/strings";
 
 type Props = {
@@ -104,11 +105,47 @@ function IconLinkOut() {
   );
 }
 
-function ArrowRightMini() {
+function StepChevron({ className = "" }: { className?: string }) {
   return (
-    <svg className="h-5 w-5 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+    <svg
+      className={`h-5 w-5 shrink-0 text-blue-300 ${className}`.trim()}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden
+    >
+      <path d="M9 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
+  );
+}
+
+function HowItWorksStepCard({
+  step,
+  title,
+  body,
+  icon,
+}: {
+  step: string;
+  title: string;
+  body: string;
+  icon: ReactNode;
+}) {
+  return (
+    <article className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_48px_-24px_rgba(37,99,235,0.14)] lg:p-7">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500 via-blue-400 to-sky-400"
+        aria-hidden
+      />
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <span className="text-[13px] font-bold tracking-[0.2em] text-blue-600">{step}</span>
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 ring-1 ring-blue-100/80">
+          {icon}
+        </div>
+      </div>
+      <h3 className="mb-2.5 text-[17px] font-semibold leading-snug tracking-[-0.02em] text-neutral-950 lg:text-[18px]">{title}</h3>
+      <p className="mt-auto text-[14px] leading-relaxed text-neutral-600">{body}</p>
+    </article>
   );
 }
 
@@ -155,6 +192,20 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
       quote: tf("landingReplica.testimonial6Quote"),
     },
   ];
+
+  const howItWorksSteps = [
+    { step: "01", icon: <IconPerson />, title: tf("productIntro.steps.s1Title"), body: tf("productIntro.steps.s1Body") },
+    { step: "02", icon: <IconList />, title: tf("productIntro.steps.s2Title"), body: tf("productIntro.steps.s2Body") },
+    { step: "03", icon: <IconRefresh />, title: tf("productIntro.steps.s3Title"), body: tf("productIntro.steps.s3Body") },
+  ];
+
+  const faqItems = Array.from({ length: 8 }, (_, i) => {
+    const n = i + 1;
+    return {
+      q: tf(`landingReplica.faqQ${n}`),
+      a: tf(`landingReplica.faqA${n}`),
+    };
+  }).filter((item) => item.q && item.a && !item.q.startsWith("landingReplica."));
 
   const dontItems = [
     tf("landingReplica.aiDont1"),
@@ -340,46 +391,39 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
             <p className="mb-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-neutral-500">{tf("app.productIntroLink")}</p>
             <h2 className="mb-3 text-[clamp(1.75rem,4vw,2.5rem)] font-bold tracking-[-0.03em] text-neutral-950">
               {tf("landingReplica.stepsH1")}
-              <br />
-              {tf("landingReplica.stepsH2")}
             </h2>
-            <p className="mb-10 max-w-[36rem] text-[16px] leading-relaxed text-neutral-600">{tf("landingReplica.stepsSub")}</p>
+            <p className="mb-12 max-w-[36rem] text-[16px] leading-relaxed text-neutral-600 lg:mb-14">{tf("landingReplica.stepsSub")}</p>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-5">
-              {/* Row 1 */}
-              <article className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.04)] md:min-h-[200px]">
-                <p className="mb-3 text-[12px] font-bold text-blue-600/50">01</p>
-                <div className="mb-3">
-                  <IconPerson />
-                </div>
-                <h3 className="mb-2 text-[18px] font-semibold text-neutral-950">{tf("productIntro.steps.s1Title")}</h3>
-                <p className="text-[14px] leading-relaxed text-neutral-600">{tf("productIntro.steps.s1Body")}</p>
-              </article>
-              <div className="hidden min-h-[120px] items-center justify-center rounded-2xl bg-[#f5f5f0] md:flex" aria-hidden>
-                <ArrowRightMini />
-              </div>
-              <article className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.04)] md:min-h-[200px]">
-                <p className="mb-3 text-[12px] font-bold text-blue-600/50">02</p>
-                <div className="mb-3">
-                  <IconList />
-                </div>
-                <h3 className="mb-2 text-[18px] font-semibold text-neutral-950">{tf("productIntro.steps.s2Title")}</h3>
-                <p className="text-[14px] leading-relaxed text-neutral-600">{tf("productIntro.steps.s2Body")}</p>
-              </article>
-              {/* Row 2 */}
-              <div className="hidden min-h-[120px] items-center justify-center rounded-2xl bg-[#f5f5f0] md:flex" aria-hidden>
-                <ArrowRightMini />
-              </div>
-              <article className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.04)] md:min-h-[200px]">
-                <p className="mb-3 text-[12px] font-bold text-blue-600/50">03</p>
-                <div className="mb-3">
-                  <IconRefresh />
-                </div>
-                <h3 className="mb-2 text-[18px] font-semibold text-neutral-950">{tf("productIntro.steps.s3Title")}</h3>
-                <p className="text-[14px] leading-relaxed text-neutral-600">{tf("productIntro.steps.s3Body")}</p>
-              </article>
-              <div className="hidden md:block" aria-hidden />
-            </div>
+            {/* Mobile: vertical timeline */}
+            <ol className="flex flex-col gap-0 lg:hidden">
+              {howItWorksSteps.map((item, idx, arr) => (
+                <li key={item.step} className="relative">
+                  {idx < arr.length - 1 ? (
+                    <span
+                      className="absolute bottom-0 left-[1.35rem] top-[4.5rem] w-px bg-gradient-to-b from-blue-200 to-neutral-200"
+                      aria-hidden
+                    />
+                  ) : null}
+                  <div className={idx < arr.length - 1 ? "pb-6" : ""}>
+                    <HowItWorksStepCard {...item} />
+                  </div>
+                  {idx < arr.length - 1 ? (
+                    <div className="flex justify-center py-1" aria-hidden>
+                      <StepChevron className="rotate-90 text-blue-200" />
+                    </div>
+                  ) : null}
+                </li>
+              ))}
+            </ol>
+
+            {/* Desktop: three equal columns */}
+            <ol className="hidden lg:grid lg:grid-cols-3 lg:gap-8" aria-label={tf("app.productIntroLink")}>
+              {howItWorksSteps.map((item) => (
+                <li key={item.step} className="min-w-0">
+                  <HowItWorksStepCard {...item} />
+                </li>
+              ))}
+            </ol>
           </div>
         </section>
 
@@ -450,31 +494,39 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
         {/* —— AI transparency —— */}
         <section className="bg-[#0a1128] py-16 text-white lg:py-24">
           <div className="mx-auto max-w-[1120px] px-6 lg:px-10">
-            <p className="mb-3 text-center text-[12px] font-semibold uppercase tracking-[0.1em] text-slate-400">{tf("landingReplica.aiEyebrow")}</p>
-            <h2 className="mb-12 text-center text-[clamp(1.75rem,4vw,2.5rem)] font-bold tracking-[-0.03em] text-white">{tf("landingReplica.aiTitle")}</h2>
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
-              <div>
-                <p className="mb-5 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">{tf("landingReplica.aiDontTitle")}</p>
-                <ul className="flex flex-col gap-3.5">
+            <p className="mb-3 text-center text-[12px] font-semibold uppercase tracking-[0.1em] text-slate-400">
+              {tf("landingReplica.aiEyebrow")}
+            </p>
+            <h2 className="mb-10 text-center text-[clamp(1.75rem,4vw,2.5rem)] font-bold tracking-[-0.03em] text-white lg:mb-12">
+              {tf("landingReplica.aiTitle")}
+            </h2>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch lg:gap-x-10 lg:gap-y-0">
+              <div className="flex min-h-0 flex-col rounded-2xl border border-slate-600/40 bg-[#111827]/60 p-6 lg:p-8">
+                <p className="mb-5 min-h-[2.5rem] text-[11px] font-bold uppercase leading-snug tracking-[0.12em] text-slate-400 lg:min-h-[2.75rem]">
+                  {tf("landingReplica.aiDontTitle")}
+                </p>
+                <ul className="flex flex-1 flex-col gap-3.5">
                   {dontItems.map((line) => (
-                    <li key={line} className="flex gap-3 text-[14px] leading-snug text-slate-300">
-                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500/20 text-[11px] font-bold text-red-300">
+                    <li key={line} className="flex items-start gap-3 text-[14px] leading-snug text-slate-300">
+                      <span className="mt-[2px] flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500/20 text-[11px] font-bold leading-none text-red-300">
                         ×
                       </span>
-                      <span>{line}</span>
+                      <span className="min-w-0 flex-1">{line}</span>
                     </li>
                   ))}
                 </ul>
               </div>
-              <div className="rounded-2xl border border-slate-600/50 bg-[#1e293b] p-6 lg:p-8">
-                <p className="mb-5 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">{tf("landingReplica.aiDoTitle")}</p>
-                <ul className="flex flex-col gap-3.5">
+              <div className="flex min-h-0 flex-col rounded-2xl border border-slate-600/50 bg-[#1e293b] p-6 lg:p-8">
+                <p className="mb-5 min-h-[2.5rem] text-[11px] font-bold uppercase leading-snug tracking-[0.12em] text-slate-400 lg:min-h-[2.75rem]">
+                  {tf("landingReplica.aiDoTitle")}
+                </p>
+                <ul className="flex flex-1 flex-col gap-3.5">
                   {doItems.map((line) => (
-                    <li key={line} className="flex gap-3 text-[14px] leading-snug text-slate-200">
-                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500/25 text-[11px] font-bold text-blue-300">
+                    <li key={line} className="flex items-start gap-3 text-[14px] leading-snug text-slate-200">
+                      <span className="mt-[2px] flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500/25 text-[11px] font-bold leading-none text-blue-300">
                         ✓
                       </span>
-                      <span>{line}</span>
+                      <span className="min-w-0 flex-1">{line}</span>
                     </li>
                   ))}
                 </ul>
@@ -488,18 +540,12 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
           <div className="mx-auto max-w-[720px] px-6 lg:px-10">
             <h2 className="mb-8 text-center text-[22px] font-bold tracking-tight text-neutral-950">{tf("landingReplica.navFaq")}</h2>
             <dl className="flex flex-col gap-8">
-              <div>
-                <dt className="mb-2 text-[15px] font-semibold text-neutral-950">{tf("landingReplica.faqQ1")}</dt>
-                <dd className="text-[14px] leading-relaxed text-neutral-600">{tf("landingReplica.faqA1")}</dd>
-              </div>
-              <div>
-                <dt className="mb-2 text-[15px] font-semibold text-neutral-950">{tf("landingReplica.faqQ2")}</dt>
-                <dd className="text-[14px] leading-relaxed text-neutral-600">{tf("landingReplica.faqA2")}</dd>
-              </div>
-              <div>
-                <dt className="mb-2 text-[15px] font-semibold text-neutral-950">{tf("landingReplica.faqQ3")}</dt>
-                <dd className="text-[14px] leading-relaxed text-neutral-600">{tf("landingReplica.faqA3")}</dd>
-              </div>
+              {faqItems.map((item, idx) => (
+                <div key={idx}>
+                  <dt className="mb-2 text-[15px] font-semibold text-neutral-950">{item.q}</dt>
+                  <dd className="text-[14px] leading-relaxed text-neutral-600">{item.a}</dd>
+                </div>
+              ))}
             </dl>
           </div>
         </section>
