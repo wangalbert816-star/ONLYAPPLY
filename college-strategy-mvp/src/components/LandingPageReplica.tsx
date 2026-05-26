@@ -6,6 +6,7 @@ import { SampleReportAutoScroll } from "./SampleReportAutoScroll";
 import "./LandingSampleReportPeek.css";
 import { LanguageToggle } from "../i18n/LanguageToggle";
 import { useLanguage } from "../i18n/LanguageContext";
+import { useAuthChrome } from "../auth/AuthChromeContext";
 import type { Locale } from "../i18n/strings";
 
 type Props = {
@@ -113,6 +114,7 @@ function ArrowRightMini() {
 
 export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrandStory, onBookExpertConsult }: Props) {
   const { t, locale } = useLanguage();
+  const { onOpenAccount } = useAuthChrome();
   const tf = (k: string) => t(k);
 
   const testimonials = [
@@ -133,6 +135,24 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
       name: tf("landingReplica.testimonial3Name"),
       meta: tf("landingReplica.testimonial3Meta"),
       quote: tf("landingReplica.testimonial3Quote"),
+    },
+    {
+      initials: tf("landingReplica.testimonial4Initials"),
+      name: tf("landingReplica.testimonial4Name"),
+      meta: tf("landingReplica.testimonial4Meta"),
+      quote: tf("landingReplica.testimonial4Quote"),
+    },
+    {
+      initials: tf("landingReplica.testimonial5Initials"),
+      name: tf("landingReplica.testimonial5Name"),
+      meta: tf("landingReplica.testimonial5Meta"),
+      quote: tf("landingReplica.testimonial5Quote"),
+    },
+    {
+      initials: tf("landingReplica.testimonial6Initials"),
+      name: tf("landingReplica.testimonial6Name"),
+      meta: tf("landingReplica.testimonial6Meta"),
+      quote: tf("landingReplica.testimonial6Quote"),
     },
   ];
 
@@ -175,20 +195,27 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
               {tf("landingReplica.navFaq")}
             </button>
           </nav>
-          <div className="flex shrink-0 items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <div className="scale-95">
               <LanguageToggle />
             </div>
             <button
               type="button"
+              onClick={onOpenAccount}
+              className="hidden rounded-[10px] border border-neutral-300 bg-white px-3 py-2 text-[13px] font-semibold text-neutral-950 shadow-sm transition hover:border-neutral-400 sm:inline-block sm:px-4 sm:text-[14px]"
+            >
+              {t("auth.myApplications")}
+            </button>
+            <button
+              type="button"
               onClick={onStart}
-              className="hidden rounded-[10px] border border-neutral-300 bg-white px-4 py-2 text-[14px] font-semibold text-neutral-950 shadow-sm transition hover:border-neutral-400 sm:inline-block"
+              className="hidden rounded-[10px] border border-neutral-300 bg-white px-3 py-2 text-[13px] font-semibold text-neutral-950 shadow-sm transition hover:border-neutral-400 sm:inline-block sm:px-4 sm:text-[14px]"
             >
               {tf("app.welcome.start")}
             </button>
           </div>
         </div>
-        <nav className="flex border-t border-neutral-100 bg-white px-6 py-2.5 md:hidden" aria-label="Primary mobile">
+        <nav className="flex flex-col gap-2 border-t border-neutral-100 bg-white px-6 py-2.5 md:hidden" aria-label="Primary mobile">
           <div className="flex w-full justify-between gap-2 text-[13px] font-medium text-neutral-600">
             <button type="button" onClick={() => scrollToId("landing-how-it-works")}>
               {tf("app.productIntroLink")}
@@ -198,6 +225,22 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
             </button>
             <button type="button" onClick={() => scrollToId("landing-faq")}>
               {tf("landingReplica.navFaq")}
+            </button>
+          </div>
+          <div className="flex w-full gap-2">
+            <button
+              type="button"
+              onClick={onOpenAccount}
+              className="min-h-[40px] flex-1 rounded-[10px] border border-neutral-300 bg-white px-2 text-[13px] font-semibold text-neutral-950 shadow-sm transition hover:border-neutral-400"
+            >
+              {t("auth.myApplications")}
+            </button>
+            <button
+              type="button"
+              onClick={onStart}
+              className="min-h-[40px] flex-1 rounded-[10px] border border-neutral-300 bg-white px-2 text-[13px] font-semibold text-neutral-950 shadow-sm transition hover:border-neutral-400"
+            >
+              {tf("app.welcome.start")}
             </button>
           </div>
         </nav>
@@ -270,10 +313,10 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
       <main>
         {/* —— Testimonials —— */}
         <section className="mx-auto max-w-[1120px] px-6 py-16 lg:px-10 lg:py-20">
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-6">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
             {testimonials.map((card) => (
               <article
-                key={card.name}
+                key={`${card.initials}-${card.name}`}
                 className="rounded-2xl border border-neutral-100 bg-[#fafaf9] p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
               >
                 <div className="mb-4 flex items-center gap-3">
