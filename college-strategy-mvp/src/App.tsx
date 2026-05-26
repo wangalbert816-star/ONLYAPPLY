@@ -9,11 +9,9 @@ import { clearUnlockStorage, readUnlockFromStorage, ReportView, writeUnlockToSto
 import { BrandLogo } from "./components/BrandLogo";
 import { FormLiveSummary, GuidedStep1, GuidedStep2, GuidedStep3, type GuideTouch } from "./components/GuidedQuestionnaire";
 import { FullscreenLogoMarquee } from "./components/FullscreenLogoMarquee";
-import { UniversityLogoMarquee } from "./components/UniversityLogoMarquee";
 import { BrandStoryOverlay } from "./components/BrandStoryOverlay";
 import { ProductIntroPage } from "./components/ProductIntroPage";
-import { LandingHeroPreview } from "./components/LandingHeroPreview";
-import { LandingScrollStory } from "./components/LandingScrollStory";
+import { LandingPageReplica } from "./components/LandingPageReplica";
 import { ExpertConsultContactModal } from "./components/ExpertConsultContactModal";
 import { requestExpertConsult } from "./lib/expertConsultBooking";
 import { useLanguage } from "./i18n/LanguageContext";
@@ -258,21 +256,23 @@ export default function App() {
   );
 
   const withChrome = useCallback(
-    (content: ReactNode, options?: { showExpertConsult?: boolean }) => (
+    (content: ReactNode, options?: { showExpertConsult?: boolean; hideChrome?: boolean }) => (
       <AuthChromeProvider value={authChromeHandlers}>
-        <AppTopChrome
-          expertConsultLabel={options?.showExpertConsult ? t("app.expertConsult.cta") : undefined}
-          onExpertConsult={
-            options?.showExpertConsult
-              ? () =>
-                  requestExpertConsult({
-                    email: user?.email ?? undefined,
-                    source: "landing",
-                    onFallback: () => setExpertConsultModalOpen(true),
-                  })
-              : undefined
-          }
-        />
+        {!options?.hideChrome && (
+          <AppTopChrome
+            expertConsultLabel={options?.showExpertConsult ? t("app.expertConsult.cta") : undefined}
+            onExpertConsult={
+              options?.showExpertConsult
+                ? () =>
+                    requestExpertConsult({
+                      email: user?.email ?? undefined,
+                      source: "landing",
+                      onFallback: () => setExpertConsultModalOpen(true),
+                    })
+                : undefined
+            }
+          />
+        )}
         {content}
       </AuthChromeProvider>
     ),
@@ -1076,98 +1076,16 @@ export default function App() {
 
   if (!flowStarted) {
     return withChrome(
-      <div className="app app--landing">
-        <div className="landing-hero-fold">
-        <div className="landing-sheet">
-          <div className="landing-hero-stage">
-            <div className="landing-hero-grid">
-              <header className="landing-hero landing-hero-main">
-                <button
-                  type="button"
-                  className="landing-logo-button"
-                  onClick={() => setBrandStoryOpen(true)}
-                  aria-label="了解 OnlyApply"
-                >
-                  <BrandLogo className="landing-logo" />
-                </button>
-                <p className="landing-social-proof">{t("app.hero.socialProof")}</p>
-                <div className="landing-copy">
-                  <h1 className="landing-title">
-                    <span className="landing-title__l1">{t("app.hero.titleLine1")}</span>
-                    <span className="landing-title__l2">{t("app.hero.titleLine2")}</span>
-                  </h1>
-                  <p className="landing-lead">{t("app.hero.lead")}</p>
-                </div>
-
-                <div className="landing-hero-preview-mobile">
-                  <LandingHeroPreview />
-                </div>
-
-                <div className="landing-cta-wrap">
-                  <button
-                    type="button"
-                    className="btn btn-primary btn-block btn-cta-landing landing-cta-primary"
-                    onClick={() => {
-                      setApplicationHubOpen(false);
-                      setFlowStarted(true);
-                      queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
-                    }}
-                  >
-                    {t("app.welcome.start")}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-block landing-intro-btn"
-                    onClick={() => {
-                      setApplicationHubOpen(false);
-                      document.getElementById("landing-product-intro")?.scrollIntoView({ behavior: "smooth", block: "start" });
-                    }}
-                  >
-                    {t("app.productIntroLink")}
-                  </button>
-                  <p className="landing-trust">{t("app.welcome.meta")}</p>
-                </div>
-
-                <div className="app-links-entry-wrap landing-hero-main__links">
-                  <button
-                    ref={applicationHubTriggerRef}
-                    type="button"
-                    className="app-links-entry"
-                    aria-expanded={applicationHubOpen}
-                    aria-controls="application-hub-dialog"
-                    onClick={(e) => openApplicationHub(e)}
-                  >
-                    {t("appLinks.entry")}
-                  </button>
-                </div>
-              </header>
-
-              <div className="landing-hero-visual">
-                <LandingHeroPreview />
-              </div>
-            </div>
-
-            <div
-              className={
-                landingMarqueeVisible ? "landing-hero-marquee-wrap" : "landing-hero-marquee-wrap landing-hero-marquee-wrap--hidden"
-              }
-              aria-hidden={!landingMarqueeVisible}
-            >
-              <UniversityLogoMarquee colored className="landing-hero-marquee" durationSec={100} />
-            </div>
-          </div>
-        </div>
-        </div>
-
-        <LandingScrollStory
-          id="landing-product-intro"
+      <>
+        <LandingPageReplica
+          landingMarqueeVisible={landingMarqueeVisible}
           onStart={() => {
             setApplicationHubOpen(false);
             setFlowStarted(true);
             queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
           }}
+          onOpenBrandStory={() => setBrandStoryOpen(true)}
         />
-
         <FullscreenLogoMarquee
           open={applicationHubOpen}
           onClose={() => {
@@ -1175,7 +1093,6 @@ export default function App() {
             queueMicrotask(() => applicationHubTriggerRef.current?.focus());
           }}
         />
-
         <BrandStoryOverlay
           open={brandStoryOpen}
           onClose={() => setBrandStoryOpen(false)}
@@ -1186,9 +1103,7 @@ export default function App() {
             queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
           }}
         />
-
         <ExpertConsultContactModal open={expertConsultModalOpen} onClose={() => setExpertConsultModalOpen(false)} />
-
         <footer className="app-disclaimer-fixed" role="contentinfo">
           <p>{t("app.disclaimer")}</p>
           <LegalLinks className="app-disclaimer-fixed__legal" />
@@ -1199,8 +1114,8 @@ export default function App() {
           successHint={saveNotice}
           onOpenAppLinks={openApplicationHub}
         />
-      </div>,
-      { showExpertConsult: true },
+      </>,
+      { hideChrome: true },
     );
   }
 

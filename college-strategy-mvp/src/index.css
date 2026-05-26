@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
   /* 单一主色 + 灰阶（禁止多蓝、乱渐变） */
   --color-primary: #2563eb;
@@ -104,6 +106,19 @@ img.onlyapply-logo {
   object-fit: contain;
 }
 
+/* 落地页顶栏字标（略大于栏高约一半，避免全局 max-height 顶满） */
+img.onlyapply-logo.landing-header-logo {
+  max-height: 2.5rem;
+  max-width: min(13.5rem, 52vw);
+}
+
+@media (min-width: 640px) {
+  img.onlyapply-logo.landing-header-logo {
+    max-height: 2.75rem;
+    max-width: min(15rem, 46vw);
+  }
+}
+
 .app-error-fallback {
   box-sizing: border-box;
   min-height: 100dvh;
@@ -140,4 +155,10 @@ img.onlyapply-logo {
   gap: 0.5rem;
   justify-content: center;
   margin-top: 0.5rem;
+}
+
+
+.landing-admitted-names {
+  font-family: "Times New Roman", ui-serif, Georgia, "Songti SC", serif;
+  letter-spacing: 0.03em;
 }
