@@ -12,6 +12,7 @@ type Props = {
   landingMarqueeVisible: boolean;
   onStart: () => void;
   onOpenBrandStory: () => void;
+  onBookExpertConsult: () => void;
 };
 
 function scrollToId(id: string) {
@@ -110,7 +111,7 @@ function ArrowRightMini() {
   );
 }
 
-export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrandStory }: Props) {
+export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrandStory, onBookExpertConsult }: Props) {
   const { t, locale } = useLanguage();
   const tf = (k: string) => t(k);
 
@@ -229,10 +230,10 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
                 </button>
                 <button
                   type="button"
-                  onClick={() => scrollToId("landing-sample-output")}
-                  className="inline-flex min-h-[48px] items-center justify-center rounded-[10px] border border-neutral-300 bg-white px-6 text-[15px] font-semibold text-neutral-950 shadow-sm transition hover:border-neutral-400"
+                  onClick={onBookExpertConsult}
+                  className="inline-flex min-h-[48px] items-center justify-center rounded-[10px] bg-blue-600 px-6 text-[15px] font-semibold text-white shadow-sm transition hover:bg-blue-700"
                 >
-                  {tf("landingReplica.viewSampleReport")}
+                  {tf("landingReplica.heroBookConsult")}
                 </button>
               </div>
               <p className="mt-3 text-[12px] leading-relaxed text-neutral-400">{tf("landingReplica.heroDisclaimerShort")}</p>
@@ -244,10 +245,9 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
         </section>
 
         {/* —— Social proof strip + marquee (marquee unchanged) —— */}
-        <section className="border-y border-neutral-100 bg-[#f3f4f6] py-10 lg:py-12" aria-label={tf("landingReplica.socialLabel")}>
+        <section className="border-y border-neutral-100 bg-[#f3f4f6] py-8 lg:py-10" aria-label={tf("landingReplica.socialLabel")}>
           <div className="mx-auto max-w-[1120px] px-6 text-center lg:px-10">
-            <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">{tf("landingReplica.socialLabel")}</p>
-            <p className="landing-admitted-names mb-8 text-[15px] font-medium text-neutral-600">{tf("landingReplica.admittedNames")}</p>
+            <p className="mb-5 text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">{tf("landingReplica.socialLabel")}</p>
             <div
               className={
                 landingMarqueeVisible

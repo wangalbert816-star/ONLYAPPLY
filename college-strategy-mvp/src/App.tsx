@@ -1085,6 +1085,13 @@ export default function App() {
             queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
           }}
           onOpenBrandStory={() => setBrandStoryOpen(true)}
+          onBookExpertConsult={() =>
+            requestExpertConsult({
+              email: user?.email ?? undefined,
+              source: "landing-hero",
+              onFallback: () => setExpertConsultModalOpen(true),
+            })
+          }
         />
         <FullscreenLogoMarquee
           open={applicationHubOpen}
