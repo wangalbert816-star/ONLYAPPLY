@@ -1693,7 +1693,7 @@ merge(enFlat, {
     socialLabel: "STUDENTS ADMITTED TO",
     heroBadge: "No sign-up required",
     heroDisclaimerShort: "AI planning aid · Not an admissions coach",
-    heroBookConsult: "Book 1:1 free 30 min consultation",
+    heroBookConsult: "Book 1:1 Free 30 Min Consultation",
     stepsSub: "Starts with a short questionnaire — ends with a clear, tiered school list.",
     stepsH1: "Three steps.",
     stepsH2: "",

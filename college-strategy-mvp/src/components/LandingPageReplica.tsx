@@ -7,7 +7,7 @@ import "./LandingSampleReportPeek.css";
 import { LanguageToggle } from "../i18n/LanguageToggle";
 import { useLanguage } from "../i18n/LanguageContext";
 import { useAuthChrome } from "../auth/AuthChromeContext";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type { Locale } from "../i18n/strings";
 
 type Props = {
@@ -146,6 +146,45 @@ function HowItWorksStepCard({
       <h3 className="mb-2.5 text-[17px] font-semibold leading-snug tracking-[-0.02em] text-neutral-950 lg:text-[18px]">{title}</h3>
       <p className="mt-auto text-[14px] leading-relaxed text-neutral-600">{body}</p>
     </article>
+  );
+}
+
+function IconChevronDown({ className = "" }: { className?: string }) {
+  return (
+    <svg className={`h-5 w-5 ${className}`.trim()} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function LandingFaqItem({ id, question, answer }: { id: string; question: string; answer: string }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div
+      className={`overflow-hidden rounded-xl border bg-white transition-shadow ${
+        open ? "border-neutral-300 shadow-[0_1px_2px_rgba(15,23,42,0.04)]" : "border-neutral-200/80"
+      }`}
+    >
+      <h3 className="m-0">
+        <button
+          type="button"
+          id={`${id}-trigger`}
+          className="flex w-full items-start justify-between gap-4 px-5 py-4 text-left transition hover:bg-neutral-50"
+          aria-expanded={open}
+          aria-controls={`${id}-panel`}
+          onClick={() => setOpen((v) => !v)}
+        >
+          <span className="text-[15px] font-semibold leading-snug text-neutral-950">{question}</span>
+          <IconChevronDown className={`mt-0.5 shrink-0 text-neutral-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+        </button>
+      </h3>
+      <div id={`${id}-panel`} role="region" aria-labelledby={`${id}-trigger`} hidden={!open}>
+        <div className="border-t border-neutral-100 px-5 pb-4 pt-3">
+          <p className="text-[14px] leading-relaxed text-neutral-600">{answer}</p>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -539,14 +578,11 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
         <section id="landing-faq" className="scroll-mt-20 border-t border-neutral-100 bg-white py-16 lg:py-20">
           <div className="mx-auto max-w-[720px] px-6 lg:px-10">
             <h2 className="mb-8 text-center text-[22px] font-bold tracking-tight text-neutral-950">{tf("landingReplica.navFaq")}</h2>
-            <dl className="flex flex-col gap-8">
+            <div className="flex flex-col gap-3">
               {faqItems.map((item, idx) => (
-                <div key={idx}>
-                  <dt className="mb-2 text-[15px] font-semibold text-neutral-950">{item.q}</dt>
-                  <dd className="text-[14px] leading-relaxed text-neutral-600">{item.a}</dd>
-                </div>
+                <LandingFaqItem key={idx} id={`landing-faq-${idx}`} question={item.q} answer={item.a} />
               ))}
-            </dl>
+            </div>
           </div>
         </section>
 
