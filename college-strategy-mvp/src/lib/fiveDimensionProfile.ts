@@ -1,4 +1,4 @@
-import type { FormState } from "../types";
+import type { ActivityItem, FormState } from "../types";
 import type { Locale } from "../i18n/strings";
 
 export type ProfileDimensionKey = "academic" | "testing" | "activities" | "essays" | "strategy";
@@ -220,18 +220,61 @@ function bandForScore(score: number): ProfileBand {
   return "high";
 }
 
+function clampScore(n: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, n));
+}
+
+/** 在 [low, high] 上线性映射到 0–1，超出 high 仍封顶为 1 */
+function linearRatio(value: number, low: number, high: number) {
+  if (high <= low) return value >= high ? 1 : 0;
+  return clampScore((value - low) / (high - low), 0, 1);
+}
+
+function scoreFromRatio(ratio: number, minScore: number, maxScore: number) {
+  return minScore + ratio * (maxScore - minScore);
+}
+
+/**
+ * 成绩单说明里的可核对信号（主因），不奖励无意义的字数堆砌。
+ * 衡量的是「顾问能否据此判断学术档位」，不是 GPA 高低本身。
+ */
+function gpaSignalQuality(g: string): number {
+  if (!g.trim()) return 0;
+  const hasGpaNumber = /\d\.\d{1,2}/.test(g) ? 1 : 0;
+  const hasPercent = /\b(9[0-9]|[1-9]?\d)\s*(\/\s*100|分)\b/.test(g) ? 1 : 0;
+  const hasRigor =
+    /rank|排名|top|前\s*\d|%\s*|\bUW\b|\bW\b|unweighted|weighted|未加权|加权|AP|IB|honors|honour|a-?level|course|课程|rigor|difficult/i.test(
+      g,
+    )
+      ? 1
+      : 0;
+  const hasRank = /rank|排名|top\s*\d|前\s*\d|percentile|decile|堂|T[1-3]/i.test(g) ? 1 : 0;
+  const hasTrend = /上升|下滑|trend|improv|declin|junior|senior|11\s*年级|12\s*年级|year\s*\d/i.test(g) ? 1 : 0;
+  const hasScale = /\/\s*4|\/\s*5|满分|scale|绩点|GPA|百分/i.test(g) ? 1 : 0;
+
+  return clampScore(
+    hasGpaNumber * 0.34 + hasPercent * 0.1 + hasRigor * 0.24 + hasRank * 0.18 + hasTrend * 0.06 + hasScale * 0.08,
+    0,
+    1,
+  );
+}
+
+/** 仅区分「过短无法判断」与「够写一两句」；不作为高分主因 */
+function gpaContextBonus(g: string): number {
+  return linearRatio(g.trim().length, 14, 64) * 0.12;
+}
+
 function scoreAcademic(form: FormState): number {
   const g = form.gpa.trim();
   if (!g) return 34;
-  let s = 50;
-  const len = g.length;
-  if (len < 28) s = 46;
-  else if (len < 85) s = 58;
-  else if (len < 160) s = 68;
-  else s = 74;
-  if (/\d\.\d/.test(g)) s += 7;
-  if (/rank|排名|top|前|\bUW\b|\bW\b|unweighted|weighted|未加权|加权|AP|IB|honors|course|课程/i.test(g)) s += 10;
-  return Math.min(94, Math.max(30, s));
+  const signals = gpaSignalQuality(g);
+  const bonus = gpaContextBonus(g);
+  let quality = clampScore(signals * 0.88 + bonus, 0, 1);
+  // 字数很多但几乎没有可核对信号 → 封顶，避免「写字凑分」
+  if (g.length > 180 && signals < 0.38) {
+    quality = Math.min(quality, 0.48);
+  }
+  return Math.round(clampScore(scoreFromRatio(quality, 34, 94), 34, 94));
 }
 
 function parseSatish(s: string): number | null {
@@ -267,9 +310,9 @@ function scoreFromCurve(value: number, points: Array<[number, number]>): number 
 function scoreTesting(form: FormState): number {
   if (!form.testing) return 36;
   if (form.testing === "test_optional") {
-    let s = 56;
-    if (form.gpa.trim().length > 60) s += 6;
-    return Math.min(82, s);
+    const g = form.gpa.trim();
+    const gpaSupport = gpaSignalQuality(g) * 0.22 + gpaContextBonus(g);
+    return Math.round(clampScore(scoreFromRatio(0.58 + gpaSupport, 52, 82), 52, 82));
   }
   const has = Boolean(form.satScore.trim() || form.actScore.trim());
   if (!has) return 42;
@@ -306,41 +349,127 @@ function scoreTesting(form: FormState): number {
   return Math.min(93, Math.max(40, Math.round(Math.max(...candidates))));
 }
 
+const ACTIVITY_LEADERSHIP_RE =
+  /lead|chair|captain|founder|president|national|international|research|paper|专利|主席|队长|创始人|国家|国际|科研/i;
+
+function activityItemHasContent(item: ActivityItem): boolean {
+  return [item.name, item.role, item.description, item.outcome, item.award, item.proof].some((v) => v.trim().length > 0);
+}
+
+function filledStructuredActivities(form: FormState): ActivityItem[] {
+  return (form.structuredActivities ?? []).filter(activityItemHasContent);
+}
+
+/** 摘要 + 明细拼成一段，用于字数与关键词检测 */
+function combinedActivityText(form: FormState): string {
+  const parts: string[] = [];
+  const summary = form.activities.trim();
+  if (summary) parts.push(summary);
+  for (const item of filledStructuredActivities(form)) {
+    const line = [
+      item.name,
+      item.kind,
+      item.role,
+      item.description,
+      item.outcome,
+      item.award,
+      item.scope,
+      item.hours,
+      item.proof,
+    ]
+      .map((v) => String(v ?? "").trim())
+      .filter(Boolean)
+      .join(" ");
+    if (line) parts.push(line);
+  }
+  return parts.join("\n");
+}
+
+function activityItemDepthNorm(item: ActivityItem): number {
+  const name = linearRatio(item.name.trim().length, 0, 14);
+  const role = linearRatio(item.role.trim().length, 0, 18);
+  const desc = linearRatio(item.description.trim().length, 0, 90);
+  const outcome = linearRatio(Math.max(item.outcome.trim().length, item.award.trim().length), 0, 28);
+  const hours = linearRatio(item.hours.trim().length, 0, 10);
+  const proof = linearRatio(item.proof.trim().length, 0, 24);
+  const scopeLevel =
+    item.scope === "international"
+      ? 1
+      : item.scope === "national"
+        ? 0.88
+        : item.scope === "state"
+          ? 0.68
+          : item.scope === "regional"
+            ? 0.52
+            : item.scope === "local"
+              ? 0.36
+              : item.scope === "school"
+                ? 0.22
+                : 0;
+  const kind =
+    item.kind === "research" || item.kind === "competition" ? 1 : item.kind ? 0.4 : 0;
+  const blob = [item.name, item.role, item.description, item.outcome, item.award].join(" ");
+  const lead = /lead|chair|captain|founder|president|主席|队长|创始人|负责人/i.test(blob) ? 1 : 0;
+
+  const quality =
+    name * 0.1 +
+    role * 0.1 +
+    desc * 0.34 +
+    outcome * 0.16 +
+    hours * 0.05 +
+    proof * 0.07 +
+    scopeLevel * 0.1 +
+    kind * 0.04 +
+    lead * 0.04;
+  return clampScore(quality, 0, 1);
+}
+
 function scoreActivities(form: FormState): number {
-  const a = form.activities.trim();
-  if (!a) return 38;
-  let s = 46;
-  const len = a.length;
-  if (len < 70) s = 50;
-  else if (len < 200) s = 62;
-  else s = 72;
-  if (/lead|chair|captain|founder|president|national|international|research|paper|专利|主席|队长|创始人|国家|国际|科研/i.test(a)) s += 12;
-  return Math.min(92, Math.max(32, s));
+  const structured = filledStructuredActivities(form);
+  const combined = combinedActivityText(form);
+  if (!combined.trim() && structured.length === 0) return 38;
+
+  const volumeRaw = linearRatio(combined.length, 0, 260);
+  const breadth = linearRatio(structured.length, 0, 4);
+  const depth =
+    structured.length > 0
+      ? structured.reduce((sum, item) => sum + activityItemDepthNorm(item), 0) / structured.length
+      : volumeRaw * 0.5;
+  const signal = ACTIVITY_LEADERSHIP_RE.test(combined) ? 1 : 0;
+  // 字数单独拉高有限：没有深度/条数时，长摘要最多贡献一部分 volume 分
+  const volume = volumeRaw * (0.35 + depth * 0.65);
+
+  let quality = clampScore(volume * 0.34 + breadth * 0.26 + depth * 0.28 + signal * 0.12, 0, 1);
+  if (combined.length > 320 && depth < 0.32 && structured.length < 2) {
+    quality = Math.min(quality, 0.52);
+  }
+  return Math.round(clampScore(scoreFromRatio(quality, 38, 92), 38, 92));
 }
 
 function scoreEssays(form: FormState): number {
-  let s = 46;
-  const act = form.activities.trim();
-  if (act.length > 140) s += 14;
-  else if (act.length > 60) s += 8;
-  if (form.majorPrimary.trim().length > 2) s += 10;
-  if (form.testing === "test_optional") s += 8;
-  if (form.highSchoolSystem) s += 4;
-  return Math.min(90, Math.max(34, s));
+  const actMaterial = linearRatio(combinedActivityText(form).length, 0, 200);
+  const major = linearRatio(form.majorPrimary.trim().length, 0, 14);
+  const hs = form.highSchoolSystem ? 1 : 0;
+  const testOptBoost = form.testing === "test_optional" ? gpaSignalQuality(form.gpa.trim()) * 0.08 : 0;
+  const quality = clampScore(actMaterial * 0.42 + major * 0.28 + hs * 0.08 + testOptBoost + 0.22, 0, 1);
+  return Math.round(clampScore(scoreFromRatio(quality, 34, 90), 34, 90));
 }
 
 function scoreStrategy(form: FormState): number {
-  let s = 44;
-  if (form.riskStyle === "balanced") s = 70;
-  else if (form.riskStyle === "conservative") s = 66;
-  else if (form.riskStyle === "aggressive") s = 68;
-  if (form.budget) s += 8;
-  if (form.geoPrefs.length >= 1) s += 6;
-  if (form.geoPrefs.length >= 3) s += 4;
-  if (form.dealbreakers.trim().length > 3) s += 8;
-  if (form.schoolSize) s += 5;
-  if (form.campusCulturePref) s += 4;
-  return Math.min(90, Math.max(36, s));
+  const riskBase =
+    form.riskStyle === "balanced" ? 0.72 : form.riskStyle === "aggressive" ? 0.7 : form.riskStyle === "conservative" ? 0.68 : 0.42;
+  const filled = [
+    Boolean(form.budget),
+    form.geoPrefs.length > 0,
+    form.dealbreakers.trim().length > 3,
+    Boolean(form.schoolSize),
+    Boolean(form.campusCulturePref),
+  ].filter(Boolean).length;
+  const completeness = linearRatio(filled, 0, 5);
+  const geoBreadth = linearRatio(form.geoPrefs.length, 0, 4);
+  const dealbreakers = form.dealbreakers.trim().length > 12 ? 1 : linearRatio(form.dealbreakers.trim().length, 0, 12);
+  const quality = clampScore(riskBase * 0.55 + completeness * 0.25 + geoBreadth * 0.1 + dealbreakers * 0.1, 0, 1);
+  return Math.round(clampScore(scoreFromRatio(quality, 36, 90), 36, 90));
 }
 
 export function buildFiveDimensionProfile(form: FormState, locale: Locale): ProfileDimension[] {
