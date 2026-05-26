@@ -369,7 +369,6 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
                   {tf("landingReplica.heroBookConsult")}
                 </button>
               </div>
-              <p className="mt-3 text-[12px] leading-relaxed text-neutral-400">{tf("landingReplica.heroDisclaimerShort")}</p>
             </div>
             <div className="min-w-0 lg:pt-1">
               <LandingHeroPreview />
