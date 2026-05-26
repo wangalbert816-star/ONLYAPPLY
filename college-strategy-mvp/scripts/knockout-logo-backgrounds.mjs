@@ -20,11 +20,12 @@ const PER_FILE = {
   "columbia.png": { sim: 42 },
   "brown.png": { sim: 38 },
   "duke.png": { sim: 52 },
-  "michigan.png": { sim: 48 },
+  "michigan.png": { sim: 52, neutralMinL: 198, neutralSpread: 36 },
   "ucla.png": { sim: 42 },
   "berkeley.png": { sim: 48 },
   "mit.png": { sim: 50 },
-  "amherst.png": { sim: 44 },
+  "amherst.png": { sim: 52, neutralMinL: 198, neutralSpread: 36 },
+  "babson.png": { sim: 50, neutralMinL: 198, neutralSpread: 34 },
 };
 
 function edgeBackgroundRef(data, w, h) {
@@ -128,24 +129,47 @@ function floodKnockout(data, w, h, sim) {
   }
 }
 
+/** 去掉已烘焙进 PNG 的白底 / 灰底棋盘格（不透明浅色中性像素） */
+function knockOpaqueNeutralLight(data, w, h, { minL = 200, maxSpread = 32 } = {}) {
+  for (let i = 0; i < w * h; i++) {
+    const o = i * 4;
+    if (data[o + 3] < 128) continue;
+    const r = data[o];
+    const g = data[o + 1];
+    const b = data[o + 2];
+    const spread = Math.max(r, g, b) - Math.min(r, g, b);
+    const l = (r + g + b) / 3;
+    if (l >= minL && spread <= maxSpread) {
+      data[o + 3] = 0;
+    }
+  }
+}
+
 async function processFile(filePath) {
   const base = path.basename(filePath);
   const opts = PER_FILE[base] ?? {};
   const sim = opts.sim ?? DEFAULT_SIM;
+  const neutralMinL = opts.neutralMinL ?? 200;
+  const neutralSpread = opts.neutralSpread ?? 32;
 
   const { data, info } = await sharp(filePath).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const w = info.width;
   const h = info.height;
   const copy = new Uint8ClampedArray(data);
   floodKnockout(copy, w, h, sim);
+  knockOpaqueNeutralLight(copy, w, h, { minL: neutralMinL, maxSpread: neutralSpread });
 
-  await sharp(Buffer.from(copy), {
+  const trimmed = await sharp(Buffer.from(copy), {
     raw: { width: w, height: h, channels: 4 },
   })
+    .trim({ threshold: 8 })
     .png({ compressionLevel: 9, effort: 10 })
-    .toFile(filePath);
+    .toBuffer();
 
-  console.log("ok", base, { sim });
+  await fs.writeFile(filePath, trimmed);
+
+  const meta = await sharp(trimmed).metadata();
+  console.log("ok", base, { sim, neutralMinL, neutralSpread, out: `${meta.width}x${meta.height}` });
 }
 
 async function main() {
