@@ -5,6 +5,7 @@ import { SampleReportShowcase } from "./SampleReportShowcase";
 import { SampleReportAutoScroll } from "./SampleReportAutoScroll";
 import { LandingCalendlyEmbed } from "./LandingCalendlyEmbed";
 import "./LandingSampleReportPeek.css";
+import "./LandingPageReplica.css";
 import { LanguageToggle } from "../i18n/LanguageToggle";
 import { useLanguage } from "../i18n/LanguageContext";
 import { useAuthChrome } from "../auth/AuthChromeContext";
@@ -253,7 +254,7 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
     <div className="landing-page-replica flex min-h-dvh flex-col bg-[var(--landing-page-bg,#ecf3ea)] pb-24 text-neutral-900 antialiased">
       {/* —— Sticky nav —— */}
       <header className="sticky top-0 z-40 shrink-0 border-b border-[#006644]/12 bg-[var(--landing-page-bg,#ecf3ea)]/95 backdrop-blur-sm">
-        <div className="mx-auto flex min-h-[56px] max-w-[1120px] items-center justify-between gap-4 px-6 py-2.5 sm:min-h-[60px] lg:px-10">
+        <div className="landing-header-inner mx-auto flex min-h-[56px] max-w-[1120px] items-center justify-between gap-4 px-6 py-2.5 sm:min-h-[60px] lg:px-10">
           <button
             type="button"
             onClick={onOpenBrandStory}
@@ -273,28 +274,31 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
               {tf("landingReplica.navFaq")}
             </button>
           </nav>
-          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <div className="landing-header-actions flex shrink-0 items-center gap-2 sm:gap-3">
             <div className="scale-95">
               <LanguageToggle />
             </div>
+            <button type="button" onClick={onOpenAccount} className="landing-header-account md:hidden">
+              {t("auth.myApplications")}
+            </button>
             <button
               type="button"
               onClick={onOpenAccount}
-              className="landing-btn landing-btn--secondary landing-btn--sm hidden sm:inline-flex"
+              className="landing-btn landing-btn--secondary landing-btn--sm hidden md:inline-flex"
             >
               {t("auth.myApplications")}
             </button>
             <button
               type="button"
               onClick={onStart}
-              className="landing-btn landing-btn--primary landing-btn--sm hidden sm:inline-flex"
+              className="landing-btn landing-btn--primary landing-btn--sm hidden md:inline-flex"
             >
               {tf("app.welcome.start")}
             </button>
           </div>
         </div>
-        <nav className="flex flex-col gap-2 border-t border-neutral-100 bg-[var(--landing-page-bg,#ecf3ea)] px-6 py-2.5 md:hidden" aria-label="Primary mobile">
-          <div className="flex w-full justify-between gap-2 text-[13px] font-medium text-neutral-600">
+        <nav className="landing-mobile-nav border-t border-neutral-100 bg-[var(--landing-page-bg,#ecf3ea)] md:hidden" aria-label="Primary mobile">
+          <div className="landing-mobile-nav__track">
             <button type="button" onClick={() => scrollToId("landing-how-it-works")}>
               {tf("app.productIntroLink")}
             </button>
@@ -305,43 +309,27 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
               {tf("landingReplica.navFaq")}
             </button>
           </div>
-          <div className="flex w-full gap-2">
-            <button
-              type="button"
-              onClick={onOpenAccount}
-              className="landing-btn landing-btn--secondary landing-btn--sm min-h-[40px] flex-1"
-            >
-              {t("auth.myApplications")}
-            </button>
-            <button
-              type="button"
-              onClick={onStart}
-              className="landing-btn landing-btn--primary landing-btn--sm min-h-[40px] flex-1"
-            >
-              {tf("app.welcome.start")}
-            </button>
-          </div>
         </nav>
       </header>
 
       {/* —— First screen: hero sits lower; logo banner flush to viewport bottom —— */}
       <div className="landing-first-fold flex min-h-0 flex-1 flex-col">
-          <section className="landing-hero-section mx-auto flex w-full max-w-[1120px] flex-1 flex-col justify-end px-6 pb-5 pt-10 lg:px-10 lg:pb-6 lg:pt-16">
-            <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-2 lg:items-center lg:gap-x-12 lg:gap-y-0">
+          <section className="landing-hero-section mx-auto flex w-full max-w-[1120px] flex-col justify-start px-6 pb-5 pt-6 lg:flex-1 lg:justify-end lg:px-10 lg:pb-6 lg:pt-16">
+            <div className="landing-hero-grid grid grid-cols-1 items-start gap-8 lg:grid-cols-2 lg:items-center lg:gap-x-12 lg:gap-y-0">
             <div className="min-w-0">
-              <p className="mb-3 inline-flex rounded-full border border-emerald-200/90 bg-emerald-50/90 px-3 py-1.5 text-[12px] font-semibold tracking-wide text-emerald-900">
+              <p className="landing-hero-badge mb-3 inline-flex rounded-full border border-emerald-200/90 bg-emerald-50/90 px-3 py-1.5 text-[12px] font-semibold tracking-wide text-emerald-900">
                 {tf("landingReplica.heroBadge")}
               </p>
-              <h1 className="mb-3 text-[clamp(1.85rem,4.5vw,2.5rem)] font-bold leading-[1.1] tracking-[-0.035em] text-neutral-950">
+              <h1 className="landing-hero-title mb-3 text-[clamp(1.85rem,4.5vw,2.5rem)] font-bold leading-[1.1] tracking-[-0.035em] text-neutral-950">
                 <span className="block">
                   <HeroTitleLine1 text={tf("app.hero.titleLine1")} locale={locale} />
                 </span>
-                <span className="mt-1 block text-[clamp(1.15rem,2.8vw,1.5rem)] font-medium leading-snug tracking-[-0.02em] text-neutral-600 lg:text-[clamp(1.2rem,2.5vw,1.45rem)]">
+                <span className="landing-hero-title__sub mt-1 block text-[clamp(1.15rem,2.8vw,1.5rem)] font-medium leading-snug tracking-[-0.02em] text-neutral-600 lg:text-[clamp(1.2rem,2.5vw,1.45rem)]">
                   {tf("app.hero.titleLine2")}
                 </span>
               </h1>
-              <p className="mb-6 max-w-[32rem] text-[15px] leading-[1.55] text-neutral-600 lg:text-[16px]">{tf("app.hero.lead")}</p>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+              <p className="landing-hero-lead mb-6 max-w-[32rem] text-[15px] leading-[1.55] text-neutral-600 lg:text-[16px]">{tf("app.hero.lead")}</p>
+              <div className="landing-hero-ctas flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
                 <button
                   type="button"
                   onClick={onStart}
@@ -354,7 +342,8 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
                   onClick={() => scrollToId("landing-booking")}
                   className="landing-btn landing-btn--primary landing-btn--md min-h-[48px]"
                 >
-                  {tf("landingReplica.heroBookConsult")}
+                  <span className="md:hidden">{tf("landingReplica.heroBookConsultMobile")}</span>
+                  <span className="hidden md:inline">{tf("landingReplica.heroBookConsult")}</span>
                 </button>
               </div>
             </div>
