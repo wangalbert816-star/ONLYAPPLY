@@ -1,38 +1,116 @@
 /* Landing replica — mobile-first tweaks (max-width: 767px) */
 
+@media (max-width: 1023px) {
+  html[data-landing] body {
+    overflow-x: clip;
+  }
+}
+
 @media (max-width: 767px) {
   html[data-landing] .landing-page-replica {
     padding-bottom: 5.5rem;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  html[data-landing] .landing-page-replica > header,
+  html[data-landing] .landing-first-fold,
+  html[data-landing] .landing-page-replica > main {
+    max-width: 100%;
   }
 
   html[data-landing] .landing-header-inner {
-    min-height: 52px;
-    padding: 0.5rem 1rem;
-    gap: 0.5rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 0.5rem 0.5rem;
+    min-height: 60px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  html[data-landing] .landing-header-brand {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    overflow: hidden;
+    justify-self: stretch;
   }
 
   html[data-landing] img.onlyapply-logo.landing-header-logo {
-    max-height: 2.125rem;
-    max-width: min(11.5rem, 46vw);
+    display: block;
+    max-height: 2.5rem;
+    max-width: 100%;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain;
+    object-position: left center;
   }
 
-  html[data-landing] .landing-header-actions {
+  html[data-landing] .landing-header-actions--mobile {
+    display: flex;
+    flex-direction: column;
     gap: 0.35rem;
+    justify-self: stretch;
+    align-self: center;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
   }
 
-  html[data-landing] .landing-header-account {
-    padding: 0.35rem 0.5rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #525252;
-    background: transparent;
-    border: none;
-    border-radius: 8px;
+  html[data-landing] .landing-header-actions__apps {
+    width: 100%;
+    min-height: 34px;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.8125rem;
+    line-height: 1.25;
     white-space: nowrap;
   }
 
-  html[data-landing] .landing-header-account:active {
-    background: rgba(0, 102, 68, 0.08);
+  html[data-landing] .landing-header-actions__pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.35rem;
+    width: 100%;
+    min-width: 0;
+  }
+
+  html[data-landing] .landing-header-actions__lang {
+    display: flex;
+    min-width: 0;
+    min-height: 34px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  html[data-landing] .landing-header-actions__lang .lang-toggle {
+    width: 100%;
+    min-height: 34px;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 0.2rem 0.3rem;
+    border-radius: 999px;
+  }
+
+  html[data-landing] .landing-header-actions__lang .lang-toggle__btn {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0.25rem 0.35rem;
+    text-align: center;
+  }
+
+  html[data-landing] .landing-header-actions__pair > .landing-btn--primary {
+    width: 100%;
+    min-height: 34px;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.8125rem;
+    line-height: 1.25;
+    white-space: nowrap;
   }
 
   html[data-landing] .landing-mobile-nav {
@@ -72,6 +150,42 @@
     flex: none;
     justify-content: flex-start;
     padding: 0.75rem 1rem 0.5rem;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: clip;
+  }
+
+  html[data-landing] .landing-hero-grid > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  html[data-landing] .landing-hero-preview-col {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+
+  html[data-landing] .landing-hero-preview-col .landing-hero-preview {
+    width: 100%;
+    max-width: min(28rem, 100%);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  html[data-landing] .landing-hero-preview .landing-hero-preview__frame {
+    transform: none;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  html[data-landing] .landing-hero-preview:hover .landing-hero-preview__frame {
+    transform: translateY(-2px);
+  }
+
+  html[data-landing] .landing-marquee-bridge {
+    max-width: 100%;
+    overflow-x: clip;
   }
 
   html[data-landing] .landing-hero-grid {
@@ -118,25 +232,23 @@
   }
 
   html[data-landing] .landing-hero-preview .landing-hero-preview__frame {
-    transform: none;
     max-width: 100%;
   }
 
   html[data-landing] .landing-hero-preview .landing-hero-preview__stage {
-    min-height: 11.5rem;
-    max-height: 14.5rem;
+    min-height: 17.5rem;
+    max-height: none;
   }
 
   html[data-landing] .landing-hero-preview .landing-hero-preview__tabs {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: visible;
   }
 
   html[data-landing] .landing-hero-preview .landing-hero-preview__tab {
-    flex: 0 0 auto;
-    font-size: 0.6875rem;
-    padding: 0.35rem 0.55rem;
+    font-size: 0.68rem;
+    padding: 0.38rem 0.45rem;
   }
 
   html[data-landing] .landing-marquee-bridge {

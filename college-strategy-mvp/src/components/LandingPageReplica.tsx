@@ -254,14 +254,14 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
     <div className="landing-page-replica flex min-h-dvh flex-col bg-[var(--landing-page-bg,#ecf3ea)] pb-24 text-neutral-900 antialiased">
       {/* —— Sticky nav —— */}
       <header className="sticky top-0 z-40 shrink-0 border-b border-[#006644]/12 bg-[var(--landing-page-bg,#ecf3ea)]/95 backdrop-blur-sm">
-        <div className="landing-header-inner mx-auto flex min-h-[56px] max-w-[1120px] items-center justify-between gap-4 px-6 py-2.5 sm:min-h-[60px] lg:px-10">
+        <div className="landing-header-inner mx-auto flex min-h-[52px] max-w-[1120px] min-w-0 items-center justify-between gap-2 px-4 py-2 lg:min-h-[60px] lg:gap-4 lg:px-10">
           <button
             type="button"
             onClick={onOpenBrandStory}
-            className="-m-1 flex shrink-0 items-center rounded-md p-1 transition hover:bg-[#006644]/8 active:bg-[#006644]/12"
+            className="landing-header-brand -m-1 flex min-w-0 shrink items-center rounded-md p-1 transition hover:bg-[#006644]/8 active:bg-[#006644]/12"
             aria-label="OnlyApply"
           >
-            <BrandLogo className="onlyapply-logo landing-header-logo block h-9 w-auto sm:h-10" />
+            <BrandLogo className="landing-header-logo block h-9 w-auto max-w-full lg:h-10" />
           </button>
           <nav className="hidden items-center gap-8 text-[15px] font-medium text-neutral-600 md:flex" aria-label="Primary">
             <button type="button" className="transition hover:text-neutral-950" onClick={() => scrollToId("landing-how-it-works")}>
@@ -274,25 +274,33 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
               {tf("landingReplica.navFaq")}
             </button>
           </nav>
-          <div className="landing-header-actions flex shrink-0 items-center gap-2 sm:gap-3">
-            <div className="scale-95">
-              <LanguageToggle />
-            </div>
-            <button type="button" onClick={onOpenAccount} className="landing-header-account md:hidden">
-              {t("auth.myApplications")}
-            </button>
+          <div className="landing-header-actions landing-header-actions--mobile md:hidden">
             <button
               type="button"
               onClick={onOpenAccount}
-              className="landing-btn landing-btn--secondary landing-btn--sm hidden md:inline-flex"
+              className="landing-btn landing-btn--secondary landing-btn--sm landing-header-actions__apps"
             >
               {t("auth.myApplications")}
             </button>
+            <div className="landing-header-actions__pair">
+              <div className="landing-header-actions__lang">
+                <LanguageToggle />
+              </div>
+              <button type="button" onClick={onStart} className="landing-btn landing-btn--primary landing-btn--sm">
+                {tf("app.welcome.start")}
+              </button>
+            </div>
+          </div>
+          <div className="landing-header-actions hidden shrink-0 items-center gap-2 md:flex sm:gap-3">
+            <LanguageToggle />
             <button
               type="button"
-              onClick={onStart}
-              className="landing-btn landing-btn--primary landing-btn--sm hidden md:inline-flex"
+              onClick={onOpenAccount}
+              className="landing-btn landing-btn--secondary landing-btn--sm"
             >
+              {t("auth.myApplications")}
+            </button>
+            <button type="button" onClick={onStart} className="landing-btn landing-btn--primary landing-btn--sm">
               {tf("app.welcome.start")}
             </button>
           </div>
@@ -347,7 +355,7 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
                 </button>
               </div>
             </div>
-            <div className="min-w-0 lg:pt-1">
+            <div className="landing-hero-preview-col min-w-0 lg:pt-1">
               <LandingHeroPreview />
             </div>
           </div>
