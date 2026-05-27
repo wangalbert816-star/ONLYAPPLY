@@ -163,7 +163,8 @@ export async function mountCalendlyInlineWidget(options: MountCalendlyInlineOpti
     const parent = options.parentElement;
     parent.replaceChildren();
     parent.style.minWidth = "320px";
-    parent.style.minHeight = window.matchMedia("(max-width: 780px)").matches ? "1050px" : "700px";
+    parent.style.minHeight = "0";
+    parent.style.height = "auto";
     window.Calendly.initInlineWidget({
       url,
       parentElement: parent,

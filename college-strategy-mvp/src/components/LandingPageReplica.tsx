@@ -166,7 +166,7 @@ function LandingFaqItem({ id, question, answer }: { id: string; question: string
 
   return (
     <div
-      className={`overflow-hidden rounded-xl border border-slate-400/30 bg-slate-200/95 shadow-sm transition-shadow ${
+      className={`landing-faq__item overflow-hidden rounded-2xl border border-slate-400/30 bg-slate-200/95 shadow-sm transition-shadow ${
         open ? "border-slate-500/45 shadow-[0_4px_24px_rgba(0,0,0,0.22)]" : "border-slate-400/22"
       }`}
     >
@@ -174,18 +174,18 @@ function LandingFaqItem({ id, question, answer }: { id: string; question: string
         <button
           type="button"
           id={`${id}-trigger`}
-          className="flex w-full items-start justify-between gap-4 px-5 py-4 text-left transition hover:bg-slate-300/75"
+          className="landing-faq__trigger flex w-full items-start justify-between gap-4 text-left font-semibold text-neutral-950 transition hover:bg-slate-300/75"
           aria-expanded={open}
           aria-controls={`${id}-panel`}
           onClick={() => setOpen((v) => !v)}
         >
-          <span className="text-[15px] font-semibold leading-snug text-neutral-950">{question}</span>
+          <span>{question}</span>
           <IconChevronDown className={`mt-0.5 shrink-0 text-neutral-500 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
         </button>
       </h3>
       <div id={`${id}-panel`} role="region" aria-labelledby={`${id}-trigger`} hidden={!open}>
-        <div className="border-t border-slate-300/90 bg-slate-200/80 px-5 pb-4 pt-3">
-          <p className="text-[14px] leading-relaxed text-neutral-600">{answer}</p>
+        <div className="border-t border-slate-300/90 bg-slate-200/80">
+          <p className="landing-faq__answer m-0 text-neutral-600">{answer}</p>
         </div>
       </div>
     </div>
@@ -519,7 +519,7 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
         </section>
 
         {/* —— 1:1 booking (Calendly inline) —— */}
-        <section id="landing-booking" className="landing-navy-band scroll-mt-20 pb-6 pt-20 text-neutral-950 lg:pb-8 lg:pt-28">
+        <section id="landing-booking" className="landing-navy-band scroll-mt-20 pb-0 pt-20 text-neutral-950 lg:pb-2 lg:pt-28">
           <div className="mx-auto max-w-[1100px] px-6 lg:px-10">
             <div className="landing-band-copy mb-8 text-center lg:mb-10">
               <p className="landing-band-copy__eyebrow mb-3 text-[12px] font-semibold uppercase tracking-[0.1em]">
@@ -534,10 +534,10 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
         </section>
 
         {/* —— FAQ (same Babson green band as AI section above) —— */}
-        <section id="landing-faq" className="scroll-mt-20 bg-[var(--landing-navy,#006644)] pb-16 pt-6 lg:pb-20 lg:pt-8">
-          <div className="mx-auto max-w-[720px] px-6 lg:px-10">
-            <h2 className="mb-6 text-center text-[22px] font-bold tracking-tight text-white">{tf("landingReplica.navFaq")}</h2>
-            <div className="flex flex-col gap-3">
+        <section id="landing-faq" className="scroll-mt-20 bg-[var(--landing-navy,#006644)] pb-20 pt-14 lg:pb-24 lg:pt-16">
+          <div className="mx-auto max-w-[min(52rem,100%)] px-6 lg:px-10">
+            <h2 className="landing-faq__title text-center text-white">{tf("landingReplica.navFaq")}</h2>
+            <div className="landing-faq__list flex flex-col">
               {faqItems.map((item, idx) => (
                 <LandingFaqItem key={idx} id={`landing-faq-${idx}`} question={item.q} answer={item.a} />
               ))}

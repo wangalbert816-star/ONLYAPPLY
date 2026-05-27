@@ -181,9 +181,28 @@ html[data-landing] .landing-band-copy__title {
   color: #0a0a0a;
 }
 
-/** Booking band + FAQ: same green, minimal seam between Calendly and FAQ */
-html[data-landing] #landing-booking + #landing-faq {
-  margin-top: 0;
+html[data-landing] #landing-faq .landing-faq__title {
+  margin-bottom: 1.75rem;
+  font-size: clamp(1.625rem, 4.5vw, 2.125rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+html[data-landing] #landing-faq .landing-faq__list {
+  gap: 1rem;
+}
+
+html[data-landing] #landing-faq .landing-faq__item .landing-faq__trigger {
+  padding: 1.15rem 1.35rem;
+  font-size: 1.0625rem;
+  line-height: 1.45;
+}
+
+html[data-landing] #landing-faq .landing-faq__item .landing-faq__answer {
+  padding: 0.85rem 1.35rem 1.15rem;
+  font-size: 0.9375rem;
+  line-height: 1.65;
 }
 
 /** Green band → page background above final CTA (taller + gentler) */

@@ -3,7 +3,7 @@
 }
 
 .landing-calendly-shell__hint {
-  margin: 0 0 1rem;
+  margin: 0 0 0.5rem;
   text-align: center;
   font-size: 0.875rem;
   line-height: 1.5;
@@ -23,7 +23,8 @@
 .landing-calendly-embed .calendly-inline-widget {
   width: 100% !important;
   min-width: 320px !important;
-  min-height: 700px !important;
+  min-height: 0 !important;
+  height: auto !important;
   border-radius: 16px;
   overflow: hidden;
   background: #ffffff;
@@ -34,8 +35,8 @@
   display: block;
   width: 100% !important;
   min-width: 320px !important;
-  min-height: 700px !important;
-  height: 100% !important;
+  min-height: 0 !important;
+  height: auto !important;
 }
 
 .landing-calendly-fallback {
@@ -59,31 +60,9 @@
   color: rgba(255, 255, 255, 0.88);
 }
 
-/* Stacked mobile layout needs more vertical space for date + time picker */
-@media (max-width: 780px) {
-  .landing-calendly-embed {
-    min-height: 1050px;
-  }
-
-  .landing-calendly-embed .calendly-inline-widget {
-    min-height: 1050px !important;
-  }
-
-  .landing-calendly-embed .calendly-inline-widget iframe {
-    min-height: 1050px !important;
-  }
-}
-
+/* Calendly resize:true sets widget height; avoid a fixed min-height gap below the card */
 @media (min-width: 1024px) {
-  .landing-calendly-embed {
-    min-height: 750px;
-  }
-
   .landing-calendly-embed .calendly-inline-widget {
-    min-height: 750px !important;
-  }
-
-  .landing-calendly-embed .calendly-inline-widget iframe {
-    min-height: 750px !important;
+    min-height: 700px !important;
   }
 }

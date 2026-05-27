@@ -31,26 +31,7 @@ export function LandingCalendlyEmbed({ onFallback }: Props) {
       source: "landing",
     }).then((ok) => {
       if (cancelled) return;
-      if (!ok) {
-        setLoadFailed(true);
-        return;
-      }
-      // Calendly sometimes mounts a short iframe before resize messages arrive
-      requestAnimationFrame(() => {
-        if (cancelled) return;
-        const widget = host.querySelector(".calendly-inline-widget");
-        const iframe = host.querySelector("iframe");
-        const minH = window.matchMedia("(max-width: 780px)").matches ? "1050px" : "700px";
-        if (widget instanceof HTMLElement) {
-          widget.style.minHeight = minH;
-          if (!widget.style.height) widget.style.height = minH;
-        }
-        if (iframe instanceof HTMLIFrameElement) {
-          iframe.style.minHeight = minH;
-          iframe.style.height = "100%";
-          iframe.style.width = "100%";
-        }
-      });
+      if (!ok) setLoadFailed(true);
     });
 
     return () => {
