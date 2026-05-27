@@ -298,14 +298,13 @@ img.onlyapply-logo.landing-header-logo {
   --logo-size: clamp(68px, 5.2vw, 96px);
   --logo-gap: clamp(1.85rem, 4.2vw, 3rem);
   --wall-fade: 96px;
-  padding: 0.55rem 0 0.75rem;
 }
 
 /** First screen: fill viewport below header; marquee band on bottom edge (above disclaimer) */
 html[data-landing] .landing-first-fold {
   flex: 1 1 auto;
   min-height: 0;
-  padding-bottom: var(--app-disclaimer-h, 3.25rem);
+  padding-bottom: max(1.5rem, calc(var(--app-disclaimer-h, 3.25rem) - 1.5rem));
 }
 
 html[data-landing] .landing-hero-section {
@@ -315,8 +314,14 @@ html[data-landing] .landing-hero-section {
 
 html[data-landing] .landing-marquee-bridge {
   margin-top: auto;
+  margin-bottom: -6px;
   flex-shrink: 0;
+  transform: translateY(10px);
   border-bottom: 1px solid color-mix(in srgb, var(--landing-page-bg-muted) 55%, transparent);
+}
+
+html[data-landing] .landing-hero-marquee.university-logo-marquee--colored {
+  padding: 0.35rem 0 0;
 }
 
 html[data-landing] .landing-hero-preview .landing-hero-preview__frame {

@@ -363,11 +363,11 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
           </section>
 
           <section
-            className="landing-band-marquee landing-marquee-bridge mt-auto shrink-0 py-6 lg:py-7"
+            className="landing-band-marquee landing-marquee-bridge mt-auto shrink-0 pt-5 pb-0 lg:pt-6 lg:pb-0"
             aria-label={tf("landingReplica.socialLabel")}
           >
             <div className="mx-auto max-w-[1120px] px-6 text-center lg:px-10">
-              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
                 {tf("landingReplica.socialLabel")}
               </p>
               <div
