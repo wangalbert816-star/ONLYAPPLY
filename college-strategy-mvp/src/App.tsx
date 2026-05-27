@@ -519,20 +519,18 @@ export default function App() {
     refreshEntitlements,
   ]);
 
-  /** 浏览器整页刷新后恢复问卷草稿（报告 pending 优先） */
+  /** 刷新后始终回到落地页；仅预填问卷字段，等用户点「开始」再进入流程 */
   useEffect(() => {
     if (readPendingSave()) return;
     const draft = readFormDraft();
     if (!draft) return;
     setForm(draft.form);
     setStep(draft.step);
-    setFlowStarted(draft.flowStarted);
-    setView("form");
   }, []);
 
-  /** 问卷进行中自动写入 sessionStorage，避免重载回到落地页 */
+  /** 问卷进行中写入草稿；回到落地页时标记 flowStarted=false，避免下次刷新误进问卷 */
   useEffect(() => {
-    if (!flowStarted || view !== "form") return;
+    if (view !== "form") return;
     writeFormDraft({ form, step, flowStarted });
   }, [form, step, flowStarted, view]);
 

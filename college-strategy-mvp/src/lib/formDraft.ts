@@ -24,7 +24,7 @@ export function readFormDraft(): FormDraftPayload | null {
     const raw = sessionStorage.getItem(KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as FormDraftPayload;
-    if (!parsed?.form || !parsed.flowStarted) return null;
+    if (!parsed?.form) return null;
     if (typeof parsed.step !== "number" || parsed.step < 1 || parsed.step > 3) return null;
     if (Date.now() - (parsed.savedAt ?? 0) > MAX_AGE_MS) {
       clearFormDraft();

@@ -27,8 +27,37 @@ const PER_FILE = {
   "babson.png": { sim: 50, neutralMinL: 198, neutralSpread: 34 },
 };
 
-/** 走马灯专用：保留黑底或原图，由 CSS mix-blend-mode 或原色显示 */
-const SKIP_KNOCKOUT = new Set(["princeton.png", "ucla.png"]);
+/** 走马灯专用：保留原图，不做通用抠图 */
+const SKIP_KNOCKOUT = new Set(["ucla.png"]);
+
+function knockPrincetonWhiteBg(data) {
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const a = data[i + 3];
+    if (a < 20) continue;
+    const spread = Math.max(r, g, b) - Math.min(r, g, b);
+    const l = (r + g + b) / 3;
+    if (l >= 248 && spread <= 12) data[i + 3] = 0;
+  }
+}
+
+/** Princeton：仅去掉外围白底，盾形/橙/黑/书页不动 */
+async function processPrincetonWhiteBgOnly(filePath) {
+  const { data, info } = await sharp(filePath).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const w = info.width;
+  const h = info.height;
+  const copy = new Uint8ClampedArray(data);
+  knockPrincetonWhiteBg(copy);
+  const trimmed = await sharp(Buffer.from(copy), { raw: { width: w, height: h, channels: 4 } })
+    .trim({ threshold: 10 })
+    .png({ compressionLevel: 9, effort: 10 })
+    .toBuffer();
+  await fs.writeFile(filePath, trimmed);
+  const meta = await sharp(trimmed).metadata();
+  console.log("ok", path.basename(filePath), { mode: "white-bg-only", out: `${meta.width}x${meta.height}` });
+}
 
 function keepNyuPurplePixel(r, g, b) {
   const max = Math.max(r, g, b);
@@ -282,6 +311,17 @@ async function main() {
         /* use existing nyu.png pixels */
       }
       await processNyuPurpleOnly(filePath);
+      continue;
+    }
+    if (f === "princeton.png") {
+      const src = path.join(LOGOS_DIR, "princeton-source.png");
+      try {
+        await fs.access(src);
+        await fs.copyFile(src, filePath);
+      } catch {
+        /* use existing princeton.png pixels */
+      }
+      await processPrincetonWhiteBgOnly(filePath);
       continue;
     }
     if (SKIP_KNOCKOUT.has(f)) {

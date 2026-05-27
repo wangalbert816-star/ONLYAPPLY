@@ -73,7 +73,6 @@ export function UniversityLogoMarquee({
     const nyuMark = school.id === "nyu";
     const mitMark = school.id === "mit";
     const tallMark = school.id === "princeton" || school.id === "brown";
-    const blendMark = school.id === "princeton";
     const cellClass = [
       "marquee-logo-cell",
       wideMark ? "marquee-logo-cell--wide" : "marquee-logo-cell--standard",
@@ -87,7 +86,6 @@ export function UniversityLogoMarquee({
       nyuMark && "marquee-logo-frame--nyu",
       mitMark && "marquee-logo-frame--mit",
       tallMark && "marquee-logo-frame--tall",
-      blendMark && "marquee-logo-frame--blend-multiply",
     ]
       .filter(Boolean)
       .join(" ");
