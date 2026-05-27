@@ -807,6 +807,20 @@ merge(zhFlat, {
 });
 
 merge(zhFlat, {
+  aboutUs: {
+    nav: "关于我们",
+    close: "关闭",
+    eyebrow: "OnlyApply",
+    title: "关于我们",
+    missionTitle: "我们的使命",
+    missionBody:
+      "OnlyApply 帮助学生以更清晰、更有策略、更有信心的方式面对大学申请，让每一步都不那么令人不知所措。",
+    whyTitle: "为什么我们做 OnlyApply",
+    whyBody:
+      "我们深知申请季有多让人焦虑。事情太多，学生可能付出了巨大努力，却仍然不确定自己处在什么位置。OnlyApply 就是为了弥合这个缺口——在「很努力」和「知道如何有目标地前进」之间。",
+    foundersCta: "阅读创始人来信",
+    foundersLink: "阅读全文 →",
+  },
   landingReplica: {
     navSampleReport: "样例报告",
     navFaq: "常见问题",
@@ -1700,6 +1714,20 @@ merge(enFlat, {
 });
 
 merge(enFlat, {
+  aboutUs: {
+    nav: "About Us",
+    close: "Close",
+    eyebrow: "OnlyApply",
+    title: "About Us",
+    missionTitle: "Our Mission",
+    missionBody:
+      "OnlyApply helps students approach the college application process with clarity, strategy, and confidence, making each step feel less overwhelming.",
+    whyTitle: "Why We Built OnlyApply",
+    whyBody:
+      "We know firsthand how stressful the application season can feel. With so many moving pieces, students can put in tremendous effort and still feel unsure of where they stand. OnlyApply was built to close that gap: the space between working hard and understanding how to move forward with purpose.",
+    foundersCta: "Read the Letter from the Founders",
+    foundersLink: "Read the full letter →",
+  },
   landingReplica: {
     navSampleReport: "Sample Report",
     navFaq: "FAQ",

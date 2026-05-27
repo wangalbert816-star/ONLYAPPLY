@@ -19,31 +19,66 @@ const storyCopy = {
     title: "把申请季里的混乱，整理成一个能继续往前走的判断。",
     intro:
       "OnlyApply 是一个 AI 申请判断与文书修改工作区。它不承诺录取，不替你决定去哪所学校，也不替你写最终文书；它只是把你的背景、目标、约束、风险和草稿放在一起，帮你看清自己大概站在哪里，以及下一步最该补什么、改什么。",
-    letterLabel: "写给正在申请的你",
+    letterLabel: "创始人来信",
     letterParagraphs: [
-      { text: "如果你在申请季，你大概已经被很多东西包围了。" },
-      { text: "排名、冲刺、保底、活动、文书、分数、预算、身份、截止日期，还有别人一句一句给你的建议。" },
-      { text: "你可能已经研究了很久，也做了很多准备，但你心里可能还是不太确定：" },
-      { text: "我现在到底在什么位置？\n我做的这些，到底够不够？", kind: "question" },
-      { text: "这种感觉，其实很正常。", kind: "emphasis" },
-      { text: "不是你不努力，也不是你哪里做错了，" },
-      { text: "而是这些信息，本来就很碎，很少有人真的把它们放在一起讲清楚。" },
-      { text: "你不缺信息。你缺的是一个更清楚的判断，和一个能继续往前改的地方。", kind: "emphasis" },
-      { text: "申请这件事，说到底不是比谁更会“填表”，也不是把自己包装成另一个人。" },
-      { text: "它更像是在不确定的情况下，把真实的你、现实的限制、学校的判断标准，一点点对齐。" },
-      { text: "OnlyApply 做的事情，其实很简单：", kind: "pause" },
-      { text: "不是替你决定去哪所学校，也不是替你写一篇文书，更不是告诉你“你行不行”。" },
-      { text: "只是在你已经做了这么多之后，帮你把现在的情况尽量讲清楚一点：" },
-      { text: "你大概在哪一档，\n真正限制你的是什么，\n下一步该补信息、调策略，还是把某段经历写清楚。", kind: "question" },
-      { text: "报告是起点。后面的补充信息、判断更新、文书方向和段落反馈，都是为了让这个判断继续变准确。" },
-      { text: "我们不希望 AI 替你做决定，也不希望 AI 替你发声。" },
-      { text: "我们更希望它像一个很耐心的整理者：把混乱摊开，把问题指出来，再陪你改到下一版。" },
-      { text: "这样，当你做选择、改名单、写文书的时候，不是因为焦虑，而是因为你至少知道自己在做什么。" },
-      { text: "走完申请这段路的人，大多都会发现一件事：" },
-      { text: "最难的，从来不是努力，而是在努力很多之后，还能看清自己到底在什么位置。", kind: "emphasis" },
-      { text: "希望 OnlyApply 至少能在这件事上，帮你轻一点，清楚一点。" },
+      {
+        text: "申请季里熬过一整个长夜之后，常常会有一种特别的安静——事情还没完，但人已经先静下来了。",
+      },
+      {
+        text: "浏览器标签页还开着，选校表填了一半，某所学校的招生页面在屏幕上发着光；在排名、文书、截止日期、分数、预算，以及身边每一个人的建议之间，整个申请开始模糊成一片。",
+      },
+      {
+        text: "你可能已经研究了好几个月，可能把同一段文字改到不再像你自己，可能建好了名单、勾完了清单、问遍了该问的问题，却仍然会想：",
+      },
+      {
+        text: "我现在到底在什么位置？\n我已经做的这一切，够不够？",
+        kind: "question",
+      },
+      {
+        text: "这种不确定，并不代表你落后了。",
+        kind: "emphasis",
+      },
+      {
+        text: "它只说明：你正站在一个要求你做出人生级决定的流程中间——信息零散、背景不完整、压力从四面八方涌来。",
+      },
+      { text: "大多数学生需要的，不是再多一个被扔进噪音里的意见。" },
+      { text: "他们需要的是清晰。", kind: "emphasis" },
+      {
+        text: "不是那种假装能预测未来的清晰，而是能更诚实地看清当下的清晰。",
+      },
+      {
+        text: "大学申请不只是展示成就，更是翻译：把多年的努力、身份、成长、抱负、限制与可能，压缩成别人几分钟内会读完的一份材料。难点往往不在「无话可说」，而在「太多可说」——太多草稿、太多角度、太多恐惧，太多版本的自己同时挤在桌上。",
+      },
+      { text: "OnlyApply 就是为那一刻而建的。", kind: "pause" },
+      {
+        text: "它不会替你决定未来，不会代替你书写人生，也不会把你的价值简化成一个分数、一次考试或一句判断。",
+      },
+      {
+        text: "它会帮你停下来，看清申请材料的大致轮廓：你大概站在哪里、什么可能在拖住你的档案，以及下一步是该加强选校名单、重新定位，还是让某一个故事终于听起来像背后的那个人。",
+      },
+      { text: "报告只是开始。" },
+      {
+        text: "后续的追问、更新反馈、文书方向与段落建议，都是为了把判断磨得更准，而不是取代你的声音。",
+      },
+      {
+        text: "我们不相信 AI 应该替你说。我们相信它应该帮你整理这间屋子，让你更能听见自己的声音。",
+        kind: "emphasis",
+      },
+      {
+        text: "OnlyApply 像一位耐心的向导：把散落的页面铺开，轻轻指向真正重要的地方，陪你走向下一稿、下一个决定、下一个更清晰的版本。",
+      },
+      {
+        text: "所以当你调整名单、修改文书、重新思考自己如何呈现时，你不只是在恐慌中挪动——你是在带着意图行动。你明白自己在改什么，也明白为什么。",
+      },
+      {
+        text: "因为对很多学生来说，申请季最难的不是工作本身，而是在已经付出这么多之后，仍想看清自己究竟站在哪里。",
+        kind: "emphasis",
+      },
+      {
+        text: "希望 OnlyApply 能让这一部分，轻一点、静一点、也清楚一点。",
+      },
     ] satisfies LetterParagraph[],
-    signature: ["一个走过这段申请的人", "OnlyApply 创始人", "写于 Babson College"],
+    signature: ["OnlyApply 创始人", "写于 Babson College"],
     start: "开始填写问卷",
   },
   en: {
@@ -52,31 +87,56 @@ const storyCopy = {
     title: "Turn the chaos of application season into a judgment you can keep moving with.",
     intro:
       "OnlyApply is an AI workspace for application judgment and essay revision. It does not promise admission, choose schools for you, or write your final essay. It puts your background, goals, constraints, risks, and drafts in one place so you can see where you stand and what to improve next.",
-    letterLabel: "A Letter To You, In Application Season",
+    letterLabel: "A Letter from the Founders",
     letterParagraphs: [
-      { text: "If you are in application season, you are probably surrounded by a lot already." },
-      { text: "Rankings, reaches, safeties, activities, essays, scores, budget, identity, deadlines, and one more piece of advice from one more person." },
-      { text: "You may have researched for months. You may have done a lot. And still, somewhere in the back of your mind, you may not feel sure:" },
-      { text: "Where do I actually stand?\nIs what I have done enough?", kind: "question" },
-      { text: "That feeling is normal.", kind: "emphasis" },
-      { text: "It does not mean you are not working hard. It does not mean you did something wrong." },
-      { text: "The problem is that the information is fragmented, and very few people put it together clearly." },
-      { text: "You do not need more noise. You need clearer judgment, and a place to keep revising from there.", kind: "emphasis" },
-      { text: "Applying is not really about who can fill out forms better. It is not about packaging yourself into someone else." },
-      { text: "It is about aligning who you are, what limits are real, and how schools will read your file." },
-      { text: "What OnlyApply does is simple:", kind: "pause" },
-      { text: "It does not decide where you should go. It does not write your essay for you. It does not tell you whether you are “good enough.”" },
-      { text: "After you have already done so much, it tries to make the current picture a little clearer:" },
-      { text: "Where you roughly stand,\nwhat is actually holding the file back,\nand whether the next move is more information, a strategy change, or making one story clearer.", kind: "question" },
-      { text: "The report is the starting point. The follow-up questions, updated judgment, essay direction, and paragraph feedback are all there to make that judgment more accurate." },
-      { text: "We do not want AI to decide for you. We do not want AI to speak for you." },
-      { text: "We want it to act more like a patient organizer: lay out the mess, point to the real problem, and help you get to the next draft." },
-      { text: "So when you choose schools, adjust a list, or revise an essay, you are not moving only because of anxiety. You at least know what you are doing." },
-      { text: "Most people who make it through this process realize one thing:" },
-      { text: "The hardest part is not effort. It is seeing where you stand after you have already tried so hard.", kind: "emphasis" },
-      { text: "I hope OnlyApply can make that part a little lighter, and a little clearer." },
+      {
+        text: "There is a particular kind of silence that follows a long night of college applications.",
+      },
+      {
+        text: "The tabs are still open. The spreadsheet is half-finished. A school’s admissions page glows on your screen, and somewhere between the rankings, essays, deadlines, scores, finances, and advice from everyone around you, the whole process begins to blur.",
+      },
+      {
+        text: "You may have spent months researching. You may have revised the same paragraph until it no longer sounded like you. You may have built the list, checked the boxes, asked the questions, and still wondered:",
+      },
+      {
+        text: "Where do I actually stand? Is everything I have done enough?",
+        kind: "question",
+      },
+      {
+        text: "That uncertainty does not mean you are behind. It means you are standing in the middle of a process that asks you to make life-shaping decisions with scattered information, incomplete context, and pressure from every direction.",
+        kind: "emphasis",
+      },
+      { text: "What most students need is not another opinion thrown into the noise." },
+      { text: "They need clarity.", kind: "emphasis" },
+      {
+        text: "Not the kind that pretends to predict the future, but the kind that helps you see the present more honestly.",
+      },
+      {
+        text: "College applications are not just about presenting achievements. They are about translation: turning years of effort, identity, growth, ambition, limits, and possibility into a file someone else will read in a matter of minutes. That is where the process becomes difficult. Not because students have nothing to say, but because they often have too much. Too many drafts, too many angles, too many fears, and too many versions of themselves to make sense of at once.",
+      },
+      { text: "OnlyApply was built for that moment.", kind: "pause" },
+      {
+        text: "It does not decide your future for you. It does not write your story in your place. It does not reduce your worth to a number, a score, or a single judgment. Instead, it helps you pause long enough to see the shape of your application more clearly: where you roughly stand, what may be holding your file back, and whether your next step is strengthening your school list, rethinking your positioning, or making one story finally sound like the person behind it.",
+      },
+      { text: "The report is only the beginning." },
+      {
+        text: "The follow-up questions, updated feedback, essay direction, and paragraph suggestions are meant to refine the judgment, not replace your voice. We do not believe AI should speak for you. We believe it should help organize the room so you can hear yourself better.",
+      },
+      {
+        text: "OnlyApply acts like a patient guide. It lays out the scattered pages, points gently to what matters, and helps you move toward the next draft, the next decision, and the next clearer version of your application.",
+      },
+      {
+        text: "So when you adjust your list, revise an essay, or rethink how you are presenting yourself, you are not moving purely out of panic. You are moving with intention. You understand not just what you are changing, but why.",
+      },
+      {
+        text: "Because for many students, the hardest part of application season is not the work itself. It is trying to see where you stand after you have already given so much of yourself to the process.",
+        kind: "emphasis",
+      },
+      {
+        text: "I hope OnlyApply can make that part feel a little lighter, a little quieter, and a little clearer.",
+      },
     ] satisfies LetterParagraph[],
-    signature: ["Someone who has been through it", "Founder of OnlyApply", "Written at Babson College"],
+    signature: ["From the Founders of OnlyApply", "Written at Babson College"],
     start: "Start Questionnaire",
   },
 };

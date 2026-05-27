@@ -16,6 +16,7 @@ type Props = {
   landingMarqueeVisible: boolean;
   onStart: () => void;
   onOpenBrandStory: () => void;
+  onOpenAboutUs: () => void;
   onBookExpertConsult: () => void;
 };
 
@@ -192,7 +193,13 @@ function LandingFaqItem({ id, question, answer }: { id: string; question: string
   );
 }
 
-export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrandStory, onBookExpertConsult }: Props) {
+export function LandingPageReplica({
+  landingMarqueeVisible,
+  onStart,
+  onOpenBrandStory,
+  onOpenAboutUs,
+  onBookExpertConsult,
+}: Props) {
   const { t, locale } = useLanguage();
   const { onOpenAccount } = useAuthChrome();
   const tf = (k: string) => t(k);
@@ -264,6 +271,9 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
             <BrandLogo className="landing-header-logo block h-9 w-auto max-w-full lg:h-10" />
           </button>
           <nav className="hidden items-center gap-8 text-[15px] font-medium text-neutral-600 md:flex" aria-label="Primary">
+            <button type="button" className="transition hover:text-neutral-950" onClick={onOpenAboutUs}>
+              {tf("aboutUs.nav")}
+            </button>
             <button type="button" className="transition hover:text-neutral-950" onClick={() => scrollToId("landing-how-it-works")}>
               {tf("app.productIntroLink")}
             </button>
@@ -307,6 +317,9 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
         </div>
         <nav className="landing-mobile-nav border-t border-neutral-100 bg-[var(--landing-page-bg,#ecf3ea)] md:hidden" aria-label="Primary mobile">
           <div className="landing-mobile-nav__track">
+            <button type="button" onClick={onOpenAboutUs}>
+              {tf("aboutUs.nav")}
+            </button>
             <button type="button" onClick={() => scrollToId("landing-how-it-works")}>
               {tf("app.productIntroLink")}
             </button>

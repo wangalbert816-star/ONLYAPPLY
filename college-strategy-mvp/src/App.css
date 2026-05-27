@@ -1418,6 +1418,34 @@ th {
   min-width: 0;
 }
 
+.app-top-chrome__about {
+  pointer-events: auto;
+  border: none;
+  padding: 0.35rem 0.5rem;
+  background: transparent;
+  color: var(--color-muted, #737373);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+.app-top-chrome__about:hover {
+  color: var(--landing-accent, #006644);
+}
+
+html[data-landing] .app-top-chrome__about,
+html[data-questionnaire] .app-top-chrome__about {
+  color: #525252;
+}
+
+html[data-landing] .app-top-chrome__about:hover,
+html[data-questionnaire] .app-top-chrome__about:hover {
+  color: var(--landing-accent, #006644);
+}
+
 .app-top-chrome__consult {
   width: 100%;
   max-width: min(26rem, 100%);

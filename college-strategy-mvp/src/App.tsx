@@ -30,6 +30,7 @@ import "./components/GuidedQuestionnaire.css";
 import "./components/QuestionnaireTheme.css";
 import { FullscreenLogoMarquee } from "./components/FullscreenLogoMarquee";
 import { BrandStoryOverlay } from "./components/BrandStoryOverlay";
+import { AboutUsOverlay } from "./components/AboutUsOverlay";
 import { ProductIntroPage } from "./components/ProductIntroPage";
 import { LandingPageReplica } from "./components/LandingPageReplica";
 import { ExpertConsultContactModal } from "./components/ExpertConsultContactModal";
@@ -248,6 +249,7 @@ export default function App() {
   const applicationHubTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [applicationHubOpen, setApplicationHubOpen] = useState(false);
   const [brandStoryOpen, setBrandStoryOpen] = useState(false);
+  const [aboutUsOpen, setAboutUsOpen] = useState(false);
   const [expertConsultModalOpen, setExpertConsultModalOpen] = useState(false);
   const [landingMarqueeVisible, setLandingMarqueeVisible] = useState(true);
 
@@ -278,6 +280,11 @@ export default function App() {
     [],
   );
 
+  const openFoundersLetter = useCallback(() => {
+    setAboutUsOpen(false);
+    setBrandStoryOpen(true);
+  }, []);
+
   const withChrome = useCallback(
     (content: ReactNode, options?: { showExpertConsult?: boolean; hideChrome?: boolean }) => (
       <AuthChromeProvider value={authChromeHandlers}>
@@ -294,12 +301,30 @@ export default function App() {
                     })
                 : undefined
             }
+            onOpenAboutUs={() => setAboutUsOpen(true)}
           />
         )}
         {content}
+        <AboutUsOverlay
+          open={aboutUsOpen}
+          onClose={() => setAboutUsOpen(false)}
+          onOpenFoundersLetter={openFoundersLetter}
+        />
+        <BrandStoryOverlay
+          open={brandStoryOpen}
+          onClose={() => setBrandStoryOpen(false)}
+          onStart={() => {
+            setBrandStoryOpen(false);
+            setAboutUsOpen(false);
+            setApplicationHubOpen(false);
+            setFlowStarted(true);
+            setView("form");
+            queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+          }}
+        />
       </AuthChromeProvider>
     ),
-    [authChromeHandlers, t, user?.email],
+    [aboutUsOpen, authChromeHandlers, brandStoryOpen, openFoundersLetter, t, user?.email],
   );
 
   const refreshEntitlements = useCallback(async (): Promise<string[]> => {
@@ -1240,6 +1265,7 @@ export default function App() {
             queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
           }}
           onOpenBrandStory={() => setBrandStoryOpen(true)}
+          onOpenAboutUs={() => setAboutUsOpen(true)}
           onBookExpertConsult={() =>
             requestExpertConsult({
               email: user?.email ?? undefined,
@@ -1253,16 +1279,6 @@ export default function App() {
           onClose={() => {
             setApplicationHubOpen(false);
             queueMicrotask(() => applicationHubTriggerRef.current?.focus());
-          }}
-        />
-        <BrandStoryOverlay
-          open={brandStoryOpen}
-          onClose={() => setBrandStoryOpen(false)}
-          onStart={() => {
-            setBrandStoryOpen(false);
-            setApplicationHubOpen(false);
-            setFlowStarted(true);
-            queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
           }}
         />
         <ExpertConsultContactModal open={expertConsultModalOpen} onClose={() => setExpertConsultModalOpen(false)} />

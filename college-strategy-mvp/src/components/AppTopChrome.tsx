@@ -2,13 +2,16 @@ import { AuthMenuButton } from "./auth/AuthMenuButton";
 import { LanguageToggle } from "../i18n/LanguageToggle";
 import { useAuth } from "../auth/AuthContext";
 import { useAuthChrome } from "../auth/AuthChromeContext";
+import { useLanguage } from "../i18n/LanguageContext";
 
 type Props = {
   expertConsultLabel?: string;
   onExpertConsult?: () => void;
+  onOpenAboutUs?: () => void;
 };
 
-export function AppTopChrome({ expertConsultLabel, onExpertConsult }: Props) {
+export function AppTopChrome({ expertConsultLabel, onExpertConsult, onOpenAboutUs }: Props) {
+  const { t } = useLanguage();
   const { configured, loading } = useAuth();
   const { onSignIn, onOpenAccount } = useAuthChrome();
   const showAuth = configured && !loading;
@@ -29,6 +32,11 @@ export function AppTopChrome({ expertConsultLabel, onExpertConsult }: Props) {
         </div>
       )}
       <div className="app-top-chrome__end">
+        {onOpenAboutUs && (
+          <button type="button" className="app-top-chrome__about" onClick={onOpenAboutUs}>
+            {t("aboutUs.nav")}
+          </button>
+        )}
         <LanguageToggle />
       </div>
     </div>
