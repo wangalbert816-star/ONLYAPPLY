@@ -301,17 +301,22 @@ img.onlyapply-logo.landing-header-logo {
   padding: 0.55rem 0 0.75rem;
 }
 
-/** Hero + marquee + testimonials: tighter vertical rhythm (avoid viewport-stretched first fold) */
+/** First screen: fill viewport below header; marquee band on bottom edge (above disclaimer) */
 html[data-landing] .landing-first-fold {
-  flex: none;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-bottom: var(--app-disclaimer-h, 3.25rem);
+}
+
+html[data-landing] .landing-hero-section {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 html[data-landing] .landing-marquee-bridge {
+  margin-top: auto;
+  flex-shrink: 0;
   border-bottom: 1px solid color-mix(in srgb, var(--landing-page-bg-muted) 55%, transparent);
-}
-
-html[data-landing] .landing-testimonials-section {
-  margin-top: 0;
 }
 
 html[data-landing] .landing-hero-preview .landing-hero-preview__frame {

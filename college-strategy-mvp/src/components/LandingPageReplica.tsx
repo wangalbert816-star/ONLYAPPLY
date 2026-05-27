@@ -248,7 +248,7 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
   }).filter((item) => item.q && item.a && !item.q.startsWith("landingReplica."));
 
   return (
-    <div className="landing-page-replica flex flex-col bg-[var(--landing-page-bg,#ecf3ea)] pb-24 text-neutral-900 antialiased">
+    <div className="landing-page-replica flex min-h-dvh flex-col bg-[var(--landing-page-bg,#ecf3ea)] pb-24 text-neutral-900 antialiased">
       {/* —— Sticky nav —— */}
       <header className="sticky top-0 z-40 shrink-0 border-b border-[#006644]/12 bg-[var(--landing-page-bg,#ecf3ea)]/95 backdrop-blur-sm">
         <div className="mx-auto flex min-h-[56px] max-w-[1120px] items-center justify-between gap-4 px-6 py-2.5 sm:min-h-[60px] lg:px-10">
@@ -322,9 +322,9 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
         </nav>
       </header>
 
-      {/* —— Hero + logos: content height (no viewport stretch) —— */}
-      <div className="landing-first-fold">
-          <section className="landing-hero-section mx-auto w-full max-w-[1120px] px-6 pb-8 pt-8 lg:px-10 lg:pb-6 lg:pt-10">
+      {/* —— First screen: hero sits lower; logo banner flush to viewport bottom —— */}
+      <div className="landing-first-fold flex min-h-0 flex-1 flex-col">
+          <section className="landing-hero-section mx-auto flex w-full max-w-[1120px] flex-1 flex-col justify-end px-6 pb-5 pt-10 lg:px-10 lg:pb-6 lg:pt-16">
             <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-2 lg:items-center lg:gap-x-12 lg:gap-y-0">
             <div className="min-w-0">
               <p className="mb-3 inline-flex rounded-full border border-emerald-200/90 bg-emerald-50/90 px-3 py-1.5 text-[12px] font-semibold tracking-wide text-emerald-900">
@@ -363,7 +363,7 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
           </section>
 
           <section
-            className="landing-band-marquee landing-marquee-bridge shrink-0 py-5 lg:py-4"
+            className="landing-band-marquee landing-marquee-bridge mt-auto shrink-0 py-6 lg:py-7"
             aria-label={tf("landingReplica.socialLabel")}
           >
             <div className="mx-auto max-w-[1120px] px-6 text-center lg:px-10">
@@ -386,12 +386,12 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
 
       <main>
         {/* —— Testimonials —— */}
-        <section id="landing-testimonials" className="landing-band-beige landing-testimonials-section mx-auto max-w-none scroll-mt-20 px-6 pb-14 pt-8 lg:px-10 lg:pb-16 lg:pt-10">
+        <section className="landing-band-beige mx-auto max-w-none px-6 py-16 lg:px-10 lg:py-20">
           <div className="mx-auto max-w-[1120px]">
-            <h2 className="mb-6 text-center text-[clamp(1.25rem,2.8vw,1.65rem)] font-bold tracking-tight text-neutral-950 lg:mb-7">
+            <h2 className="mb-8 text-center text-[clamp(1.35rem,3.2vw,1.875rem)] font-bold tracking-tight text-neutral-950 lg:mb-10">
               {tf("landingReplica.testimonialsTitle")}
             </h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
               {testimonials.map((card) => (
                 <article
                   key={`${card.initials}-${card.name}`}
