@@ -15,6 +15,7 @@
     "preview": "vite preview",
     "knockout-logos": "node scripts/knockout-logo-backgrounds.mjs",
     "build:onlyapply-logo": "node scripts/build-onlyapply-brand-logo.mjs",
+    "build:favicon": "node scripts/build-favicon.mjs",
     "test:data": "node scripts/test-data-quality.mjs"
   },
   "dependencies": {
