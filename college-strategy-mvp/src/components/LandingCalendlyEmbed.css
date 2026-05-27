@@ -10,11 +10,11 @@
   color: #525252;
 }
 
-/* Host for initInlineWidget — min-height ensures iframe is tall enough before resize messages */
+/* Host wraps widget only — avoid extra green gap below the white Calendly card */
 .landing-calendly-embed {
   width: 100%;
   min-width: 320px;
-  min-height: 700px;
+  min-height: 0;
   height: auto;
   overflow: visible;
   background: transparent;

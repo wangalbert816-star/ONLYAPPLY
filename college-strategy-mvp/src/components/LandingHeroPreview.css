@@ -12,7 +12,7 @@
     0 18px 48px rgba(0, 102, 68, 0.1),
     0 4px 14px rgba(15, 23, 42, 0.06);
   overflow: hidden;
-  transform: perspective(1200px) rotateY(-4deg) rotateX(2deg);
+  transform: perspective(1200px) rotateY(-2deg) rotateX(1deg);
   transform-origin: center left;
   transition: transform 0.35s ease, box-shadow 0.35s ease;
 }
@@ -93,7 +93,7 @@
 
 .landing-hero-preview__stage {
   position: relative;
-  min-height: 19.25rem;
+  min-height: 17.5rem;
 }
 
 .landing-hero-preview__slide {

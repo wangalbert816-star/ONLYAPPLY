@@ -181,6 +181,11 @@ html[data-landing] .landing-band-copy__title {
   color: #0a0a0a;
 }
 
+/** Booking band + FAQ: same green, minimal seam between Calendly and FAQ */
+html[data-landing] #landing-booking + #landing-faq {
+  margin-top: 0;
+}
+
 /** Green band → page background above final CTA (taller + gentler) */
 html[data-landing] .landing-fade-navy-to-page {
   height: clamp(4.5rem, 14vw, 9rem);
@@ -296,11 +301,26 @@ img.onlyapply-logo.landing-header-logo {
   padding: 0.55rem 0 0.75rem;
 }
 
-/* Landing first screen: marquee band sits at bottom of viewport (lg+) */
+/** Hero + marquee + testimonials: tighter vertical rhythm (avoid viewport-stretched first fold) */
+html[data-landing] .landing-first-fold {
+  flex: none;
+}
+
+html[data-landing] .landing-marquee-bridge {
+  border-bottom: 1px solid color-mix(in srgb, var(--landing-page-bg-muted) 55%, transparent);
+}
+
+html[data-landing] .landing-testimonials-section {
+  margin-top: 0;
+}
+
+html[data-landing] .landing-hero-preview .landing-hero-preview__frame {
+  transform: perspective(1200px) rotateY(-2deg) rotateX(1deg);
+}
+
 @media (min-width: 1024px) {
-  .landing-first-fold {
-    min-height: 0;
-    padding-bottom: var(--app-disclaimer-h);
+  html[data-landing] .landing-hero-preview .landing-hero-preview__stage {
+    min-height: 16.5rem;
   }
 }
 
