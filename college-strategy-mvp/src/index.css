@@ -64,17 +64,44 @@ html[data-landing][lang="en"] .fs-root {
   font-family: inherit;
 }
 
-html[data-landing] {
+html[data-landing],
+html[data-questionnaire] {
   /* Babson-inspired: light green base + lighter beige bands with soft blends */
   --color-bg: #ecf3ea;
   --color-surface: #ecf3ea;
   --color-line-subtle: #d8e6d4;
+  --color-line: #c5d9c0;
   --landing-page-bg: #ecf3ea;
   --landing-page-bg-muted: #f7f5ef;
   --landing-marquee-bg: #f7f5ef;
   --landing-accent: #006644;
   --landing-accent-hover: #005538;
   --landing-navy: #006644;
+  --color-primary: #006644;
+  --color-primary-hover: #005538;
+  --color-primary-pressed: #004a30;
+  --gq-accent-rgb: 0, 102, 68;
+}
+
+html[data-questionnaire] body,
+html[data-questionnaire] #root {
+  background-color: var(--landing-page-bg);
+  color: #0a0a0a;
+}
+
+html[data-questionnaire][lang="en"] {
+  font-family:
+    "Fraunces",
+    ui-serif,
+    Georgia,
+    "Times New Roman",
+    serif;
+  font-optical-sizing: auto;
+}
+
+html[data-questionnaire][lang="en"] body,
+html[data-questionnaire][lang="en"] #root {
+  font-family: inherit;
 }
 
 /** Landing buttons: consistent with green chrome */
@@ -146,7 +173,8 @@ html[data-landing] .landing-btn--md {
   font-size: 0.9375rem;
 }
 
-html[data-landing] .lang-toggle__btn--on {
+html[data-landing] .lang-toggle__btn--on,
+html[data-questionnaire] .lang-toggle__btn--on {
   color: var(--landing-accent);
 }
 

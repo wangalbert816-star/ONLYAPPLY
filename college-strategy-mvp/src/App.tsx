@@ -7,7 +7,27 @@ import { apiUrl } from "./lib/apiBase";
 import { readApiJson } from "./lib/parseApiResponse";
 import { clearUnlockStorage, readUnlockFromStorage, ReportView, writeUnlockToStorage } from "./ReportView";
 import { BrandLogo } from "./components/BrandLogo";
-import { FormLiveSummary, GuidedStep1, GuidedStep2, GuidedStep3, type GuideTouch } from "./components/GuidedQuestionnaire";
+import { FormLiveSummary, type GuideTouch } from "./components/GuidedQuestionnaire";
+import {
+  GuidedStep1Flow,
+  getStep1Screens,
+  validateStep1Screen,
+  type Step1ScreenId,
+} from "./components/GuidedStep1Flow";
+import {
+  GuidedStep2Flow,
+  getStep2Screens,
+  validateStep2Screen,
+  type Step2ScreenId,
+} from "./components/GuidedStep2Flow";
+import {
+  GuidedStep3Flow,
+  getStep3Screens,
+  validateStep3Screen,
+  type Step3ScreenId,
+} from "./components/GuidedStep3Flow";
+import "./components/GuidedQuestionnaire.css";
+import "./components/QuestionnaireTheme.css";
 import { FullscreenLogoMarquee } from "./components/FullscreenLogoMarquee";
 import { BrandStoryOverlay } from "./components/BrandStoryOverlay";
 import { ProductIntroPage } from "./components/ProductIntroPage";
@@ -201,6 +221,9 @@ export default function App() {
   const demoUnlockEnabled = !cloudEntitlementsEnabled && import.meta.env.DEV;
   const [flowStarted, setFlowStarted] = useState(false);
   const [step, setStep] = useState(1);
+  const [step1Screen, setStep1Screen] = useState(0);
+  const [step2Screen, setStep2Screen] = useState(0);
+  const [step3Screen, setStep3Screen] = useState(0);
   const [form, setForm] = useState<FormState>(initialForm);
   const [guideTouch, setGuideTouch] = useState<GuideTouch>({});
   const [view, setView] = useState<"form" | "report" | "account" | "intro">("form");
@@ -705,6 +728,17 @@ export default function App() {
     setGuideTouch({});
   }, [step]);
 
+  /** 问卷进行中：沿用落地页配色与字体（data-questionnaire）；落地页用 data-landing */
+  useEffect(() => {
+    const root = document.documentElement;
+    if (view === "form" && flowStarted) {
+      root.setAttribute("data-questionnaire", "");
+    } else {
+      root.removeAttribute("data-questionnaire");
+    }
+    return () => root.removeAttribute("data-questionnaire");
+  }, [flowStarted, view]);
+
   useEffect(() => {
     const root = document.documentElement;
     if (flowStarted) {
@@ -821,17 +855,116 @@ export default function App() {
     }
   }
 
-  function next() {
-    const e = validateStep(step, form, t);
-    setErr(e);
-    if (e) return;
-    setStep((s) => Math.min(3, s + 1));
+  const step1Screens = useMemo(() => getStep1Screens(form), [form]);
+  const step2Screens = useMemo(() => getStep2Screens(), []);
+  const step3Screens = useMemo(() => getStep3Screens(), []);
+
+  const step1ScreenSafe = Math.min(step1Screen, Math.max(0, step1Screens.length - 1));
+  const step1ScreenId = step1Screens[step1ScreenSafe] ?? "intake";
+  const step1IsLastScreen = step === 1 && step1ScreenSafe >= step1Screens.length - 1;
+
+  const step2ScreenSafe = Math.min(step2Screen, Math.max(0, step2Screens.length - 1));
+  const step2ScreenId = step2Screens[step2ScreenSafe] ?? "hs";
+  const step2IsLastScreen = step === 2 && step2ScreenSafe >= step2Screens.length - 1;
+
+  const step3ScreenSafe = Math.min(step3Screen, Math.max(0, step3Screens.length - 1));
+  const step3ScreenId = step3Screens[step3ScreenSafe] ?? "activities";
+  const step3IsLastScreen = step === 3 && step3ScreenSafe >= step3Screens.length - 1;
+
+  const guidedSubStepIsLast =
+    step === 1 ? step1IsLastScreen : step === 2 ? step2IsLastScreen : step === 3 ? step3IsLastScreen : true;
+
+  function scrollFlowTop() {
     queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+  }
+
+  function touchOnStep2Leave(screenId: Step2ScreenId) {
+    if (screenId === "gpa") markGuideTouch("s2_gpa");
+    if (screenId === "major") markGuideTouch("s2_major");
+    if (screenId === "major2") markGuideTouch("s2_major2");
+  }
+
+  function touchOnStep3Leave(screenId: Step3ScreenId) {
+    if (screenId === "activities") markGuideTouch("s3_actv");
+    if (screenId === "deal") markGuideTouch("s3_deal");
+  }
+
+  function next() {
+    if (step === 1) {
+      const screenId = step1Screens[step1ScreenSafe] as Step1ScreenId | undefined;
+      if (!screenId) return;
+      const e = validateStep1Screen(screenId, form, t);
+      setErr(e);
+      if (e) return;
+      if (step1ScreenSafe < step1Screens.length - 1) {
+        setStep1Screen((i) => i + 1);
+        scrollFlowTop();
+        return;
+      }
+      setStep1Screen(0);
+      setStep2Screen(0);
+      setStep(2);
+      scrollFlowTop();
+      return;
+    }
+    if (step === 2) {
+      const screenId = step2Screens[step2ScreenSafe] as Step2ScreenId | undefined;
+      if (!screenId) return;
+      const e = validateStep2Screen(screenId, form, t);
+      setErr(e);
+      if (e) return;
+      touchOnStep2Leave(screenId);
+      if (step2ScreenSafe < step2Screens.length - 1) {
+        setStep2Screen((i) => i + 1);
+        scrollFlowTop();
+        return;
+      }
+      setStep2Screen(0);
+      setStep3Screen(0);
+      setStep(3);
+      scrollFlowTop();
+      return;
+    }
+    if (step === 3) {
+      const screenId = step3Screens[step3ScreenSafe] as Step3ScreenId | undefined;
+      if (!screenId) return;
+      const e = validateStep3Screen(screenId, form, t);
+      setErr(e);
+      if (e) return;
+      touchOnStep3Leave(screenId);
+      if (step3ScreenSafe < step3Screens.length - 1) {
+        setStep3Screen((i) => i + 1);
+        scrollFlowTop();
+      }
+      return;
+    }
   }
 
   function prev() {
     setErr(null);
+    if (step === 1 && step1Screen > 0) {
+      setStep1Screen((i) => i - 1);
+      scrollFlowTop();
+      return;
+    }
+    if (step === 2 && step2Screen > 0) {
+      setStep2Screen((i) => i - 1);
+      scrollFlowTop();
+      return;
+    }
+    if (step === 3 && step3Screen > 0) {
+      setStep3Screen((i) => i - 1);
+      scrollFlowTop();
+      return;
+    }
+    if (step === 2) {
+      setStep1Screen(Math.max(0, getStep1Screens(form).length - 1));
+    }
+    if (step === 3) {
+      setStep2Screen(Math.max(0, getStep2Screens().length - 1));
+    }
     setStep((s) => Math.max(1, s - 1));
+    scrollFlowTop();
   }
 
   function dismissReportDiff() {
@@ -943,6 +1076,9 @@ export default function App() {
             setCurrentApplicationId(null);
             setCurrentReportId(null);
             setStep(1);
+            setStep1Screen(0);
+            setStep2Screen(0);
+            setStep3Screen(0);
             setFlowStarted(true);
             setView("form");
             setSessionSaved(false);
@@ -957,6 +1093,9 @@ export default function App() {
             answeredGapSupplementaryRef.current = supplementaryNotes ?? [];
             profileFiveSupplementaryRef.current = [];
             setStep(targetStep ?? 1);
+            setStep1Screen(0);
+            setStep2Screen(0);
+            setStep3Screen(0);
             setFlowStarted(true);
             setView("form");
           }}
@@ -1057,6 +1196,9 @@ export default function App() {
           setView("form");
           setReport(null);
           setStep(1);
+          setStep1Screen(0);
+          setStep2Screen(0);
+          setStep3Screen(0);
           setFlowStarted(false);
           setApplicationHubOpen(false);
           setReportDiff(null);
@@ -1161,67 +1303,119 @@ export default function App() {
       </div>
 
       {step === 1 && (
-        <div className="card card--step">
-          <h2>{t("steps.1.title")}</h2>
-          <p className="step-lead">{t("steps.1.lead")}</p>
-          <GuidedStep1 form={form} update={update} t={t} />
-          <FormLiveSummary form={form} t={t} />
+        <div className="card card--guided">
+          <div className="guided-progress" aria-hidden>
+            {step1Screens.map((id, idx) => (
+              <span key={id} className={`guided-progress__dot${idx <= step1ScreenSafe ? " guided-progress__dot--on" : ""}`} />
+            ))}
+          </div>
+          <GuidedStep1Flow screen={step1ScreenId} form={form} update={update} t={t} />
+          <div className="flow-step-foot">
+            {err && <div className="error">{err}</div>}
+            <div className="actions actions--guided actions--above-snapshot">
+              {step1ScreenSafe === 0 && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setApplicationHubOpen(false);
+                    setFlowStarted(false);
+                    setStep1Screen(0);
+                    setStep2Screen(0);
+                    setStep3Screen(0);
+                    setErr(null);
+                  }}
+                  disabled={loading}
+                >
+                  {t("app.actions.backIntro")}
+                </button>
+              )}
+              {step1ScreenSafe > 0 && (
+                <button type="button" className="btn btn-secondary" onClick={prev} disabled={loading}>
+                  {t("app.actions.prev")}
+                </button>
+              )}
+              <button type="button" className="btn btn-primary btn-primary--guided" onClick={next} disabled={loading}>
+                {step1IsLastScreen ? t("app.actions.step1Finish") : t("app.actions.step1Next")}
+              </button>
+            </div>
+            <FormLiveSummary form={form} t={t} step={1} step1ScreenId={step1ScreenId} />
+          </div>
         </div>
       )}
 
       {step === 2 && (
-        <div className="card card--step">
-          <h2>{t("steps.2.title")}</h2>
-          <p className="step-lead">{t("steps.2.lead")}</p>
-          <GuidedStep2 form={form} update={update} t={t} guideTouch={guideTouch} markTouch={markGuideTouch} />
-          <FormLiveSummary form={form} t={t} />
+        <div className="card card--guided">
+          <div className="guided-progress" aria-hidden>
+            {step2Screens.map((id, idx) => (
+              <span key={id} className={`guided-progress__dot${idx <= step2ScreenSafe ? " guided-progress__dot--on" : ""}`} />
+            ))}
+          </div>
+          <GuidedStep2Flow
+            screen={step2ScreenId}
+            form={form}
+            update={update}
+            t={t}
+            guideTouch={guideTouch}
+            markTouch={markGuideTouch}
+          />
+          <div className="flow-step-foot">
+            {err && <div className="error">{err}</div>}
+            <div className="actions actions--guided actions--above-snapshot">
+              <button type="button" className="btn btn-secondary" onClick={prev} disabled={loading}>
+                {t("app.actions.prev")}
+              </button>
+              <button type="button" className="btn btn-primary btn-primary--guided" onClick={next} disabled={loading}>
+                {step2IsLastScreen ? t("app.actions.step2Finish") : t("app.actions.step2Next")}
+              </button>
+            </div>
+            <FormLiveSummary form={form} t={t} step={2} step2ScreenId={step2ScreenId} />
+          </div>
         </div>
       )}
 
       {step === 3 && (
-        <div className="card card--step">
-          <h2>{t("steps.3.title")}</h2>
-          <p className="step-lead">{t("steps.3.lead")}</p>
-          <GuidedStep3 form={form} update={update} t={t} guideTouch={guideTouch} markTouch={markGuideTouch} />
-          <FormLiveSummary form={form} t={t} />
+        <div className="card card--guided">
+          <div className="guided-progress" aria-hidden>
+            {step3Screens.map((id, idx) => (
+              <span key={id} className={`guided-progress__dot${idx <= step3ScreenSafe ? " guided-progress__dot--on" : ""}`} />
+            ))}
+          </div>
+          <GuidedStep3Flow
+            screen={step3ScreenId}
+            form={form}
+            update={update}
+            t={t}
+            guideTouch={guideTouch}
+            markTouch={markGuideTouch}
+          />
+          <div className="flow-step-foot">
+            {err && <div className="error">{err}</div>}
+            <div className="actions actions--guided actions--above-snapshot">
+              <button type="button" className="btn btn-secondary" onClick={prev} disabled={loading}>
+                {t("app.actions.prev")}
+              </button>
+              {!guidedSubStepIsLast && (
+                <button type="button" className="btn btn-primary btn-primary--guided" onClick={next} disabled={loading}>
+                  {t("app.actions.step3Next")}
+                </button>
+              )}
+              {guidedSubStepIsLast && (
+                <button
+                  type="button"
+                  className="btn btn-primary btn-primary--guided"
+                  onClick={submitReport}
+                  disabled={loading || !!stepError}
+                >
+                  {loading ? t("app.actions.generating") : t("app.actions.submit")}
+                </button>
+              )}
+            </div>
+            {guidedSubStepIsLast && stepError && <p className="field-hint warn flow-step-foot__hint">{t("app.hintStep3")}</p>}
+            <FormLiveSummary form={form} t={t} step={3} step3ScreenId={step3ScreenId} />
+          </div>
         </div>
       )}
-
-      {err && <div className="error">{err}</div>}
-
-      <div className="actions">
-        {step === 1 && (
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => {
-              setApplicationHubOpen(false);
-              setFlowStarted(false);
-              setErr(null);
-            }}
-            disabled={loading}
-          >
-            {t("app.actions.backIntro")}
-          </button>
-        )}
-        {step > 1 && (
-          <button type="button" className="btn btn-secondary" onClick={prev} disabled={loading}>
-            {t("app.actions.prev")}
-          </button>
-        )}
-        {step < 3 && (
-          <button type="button" className="btn btn-primary" onClick={next} disabled={loading}>
-            {step === 1 ? t("app.actions.next2") : t("app.actions.next3")}
-          </button>
-        )}
-        {step === 3 && (
-          <button type="button" className="btn btn-primary" onClick={submitReport} disabled={loading || !!stepError}>
-            {loading ? t("app.actions.generating") : t("app.actions.submit")}
-          </button>
-        )}
-      </div>
-
-      {step === 3 && stepError && <p className="field-hint warn">{t("app.hintStep3")}</p>}
 
       {loading && (
         <div className="loading-overlay" role="status" aria-live="polite" aria-busy="true">

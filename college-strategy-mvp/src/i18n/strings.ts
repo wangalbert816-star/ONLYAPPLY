@@ -71,6 +71,11 @@ merge(zhFlat, {
     actions: {
       backIntro: "← 返回",
       prev: "上一步",
+      step1Next: "下一步 →",
+      step1Finish: "继续 → 学术与偏好",
+      step2Next: "下一步 →",
+      step2Finish: "继续 → 活动与名单风格",
+      step3Next: "下一步 →",
       next2: "继续",
       next3: "继续",
       generating: "正在生成…",
@@ -947,6 +952,11 @@ merge(enFlat, {
     actions: {
       backIntro: "← Back",
       prev: "Back",
+      step1Next: "Next →",
+      step1Finish: "Continue → Academics & fit",
+      step2Next: "Next →",
+      step2Finish: "Continue → Activities & list style",
+      step3Next: "Next →",
       next2: "Continue",
       next3: "Continue",
       generating: "Generating…",

@@ -1,0 +1,144 @@
+/* Questionnaire flow — visual parity with landing (html[data-questionnaire]) */
+
+html[data-questionnaire] .app-disclaimer-fixed {
+  background: rgba(236, 243, 234, 0.94);
+  border-top: 1px solid rgba(0, 102, 68, 0.1);
+  color: #525252;
+}
+
+html[data-questionnaire] .app--flow .steps-caption {
+  color: #3f4f3c;
+}
+
+html[data-questionnaire] .app--flow .step-dot {
+  background: rgba(0, 102, 68, 0.14);
+}
+
+html[data-questionnaire] .app--flow .step-dot.on {
+  background: var(--landing-accent);
+}
+
+html[data-questionnaire] .app--flow .card--step {
+  background: #ffffff;
+  border: 1px solid rgba(0, 102, 68, 0.08);
+  border-radius: 20px;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 16px 48px rgba(0, 102, 68, 0.1);
+}
+
+html[data-questionnaire] .app--flow .btn-secondary {
+  background: rgba(255, 255, 255, 0.72);
+  color: #0f172a;
+  border: 1px solid rgba(0, 102, 68, 0.22);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+html[data-questionnaire] .app--flow .btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 102, 68, 0.32);
+}
+
+html[data-questionnaire] .app--flow .btn-primary,
+html[data-questionnaire] .app--flow .btn-primary--guided {
+  background: var(--landing-accent);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.08),
+    0 12px 28px rgba(0, 102, 68, 0.18);
+}
+
+html[data-questionnaire] .app--flow .btn-primary:hover:not(:disabled),
+html[data-questionnaire] .app--flow .btn-primary--guided:hover:not(:disabled) {
+  background: var(--landing-accent-hover);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.08),
+    0 14px 32px rgba(0, 102, 68, 0.22);
+}
+
+html[data-questionnaire] .app--flow .btn-primary:active:not(:disabled),
+html[data-questionnaire] .app--flow .btn-primary--guided:active:not(:disabled) {
+  background: var(--color-primary-pressed);
+}
+
+html[data-questionnaire] .app--flow .field-feedback {
+  background: linear-gradient(135deg, rgba(0, 102, 68, 0.09), rgba(0, 102, 68, 0.02));
+  border-color: rgba(0, 102, 68, 0.22);
+}
+
+html[data-questionnaire] .app--flow .field-skip-btn {
+  border-color: rgba(0, 102, 68, 0.2);
+  background: rgba(0, 102, 68, 0.05);
+  color: var(--landing-accent);
+}
+
+html[data-questionnaire] .app--flow .field-skip-btn:hover {
+  border-color: rgba(0, 102, 68, 0.38);
+  background: rgba(0, 102, 68, 0.1);
+}
+
+html[data-questionnaire] .app--flow .field-skip-btn:focus-visible {
+  outline-color: var(--landing-accent);
+}
+
+html[data-questionnaire] .app--flow .major-preset {
+  border-color: rgba(0, 102, 68, 0.2);
+  background: rgba(0, 102, 68, 0.05);
+}
+
+html[data-questionnaire] .app--flow .major-preset:hover {
+  border-color: rgba(0, 102, 68, 0.42);
+  background: rgba(0, 102, 68, 0.1);
+}
+
+html[data-questionnaire] .app--flow .major-preset:focus-visible {
+  outline-color: var(--landing-accent);
+}
+
+html[data-questionnaire] .app--flow .major-preset--selected {
+  border-color: rgba(0, 102, 68, 0.65);
+  background: rgba(0, 102, 68, 0.12);
+  color: var(--landing-accent);
+}
+
+html[data-questionnaire] .app--flow select.select-modern:hover,
+html[data-questionnaire] .app--flow .input-modern:hover {
+  border-color: rgba(0, 102, 68, 0.45);
+  box-shadow: 0 0 0 3px rgba(0, 102, 68, 0.1);
+}
+
+html[data-questionnaire] .app--flow select.select-modern:focus,
+html[data-questionnaire] .app--flow .input-modern:focus {
+  border-color: rgba(0, 102, 68, 0.85);
+  box-shadow: 0 0 0 4px rgba(0, 102, 68, 0.14);
+}
+
+html[data-questionnaire] .app--flow select.select-modern:focus-visible {
+  outline-color: var(--landing-accent);
+}
+
+html[data-questionnaire] .app--flow .activity-builder {
+  border-color: rgba(0, 102, 68, 0.16);
+  background:
+    radial-gradient(circle at top right, rgba(0, 102, 68, 0.07), transparent 18rem),
+    rgba(255, 255, 255, 0.88);
+}
+
+html[data-questionnaire] .hero--compact-copy h1 {
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+
+html[data-questionnaire][lang="en"] .hero--compact-copy h1,
+html[data-questionnaire][lang="en"] .guided-screen__question {
+  font-family: inherit;
+}
+
+html[data-questionnaire] .form-snapshot {
+  border-top-color: rgba(0, 102, 68, 0.12);
+}
+
+html[data-questionnaire] .form-snapshot__table-wrap {
+  background: rgba(255, 255, 255, 0.82);
+}

@@ -1,0 +1,223 @@
+/* Guided positioning flow — Step 1 micro-screens */
+
+.app--flow .card--guided {
+  max-width: 36rem;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: clamp(2rem, 5vh, 3rem);
+  padding: clamp(2rem, 5vw, 2.75rem) clamp(1.5rem, 4vw, 2.25rem);
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 20px;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 16px 48px rgba(15, 23, 42, 0.08);
+}
+
+html[data-questionnaire] .app--flow .card--guided {
+  border-color: rgba(0, 102, 68, 0.08);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 16px 48px rgba(0, 102, 68, 0.1);
+}
+
+.guided-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-bottom: clamp(1.75rem, 4vh, 2.25rem);
+}
+
+.guided-progress__dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.12);
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.guided-progress__dot--on {
+  background: var(--color-primary, #2563eb);
+  transform: scale(1.15);
+}
+
+.guided-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  animation: guidedScreenIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes guidedScreenIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.guided-screen__eyebrow {
+  margin: 0 0 1rem;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted, #737373);
+}
+
+html[data-questionnaire] .guided-screen__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  margin-bottom: 1.1rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: #065f46;
+  background: rgba(236, 253, 245, 0.92);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 999px;
+}
+
+.guided-screen__question {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.45rem, 4.2vw, 1.875rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  color: var(--color-fg, #0a0a0a);
+}
+
+.guided-screen__context {
+  margin: 0 0 clamp(1.75rem, 4vh, 2.25rem);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--color-muted, #737373);
+  max-width: 32rem;
+}
+
+.guided-screen__followup {
+  margin-top: 1rem;
+}
+
+.guided-screen__field-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.guided-screen__field-stack--pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 520px) {
+  .guided-screen__field-stack--pair {
+    grid-template-columns: 1fr;
+  }
+}
+
+.app--flow .select-modern--action,
+.app--flow .input-modern--action {
+  min-height: 3.25rem;
+  padding: 0.95rem 1.1rem;
+  font-size: 1.0625rem;
+  border-radius: 14px;
+  border-color: rgba(15, 23, 42, 0.12);
+  background: #ffffff;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease,
+    transform 0.12s ease;
+}
+
+.app--flow select.select-modern--action {
+  padding-right: 2.75rem;
+  font-weight: 550;
+  cursor: pointer;
+}
+
+.app--flow .select-modern--action:hover,
+.app--flow .input-modern--action:hover {
+  border-color: rgba(var(--gq-accent-rgb, 37, 99, 235), 0.45);
+  box-shadow: 0 0 0 4px rgba(var(--gq-accent-rgb, 37, 99, 235), 0.1);
+}
+
+.app--flow .select-modern--action:focus,
+.app--flow .input-modern--action:focus {
+  outline: none;
+  border-color: rgba(var(--gq-accent-rgb, 37, 99, 235), 0.88);
+  box-shadow: 0 0 0 4px rgba(var(--gq-accent-rgb, 37, 99, 235), 0.16);
+}
+
+.app--flow .actions--guided:not(.actions--above-snapshot) {
+  max-width: 36rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.app--flow .btn-primary--guided {
+  min-height: 3rem;
+  padding: 0.85rem 1.35rem;
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.app--flow textarea.input-modern--action {
+  min-height: 7.5rem;
+  resize: vertical;
+}
+
+.guided-screen__char-count {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--color-muted, #737373);
+}
+
+.row-check--guided {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.row-check--guided label {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: #ffffff;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.row-check--guided label:has(input:checked) {
+  border-color: rgba(var(--gq-accent-rgb, 0, 102, 68), 0.45);
+  background: rgba(var(--gq-accent-rgb, 0, 102, 68), 0.06);
+}
+
+.activity-builder--guided {
+  margin-top: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guided-screen {
+    animation: none;
+  }
+}
