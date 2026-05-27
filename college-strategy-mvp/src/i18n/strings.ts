@@ -831,7 +831,7 @@ merge(zhFlat, {
     heroBookConsult: "预约 1:1 咨询",
     heroBookConsultMobile: "预约 1:1 咨询",
     stepsSub: "从一份短问卷开始——结束时得到清晰的冲/稳/保分档名单。",
-    stepsH1: "三步。",
+    stepsH1: "先判断，再申请",
     stepsH2: "",
     testimonial1Initials: "JR",
     testimonial1Name: "Jamie R.",

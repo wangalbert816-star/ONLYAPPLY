@@ -23,15 +23,10 @@
   --space-section: clamp(3rem, 7vh, 4.5rem);
   --space-block: clamp(2.75rem, 6vh, 4rem);
 
-  font-family:
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    "PingFang SC",
-    "Microsoft YaHei",
-    sans-serif;
+  --font-pingfang: "PingFang SC", "PingFang TC", "苹方-简", "苹方-繁", sans-serif;
+  --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  font-family: var(--font-ui);
   line-height: 1.5;
   font-weight: 400;
   color: var(--color-fg);
@@ -42,7 +37,33 @@
   color-scheme: light;
 }
 
-/** English landing: Fraunces serif (zh keeps :root sans stack) */
+/** 中文界面：全局苹方（lang 由 LanguageContext 设为 zh-Hans） */
+html[lang^="zh"],
+html[lang^="zh"] body,
+html[lang^="zh"] #root {
+  font-family: var(--font-pingfang);
+}
+
+html[lang^="zh"] .brand-story,
+html[lang^="zh"] .legal-page,
+html[lang^="zh"] .about-us-page,
+html[lang^="zh"] .fs-root {
+  font-family: inherit;
+}
+
+html[data-landing][lang^="zh"],
+html[data-questionnaire][lang^="zh"] {
+  font-family: var(--font-pingfang);
+}
+
+html[data-landing][lang^="zh"] body,
+html[data-landing][lang^="zh"] #root,
+html[data-questionnaire][lang^="zh"] body,
+html[data-questionnaire][lang^="zh"] #root {
+  font-family: inherit;
+}
+
+/** English landing: Fraunces serif (zh keeps PingFang) */
 html[data-landing][lang="en"] {
   font-family:
     "Fraunces",

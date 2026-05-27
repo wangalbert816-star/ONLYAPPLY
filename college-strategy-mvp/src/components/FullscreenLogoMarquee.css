@@ -14,7 +14,7 @@
   position: fixed;
   inset: 0;
   z-index: 400;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+  font-family: inherit;
   animation: fs-root-enter 0.32s ease-out;
 }
 
