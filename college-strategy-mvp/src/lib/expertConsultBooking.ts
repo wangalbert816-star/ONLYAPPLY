@@ -4,6 +4,13 @@ type CalendlyWidget = {
     prefill?: { email?: string; name?: string };
     utm?: Record<string, string>;
   }) => void;
+  initInlineWidget: (options: {
+    url: string;
+    parentElement: HTMLElement;
+    prefill?: { email?: string; name?: string };
+    utm?: Record<string, string>;
+    resize?: boolean;
+  }) => void;
 };
 
 declare global {
@@ -42,9 +49,13 @@ function usePopupWidget() {
   return raw !== "false" && raw !== "0";
 }
 
+function calendlyReady() {
+  return Boolean(window.Calendly?.initPopupWidget || window.Calendly?.initInlineWidget);
+}
+
 function loadCalendlyAssets(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
-  if (window.Calendly?.initPopupWidget) return Promise.resolve();
+  if (calendlyReady()) return Promise.resolve();
 
   if (!widgetLoadPromise) {
     widgetLoadPromise = new Promise((resolve, reject) => {
@@ -127,6 +138,43 @@ export function openCalendlyBooking(options: OpenCalendlyOptions = {}): boolean 
     });
 
   return true;
+}
+
+export type MountCalendlyInlineOptions = OpenCalendlyOptions & {
+  parentElement: HTMLElement;
+};
+
+/** Embeds Calendly inline (e.g. landing booking band). Returns false if URL missing or widget failed. */
+export async function mountCalendlyInlineWidget(options: MountCalendlyInlineOptions): Promise<boolean> {
+  const url = getCalendlyBookingUrl(options.url);
+  if (!url) return false;
+
+  const email = options.email?.trim() || undefined;
+  const name = options.name?.trim() || undefined;
+  const utm = {
+    utm_source: "onlyapply",
+    utm_medium: "expert_consult",
+    utm_campaign: options.source || "landing",
+  };
+
+  try {
+    await loadCalendlyAssets();
+    if (!window.Calendly?.initInlineWidget) return false;
+    const parent = options.parentElement;
+    parent.replaceChildren();
+    parent.style.minWidth = "320px";
+    parent.style.minHeight = window.matchMedia("(max-width: 780px)").matches ? "1050px" : "700px";
+    window.Calendly.initInlineWidget({
+      url,
+      parentElement: parent,
+      prefill: { email, name },
+      utm,
+      resize: true,
+    });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function requestExpertConsult(options: OpenCalendlyOptions & { onFallback: () => void }) {

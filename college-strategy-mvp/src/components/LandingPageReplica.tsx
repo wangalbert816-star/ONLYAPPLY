@@ -3,6 +3,7 @@ import { LandingHeroPreview } from "./LandingHeroPreview";
 import { UniversityLogoMarquee } from "./UniversityLogoMarquee";
 import { SampleReportShowcase } from "./SampleReportShowcase";
 import { SampleReportAutoScroll } from "./SampleReportAutoScroll";
+import { LandingCalendlyEmbed } from "./LandingCalendlyEmbed";
 import "./LandingSampleReportPeek.css";
 import { LanguageToggle } from "../i18n/LanguageToggle";
 import { useLanguage } from "../i18n/LanguageContext";
@@ -246,21 +247,6 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
     };
   }).filter((item) => item.q && item.a && !item.q.startsWith("landingReplica."));
 
-  const dontItems = [
-    tf("landingReplica.aiDont1"),
-    tf("landingReplica.aiDont2"),
-    tf("landingReplica.aiDont3"),
-    tf("landingReplica.aiDont4"),
-    tf("landingReplica.aiDont5"),
-  ];
-  const doItems = [
-    tf("landingReplica.aiDo1"),
-    tf("landingReplica.aiDo2"),
-    tf("landingReplica.aiDo3"),
-    tf("landingReplica.aiDo4"),
-    tf("landingReplica.aiDo5"),
-  ];
-
   return (
     <div className="landing-page-replica flex min-h-dvh flex-col bg-[var(--landing-page-bg,#ecf3ea)] pb-28 text-neutral-900 antialiased">
       {/* —— Sticky nav —— */}
@@ -363,7 +349,7 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
                 </button>
                 <button
                   type="button"
-                  onClick={onBookExpertConsult}
+                  onClick={() => scrollToId("landing-booking")}
                   className="landing-btn landing-btn--primary landing-btn--md min-h-[48px]"
                 >
                   {tf("landingReplica.heroBookConsult")}
@@ -534,52 +520,23 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
           </div>
         </section>
 
-        {/* —— AI transparency —— */}
-        <section className="landing-navy-band py-16 text-white lg:py-24">
-          <div className="mx-auto max-w-[1120px] px-6 lg:px-10">
-            <p className="mb-3 text-center text-[12px] font-semibold uppercase tracking-[0.1em] text-white/70 drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)]">
-              {tf("landingReplica.aiEyebrow")}
-            </p>
-            <h2 className="mb-10 text-center text-[clamp(1.75rem,4vw,2.5rem)] font-bold tracking-[-0.03em] text-white drop-shadow-[0_3px_18px_rgba(0,0,0,0.55)] lg:mb-12">
-              {tf("landingReplica.aiTitle")}
-            </h2>
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch lg:gap-x-10 lg:gap-y-0">
-              <div className="flex min-h-0 flex-col rounded-2xl border border-slate-600/40 bg-[#111827]/60 p-6 lg:p-8">
-                <p className="mb-5 min-h-[2.5rem] text-[11px] font-bold uppercase leading-snug tracking-[0.12em] text-slate-400 lg:min-h-[2.75rem]">
-                  {tf("landingReplica.aiDontTitle")}
-                </p>
-                <ul className="flex flex-1 flex-col gap-3.5">
-                  {dontItems.map((line) => (
-                    <li key={line} className="flex items-start gap-3 text-[14px] leading-snug text-slate-300">
-                      <span className="mt-[2px] flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500/20 text-[11px] font-bold leading-none text-red-300">
-                        ×
-                      </span>
-                      <span className="min-w-0 flex-1">{line}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="flex min-h-0 flex-col rounded-2xl border border-slate-600/50 bg-[#1e293b] p-6 lg:p-8">
-                <p className="mb-5 min-h-[2.5rem] text-[11px] font-bold uppercase leading-snug tracking-[0.12em] text-slate-400 lg:min-h-[2.75rem]">
-                  {tf("landingReplica.aiDoTitle")}
-                </p>
-                <ul className="flex flex-1 flex-col gap-3.5">
-                  {doItems.map((line) => (
-                    <li key={line} className="flex items-start gap-3 text-[14px] leading-snug text-slate-200">
-                      <span className="mt-[2px] flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/25 text-[11px] font-bold leading-none text-emerald-200">
-                        ✓
-                      </span>
-                      <span className="min-w-0 flex-1">{line}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+        {/* —— 1:1 booking (Calendly inline) —— */}
+        <section id="landing-booking" className="landing-navy-band scroll-mt-20 pb-16 pt-20 text-neutral-950 lg:pb-24 lg:pt-28">
+          <div className="mx-auto max-w-[1100px] px-6 lg:px-10">
+            <div className="landing-band-copy mb-8 text-center lg:mb-10">
+              <p className="landing-band-copy__eyebrow mb-3 text-[12px] font-semibold uppercase tracking-[0.1em]">
+                {tf("landingReplica.bookingEyebrow")}
+              </p>
+              <h2 className="landing-band-copy__title text-[clamp(1.75rem,4vw,2.5rem)] font-bold tracking-[-0.03em]">
+                {tf("landingReplica.bookingTitle")}
+              </h2>
             </div>
+            <LandingCalendlyEmbed onFallback={onBookExpertConsult} />
           </div>
         </section>
 
-        {/* —— FAQ (same navy band as AI section above) —— */}
-        <section id="landing-faq" className="scroll-mt-20 bg-[var(--landing-navy,#0a1128)] py-16 lg:py-20">
+        {/* —— FAQ (same Babson green band as AI section above) —— */}
+        <section id="landing-faq" className="scroll-mt-20 bg-[var(--landing-navy,#006644)] py-16 lg:py-20">
           <div className="mx-auto max-w-[720px] px-6 lg:px-10">
             <h2 className="mb-8 text-center text-[22px] font-bold tracking-tight text-white">{tf("landingReplica.navFaq")}</h2>
             <div className="flex flex-col gap-3">

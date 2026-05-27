@@ -1,0 +1,89 @@
+.landing-calendly-shell {
+  margin-top: 0.5rem;
+}
+
+.landing-calendly-shell__hint {
+  margin: 0 0 1rem;
+  text-align: center;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #525252;
+}
+
+/* Host for initInlineWidget — min-height ensures iframe is tall enough before resize messages */
+.landing-calendly-embed {
+  width: 100%;
+  min-width: 320px;
+  min-height: 700px;
+  height: auto;
+  overflow: visible;
+  background: transparent;
+}
+
+.landing-calendly-embed .calendly-inline-widget {
+  width: 100% !important;
+  min-width: 320px !important;
+  min-height: 700px !important;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+}
+
+.landing-calendly-embed .calendly-inline-widget iframe {
+  display: block;
+  width: 100% !important;
+  min-width: 320px !important;
+  min-height: 700px !important;
+  height: 100% !important;
+}
+
+.landing-calendly-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  margin-top: 0.5rem;
+  padding: clamp(2rem, 5vw, 3rem);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.12);
+  text-align: center;
+}
+
+.landing-calendly-fallback__lead {
+  margin: 0;
+  max-width: 28rem;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+/* Stacked mobile layout needs more vertical space for date + time picker */
+@media (max-width: 780px) {
+  .landing-calendly-embed {
+    min-height: 1050px;
+  }
+
+  .landing-calendly-embed .calendly-inline-widget {
+    min-height: 1050px !important;
+  }
+
+  .landing-calendly-embed .calendly-inline-widget iframe {
+    min-height: 1050px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .landing-calendly-embed {
+    min-height: 750px;
+  }
+
+  .landing-calendly-embed .calendly-inline-widget {
+    min-height: 750px !important;
+  }
+
+  .landing-calendly-embed .calendly-inline-widget iframe {
+    min-height: 750px !important;
+  }
+}

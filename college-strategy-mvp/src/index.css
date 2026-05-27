@@ -74,7 +74,7 @@ html[data-landing] {
   --landing-marquee-bg: #f7f5ef;
   --landing-accent: #006644;
   --landing-accent-hover: #005538;
-  --landing-navy: #0a1128;
+  --landing-navy: #006644;
 }
 
 /** Landing buttons: consistent with green chrome */
@@ -150,20 +150,38 @@ html[data-landing] .lang-toggle__btn--on {
   color: var(--landing-accent);
 }
 
-/** Light landing chrome → navy (AI / FAQ band): longer soft top edge */
+/** Light page → Babson green: long, even blend (booking band) */
 html[data-landing] .landing-navy-band {
+  position: relative;
   background: linear-gradient(
     180deg,
     var(--landing-page-bg) 0%,
-    color-mix(in srgb, var(--landing-page-bg) 65%, var(--landing-navy) 35%) 14%,
-    color-mix(in srgb, var(--landing-page-bg) 40%, var(--landing-navy) 60%) 28%,
-    color-mix(in srgb, var(--landing-page-bg) 18%, var(--landing-navy) 82%) 44%,
-    var(--landing-navy) 58%,
+    color-mix(in srgb, var(--landing-page-bg) 90%, var(--landing-navy) 10%) 6%,
+    color-mix(in srgb, var(--landing-page-bg) 78%, var(--landing-navy) 22%) 14%,
+    color-mix(in srgb, var(--landing-page-bg) 64%, var(--landing-navy) 36%) 24%,
+    color-mix(in srgb, var(--landing-page-bg) 50%, var(--landing-navy) 50%) 34%,
+    color-mix(in srgb, var(--landing-page-bg) 36%, var(--landing-navy) 64%) 44%,
+    color-mix(in srgb, var(--landing-page-bg) 22%, var(--landing-navy) 78%) 54%,
+    color-mix(in srgb, var(--landing-page-bg) 10%, var(--landing-navy) 90%) 64%,
+    var(--landing-navy) 76%,
     var(--landing-navy) 100%
   );
 }
 
-/** Navy band → page background above final CTA (taller + gentler) */
+html[data-landing] .landing-band-copy {
+  position: relative;
+  z-index: 1;
+}
+
+html[data-landing] .landing-band-copy__eyebrow {
+  color: #404040;
+}
+
+html[data-landing] .landing-band-copy__title {
+  color: #0a0a0a;
+}
+
+/** Green band → page background above final CTA (taller + gentler) */
 html[data-landing] .landing-fade-navy-to-page {
   height: clamp(4.5rem, 14vw, 9rem);
   background: linear-gradient(
