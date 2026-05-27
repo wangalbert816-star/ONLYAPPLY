@@ -32,7 +32,7 @@ function HeroTitleLine1({ text, locale }: { text: string; locale: Locale }) {
       return (
         <>
           {before}
-          <span className="text-blue-600">{mid}</span>
+          <span className="text-[var(--landing-accent,#006644)]">{mid}</span>
           {after}
         </>
       );
@@ -262,9 +262,9 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
   ];
 
   return (
-    <div className="flex min-h-dvh flex-col bg-white pb-28 text-neutral-900 antialiased">
+    <div className="landing-page-replica flex min-h-dvh flex-col bg-[var(--landing-page-bg,#ecf3ea)] pb-28 text-neutral-900 antialiased">
       {/* —— Sticky nav —— */}
-      <header className="sticky top-0 z-40 shrink-0 border-b border-neutral-200 bg-white">
+      <header className="sticky top-0 z-40 shrink-0 border-b border-neutral-200/80 bg-[var(--landing-page-bg,#ecf3ea)]/95 backdrop-blur-sm">
         <div className="mx-auto flex min-h-[56px] max-w-[1120px] items-center justify-between gap-4 px-6 py-2.5 sm:min-h-[60px] lg:px-10">
           <button
             type="button"
@@ -305,7 +305,7 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
             </button>
           </div>
         </div>
-        <nav className="flex flex-col gap-2 border-t border-neutral-100 bg-white px-6 py-2.5 md:hidden" aria-label="Primary mobile">
+        <nav className="flex flex-col gap-2 border-t border-neutral-100 bg-[var(--landing-page-bg,#ecf3ea)] px-6 py-2.5 md:hidden" aria-label="Primary mobile">
           <div className="flex w-full justify-between gap-2 text-[13px] font-medium text-neutral-600">
             <button type="button" onClick={() => scrollToId("landing-how-it-works")}>
               {tf("app.productIntroLink")}
@@ -364,7 +364,7 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
                 <button
                   type="button"
                   onClick={onBookExpertConsult}
-                  className="inline-flex min-h-[48px] items-center justify-center rounded-[10px] bg-blue-600 px-6 text-[15px] font-semibold text-white shadow-sm transition hover:bg-blue-700"
+                  className="inline-flex min-h-[48px] items-center justify-center rounded-[10px] bg-[var(--landing-accent,#006644)] px-6 text-[15px] font-semibold text-white shadow-sm transition hover:bg-[var(--landing-accent-hover,#005538)]"
                 >
                   {tf("landingReplica.heroBookConsult")}
                 </button>
@@ -378,7 +378,7 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
 
           {/* Marquee sits on the bottom edge of the first viewport (lg+) */}
           <section
-            className="shrink-0 border-t border-neutral-100 bg-[#f3f4f6] py-8 lg:py-7"
+            className="landing-band-marquee shrink-0 py-8 lg:py-7"
             aria-label={tf("landingReplica.socialLabel")}
           >
             <div className="mx-auto max-w-[1120px] px-6 text-center lg:px-10">
@@ -401,12 +401,12 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
 
       <main>
         {/* —— Testimonials —— */}
-        <section className="mx-auto max-w-[1120px] px-6 py-16 lg:px-10 lg:py-20">
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+        <section className="landing-band-beige mx-auto max-w-none px-6 py-16 lg:px-10 lg:py-20">
+          <div className="mx-auto grid max-w-[1120px] grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
             {testimonials.map((card) => (
               <article
                 key={`${card.initials}-${card.name}`}
-                className="rounded-2xl border border-neutral-100 bg-[#fafaf9] p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+                className="rounded-2xl border border-neutral-100 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
               >
                 <div className="mb-4 flex items-center gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-200 text-[13px] font-bold text-neutral-700">
@@ -424,7 +424,7 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
         </section>
 
         {/* —— How it works —— */}
-        <section id="landing-how-it-works" className="scroll-mt-20 border-t border-neutral-100 bg-white py-16 lg:py-24">
+        <section id="landing-how-it-works" className="scroll-mt-20 bg-[var(--landing-page-bg,#ecf3ea)] py-16 lg:py-24">
           <div className="mx-auto max-w-[1120px] px-6 lg:px-10">
             <p className="mb-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-neutral-500">{tf("app.productIntroLink")}</p>
             <h2 className="mb-3 text-[clamp(1.75rem,4vw,2.5rem)] font-bold tracking-[-0.03em] text-neutral-950">
@@ -466,7 +466,7 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
         </section>
 
         {/* —— What you get —— */}
-        <section className="border-t border-neutral-100 bg-[#f5f5f0] py-16 lg:py-24">
+        <section className="landing-band-beige py-16 lg:py-24">
           <div className="mx-auto grid max-w-[1120px] grid-cols-1 gap-12 px-6 lg:grid-cols-2 lg:gap-x-16 lg:px-10">
             <div className="min-w-0">
               <p className="mb-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-neutral-500">{tf("landingReplica.whatEyebrow")}</p>
@@ -574,7 +574,7 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
         </section>
 
         {/* —— FAQ —— */}
-        <section id="landing-faq" className="scroll-mt-20 border-t border-neutral-100 bg-white py-16 lg:py-20">
+        <section id="landing-faq" className="scroll-mt-20 bg-[var(--landing-page-bg,#ecf3ea)] py-16 lg:py-20">
           <div className="mx-auto max-w-[720px] px-6 lg:px-10">
             <h2 className="mb-8 text-center text-[22px] font-bold tracking-tight text-neutral-950">{tf("landingReplica.navFaq")}</h2>
             <div className="flex flex-col gap-3">
@@ -586,7 +586,7 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
         </section>
 
         {/* —— Final CTA —— */}
-        <section className="border-t border-neutral-100 bg-white py-20 lg:py-28">
+        <section className="bg-[var(--landing-page-bg,#ecf3ea)] py-20 lg:py-28">
           <div className="mx-auto max-w-[640px] px-6 text-center lg:px-10">
             <h2 className="mb-3 text-[clamp(1.75rem,4vw,2.5rem)] font-bold tracking-[-0.03em] text-neutral-950">{tf("landingReplica.finalTitle")}</h2>
             <p className="mb-8 text-[16px] text-neutral-600">{tf("landingReplica.finalSub")}</p>

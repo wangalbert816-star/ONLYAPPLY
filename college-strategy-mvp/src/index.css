@@ -43,9 +43,38 @@
 }
 
 html[data-landing] {
-  --color-bg: #f3f6fc;
-  --color-surface: #ffffff;
-  --color-line-subtle: #e8eef7;
+  /* Babson-inspired: light green base + lighter beige bands with soft blends */
+  --color-bg: #ecf3ea;
+  --color-surface: #ecf3ea;
+  --color-line-subtle: #d8e6d4;
+  --landing-page-bg: #ecf3ea;
+  --landing-page-bg-muted: #f7f5ef;
+  --landing-marquee-bg: #f7f5ef;
+  --landing-accent: #006644;
+  --landing-accent-hover: #005538;
+}
+
+html[data-landing] .landing-band-beige {
+  background: linear-gradient(
+    180deg,
+    var(--landing-page-bg) 0%,
+    color-mix(in srgb, var(--landing-page-bg) 55%, var(--landing-page-bg-muted) 45%) 14%,
+    var(--landing-page-bg-muted) 32%,
+    var(--landing-page-bg-muted) 68%,
+    color-mix(in srgb, var(--landing-page-bg) 55%, var(--landing-page-bg-muted) 45%) 86%,
+    var(--landing-page-bg) 100%
+  );
+}
+
+html[data-landing] .landing-band-marquee {
+  background: linear-gradient(
+    180deg,
+    var(--landing-page-bg) 0%,
+    color-mix(in srgb, var(--landing-page-bg) 45%, var(--landing-marquee-bg) 55%) 22%,
+    var(--landing-marquee-bg) 50%,
+    color-mix(in srgb, var(--landing-page-bg) 45%, var(--landing-marquee-bg) 55%) 78%,
+    var(--landing-page-bg) 100%
+  );
 }
 
 @media (prefers-color-scheme: dark) {
