@@ -264,12 +264,12 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
   return (
     <div className="landing-page-replica flex min-h-dvh flex-col bg-[var(--landing-page-bg,#ecf3ea)] pb-28 text-neutral-900 antialiased">
       {/* —— Sticky nav —— */}
-      <header className="sticky top-0 z-40 shrink-0 border-b border-neutral-200/80 bg-[var(--landing-page-bg,#ecf3ea)]/95 backdrop-blur-sm">
+      <header className="sticky top-0 z-40 shrink-0 border-b border-[#006644]/12 bg-[var(--landing-page-bg,#ecf3ea)]/95 backdrop-blur-sm">
         <div className="mx-auto flex min-h-[56px] max-w-[1120px] items-center justify-between gap-4 px-6 py-2.5 sm:min-h-[60px] lg:px-10">
           <button
             type="button"
             onClick={onOpenBrandStory}
-            className="-m-1 flex shrink-0 items-center rounded-md p-1 transition hover:bg-neutral-200/50"
+            className="-m-1 flex shrink-0 items-center rounded-md p-1 transition hover:bg-[#006644]/8 active:bg-[#006644]/12"
             aria-label="OnlyApply"
           >
             <BrandLogo className="onlyapply-logo landing-header-logo block h-9 w-auto sm:h-10" />
