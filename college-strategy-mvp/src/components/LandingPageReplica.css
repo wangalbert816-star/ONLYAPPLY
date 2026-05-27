@@ -1,5 +1,19 @@
 /* Landing replica — mobile-first tweaks (max-width: 767px) */
 
+@media (min-width: 768px) {
+  html[data-landing] .landing-header-inner {
+    width: min(100%, 1320px);
+  }
+
+  html[data-landing] .landing-header-nav {
+    flex: 0 0 auto;
+  }
+
+  html[data-landing] .landing-header-nav button {
+    white-space: nowrap;
+  }
+}
+
 @media (max-width: 1023px) {
   html[data-landing] body {
     overflow-x: clip;

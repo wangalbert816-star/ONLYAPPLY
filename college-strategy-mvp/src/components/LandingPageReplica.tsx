@@ -261,7 +261,7 @@ export function LandingPageReplica({
     <div className="landing-page-replica flex min-h-dvh flex-col bg-[var(--landing-page-bg,#ecf3ea)] pb-24 text-neutral-900 antialiased">
       {/* —— Sticky nav —— */}
       <header className="sticky top-0 z-40 shrink-0 border-b border-[#006644]/12 bg-[var(--landing-page-bg,#ecf3ea)]/95 backdrop-blur-sm">
-        <div className="landing-header-inner mx-auto flex min-h-[52px] max-w-[1120px] min-w-0 items-center justify-between gap-2 px-4 py-2 lg:min-h-[60px] lg:gap-4 lg:px-10">
+        <div className="landing-header-inner mx-auto flex min-h-[52px] max-w-[1320px] min-w-0 items-center justify-between gap-3 px-4 py-2 lg:min-h-[60px] lg:gap-5 lg:px-12">
           <button
             type="button"
             onClick={onOpenBrandStory}
@@ -270,17 +270,17 @@ export function LandingPageReplica({
           >
             <BrandLogo className="landing-header-logo block h-9 w-auto max-w-full lg:h-10" />
           </button>
-          <nav className="hidden items-center gap-8 text-[15px] font-medium text-neutral-600 md:flex" aria-label="Primary">
-            <button type="button" className="transition hover:text-neutral-950" onClick={onOpenAboutUs}>
+          <nav className="landing-header-nav hidden shrink-0 items-center gap-8 text-[15px] font-medium text-neutral-600 md:flex" aria-label="Primary">
+            <button type="button" className="whitespace-nowrap transition hover:text-neutral-950" onClick={onOpenAboutUs}>
               {tf("aboutUs.nav")}
             </button>
-            <button type="button" className="transition hover:text-neutral-950" onClick={() => scrollToId("landing-how-it-works")}>
+            <button type="button" className="whitespace-nowrap transition hover:text-neutral-950" onClick={() => scrollToId("landing-how-it-works")}>
               {tf("app.productIntroLink")}
             </button>
-            <button type="button" className="transition hover:text-neutral-950" onClick={() => scrollToId("landing-sample-output")}>
+            <button type="button" className="whitespace-nowrap transition hover:text-neutral-950" onClick={() => scrollToId("landing-sample-output")}>
               {tf("landingReplica.navSampleReport")}
             </button>
-            <button type="button" className="transition hover:text-neutral-950" onClick={() => scrollToId("landing-faq")}>
+            <button type="button" className="whitespace-nowrap transition hover:text-neutral-950" onClick={() => scrollToId("landing-faq")}>
               {tf("landingReplica.navFaq")}
             </button>
           </nav>

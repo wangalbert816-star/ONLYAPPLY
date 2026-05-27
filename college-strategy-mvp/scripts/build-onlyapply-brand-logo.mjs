@@ -117,6 +117,22 @@ function floodKnockout(data, w, h, sim) {
   }
 }
 
+/** 去掉字标内未与边缘连通的白/浅灰底（如 O、p 的内洞） */
+function knockOpaqueNeutralLight(data, w, h, { minL = 248, maxSpread = 14 } = {}) {
+  for (let i = 0; i < w * h; i++) {
+    const o = i * 4;
+    if (data[o + 3] < 128) continue;
+    const r = data[o];
+    const g = data[o + 1];
+    const b = data[o + 2];
+    const spread = Math.max(r, g, b) - Math.min(r, g, b);
+    const l = (r + g + b) / 3;
+    if (l >= minL && spread <= maxSpread) {
+      data[o + 3] = 0;
+    }
+  }
+}
+
 async function main() {
   const meta = await sharp(SRC).metadata();
   const fullH = meta.height ?? 0;
@@ -135,6 +151,7 @@ async function main() {
   const h = cropped.info.height;
   const copy = new Uint8ClampedArray(cropped.data);
   floodKnockout(copy, w, h, SIM);
+  knockOpaqueNeutralLight(copy, w, h);
 
   const buf = await sharp(Buffer.from(copy), {
     raw: { width: w, height: h, channels: 4 },
