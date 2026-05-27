@@ -162,25 +162,25 @@ function LandingFaqItem({ id, question, answer }: { id: string; question: string
 
   return (
     <div
-      className={`overflow-hidden rounded-xl border bg-white transition-shadow ${
-        open ? "border-neutral-300 shadow-[0_1px_2px_rgba(15,23,42,0.04)]" : "border-neutral-200/80"
+      className={`overflow-hidden rounded-xl border border-slate-400/30 bg-slate-200/95 shadow-sm transition-shadow ${
+        open ? "border-slate-500/45 shadow-[0_4px_24px_rgba(0,0,0,0.22)]" : "border-slate-400/22"
       }`}
     >
       <h3 className="m-0">
         <button
           type="button"
           id={`${id}-trigger`}
-          className="flex w-full items-start justify-between gap-4 px-5 py-4 text-left transition hover:bg-neutral-50"
+          className="flex w-full items-start justify-between gap-4 px-5 py-4 text-left transition hover:bg-slate-300/75"
           aria-expanded={open}
           aria-controls={`${id}-panel`}
           onClick={() => setOpen((v) => !v)}
         >
           <span className="text-[15px] font-semibold leading-snug text-neutral-950">{question}</span>
-          <IconChevronDown className={`mt-0.5 shrink-0 text-neutral-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+          <IconChevronDown className={`mt-0.5 shrink-0 text-neutral-500 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
         </button>
       </h3>
       <div id={`${id}-panel`} role="region" aria-labelledby={`${id}-trigger`} hidden={!open}>
-        <div className="border-t border-neutral-100 px-5 pb-4 pt-3">
+        <div className="border-t border-slate-300/90 bg-slate-200/80 px-5 pb-4 pt-3">
           <p className="text-[14px] leading-relaxed text-neutral-600">{answer}</p>
         </div>
       </div>
@@ -573,10 +573,10 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
           </div>
         </section>
 
-        {/* —— FAQ —— */}
-        <section id="landing-faq" className="scroll-mt-20 bg-[var(--landing-page-bg,#ecf3ea)] py-16 lg:py-20">
+        {/* —— FAQ (same navy band as AI section above) —— */}
+        <section id="landing-faq" className="scroll-mt-20 bg-[#0a1128] py-16 lg:py-20">
           <div className="mx-auto max-w-[720px] px-6 lg:px-10">
-            <h2 className="mb-8 text-center text-[22px] font-bold tracking-tight text-neutral-950">{tf("landingReplica.navFaq")}</h2>
+            <h2 className="mb-8 text-center text-[22px] font-bold tracking-tight text-white">{tf("landingReplica.navFaq")}</h2>
             <div className="flex flex-col gap-3">
               {faqItems.map((item, idx) => (
                 <LandingFaqItem key={idx} id={`landing-faq-${idx}`} question={item.q} answer={item.a} />
