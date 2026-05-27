@@ -24,9 +24,99 @@ const PER_FILE = {
   "ucla.png": { sim: 42 },
   "berkeley.png": { sim: 48 },
   "mit.png": { sim: 50 },
-  "amherst.png": { sim: 52, neutralMinL: 198, neutralSpread: 36 },
   "babson.png": { sim: 50, neutralMinL: 198, neutralSpread: 34 },
 };
+
+/** 走马灯专用：保留黑底或原图，由 CSS mix-blend-mode 或原色显示 */
+const SKIP_KNOCKOUT = new Set(["princeton.png", "ucla.png"]);
+
+function keepNyuPurplePixel(r, g, b) {
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  if (max < 28) return false;
+  if (max - min < 18) return false;
+  const l = (r + g + b) / 3;
+  if (l < 35 || l > 235) return false;
+  if (b < 45 || r < 45) return false;
+  if (g > Math.min(r, b) * 0.92) return false;
+  return r + b > g * 2.2;
+}
+
+/** 抠图后收紧紫条与 NYU 字之间的透明缝，避免走马灯里像空一格 */
+function tightenNyuHorizontalGap(data, w, h, targetGapPx = 10) {
+  const colCount = new Int32Array(w);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (data[(y * w + x) * 4 + 3] > 30) colCount[x]++;
+    }
+  }
+  let first = -1;
+  let last = -1;
+  for (let x = 0; x < w; x++) {
+    if (colCount[x] > 0) {
+      if (first < 0) first = x;
+      last = x;
+    }
+  }
+  if (first < 0) return data;
+
+  let gapStart = -1;
+  let gapEnd = -1;
+  let inGap = false;
+  for (let x = first; x <= last; x++) {
+    if (colCount[x] === 0) {
+      if (!inGap) {
+        gapStart = x;
+        inGap = true;
+      }
+      gapEnd = x;
+    } else if (inGap) {
+      break;
+    }
+  }
+  if (gapStart < 0 || gapEnd < gapStart) return data;
+
+  const gapWidth = gapEnd - gapStart + 1;
+  const shift = gapWidth - targetGapPx;
+  if (shift <= 0) return data;
+
+  const out = new Uint8ClampedArray(data);
+  out.fill(0);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const o = (y * w + x) * 4;
+      if (data[o + 3] < 30) continue;
+      const nx = x > gapEnd ? x - shift : x;
+      if (nx < 0 || nx >= w) continue;
+      const no = (y * w + nx) * 4;
+      out[no] = data[o];
+      out[no + 1] = data[o + 1];
+      out[no + 2] = data[o + 2];
+      out[no + 3] = data[o + 3];
+    }
+  }
+  return out;
+}
+
+/** NYU wordmark: keep brand purple only; black / white / gray → transparent */
+async function processNyuPurpleOnly(filePath) {
+  const { data, info } = await sharp(filePath).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const w = info.width;
+  const h = info.height;
+  let copy = new Uint8ClampedArray(data);
+  for (let i = 0; i < w * h; i++) {
+    const o = i * 4;
+    if (!keepNyuPurplePixel(copy[o], copy[o + 1], copy[o + 2])) copy[o + 3] = 0;
+  }
+  copy = tightenNyuHorizontalGap(copy, w, h, 10);
+  const trimmed = await sharp(Buffer.from(copy), { raw: { width: w, height: h, channels: 4 } })
+    .trim({ threshold: 12 })
+    .png({ compressionLevel: 9, effort: 10 })
+    .toBuffer();
+  await fs.writeFile(filePath, trimmed);
+  const meta = await sharp(trimmed).metadata();
+  console.log("ok", path.basename(filePath), { mode: "purple-only", out: `${meta.width}x${meta.height}` });
+}
 
 function edgeBackgroundRef(data, w, h) {
   let r = 0;
@@ -157,7 +247,9 @@ async function processFile(filePath) {
   const h = info.height;
   const copy = new Uint8ClampedArray(data);
   floodKnockout(copy, w, h, sim);
-  knockOpaqueNeutralLight(copy, w, h, { minL: neutralMinL, maxSpread: neutralSpread });
+  if (!opts.skipNeutralKnock) {
+    knockOpaqueNeutralLight(copy, w, h, { minL: neutralMinL, maxSpread: neutralSpread });
+  }
 
   const trimmed = await sharp(Buffer.from(copy), {
     raw: { width: w, height: h, channels: 4 },
@@ -174,13 +266,37 @@ async function processFile(filePath) {
 
 async function main() {
   const entries = await fs.readdir(LOGOS_DIR);
-  const pngs = entries.filter((f) => f.endsWith(".png"));
+  const pngs = entries.filter((f) => f.endsWith(".png") && !f.includes("-source"));
   if (pngs.length === 0) {
     console.error("no png in", LOGOS_DIR);
     process.exit(1);
   }
   for (const f of pngs) {
-    await processFile(path.join(LOGOS_DIR, f));
+    const filePath = path.join(LOGOS_DIR, f);
+    if (f === "nyu.png") {
+      const src = path.join(LOGOS_DIR, "nyu-source.png");
+      try {
+        await fs.access(src);
+        await fs.copyFile(src, filePath);
+      } catch {
+        /* use existing nyu.png pixels */
+      }
+      await processNyuPurpleOnly(filePath);
+      continue;
+    }
+    if (SKIP_KNOCKOUT.has(f)) {
+      const src = path.join(LOGOS_DIR, f.replace(".png", "-source.png"));
+      try {
+        await fs.access(src);
+        await fs.copyFile(src, filePath);
+      } catch {
+        /* keep current asset */
+      }
+      const meta = await sharp(filePath).metadata();
+      console.log("skip", f, { mode: "source-only", out: `${meta.width}x${meta.height}` });
+      continue;
+    }
+    await processFile(filePath);
   }
 }
 

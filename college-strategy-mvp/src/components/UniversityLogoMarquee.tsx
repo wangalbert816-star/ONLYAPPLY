@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState, type CSSProperties } from "react";
-import amherstLogo from "../assets/logos/amherst.png";
 import babsonLogo from "../assets/logos/babson.png";
+import nyuLogo from "../assets/logos/nyu.png";
+import princetonLogo from "../assets/logos/princeton.png";
 import berkeleyLogo from "../assets/logos/berkeley.png";
 import brownLogo from "../assets/logos/brown.png";
 import columbiaLogo from "../assets/logos/columbia.png";
@@ -31,7 +32,8 @@ export const DEFAULT_MARQUEE_SCHOOLS: MarqueeSchool[] = [
   { id: "ucla", name: "UCLA", logoUrl: uclaLogo },
   { id: "berkeley", name: "Berkeley", logoUrl: berkeleyLogo },
   { id: "mit", name: "MIT", logoUrl: mitLogo },
-  { id: "amherst", name: "Amherst", logoUrl: amherstLogo },
+  { id: "nyu", name: "NYU", logoUrl: nyuLogo },
+  { id: "princeton", name: "Princeton", logoUrl: princetonLogo },
   { id: "babson", name: "Babson College", logoUrl: babsonLogo },
 ];
 
@@ -64,13 +66,33 @@ export function UniversityLogoMarquee({
   const effectiveDuration = durationSec ?? (colored ? 120 : 280);
   const style = { "--marquee-duration": `${effectiveDuration}s` } as CSSProperties;
 
-  const stripSchools = useMemo(() => repeatMarqueeStrip(schools, 10), [schools]);
+  const stripSchools = useMemo(() => repeatMarqueeStrip(schools, 12), [schools]);
 
-  const renderLogo = (school: MarqueeSchool, keySuffix: string) => {
-    const wideMark = school.id === "babson";
-    const frameClass = ["marquee-logo-frame", wideMark && "marquee-logo-frame--wide"].filter(Boolean).join(" ");
+  const renderLogo = (school: MarqueeSchool, keySuffix: string, loopDup = false) => {
+    const wideMark = school.id === "babson" || school.id === "michigan" || school.id === "mit";
+    const nyuMark = school.id === "nyu";
+    const mitMark = school.id === "mit";
+    const tallMark = school.id === "princeton" || school.id === "brown";
+    const blendMark = school.id === "princeton";
+    const cellClass = [
+      "marquee-logo-cell",
+      wideMark ? "marquee-logo-cell--wide" : "marquee-logo-cell--standard",
+      loopDup && "marquee-logo-cell--loop-dup",
+    ]
+      .filter(Boolean)
+      .join(" ");
+    const frameClass = [
+      "marquee-logo-frame",
+      wideMark && "marquee-logo-frame--wide",
+      nyuMark && "marquee-logo-frame--nyu",
+      mitMark && "marquee-logo-frame--mit",
+      tallMark && "marquee-logo-frame--tall",
+      blendMark && "marquee-logo-frame--blend-multiply",
+    ]
+      .filter(Boolean)
+      .join(" ");
     return (
-      <div className="marquee-logo-cell" key={`${school.id}-${keySuffix}`} aria-hidden>
+      <div className={cellClass} key={`${school.id}-${keySuffix}`} aria-hidden>
         <div className={frameClass}>
           {broken[school.id] ? (
             <InitialFallback name={school.name} />
@@ -78,7 +100,7 @@ export function UniversityLogoMarquee({
             <img
               src={school.logoUrl}
               alt=""
-              loading="lazy"
+              loading="eager"
               decoding="async"
               draggable={false}
               onError={() => onImgError(school.id)}
@@ -99,9 +121,9 @@ export function UniversityLogoMarquee({
       <div className="marquee-fade marquee-fade--right" aria-hidden />
       <div className="marquee-viewport">
         <div className="marquee-track">
-          <div className="marquee-group">{stripSchools.map((s, i) => renderLogo(s, `a-${i}`))}</div>
-          <div className="marquee-group" aria-hidden>
-            {stripSchools.map((s, i) => renderLogo(s, `b-${i}`))}
+          <div className="marquee-group">
+            {stripSchools.map((s, i) => renderLogo(s, `a-${i}`))}
+            {stripSchools.map((s, i) => renderLogo(s, `b-${i}`, true))}
           </div>
         </div>
       </div>

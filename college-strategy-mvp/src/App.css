@@ -146,7 +146,7 @@
 
 .app--landing .landing-hero-marquee.university-logo-marquee--colored {
   --logo-size: clamp(54px, 14vw, 72px);
-  --logo-gap: clamp(1.1rem, 3.5vw, 1.85rem);
+  --logo-gap: 2.5rem;
   padding: clamp(0.35rem, 1.2vh, 0.55rem) 0;
 }
 
@@ -1542,7 +1542,7 @@ th {
 
   .app--landing .landing-hero-marquee.university-logo-marquee--colored {
     --logo-size: clamp(60px, 9vw, 74px);
-    --logo-gap: clamp(1.35rem, 3vw, 2.1rem);
+    --logo-gap: 2.5rem;
   }
 
   .landing-hero-marquee-wrap {
@@ -1678,7 +1678,7 @@ th {
 
   .app--landing .landing-hero-marquee.university-logo-marquee--colored {
     --logo-size: clamp(72px, 4.5vw, 88px);
-    --logo-gap: clamp(1.75rem, 2.5vw, 2.5rem);
+    --logo-gap: 2.5rem;
   }
 
   .app--landing .landing-lead {

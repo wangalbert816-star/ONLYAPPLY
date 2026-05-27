@@ -42,11 +42,12 @@ function HeroTitleLine1({ text, locale }: { text: string; locale: Locale }) {
   return <>{text}</>;
 }
 
-function IconPerson() {
+function IconQuestion() {
   return (
     <svg className="h-6 w-6 text-emerald-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
-      <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" />
-      <path d="M4 21a8 8 0 0 1 16 0" strokeLinecap="round" />
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.5 9.5a2.5 2.5 0 1 1 4.6 1.2c-.9.5-1.1 1-1.1 1.8V13" strokeLinecap="round" />
+      <path d="M12 17h.01" strokeLinecap="round" />
     </svg>
   );
 }
@@ -60,11 +61,12 @@ function IconList() {
   );
 }
 
-function IconRefresh() {
+/** Step 03: verify on official sites */
+function IconCheck() {
   return (
     <svg className="h-6 w-6 text-emerald-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
-      <path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.36-2.64" strokeLinecap="round" />
-      <path d="M3 12a9 9 0 0 1 9-9 4.5 4.5 0 0 1 4.5 4.5V8l4-4-4-4" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8 12.5 10.5 15 16 9" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -234,9 +236,9 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
   ];
 
   const howItWorksSteps = [
-    { step: "01", icon: <IconPerson />, title: tf("productIntro.steps.s1Title"), body: tf("productIntro.steps.s1Body") },
+    { step: "01", icon: <IconQuestion />, title: tf("productIntro.steps.s1Title"), body: tf("productIntro.steps.s1Body") },
     { step: "02", icon: <IconList />, title: tf("productIntro.steps.s2Title"), body: tf("productIntro.steps.s2Body") },
-    { step: "03", icon: <IconRefresh />, title: tf("productIntro.steps.s3Title"), body: tf("productIntro.steps.s3Body") },
+    { step: "03", icon: <IconCheck />, title: tf("productIntro.steps.s3Title"), body: tf("productIntro.steps.s3Body") },
   ];
 
   const faqItems = Array.from({ length: 8 }, (_, i) => {
@@ -378,7 +380,7 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
                 }
                 aria-hidden={!landingMarqueeVisible}
               >
-                <UniversityLogoMarquee colored className="landing-hero-marquee" durationSec={100} />
+                <UniversityLogoMarquee colored className="landing-hero-marquee" durationSec={140} />
               </div>
             </div>
           </section>

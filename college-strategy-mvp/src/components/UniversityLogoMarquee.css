@@ -26,29 +26,45 @@
 .marquee-track {
   display: flex;
   width: max-content;
+}
+
+/* 单轨内首尾各一份相同序列，-50% 位移 = 恒定线速度，避免双 group 宽度漂移越滚越快 */
+.marquee-group {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0;
+  flex-shrink: 0;
+  width: max-content;
   will-change: transform;
-  animation: marquee-scroll var(--marquee-duration) linear infinite;
+  animation: marquee-scroll var(--marquee-duration, 120s) linear infinite;
 }
 
 @keyframes marquee-scroll {
   from {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
   to {
-    transform: translateX(-50%);
+    transform: translate3d(-50%, 0, 0);
   }
-}
-
-.marquee-group {
-  display: flex;
-  align-items: center;
-  gap: var(--logo-gap);
-  padding: 0 0.5rem;
-  flex-shrink: 0;
 }
 
 .marquee-logo-cell {
   flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.marquee-logo-cell--standard {
+  width: calc(var(--logo-size, 56px) + var(--logo-gap, 2.5rem));
+  padding-inline: calc(var(--logo-gap, 2.5rem) * 0.5);
+}
+
+.marquee-logo-cell--wide {
+  width: calc(var(--logo-size, 56px) * 2.35 + var(--logo-gap, 2.5rem));
+  padding-inline: calc(var(--logo-gap, 2.5rem) * 0.5);
 }
 
 .marquee-logo-frame {
@@ -119,6 +135,7 @@
 
 .marquee-logo-frame--wide {
   width: calc(var(--logo-size, 56px) * 2.35);
+  max-width: 100%;
 }
 
 .marquee-logo-frame--wide img {
@@ -130,6 +147,51 @@
 
 .university-logo-marquee--colored .marquee-logo-frame--wide img {
   height: 68%;
+}
+
+.university-logo-marquee--colored .marquee-logo-frame--nyu img {
+  width: 100%;
+  max-width: 100%;
+  height: 92%;
+  object-fit: contain;
+}
+
+.university-logo-marquee--colored .marquee-logo-frame--mit img {
+  height: 82%;
+  max-width: 98%;
+}
+
+.university-logo-marquee--colored .marquee-logo-frame--wide.marquee-logo-frame--mit img {
+  height: 78%;
+}
+
+/* 盾形等竖长校徽：占满高度，避免 Amherst 去掉后留下视觉空位 */
+.marquee-logo-frame--tall {
+  width: calc(var(--logo-size, 56px) * 0.92);
+}
+
+.marquee-logo-frame--tall img {
+  width: auto;
+  max-width: 100%;
+  height: 88%;
+  object-fit: contain;
+}
+
+.university-logo-marquee--colored .marquee-logo-frame--tall img {
+  height: 90%;
+}
+
+/* Princeton 黑底盾形：multiply 让黑底融入浅绿走马灯 */
+.university-logo-marquee--colored .marquee-logo-frame--blend-multiply {
+  background: transparent;
+}
+
+.university-logo-marquee--colored .marquee-logo-frame--blend-multiply img {
+  mix-blend-mode: multiply;
+  opacity: 1;
+  height: 94%;
+  width: auto;
+  max-width: 100%;
 }
 
 .university-logo-marquee--colored .marquee-fallback-letter {
@@ -148,16 +210,16 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .marquee-track {
+  .marquee-group {
     animation: none;
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
     flex-wrap: wrap;
     justify-content: center;
     row-gap: 0.75rem;
     width: 100%;
   }
 
-  .marquee-group[aria-hidden="true"] {
+  .marquee-logo-cell--loop-dup {
     display: none;
   }
 }
