@@ -357,7 +357,7 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
                 <button
                   type="button"
                   onClick={onStart}
-                  className="landing-btn landing-btn--secondary landing-btn--md min-h-[48px]"
+                  className="landing-btn landing-btn--black landing-btn--md min-h-[48px]"
                 >
                   {tf("app.welcome.start")} →
                 </button>
