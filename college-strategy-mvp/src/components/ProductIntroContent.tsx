@@ -124,7 +124,6 @@ export function ProductIntroContent({ variant = "page", id, onStart }: Props) {
 
       {!embedded && (
         <footer className="intro-footer" role="contentinfo">
-          <p>{t("app.disclaimer")}</p>
           <LegalLinks className="intro-footer__legal" openDoc={legalOpen} onOpenDocChange={setLegalOpen} />
         </footer>
       )}

@@ -55,8 +55,6 @@ merge(zhFlat, {
       s3t: "风格与叙事",
       s3d: "冲 / 稳 / 保偏好与活动摘要——让建议更贴你的打法。",
     },
-    disclaimer:
-      "AI 生成规划参考，非招生决定；录取结果与政策以各校官网为准。",
     steps: {
       caption: "第 {step} / 3 步",
       captionMid: " · 完成后继续",
@@ -933,8 +931,6 @@ merge(enFlat, {
       s3t: "Style & narrative",
       s3d: "Risk posture & activities—so advice fits how you play.",
     },
-    disclaimer:
-      "AI-generated planning aid, not an admissions decision. Policies and outcomes live on each school’s site. For more assistance book a free consultation as it is shown in the report.",
     steps: {
       caption: "Step {step} / 3",
       captionMid: " · Continue when ready",
