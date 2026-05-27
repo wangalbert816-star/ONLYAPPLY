@@ -43,7 +43,7 @@ function HeroTitleLine1({ text, locale }: { text: string; locale: Locale }) {
 
 function IconPerson() {
   return (
-    <svg className="h-6 w-6 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+    <svg className="h-6 w-6 text-emerald-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
       <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" />
       <path d="M4 21a8 8 0 0 1 16 0" strokeLinecap="round" />
     </svg>
@@ -52,7 +52,7 @@ function IconPerson() {
 
 function IconList() {
   return (
-    <svg className="h-6 w-6 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+    <svg className="h-6 w-6 text-emerald-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
       <path d="M8 6h13M8 12h13M8 18h13" strokeLinecap="round" />
       <path d="M4 6h.01M4 12h.01M4 18h.01" strokeLinecap="round" />
     </svg>
@@ -61,7 +61,7 @@ function IconList() {
 
 function IconRefresh() {
   return (
-    <svg className="h-6 w-6 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+    <svg className="h-6 w-6 text-emerald-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
       <path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.36-2.64" strokeLinecap="round" />
       <path d="M3 12a9 9 0 0 1 9-9 4.5 4.5 0 0 1 4.5 4.5V8l4-4-4-4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
@@ -70,7 +70,7 @@ function IconRefresh() {
 
 function IconTarget() {
   return (
-    <svg className="h-5 w-5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+    <svg className="h-5 w-5 text-emerald-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
       <circle cx="12" cy="12" r="9" />
       <circle cx="12" cy="12" r="4" />
       <path d="M12 3v2M12 19v2M3 12h2M19 12h2" strokeLinecap="round" />
@@ -80,7 +80,7 @@ function IconTarget() {
 
 function IconUserCard() {
   return (
-    <svg className="h-5 w-5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+    <svg className="h-5 w-5 text-emerald-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
       <rect x="3" y="5" width="18" height="14" rx="2" />
       <path d="M7 15h4M7 11h10" strokeLinecap="round" />
       <circle cx="9" cy="9" r="1.5" fill="currentColor" />
@@ -90,7 +90,7 @@ function IconUserCard() {
 
 function IconAlert() {
   return (
-    <svg className="h-5 w-5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+    <svg className="h-5 w-5 text-emerald-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
       <path d="M12 9v4M12 17h.01" strokeLinecap="round" />
       <path d="M10.3 3.6 2.6 17a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0Z" strokeLinejoin="round" />
     </svg>
@@ -99,7 +99,7 @@ function IconAlert() {
 
 function IconLinkOut() {
   return (
-    <svg className="h-5 w-5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+    <svg className="h-5 w-5 text-emerald-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
       <path d="M14 3h7v7M10 14 21 3M21 14v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
@@ -108,7 +108,7 @@ function IconLinkOut() {
 function StepChevron({ className = "" }: { className?: string }) {
   return (
     <svg
-      className={`h-5 w-5 shrink-0 text-blue-300 ${className}`.trim()}
+      className={`h-5 w-5 shrink-0 text-emerald-300 ${className}`.trim()}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -134,12 +134,12 @@ function HowItWorksStepCard({
   return (
     <article className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_48px_-24px_rgba(37,99,235,0.14)] lg:p-7">
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500 via-blue-400 to-sky-400"
+        className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500"
         aria-hidden
       />
       <div className="mb-5 flex items-center justify-between gap-3">
-        <span className="text-[13px] font-bold tracking-[0.2em] text-blue-600">{step}</span>
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 ring-1 ring-blue-100/80">
+        <span className="text-[13px] font-bold tracking-[0.2em] text-emerald-700">{step}</span>
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 ring-1 ring-emerald-100/80">
           {icon}
         </div>
       </div>
@@ -292,14 +292,14 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
             <button
               type="button"
               onClick={onOpenAccount}
-              className="hidden rounded-[10px] border border-neutral-300 bg-white px-3 py-2 text-[13px] font-semibold text-neutral-950 shadow-sm transition hover:border-neutral-400 sm:inline-block sm:px-4 sm:text-[14px]"
+              className="landing-btn landing-btn--secondary landing-btn--sm hidden sm:inline-flex"
             >
               {t("auth.myApplications")}
             </button>
             <button
               type="button"
               onClick={onStart}
-              className="hidden rounded-[10px] border border-neutral-300 bg-white px-3 py-2 text-[13px] font-semibold text-neutral-950 shadow-sm transition hover:border-neutral-400 sm:inline-block sm:px-4 sm:text-[14px]"
+              className="landing-btn landing-btn--primary landing-btn--sm hidden sm:inline-flex"
             >
               {tf("app.welcome.start")}
             </button>
@@ -321,14 +321,14 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
             <button
               type="button"
               onClick={onOpenAccount}
-              className="min-h-[40px] flex-1 rounded-[10px] border border-neutral-300 bg-white px-2 text-[13px] font-semibold text-neutral-950 shadow-sm transition hover:border-neutral-400"
+              className="landing-btn landing-btn--secondary landing-btn--sm min-h-[40px] flex-1"
             >
               {t("auth.myApplications")}
             </button>
             <button
               type="button"
               onClick={onStart}
-              className="min-h-[40px] flex-1 rounded-[10px] border border-neutral-300 bg-white px-2 text-[13px] font-semibold text-neutral-950 shadow-sm transition hover:border-neutral-400"
+              className="landing-btn landing-btn--primary landing-btn--sm min-h-[40px] flex-1"
             >
               {tf("app.welcome.start")}
             </button>
@@ -341,7 +341,7 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
           <section className="mx-auto w-full max-w-[1120px] flex-1 px-6 pb-16 pt-10 lg:flex lg:min-h-0 lg:flex-col lg:justify-center lg:px-10 lg:pb-6 lg:pt-6">
             <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-2 lg:items-center lg:gap-x-14 lg:gap-y-0">
             <div className="min-w-0">
-              <p className="mb-4 inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-[12px] font-semibold tracking-wide text-blue-700">
+              <p className="mb-4 inline-flex rounded-full border border-emerald-200/90 bg-emerald-50/90 px-3 py-1.5 text-[12px] font-semibold tracking-wide text-emerald-900">
                 {tf("landingReplica.heroBadge")}
               </p>
               <h1 className="mb-4 text-[clamp(2rem,5vw,2.75rem)] font-bold leading-[1.08] tracking-[-0.035em] text-neutral-950">
@@ -357,14 +357,14 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
                 <button
                   type="button"
                   onClick={onStart}
-                  className="inline-flex min-h-[48px] items-center justify-center rounded-[10px] bg-neutral-950 px-6 text-[15px] font-semibold text-white transition hover:bg-neutral-800"
+                  className="landing-btn landing-btn--secondary landing-btn--md min-h-[48px]"
                 >
                   {tf("app.welcome.start")} →
                 </button>
                 <button
                   type="button"
                   onClick={onBookExpertConsult}
-                  className="inline-flex min-h-[48px] items-center justify-center rounded-[10px] bg-[var(--landing-accent,#006644)] px-6 text-[15px] font-semibold text-white shadow-sm transition hover:bg-[var(--landing-accent-hover,#005538)]"
+                  className="landing-btn landing-btn--primary landing-btn--md min-h-[48px]"
                 >
                   {tf("landingReplica.heroBookConsult")}
                 </button>
@@ -402,24 +402,29 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
       <main>
         {/* —— Testimonials —— */}
         <section className="landing-band-beige mx-auto max-w-none px-6 py-16 lg:px-10 lg:py-20">
-          <div className="mx-auto grid max-w-[1120px] grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-            {testimonials.map((card) => (
-              <article
-                key={`${card.initials}-${card.name}`}
-                className="rounded-2xl border border-neutral-100 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
-              >
-                <div className="mb-4 flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-200 text-[13px] font-bold text-neutral-700">
-                    {card.initials}
+          <div className="mx-auto max-w-[1120px]">
+            <h2 className="mb-8 text-center text-[clamp(1.35rem,3.2vw,1.875rem)] font-bold tracking-tight text-neutral-950 lg:mb-10">
+              {tf("landingReplica.testimonialsTitle")}
+            </h2>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+              {testimonials.map((card) => (
+                <article
+                  key={`${card.initials}-${card.name}`}
+                  className="rounded-2xl border border-neutral-100 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+                >
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-200 text-[13px] font-bold text-neutral-700">
+                      {card.initials}
+                    </div>
+                    <div>
+                      <p className="text-[15px] font-semibold text-neutral-950">{card.name}</p>
+                      <p className="text-[13px] text-neutral-500">{card.meta}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[15px] font-semibold text-neutral-950">{card.name}</p>
-                    <p className="text-[13px] text-neutral-500">{card.meta}</p>
-                  </div>
-                </div>
-                <p className="text-[14px] italic leading-relaxed text-neutral-600">{card.quote}</p>
-              </article>
-            ))}
+                  <p className="text-[14px] italic leading-relaxed text-neutral-600">{card.quote}</p>
+                </article>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -438,7 +443,7 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
                 <li key={item.step} className="relative">
                   {idx < arr.length - 1 ? (
                     <span
-                      className="absolute bottom-0 left-[1.35rem] top-[4.5rem] w-px bg-gradient-to-b from-blue-200 to-neutral-200"
+                      className="absolute bottom-0 left-[1.35rem] top-[4.5rem] w-px bg-gradient-to-b from-emerald-200 to-neutral-200"
                       aria-hidden
                     />
                   ) : null}
@@ -447,7 +452,7 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
                   </div>
                   {idx < arr.length - 1 ? (
                     <div className="flex justify-center py-1" aria-hidden>
-                      <StepChevron className="rotate-90 text-blue-200" />
+                      <StepChevron className="rotate-90 text-emerald-200" />
                     </div>
                   ) : null}
                 </li>
@@ -530,12 +535,12 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
         </section>
 
         {/* —— AI transparency —— */}
-        <section className="bg-[#0a1128] py-16 text-white lg:py-24">
+        <section className="landing-navy-band py-16 text-white lg:py-24">
           <div className="mx-auto max-w-[1120px] px-6 lg:px-10">
-            <p className="mb-3 text-center text-[12px] font-semibold uppercase tracking-[0.1em] text-slate-400">
+            <p className="mb-3 text-center text-[12px] font-semibold uppercase tracking-[0.1em] text-white/70 drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)]">
               {tf("landingReplica.aiEyebrow")}
             </p>
-            <h2 className="mb-10 text-center text-[clamp(1.75rem,4vw,2.5rem)] font-bold tracking-[-0.03em] text-white lg:mb-12">
+            <h2 className="mb-10 text-center text-[clamp(1.75rem,4vw,2.5rem)] font-bold tracking-[-0.03em] text-white drop-shadow-[0_3px_18px_rgba(0,0,0,0.55)] lg:mb-12">
               {tf("landingReplica.aiTitle")}
             </h2>
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch lg:gap-x-10 lg:gap-y-0">
@@ -561,7 +566,7 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
                 <ul className="flex flex-1 flex-col gap-3.5">
                   {doItems.map((line) => (
                     <li key={line} className="flex items-start gap-3 text-[14px] leading-snug text-slate-200">
-                      <span className="mt-[2px] flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500/25 text-[11px] font-bold leading-none text-blue-300">
+                      <span className="mt-[2px] flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/25 text-[11px] font-bold leading-none text-emerald-200">
                         ✓
                       </span>
                       <span className="min-w-0 flex-1">{line}</span>
@@ -574,7 +579,7 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
         </section>
 
         {/* —— FAQ (same navy band as AI section above) —— */}
-        <section id="landing-faq" className="scroll-mt-20 bg-[#0a1128] py-16 lg:py-20">
+        <section id="landing-faq" className="scroll-mt-20 bg-[var(--landing-navy,#0a1128)] py-16 lg:py-20">
           <div className="mx-auto max-w-[720px] px-6 lg:px-10">
             <h2 className="mb-8 text-center text-[22px] font-bold tracking-tight text-white">{tf("landingReplica.navFaq")}</h2>
             <div className="flex flex-col gap-3">
@@ -585,6 +590,8 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
           </div>
         </section>
 
+        <div className="landing-fade-navy-to-page" aria-hidden />
+
         {/* —— Final CTA —— */}
         <section className="bg-[var(--landing-page-bg,#ecf3ea)] py-20 lg:py-28">
           <div className="mx-auto max-w-[640px] px-6 text-center lg:px-10">
@@ -593,7 +600,7 @@ export function LandingPageReplica({ landingMarqueeVisible, onStart, onOpenBrand
             <button
               type="button"
               onClick={onStart}
-              className="inline-flex min-h-[52px] min-w-[200px] items-center justify-center rounded-[10px] border border-neutral-300 bg-white px-8 text-[15px] font-semibold text-neutral-950 shadow-sm transition hover:border-neutral-400"
+              className="landing-btn landing-btn--primary landing-btn--md min-h-[52px] min-w-[200px] px-8"
             >
               {tf("app.welcome.start")} →
             </button>

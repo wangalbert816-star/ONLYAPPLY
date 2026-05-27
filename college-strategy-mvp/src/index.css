@@ -52,6 +52,93 @@ html[data-landing] {
   --landing-marquee-bg: #f7f5ef;
   --landing-accent: #006644;
   --landing-accent-hover: #005538;
+  --landing-navy: #0a1128;
+}
+
+/** Landing buttons: consistent with green chrome */
+html[data-landing] .landing-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 12px;
+  font-weight: 650;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    background-color 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    color 120ms ease;
+}
+
+html[data-landing] .landing-btn:active {
+  transform: translateY(0.5px);
+}
+
+html[data-landing] .landing-btn--primary {
+  background: var(--landing-accent);
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 12px 28px rgba(0, 102, 68, 0.18);
+}
+
+html[data-landing] .landing-btn--primary:hover {
+  background: var(--landing-accent-hover);
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.1), 0 16px 34px rgba(0, 102, 68, 0.22);
+}
+
+html[data-landing] .landing-btn--secondary {
+  background: rgba(255, 255, 255, 0.72);
+  color: #0f172a;
+  border-color: rgba(0, 102, 68, 0.22);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(6px);
+}
+
+html[data-landing] .landing-btn--secondary:hover {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(0, 102, 68, 0.32);
+}
+
+html[data-landing] .landing-btn--sm {
+  padding: 0.5rem 0.9rem;
+  font-size: 0.875rem;
+}
+
+html[data-landing] .landing-btn--md {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.9375rem;
+}
+
+html[data-landing] .lang-toggle__btn--on {
+  color: var(--landing-accent);
+}
+
+/** Light landing chrome → navy (AI / FAQ band): longer soft top edge */
+html[data-landing] .landing-navy-band {
+  background: linear-gradient(
+    180deg,
+    var(--landing-page-bg) 0%,
+    color-mix(in srgb, var(--landing-page-bg) 65%, var(--landing-navy) 35%) 14%,
+    color-mix(in srgb, var(--landing-page-bg) 40%, var(--landing-navy) 60%) 28%,
+    color-mix(in srgb, var(--landing-page-bg) 18%, var(--landing-navy) 82%) 44%,
+    var(--landing-navy) 58%,
+    var(--landing-navy) 100%
+  );
+}
+
+/** Navy band → page background above final CTA (taller + gentler) */
+html[data-landing] .landing-fade-navy-to-page {
+  height: clamp(4.5rem, 14vw, 9rem);
+  background: linear-gradient(
+    180deg,
+    var(--landing-navy) 0%,
+    color-mix(in srgb, var(--landing-navy) 70%, var(--landing-page-bg) 30%) 28%,
+    color-mix(in srgb, var(--landing-navy) 38%, var(--landing-page-bg) 62%) 55%,
+    color-mix(in srgb, var(--landing-navy) 12%, var(--landing-page-bg) 88%) 82%,
+    var(--landing-page-bg) 100%
+  );
 }
 
 html[data-landing] .landing-band-beige {
