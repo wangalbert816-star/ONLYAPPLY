@@ -17,6 +17,7 @@ import { BrandLogo } from "../BrandLogo";
 import { ExportActivitiesCsvButton } from "../ExportActivitiesCsvButton";
 import { AccountReportSnapshot } from "./AccountReportSnapshot";
 import { AccountExpertPanel } from "./AccountExpertPanel";
+import { SchoolFitComparisonCard } from "./SchoolFitComparisonCard";
 import "./AccountHome.css";
 
 type Props = {
@@ -796,6 +797,14 @@ export function AccountHome({
             <p className="account-home__empty">{loading ? t("auth.accountLoading") : t("auth.accountEmpty")}</p>
           )}
         </section>
+
+        {latestReport && fiveProfile.length > 0 && (
+          <SchoolFitComparisonCard
+            report={latestReport.report_payload}
+            userDimensions={fiveProfile}
+            t={t}
+          />
+        )}
 
         <div className={`account-dashboard__workspace${currentApp ? " account-dashboard__workspace--split" : ""}`}>
           <div className="account-dashboard__workspace-col account-dashboard__workspace-col--advisor">

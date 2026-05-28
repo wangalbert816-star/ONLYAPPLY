@@ -1,0 +1,432 @@
+/* 与 account-hero / account-activity-card / profile-five 同色体系 */
+
+.account-school-fit {
+  margin-top: 0.25rem;
+  padding: 1.15rem 1.2rem 1rem;
+  border-radius: 22px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background:
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.1), transparent 28rem),
+    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.06);
+}
+
+.account-school-fit__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.account-school-fit__kicker {
+  margin: 0 0 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #2563eb;
+}
+
+.account-school-fit__head h2 {
+  margin: 0;
+  font-size: clamp(1.05rem, 1.8vw, 1.2rem);
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.account-school-fit__lead {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: #64748b;
+  max-width: 52ch;
+}
+
+.account-school-fit__picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.account-school-fit__picker-label {
+  font-size: 0.76rem;
+  font-weight: 650;
+  color: #64748b;
+}
+
+.account-school-fit__picker select {
+  width: 100%;
+  max-width: 420px;
+  padding: 0.5rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #fff;
+  color: #0f172a;
+  font-size: 0.86rem;
+}
+
+.account-school-fit__picker select:focus {
+  outline: none;
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+}
+
+.account-school-fit__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.1rem;
+  align-items: start;
+}
+
+@media (min-width: 880px) {
+  .account-school-fit__head {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .account-school-fit__body {
+    grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+    gap: 1.25rem;
+  }
+}
+
+.school-fit-radar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.school-fit-radar__svg {
+  width: 100%;
+  max-width: 340px;
+  height: auto;
+  display: block;
+}
+
+.school-fit-radar__grid {
+  stroke: #e2e8f0;
+  stroke-width: 1;
+}
+
+.school-fit-radar__axis {
+  stroke: #e2e8f0;
+  stroke-width: 1;
+}
+
+/* 你的画像 — 与 report profile-five 一致 */
+.school-fit-radar__area--user {
+  fill: rgba(37, 99, 235, 0.14);
+}
+
+.school-fit-radar__stroke--user {
+  fill: none;
+  stroke: #2563eb;
+  stroke-width: 2.25;
+  stroke-linejoin: round;
+}
+
+/* 学校参考线 — 与冲校 tier 琥珀色一致 */
+.school-fit-radar__area--school {
+  fill: rgba(245, 158, 11, 0.1);
+}
+
+.school-fit-radar__stroke--school {
+  fill: none;
+  stroke: #d97706;
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+  stroke-linejoin: round;
+}
+
+.school-fit-radar__label {
+  fill: #475569;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.school-fit-radar__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.76rem;
+  color: #64748b;
+}
+
+.school-fit-radar__legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.school-fit-radar__swatch {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.school-fit-radar__swatch--user {
+  background: #2563eb;
+}
+
+.school-fit-radar__swatch--school {
+  background: repeating-linear-gradient(
+    90deg,
+    #d97706 0,
+    #d97706 4px,
+    transparent 4px,
+    transparent 7px
+  );
+}
+
+.account-school-fit__side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.account-school-fit__scores {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.account-school-fit__score-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.5rem 0.65rem;
+  align-items: center;
+  padding: 0.45rem 0.6rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  font-size: 0.82rem;
+}
+
+.account-school-fit__score-row--behind {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.account-school-fit__score-row--ahead {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.account-school-fit__score-label {
+  color: #334155;
+  font-weight: 650;
+}
+
+.account-school-fit__score-values {
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.account-school-fit__score-you {
+  color: #1d4ed8;
+  font-weight: 650;
+}
+
+.account-school-fit__score-bench {
+  color: #b45309;
+  font-weight: 650;
+}
+
+.account-school-fit__score-vs {
+  margin: 0 0.15rem;
+  opacity: 0.45;
+}
+
+.account-school-fit__score-delta {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: #64748b;
+  min-width: 2.2rem;
+  text-align: right;
+}
+
+.account-school-fit__score-row--behind .account-school-fit__score-delta {
+  color: #b45309;
+}
+
+.account-school-fit__score-row--ahead .account-school-fit__score-delta {
+  color: #047857;
+}
+
+.account-school-fit__gaps-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.account-school-fit__gaps ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.82rem;
+  color: #b45309;
+  line-height: 1.45;
+}
+
+.account-school-fit__aligned {
+  margin: 0;
+  font-size: 0.84rem;
+  color: #047857;
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+.account-school-fit__tier-note {
+  margin: 0;
+  font-size: 0.76rem;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.account-school-fit__disclaimer {
+  margin: 0.85rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: #94a3b8;
+}
+
+@media (prefers-color-scheme: dark) {
+  .account-school-fit {
+    background:
+      radial-gradient(circle at top right, rgba(96, 165, 250, 0.16), transparent 24rem),
+      linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(17, 24, 39, 0.98));
+    border-color: rgba(96, 165, 250, 0.28);
+    box-shadow: 0 20px 55px rgba(0, 0, 0, 0.24);
+  }
+
+  .account-school-fit__kicker {
+    color: var(--color-primary, #60a5fa);
+  }
+
+  .account-school-fit__head h2,
+  .account-school-fit__gaps-title {
+    color: var(--color-fg, #e5e7eb);
+  }
+
+  .account-school-fit__lead,
+  .account-school-fit__picker-label,
+  .account-school-fit__tier-note,
+  .account-school-fit__disclaimer,
+  .school-fit-radar__legend {
+    color: var(--color-muted, #9ca3af);
+  }
+
+  .account-school-fit__picker select {
+    background: rgba(15, 23, 42, 0.92);
+    border-color: var(--color-line, #253044);
+    color: var(--color-fg, #e5e7eb);
+  }
+
+  .account-school-fit__picker select:focus {
+    border-color: rgba(96, 165, 250, 0.55);
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.18);
+  }
+
+  .school-fit-radar__grid,
+  .school-fit-radar__axis {
+    stroke: rgba(148, 163, 184, 0.22);
+  }
+
+  .school-fit-radar__area--user {
+    fill: rgba(96, 165, 250, 0.16);
+  }
+
+  .school-fit-radar__stroke--user {
+    stroke: #60a5fa;
+  }
+
+  .school-fit-radar__area--school {
+    fill: rgba(251, 191, 36, 0.1);
+  }
+
+  .school-fit-radar__stroke--school {
+    stroke: #fbbf24;
+  }
+
+  .school-fit-radar__label {
+    fill: #94a3b8;
+  }
+
+  .school-fit-radar__swatch--user {
+    background: #60a5fa;
+  }
+
+  .school-fit-radar__swatch--school {
+    background: repeating-linear-gradient(
+      90deg,
+      #fbbf24 0,
+      #fbbf24 4px,
+      transparent 4px,
+      transparent 7px
+    );
+  }
+
+  .account-school-fit__score-row {
+    background: rgba(15, 23, 42, 0.74);
+    border-color: rgba(148, 163, 184, 0.22);
+  }
+
+  .account-school-fit__score-row--behind {
+    background: rgba(120, 53, 15, 0.22);
+    border-color: rgba(251, 191, 36, 0.28);
+  }
+
+  .account-school-fit__score-row--ahead {
+    background: rgba(6, 78, 59, 0.2);
+    border-color: rgba(52, 211, 153, 0.22);
+  }
+
+  .account-school-fit__score-label {
+    color: #e2e8f0;
+  }
+
+  .account-school-fit__score-values {
+    color: #94a3b8;
+  }
+
+  .account-school-fit__score-you {
+    color: #93c5fd;
+  }
+
+  .account-school-fit__score-bench {
+    color: #fcd34d;
+  }
+
+  .account-school-fit__score-delta {
+    color: #94a3b8;
+  }
+
+  .account-school-fit__score-row--behind .account-school-fit__score-delta {
+    color: #fcd34d;
+  }
+
+  .account-school-fit__score-row--ahead .account-school-fit__score-delta {
+    color: #6ee7b7;
+  }
+
+  .account-school-fit__gaps ul {
+    color: #fcd34d;
+  }
+
+  .account-school-fit__aligned {
+    color: #6ee7b7;
+  }
+}
