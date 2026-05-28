@@ -249,7 +249,7 @@ export function LandingPageReplica({
     { step: "03", icon: <IconCheck />, title: tf("productIntro.steps.s3Title"), body: tf("productIntro.steps.s3Body") },
   ];
 
-  const faqItems = Array.from({ length: 8 }, (_, i) => {
+  const faqItems = Array.from({ length: 7 }, (_, i) => {
     const n = i + 1;
     return {
       q: tf(`landingReplica.faqQ${n}`),
@@ -572,7 +572,6 @@ export function LandingPageReplica({
             >
               {tf("app.welcome.start")} →
             </button>
-            <p className="mt-4 text-[12px] text-neutral-400">{tf("landingReplica.finalDisclaimer")}</p>
           </div>
         </section>
       </main>
