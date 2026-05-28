@@ -180,7 +180,6 @@ export function BrandStoryOverlay({ open, onClose, onStart }: Props) {
         <main className="brand-story__main">
           <section className="brand-story__hero" aria-labelledby={titleId}>
             <BrandLogo className="brand-story__logo" />
-            <p className="brand-story__eyebrow">{copy.eyebrow}</p>
             <h1 id={titleId}>{copy.title}</h1>
             <p className="brand-story__intro">{copy.intro}</p>
           </section>
