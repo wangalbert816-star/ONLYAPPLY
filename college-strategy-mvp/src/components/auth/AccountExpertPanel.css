@@ -1,9 +1,10 @@
 .account-expert-panel {
   display: flex;
   flex-direction: column;
+  flex: 1;
   min-width: 0;
   border: 1px solid rgba(37, 99, 235, 0.2);
-  border-radius: 20px;
+  border-radius: 22px;
   background:
     radial-gradient(circle at top left, rgba(59, 130, 246, 0.14), transparent 18rem),
     linear-gradient(165deg, #ffffff 0%, #f0f7ff 55%, #f8fafc 100%);

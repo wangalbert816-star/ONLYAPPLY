@@ -2,6 +2,10 @@
 
 export const wizardZhNested = {
   wizard: {
+    progressBar: {
+      aria: "问卷完成进度",
+      percent: "已完成 {n}%",
+    },
     summary: {
       title: "当前画像",
       lead: "每填一项，表格会即时更新；高亮行提示你此刻该完成的内容。",
@@ -321,6 +325,10 @@ export const wizardZhNested = {
 
 export const wizardEnNested = {
   wizard: {
+    progressBar: {
+      aria: "Questionnaire completion",
+      percent: "{n}% complete",
+    },
     summary: {
       title: "Your snapshot",
       lead: "Each answer updates this table instantly—the highlighted row shows what to complete next.",

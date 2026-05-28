@@ -23,23 +23,41 @@ html[data-questionnaire] .app--flow .card--guided {
 
 .guided-progress {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
   margin-bottom: clamp(1.75rem, 4vh, 2.25rem);
 }
 
-.guided-progress__dot {
-  width: 0.4rem;
-  height: 0.4rem;
+.guided-progress__track {
+  height: 0.35rem;
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.12);
-  transition: background-color 0.2s ease, transform 0.2s ease;
+  background: rgba(15, 23, 42, 0.08);
+  overflow: hidden;
 }
 
-.guided-progress__dot--on {
+.guided-progress__fill {
+  height: 100%;
+  border-radius: inherit;
   background: var(--color-primary, #2563eb);
-  transform: scale(1.15);
+  transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html[data-questionnaire] .guided-progress__fill {
+  background: var(--landing-accent, #006644);
+}
+
+.guided-progress__label {
+  margin: 0;
+  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--color-muted, #737373);
+}
+
+html[data-questionnaire] .guided-progress__label {
+  color: #525252;
 }
 
 .guided-screen {

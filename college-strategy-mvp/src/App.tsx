@@ -25,6 +25,7 @@ import {
   validateStep3Screen,
   type Step3ScreenId,
 } from "./components/GuidedStep3Flow";
+import { GuidedFormProgress } from "./components/guidedStepShared";
 import "./components/GuidedQuestionnaire.css";
 import "./components/QuestionnaireTheme.css";
 import { FullscreenLogoMarquee } from "./components/FullscreenLogoMarquee";
@@ -46,7 +47,7 @@ import { getSupabase } from "./lib/supabase/client";
 import { formatSupabaseError } from "./lib/supabase/errors";
 import { clearFormDraft, readFormDraft, writeFormDraft } from "./lib/formDraft";
 import { clearPendingSave, readPendingSave, writePendingSave } from "./lib/pendingSave";
-import { isEssayAnalysisCheckoutEnabled, isStripeCheckoutEnabled } from "./lib/stripeCheckout";
+import { isStripeCheckoutEnabled } from "./lib/stripeCheckout";
 import { isInviteCodesEnabled } from "./lib/inviteCodes";
 import "./App.css";
 
@@ -215,7 +216,6 @@ function readStoredSupabaseAccessToken(): string | null {
 export default function App() {
   const { t, locale } = useLanguage();
   const stripeCheckoutEnabled = isStripeCheckoutEnabled();
-  const essayAnalysisCheckoutEnabled = isEssayAnalysisCheckoutEnabled();
   const inviteCodesEnabled = isInviteCodesEnabled();
   const cloudEntitlementsEnabled = stripeCheckoutEnabled || inviteCodesEnabled;
   const demoUnlockEnabled = !cloudEntitlementsEnabled && import.meta.env.DEV;
@@ -686,17 +686,6 @@ export default function App() {
       window.history.replaceState({}, "", path);
     })();
   }, [stripeCheckoutEnabled, refreshEntitlements, t]);
-
-  useEffect(() => {
-    const p = new URLSearchParams(window.location.search);
-    const st = p.get("essay_checkout");
-    if (!st || !essayAnalysisCheckoutEnabled || authLoading) return;
-    const path = `${window.location.pathname}${window.location.hash}`;
-    if (user) {
-      setView("account");
-    }
-    window.history.replaceState({}, "", path);
-  }, [essayAnalysisCheckoutEnabled, authLoading, user]);
 
   useEffect(() => {
     if (view !== "account" || authLoading || user) return;
@@ -1310,11 +1299,16 @@ export default function App() {
 
       {step === 1 && (
         <div className="card card--guided">
-          <div className="guided-progress" aria-hidden>
-            {step1Screens.map((id, idx) => (
-              <span key={id} className={`guided-progress__dot${idx <= step1ScreenSafe ? " guided-progress__dot--on" : ""}`} />
-            ))}
-          </div>
+          <GuidedFormProgress
+            step={1}
+            step1Screens={step1Screens}
+            step2Screens={step2Screens}
+            step3Screens={step3Screens}
+            step1ScreenSafe={step1ScreenSafe}
+            step2ScreenSafe={step2ScreenSafe}
+            step3ScreenSafe={step3ScreenSafe}
+            t={t}
+          />
           <GuidedStep1Flow screen={step1ScreenId} form={form} update={update} t={t} />
           <div className="flow-step-foot">
             {err && <div className="error">{err}</div>}
@@ -1352,11 +1346,16 @@ export default function App() {
 
       {step === 2 && (
         <div className="card card--guided">
-          <div className="guided-progress" aria-hidden>
-            {step2Screens.map((id, idx) => (
-              <span key={id} className={`guided-progress__dot${idx <= step2ScreenSafe ? " guided-progress__dot--on" : ""}`} />
-            ))}
-          </div>
+          <GuidedFormProgress
+            step={2}
+            step1Screens={step1Screens}
+            step2Screens={step2Screens}
+            step3Screens={step3Screens}
+            step1ScreenSafe={step1ScreenSafe}
+            step2ScreenSafe={step2ScreenSafe}
+            step3ScreenSafe={step3ScreenSafe}
+            t={t}
+          />
           <GuidedStep2Flow
             screen={step2ScreenId}
             form={form}
@@ -1382,11 +1381,16 @@ export default function App() {
 
       {step === 3 && (
         <div className="card card--guided">
-          <div className="guided-progress" aria-hidden>
-            {step3Screens.map((id, idx) => (
-              <span key={id} className={`guided-progress__dot${idx <= step3ScreenSafe ? " guided-progress__dot--on" : ""}`} />
-            ))}
-          </div>
+          <GuidedFormProgress
+            step={3}
+            step1Screens={step1Screens}
+            step2Screens={step2Screens}
+            step3Screens={step3Screens}
+            step1ScreenSafe={step1ScreenSafe}
+            step2ScreenSafe={step2ScreenSafe}
+            step3ScreenSafe={step3ScreenSafe}
+            t={t}
+          />
           <GuidedStep3Flow
             screen={step3ScreenId}
             form={form}

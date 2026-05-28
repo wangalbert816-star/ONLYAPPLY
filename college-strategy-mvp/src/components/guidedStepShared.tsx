@@ -48,6 +48,78 @@ export function toggleGeo(prefs: GeoPref[], g: GeoPref): GeoPref[] {
   return [...withoutAny, g];
 }
 
+export function guidedFormCompletionPercent(
+  step: 1 | 2 | 3,
+  step1Screens: readonly string[],
+  step2Screens: readonly string[],
+  step3Screens: readonly string[],
+  step1ScreenSafe: number,
+  step2ScreenSafe: number,
+  step3ScreenSafe: number,
+): number {
+  const total = step1Screens.length + step2Screens.length + step3Screens.length;
+  if (total <= 0) return 0;
+
+  let completed = 0;
+  if (step >= 1) {
+    completed += step === 1 ? step1ScreenSafe + 1 : step1Screens.length;
+  }
+  if (step >= 2) {
+    completed += step === 2 ? step2ScreenSafe + 1 : step2Screens.length;
+  }
+  if (step >= 3) {
+    completed += step === 3 ? step3ScreenSafe + 1 : step3Screens.length;
+  }
+
+  return Math.min(100, Math.round((completed / total) * 100));
+}
+
+export function GuidedFormProgress({
+  step,
+  step1Screens,
+  step2Screens,
+  step3Screens,
+  step1ScreenSafe,
+  step2ScreenSafe,
+  step3ScreenSafe,
+  t,
+}: {
+  step: 1 | 2 | 3;
+  step1Screens: readonly string[];
+  step2Screens: readonly string[];
+  step3Screens: readonly string[];
+  step1ScreenSafe: number;
+  step2ScreenSafe: number;
+  step3ScreenSafe: number;
+  t: Translate;
+}) {
+  const percent = guidedFormCompletionPercent(
+    step,
+    step1Screens,
+    step2Screens,
+    step3Screens,
+    step1ScreenSafe,
+    step2ScreenSafe,
+    step3ScreenSafe,
+  );
+
+  return (
+    <div
+      className="guided-progress"
+      role="progressbar"
+      aria-valuenow={percent}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={t("wizard.progressBar.aria")}
+    >
+      <div className="guided-progress__track">
+        <div className="guided-progress__fill" style={{ width: `${percent}%` }} />
+      </div>
+      <p className="guided-progress__label">{t("wizard.progressBar.percent", { n: percent })}</p>
+    </div>
+  );
+}
+
 export function GuidedScreenShell({
   step,
   screenId,
