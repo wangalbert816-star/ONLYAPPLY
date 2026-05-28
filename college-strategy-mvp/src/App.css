@@ -219,7 +219,7 @@
 }
 
 .app--flow {
-  padding-top: 1.75rem;
+  padding-top: 4.75rem;
 }
 
 .landing-sheet {
@@ -1375,10 +1375,10 @@ th {
   right: 0.75rem;
   z-index: 40;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0;
+  padding: 0 0.1rem;
   pointer-events: none;
   font-size: 0.75rem;
 }
@@ -1418,32 +1418,9 @@ th {
   min-width: 0;
 }
 
-.app-top-chrome__about {
-  pointer-events: auto;
-  border: none;
-  padding: 0.35rem 0.5rem;
-  background: transparent;
-  color: var(--color-muted, #737373);
-  font: inherit;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: color 0.15s ease;
-}
-
-.app-top-chrome__about:hover {
-  color: var(--landing-accent, #006644);
-}
-
-html[data-landing] .app-top-chrome__about,
-html[data-questionnaire] .app-top-chrome__about {
-  color: #525252;
-}
-
-html[data-landing] .app-top-chrome__about:hover,
-html[data-questionnaire] .app-top-chrome__about:hover {
-  color: var(--landing-accent, #006644);
+.app-top-chrome__logo.onlyapply-logo {
+  max-height: 2.1rem;
+  max-width: min(12rem, 46vw);
 }
 
 .app-top-chrome__consult {

@@ -6,7 +6,6 @@ import { collectHighlightKeys, compareReports, reportDiffIsEmpty } from "./lib/r
 import { apiUrl } from "./lib/apiBase";
 import { readApiJson } from "./lib/parseApiResponse";
 import { clearUnlockStorage, readUnlockFromStorage, ReportView, writeUnlockToStorage } from "./ReportView";
-import { BrandLogo } from "./components/BrandLogo";
 import { FormLiveSummary, type GuideTouch } from "./components/GuidedQuestionnaire";
 import {
   GuidedStep1Flow,
@@ -301,7 +300,6 @@ export default function App() {
                     })
                 : undefined
             }
-            onOpenAboutUs={() => setAboutUsOpen(true)}
           />
         )}
         {content}
@@ -1299,14 +1297,6 @@ export default function App() {
   return withChrome(
     <>
     <div className="app app--flow">
-      <header className="hero--compact">
-        <BrandLogo />
-        <div className="hero--compact-copy">
-          <h1>{t("app.flow.headline")}</h1>
-          <p className="hero-flow-tagline">{t("app.flow.tagline")}</p>
-        </div>
-      </header>
-
       <p className="steps-caption" aria-live="polite">
         {t("app.steps.caption", { step })}
         {step === 3 ? t("app.steps.captionFinal") : t("app.steps.captionMid")}
