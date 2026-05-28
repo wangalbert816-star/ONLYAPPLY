@@ -1,7 +1,6 @@
 import { useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useLanguage } from "../i18n/LanguageContext";
-import { BrandLogo } from "./BrandLogo";
 import "./BrandStoryOverlay.css";
 
 type Props = {
@@ -178,12 +177,6 @@ export function BrandStoryOverlay({ open, onClose, onStart }: Props) {
         </header>
 
         <main className="brand-story__main">
-          <section className="brand-story__hero" aria-labelledby={titleId}>
-            <BrandLogo className="brand-story__logo" />
-            <h1 id={titleId}>{copy.title}</h1>
-            <p className="brand-story__intro">{copy.intro}</p>
-          </section>
-
           <article className="brand-story__letter" aria-label={copy.letterLabel}>
             <p className="brand-story__letter-kicker">{copy.letterLabel}</p>
             {copy.letterParagraphs.map((paragraph) => (
