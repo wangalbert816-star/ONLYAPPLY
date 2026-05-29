@@ -36,6 +36,10 @@ export const APPLICATION_LINK_CATEGORIES = [
         id: "qs" as const,
         href: "https://www.topuniversities.com/university-rankings/world-university-rankings",
       },
+      {
+        id: "wsj" as const,
+        href: "https://www.wsj.com/rankings/college-rankings",
+      },
       { id: "niche" as const, href: "https://www.niche.com/colleges" },
       { id: "collegeNavigator" as const, href: "https://nces.ed.gov/collegenavigator" },
     ],

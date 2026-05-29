@@ -24,10 +24,13 @@ export const wizardZhNested = {
         identity: "申请身份",
         environment: "申请环境",
         budget: "资金预期",
-        testing: "标化策略",
-        scores: "标化分数",
         hs: "高中体系",
         gpa: "成绩说明",
+        gpaTrend: "GPA 趋势",
+        testing: "标化策略",
+        scores: "标化分数",
+        language: "语言成绩",
+        special: "学业特殊情况",
         major: "主修意向",
         major2: "第二意向",
         size: "校园规模",
@@ -42,10 +45,13 @@ export const wizardZhNested = {
         identity: "选择最接近的申请身份",
         environment: "可选：填写护照地区或常住地",
         budget: "选择资金/奖助预期",
+        gpa: "填写 GPA 或成绩说明",
+        gpaTrend: "选择整体 GPA 走势",
         testing: "选择是否递交标化",
         scores: "填写 SAT 或 ACT（至少一项）",
+        language: "填写 TOEFL / IELTS / Duolingo 等",
+        special: "可选：勾选或说明成绩单特殊情况",
         hs: "选择高中课程体系",
-        gpa: "填写 GPA 或成绩说明",
         major: "填写主修或方向",
         major2: "可选：填写第二意向",
         size: "选择偏好的校园规模",
@@ -76,14 +82,6 @@ export const wizardZhNested = {
         budget: {
           title: "第 1 步 — 资金预期",
           context: "决定名单里全自费可达 vs 需要奖助支撑的比例。",
-        },
-        testing: {
-          title: "第 1 步 — 标化策略",
-          context: "是否递交分数，会改变学校组合与验证重点。",
-        },
-        scores: {
-          title: "第 1 步 — 标化分数",
-          context: "填一项即可，用于校对你的学术证据链。",
         },
       },
       intake: {
@@ -116,27 +114,36 @@ export const wizardZhNested = {
         fbAid: "收到。需要奖助时，我们会更强调可验证的财务叙事与匹配型机会，而不是只看排名。",
         fbUnsure: "没关系。我们会同时给出「保守可达」与「需要更多信息才安全」的档位提示。",
       },
-      testing: {
-        q: "SAT / ACT 你打算怎么交？",
-        why: "Test-Optional 与递交分数会显著改变学校组合与材料验证重点。",
-        fbOpt: "了解。不强制递交时，我们会更依赖课程强度、叙事与可验证活动来支撑档位。",
-        fbSubmit: "好。有分数时，我们会把分数与课程档案放在一起看「是否互相印证」。",
-      },
-      scores: {
-        q: "填写 SAT 或 ACT（二选一即可）",
-        why: "分数强弱会影响名单里「证据链」是否闭合，以及哪些学校更值得花时间验证。",
-        fb: "收到。我们会把你的分数纳入可达性判断，并在报告里标出需要官网核对的敏感项。",
-      },
     },
     s2: {
       screens: {
-        hs: {
-          title: "第 2 步 — 高中体系",
-          context: "课程体系决定招生官如何解读你的成绩单与课程难度。",
-        },
         gpa: {
           title: "第 2 步 — 成绩说明",
           context: "比单一 GPA 数字更重要的是可验证的学术信号。",
+        },
+        gpaTrend: {
+          title: "第 2 步 — GPA 趋势",
+          context: "上升/下滑趋势会影响招生官如何读你的成绩单。",
+        },
+        testing: {
+          title: "第 2 步 — 标化策略",
+          context: "是否递交分数，会改变学校组合与验证重点。",
+        },
+        scores: {
+          title: "第 2 步 — 标化分数",
+          context: "填一项即可，用于校对你的学术证据链。",
+        },
+        language: {
+          title: "第 2 步 — 语言成绩",
+          context: "国际生路径下，语言分数是常见核对项。",
+        },
+        special: {
+          title: "第 2 步 — 学业特殊情况",
+          context: "可选。有 C 分、Gap Year、健康等情况时建议说明，便于准确判断。",
+        },
+        hs: {
+          title: "第 2 步 — 高中体系",
+          context: "课程体系决定招生官如何解读你的成绩单与课程难度。",
         },
         major: {
           title: "第 2 步 — 主修意向",
@@ -173,6 +180,37 @@ export const wizardZhNested = {
         q: "请用几句话描述你的成绩与年级位置（GPA、排名、核心科目等）。",
         why: "这是招生官判断学术可信度与课程强度的第一手材料，比单一数字更重要。",
         fb: "好。我们会把这些信息转译成「可验证信号」，并在不匹配处标出风险。",
+      },
+      gpaTrend: {
+        q: "整体来看，你的 GPA / 成绩走势更接近哪一种？",
+        why: "趋势比单点分数更能解释招生官会怎么读你的学术故事。",
+        fbUpward: "收到。上升趋势通常能支撑更积极的学术叙事，但仍需与课程难度对齐。",
+        fbStable: "了解。稳定表现说明学术信号一致，我们会重点核对课程强度是否匹配目标校。",
+        fbDownward: "明白。有下滑时，报告会更保守，并提示如何用后续表现或说明来补上下文。",
+        fbMixed: "收到。有升有降时，我们会帮你找出哪一段最能被材料证明、哪一段需要解释。",
+        fbUnsure: "没关系。你可以在后面补充说明，我们会把不确定处标进信息缺口。",
+      },
+      testing: {
+        q: "SAT / ACT 你打算怎么交？",
+        why: "Test-Optional 与递交分数会显著改变学校组合与材料验证重点。",
+        fbOpt: "了解。不强制递交时，我们会更依赖课程强度、叙事与可验证活动来支撑档位。",
+        fbSubmit: "好。有分数时，我们会把分数与课程档案放在一起看「是否互相印证」。",
+      },
+      scores: {
+        q: "填写 SAT 或 ACT（二选一即可）",
+        why: "分数强弱会影响名单里「证据链」是否闭合，以及哪些学校更值得花时间验证。",
+        fb: "收到。我们会把你的分数纳入可达性判断，并在报告里标出需要官网核对的敏感项。",
+      },
+      language: {
+        q: "你的英语语言成绩如何？（TOEFL / IELTS / Duolingo 等）",
+        why: "国际生申请里，语言分数常与学术材料一起被核对。",
+        skip: "暂未考试 / 暂无分数，继续",
+      },
+      special: {
+        q: "成绩单或学业过程中，有没有需要说明的特殊情况？",
+        why: "例如有过 C 等低分、Gap Year、健康问题等——提前说明有助于避免系统误判。",
+        notesLabel: "补充说明（可选）",
+        skip: "没有需要说明的情况，继续",
       },
       major: {
         q: "你目前的主修意向是什么？（可以是大类或具体方向）",
@@ -347,10 +385,13 @@ export const wizardEnNested = {
         identity: "Applicant profile",
         environment: "Application context",
         budget: "Funding posture",
-        testing: "Testing strategy",
-        scores: "Test scores",
         hs: "High school system",
         gpa: "Academic record",
+        gpaTrend: "GPA trend",
+        testing: "Testing strategy",
+        scores: "Test scores",
+        language: "Language scores",
+        special: "Academic flags",
         major: "Primary interest",
         major2: "Secondary interest",
         size: "Campus size",
@@ -365,10 +406,13 @@ export const wizardEnNested = {
         identity: "Pick the profile that fits you best",
         environment: "Optional: passport region or where you live",
         budget: "Choose your cost / aid posture",
+        gpa: "Enter GPA or academic summary",
+        gpaTrend: "Select overall GPA trend",
         testing: "Choose whether you will submit scores",
         scores: "Enter SAT or ACT (at least one)",
+        language: "Enter TOEFL / IELTS / Duolingo, etc.",
+        special: "Optional: note transcript special circumstances",
         hs: "Select your high school curriculum",
-        gpa: "Enter GPA or academic summary",
         major: "Enter primary major or direction",
         major2: "Optional: secondary interest",
         size: "Pick preferred campus size",
@@ -399,14 +443,6 @@ export const wizardEnNested = {
         budget: {
           title: "Step 1 — Funding",
           context: "Sets how much of your list is full-pay realistic vs aid-dependent.",
-        },
-        testing: {
-          title: "Step 1 — Testing plan",
-          context: "Whether you submit scores changes school mix and what we verify first.",
-        },
-        scores: {
-          title: "Step 1 — Test scores",
-          context: "Enter one score so we can check your academic evidence chain.",
         },
       },
       intake: {
@@ -439,27 +475,36 @@ export const wizardEnNested = {
         fbAid: "Noted—we’ll stress verifiable aid fit and matches, not rank‑only optimism.",
         fbUnsure: "That’s fine—we’ll show both conservative reaches and items that need more financial clarity.",
       },
-      testing: {
-        q: "How will you handle SAT / ACT?",
-        why: "Test‑optional vs submitting scores changes school mixes and what gets verified first.",
-        fbOpt: "Understood—without scores, rigor, narrative, and verifiable activity matter more.",
-        fbSubmit: "Great—we’ll read scores alongside coursework for consistency signals.",
-      },
-      scores: {
-        q: "If you’re submitting tests, add SAT and/or ACT (one is enough).",
-        why: "Score strength affects whether your “evidence chain” closes and where verification time pays off.",
-        fb: "Received—we’ll fold scores into reach realism and flag items to verify on official pages.",
-      },
     },
     s2: {
       screens: {
-        hs: {
-          title: "Step 2 — High school system",
-          context: "Your curriculum shapes how officers read rigor and course difficulty.",
-        },
         gpa: {
           title: "Step 2 — Academic record",
           context: "Verifiable signals matter more than a single GPA number alone.",
+        },
+        gpaTrend: {
+          title: "Step 2 — GPA trend",
+          context: "Upward or downward patterns change how officers read your transcript.",
+        },
+        testing: {
+          title: "Step 2 — Testing plan",
+          context: "Whether you submit scores changes school mix and what we verify first.",
+        },
+        scores: {
+          title: "Step 2 — Test scores",
+          context: "Enter one score so we can check your academic evidence chain.",
+        },
+        language: {
+          title: "Step 2 — Language scores",
+          context: "For international applicants, language tests are a common verification item.",
+        },
+        special: {
+          title: "Step 2 — Special circumstances",
+          context: "Optional. Note C grades, gap years, health issues, etc., for a fairer read.",
+        },
+        hs: {
+          title: "Step 2 — High school system",
+          context: "Your curriculum shapes how officers read rigor and course difficulty.",
         },
         major: {
           title: "Step 2 — Primary interest",
@@ -496,6 +541,37 @@ export const wizardEnNested = {
         q: "In a few sentences, describe grades and standing (GPA scale, rank, key courses).",
         why: "This is how officers judge rigor—richer than a single number for many contexts.",
         fb: "Great—we’ll translate this into verifiable signals and flag mismatches as risk.",
+      },
+      gpaTrend: {
+        q: "Overall, which best describes your GPA / grade trend?",
+        why: "Trend often matters as much as a single snapshot for how officers read your record.",
+        fbUpward: "Noted—an upward trend supports a stronger academic story if rigor stays aligned.",
+        fbStable: "Understood—steady performance reads as consistent; we’ll check rigor vs target schools.",
+        fbDownward: "Got it—with decline, we’ll be more conservative and note what context to add.",
+        fbMixed: "Received—we’ll highlight what’s provable vs what needs explanation.",
+        fbUnsure: "That’s fine—you can add detail later; we’ll flag uncertainty in information gaps.",
+      },
+      testing: {
+        q: "How will you handle SAT / ACT?",
+        why: "Test‑optional vs submitting scores changes school mixes and what gets verified first.",
+        fbOpt: "Understood—without scores, rigor, narrative, and verifiable activity matter more.",
+        fbSubmit: "Great—we’ll read scores alongside coursework for consistency signals.",
+      },
+      scores: {
+        q: "If you’re submitting tests, add SAT and/or ACT (one is enough).",
+        why: "Score strength affects whether your “evidence chain” closes and where verification time pays off.",
+        fb: "Received—we’ll fold scores into reach realism and flag items to verify on official pages.",
+      },
+      language: {
+        q: "What are your English language test scores? (TOEFL / IELTS / Duolingo, etc.)",
+        why: "For international applicants, language scores are often checked alongside academics.",
+        skip: "Not tested yet / no score, continue",
+      },
+      special: {
+        q: "Any special circumstances on your transcript or academic path to note?",
+        why: "e.g. C grades, a gap year, health issues—stating them early avoids misreads.",
+        notesLabel: "Additional notes (optional)",
+        skip: "Nothing to note, continue",
       },
       major: {
         q: "What’s your primary intended major or direction (broad or specific is fine)?",

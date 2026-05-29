@@ -9,7 +9,7 @@ import "./LandingPageReplica.css";
 import { LanguageToggle } from "../i18n/LanguageToggle";
 import { useLanguage } from "../i18n/LanguageContext";
 import { useAuthChrome } from "../auth/AuthChromeContext";
-import { useState, type ReactNode } from "react";
+import { useState, type MouseEvent, type ReactNode } from "react";
 import type { Locale } from "../i18n/strings";
 
 type Props = {
@@ -18,6 +18,7 @@ type Props = {
   onOpenBrandStory: () => void;
   onOpenAboutUs: () => void;
   onBookExpertConsult: () => void;
+  onOpenApplicationRoadmap: (e: MouseEvent<HTMLButtonElement>) => void;
 };
 
 function scrollToId(id: string) {
@@ -199,6 +200,7 @@ export function LandingPageReplica({
   onOpenBrandStory,
   onOpenAboutUs,
   onBookExpertConsult,
+  onOpenApplicationRoadmap,
 }: Props) {
   const { t, locale } = useLanguage();
   const { onOpenAccount } = useAuthChrome();
@@ -277,7 +279,7 @@ export function LandingPageReplica({
             <button type="button" className="whitespace-nowrap transition hover:text-neutral-950" onClick={() => scrollToId("landing-how-it-works")}>
               {tf("app.productIntroLink")}
             </button>
-            <button type="button" className="whitespace-nowrap transition hover:text-neutral-950" onClick={() => scrollToId("landing-sample-output")}>
+            <button type="button" className="whitespace-nowrap transition hover:text-neutral-950" onClick={onOpenApplicationRoadmap}>
               {tf("landingReplica.navSampleReport")}
             </button>
             <button type="button" className="whitespace-nowrap transition hover:text-neutral-950" onClick={() => scrollToId("landing-faq")}>
@@ -323,7 +325,7 @@ export function LandingPageReplica({
             <button type="button" onClick={() => scrollToId("landing-how-it-works")}>
               {tf("app.productIntroLink")}
             </button>
-            <button type="button" onClick={() => scrollToId("landing-sample-output")}>
+            <button type="button" onClick={onOpenApplicationRoadmap}>
               {tf("landingReplica.navSampleReport")}
             </button>
             <button type="button" onClick={() => scrollToId("landing-faq")}>

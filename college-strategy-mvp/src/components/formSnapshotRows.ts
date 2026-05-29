@@ -94,6 +94,25 @@ function labelRisk(form: FormState, t: Translate): string {
   return t(m[form.riskStyle] ?? "");
 }
 
+function labelGpaTrend(form: FormState, t: Translate): string {
+  if (!form.gpaTrend) return "";
+  const m: Record<string, string> = {
+    upward: "form.opt.gpaTrendUpward",
+    stable: "form.opt.gpaTrendStable",
+    downward: "form.opt.gpaTrendDownward",
+    mixed: "form.opt.gpaTrendMixed",
+    unsure: "form.opt.gpaTrendUnsure",
+  };
+  return t(m[form.gpaTrend] ?? "");
+}
+
+function specialDisplay(form: FormState, t: Translate): string | null {
+  const parts = form.academicSpecialFlags.map((flag) => t(`form.opt.special.${flag}`));
+  const notes = form.academicSpecialNotes.trim();
+  if (notes) parts.push(notes.length > 40 ? `${notes.slice(0, 40)}…` : notes);
+  return parts.length ? parts.join(" · ") : null;
+}
+
 function scoreDisplay(form: FormState): string | null {
   const bits: string[] = [];
   if (form.satScore.trim()) bits.push(`SAT ${form.satScore.trim()}`);
@@ -133,6 +152,7 @@ function defsForSection(section: 1 | 2 | 3, form: FormState): RowDef[] {
   return ROW_DEFS.filter((def) => {
     if (def.section !== section) return false;
     if (def.id === "scores" && form.testing !== "will_submit") return false;
+    if (def.id === "language" && form.applicantIdentity !== "intl") return false;
     return true;
   });
 }
@@ -237,23 +257,58 @@ const ROW_DEFS: RowDef[] = [
     value: (f, t) => labelBudget(f, t) || null,
   },
   {
+    id: "gpa",
+    section: 2,
+    labelKey: "wizard.summary.row.gpa",
+    hintKey: "wizard.summary.hint.gpa",
+    filled: (f) => Boolean(f.gpa.trim()),
+    value: (f) => f.gpa.trim() || null,
+  },
+  {
+    id: "gpaTrend",
+    section: 2,
+    labelKey: "wizard.summary.row.gpaTrend",
+    hintKey: "wizard.summary.hint.gpaTrend",
+    filled: (f) => Boolean(f.gpaTrend),
+    value: (f, t) => labelGpaTrend(f, t) || null,
+  },
+  {
     id: "testing",
-    section: 1,
+    section: 2,
     labelKey: "wizard.summary.row.testing",
     hintKey: "wizard.summary.hint.testing",
-    step1Screen: "testing",
     filled: (f) => Boolean(f.testing),
     value: (f, t) => labelTesting(f, t) || null,
   },
   {
     id: "scores",
-    section: 1,
+    section: 2,
     labelKey: "wizard.summary.row.scores",
     hintKey: "wizard.summary.hint.scores",
-    step1Screen: "scores",
     filled: (f) => Boolean(scoreDisplay(f)),
     value: (f) => scoreDisplay(f),
     statusWhenEmpty: (f) => (f.testing === "test_optional" ? "na" : "pending"),
+  },
+  {
+    id: "language",
+    section: 2,
+    labelKey: "wizard.summary.row.language",
+    hintKey: "wizard.summary.hint.language",
+    optional: true,
+    filled: (f) => Boolean(f.languageScores.trim()),
+    value: (f) => f.languageScores.trim() || null,
+    statusWhenEmpty: () => "optional",
+  },
+  {
+    id: "special",
+    section: 2,
+    labelKey: "wizard.summary.row.special",
+    hintKey: "wizard.summary.hint.special",
+    optional: true,
+    filled: (f) =>
+      f.academicSpecialFlags.length > 0 || Boolean(f.academicSpecialNotes.trim()),
+    value: (f, t) => specialDisplay(f, t),
+    statusWhenEmpty: () => "optional",
   },
   {
     id: "hs",
@@ -262,14 +317,6 @@ const ROW_DEFS: RowDef[] = [
     hintKey: "wizard.summary.hint.hs",
     filled: (f) => Boolean(f.highSchoolSystem),
     value: (f, t) => labelHs(f, t) || null,
-  },
-  {
-    id: "gpa",
-    section: 2,
-    labelKey: "wizard.summary.row.gpa",
-    hintKey: "wizard.summary.hint.gpa",
-    filled: (f) => Boolean(f.gpa.trim()),
-    value: (f) => f.gpa.trim() || null,
   },
   {
     id: "major",
@@ -354,7 +401,20 @@ const ROW_DEFS: RowDef[] = [
   },
 ];
 
-const STEP2_SCREEN_IDS = new Set<Step2ScreenId>(["hs", "gpa", "major", "major2", "size", "culture", "geo"]);
+const STEP2_SCREEN_IDS = new Set<Step2ScreenId>([
+  "gpa",
+  "gpaTrend",
+  "testing",
+  "scores",
+  "language",
+  "special",
+  "hs",
+  "major",
+  "major2",
+  "size",
+  "culture",
+  "geo",
+]);
 const STEP3_SCREEN_IDS = new Set<Step3ScreenId>(["activities", "risk", "deal"]);
 
 export function buildSnapshotRows(

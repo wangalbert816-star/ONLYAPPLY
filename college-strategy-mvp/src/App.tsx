@@ -63,6 +63,10 @@ const initialForm: FormState = {
   actScore: "",
   highSchoolSystem: "",
   gpa: "",
+  gpaTrend: "",
+  languageScores: "",
+  academicSpecialFlags: [],
+  academicSpecialNotes: "",
   majorPrimary: "",
   majorSecondary: "",
   schoolSize: "",
@@ -154,16 +158,17 @@ function validateStep(step: number, f: FormState, tr: (path: string) => string):
     if (!getEffectiveIntake(f).trim()) return tr("validation.intake");
     if (!f.applicantIdentity) return tr("validation.identity");
     if (!f.budget) return tr("validation.budget");
+  }
+  if (step === 2) {
+    if (!f.gpa.trim()) return tr("validation.gpa");
+    if (!f.gpaTrend) return tr("validation.gpaTrend");
     if (!f.testing) return tr("validation.testing");
     if (f.testing === "will_submit") {
       const hasSat = f.satScore.trim().length > 0;
       const hasAct = f.actScore.trim().length > 0;
       if (!hasSat && !hasAct) return tr("validation.testScore");
     }
-  }
-  if (step === 2) {
     if (!f.highSchoolSystem) return tr("validation.hs");
-    if (!f.gpa.trim()) return tr("validation.gpa");
     if (!f.majorPrimary.trim()) return tr("validation.major");
     if (!f.schoolSize) return tr("validation.schoolSize");
     if (!f.campusCulturePref) return tr("validation.campusCulture");
@@ -570,7 +575,13 @@ export default function App() {
     if (readPendingSave()) return;
     const draft = readFormDraft();
     if (!draft) return;
-    setForm(draft.form);
+    setForm({
+      ...initialForm,
+      ...draft.form,
+      geoPrefs: draft.form.geoPrefs ?? [],
+      academicSpecialFlags: draft.form.academicSpecialFlags ?? [],
+      structuredActivities: draft.form.structuredActivities ?? [],
+    });
     setStep(draft.step);
   }, []);
 
@@ -868,7 +879,7 @@ export default function App() {
   }
 
   const step1Screens = useMemo(() => getStep1Screens(form), [form]);
-  const step2Screens = useMemo(() => getStep2Screens(), []);
+  const step2Screens = useMemo(() => getStep2Screens(form), [form]);
   const step3Screens = useMemo(() => getStep3Screens(), []);
 
   const step1ScreenSafe = Math.min(step1Screen, Math.max(0, step1Screens.length - 1));
@@ -973,7 +984,7 @@ export default function App() {
       setStep1Screen(Math.max(0, getStep1Screens(form).length - 1));
     }
     if (step === 3) {
-      setStep2Screen(Math.max(0, getStep2Screens().length - 1));
+      setStep2Screen(Math.max(0, getStep2Screens(form).length - 1));
     }
     setStep((s) => Math.max(1, s - 1));
     scrollFlowTop();
@@ -1260,6 +1271,7 @@ export default function App() {
               onFallback: () => setExpertConsultModalOpen(true),
             })
           }
+          onOpenApplicationRoadmap={openApplicationHub}
         />
         <FullscreenLogoMarquee
           open={applicationHubOpen}

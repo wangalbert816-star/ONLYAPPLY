@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { ActivityItem, FormState, GeoPref } from "../types";
+import type { ActivityItem, AcademicSpecialFlag, FormState, GeoPref } from "../types";
 import type { Translate } from "../i18n/LanguageContext";
 
 export const MAJOR_PRESET_KEYS = ["cs", "business", "engineering", "bio", "social", "arts", "policy", "undecided"] as const;
@@ -46,6 +46,26 @@ export function toggleGeo(prefs: GeoPref[], g: GeoPref): GeoPref[] {
   const withoutAny = prefs.filter((x) => x !== "any");
   if (withoutAny.includes(g)) return withoutAny.filter((x) => x !== g);
   return [...withoutAny, g];
+}
+
+export function toggleAcademicSpecialFlag(
+  flags: AcademicSpecialFlag[],
+  flag: AcademicSpecialFlag,
+): AcademicSpecialFlag[] {
+  if (flags.includes(flag)) return flags.filter((f) => f !== flag);
+  return [...flags, flag];
+}
+
+export function gpaTrendFeedback(form: FormState, t: Translate): string | null {
+  const map: Record<string, string> = {
+    upward: "wizard.s2.gpaTrend.fbUpward",
+    stable: "wizard.s2.gpaTrend.fbStable",
+    downward: "wizard.s2.gpaTrend.fbDownward",
+    mixed: "wizard.s2.gpaTrend.fbMixed",
+    unsure: "wizard.s2.gpaTrend.fbUnsure",
+  };
+  if (!form.gpaTrend) return null;
+  return t(map[form.gpaTrend] ?? "wizard.s2.gpaTrend.fbUnsure");
 }
 
 export function guidedFormCompletionPercent(

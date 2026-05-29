@@ -20,6 +20,7 @@ const LINK_DESC_KEY: Record<ApplicationLinkId, string> = {
   toefl: "appLinks.descToefl",
   usNews: "appLinks.descUsNews",
   qs: "appLinks.descQs",
+  wsj: "appLinks.descWsj",
   niche: "appLinks.descNiche",
   collegeNavigator: "appLinks.descCollegeNavigator",
   commonAppEssayPrompts: "appLinks.descCommonAppEssayPrompts",

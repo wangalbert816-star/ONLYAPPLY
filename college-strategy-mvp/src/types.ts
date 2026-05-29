@@ -1,6 +1,8 @@
 export type ApplicantIdentity = "intl" | "us_citizen" | "other";
 export type Budget = "full_pay" | "high_budget" | "budget_cap" | "need_aid" | "unsure";
 export type Testing = "test_optional" | "will_submit";
+export type GpaTrend = "upward" | "stable" | "downward" | "mixed" | "unsure";
+export type AcademicSpecialFlag = "low_grades" | "gap_year" | "health";
 export type SchoolSize = "small" | "medium" | "large" | "any";
 /** 校园社区气质偏好：学术 / 平衡 / 社交派对活跃 / 无强烈偏好 */
 export type CampusCulturePref = "academic" | "balanced" | "social" | "any";
@@ -57,6 +59,10 @@ export interface FormState {
   actScore: string;
   highSchoolSystem: string;
   gpa: string;
+  gpaTrend: GpaTrend | "";
+  languageScores: string;
+  academicSpecialFlags: AcademicSpecialFlag[];
+  academicSpecialNotes: string;
   majorPrimary: string;
   majorSecondary: string;
   schoolSize: SchoolSize | "";

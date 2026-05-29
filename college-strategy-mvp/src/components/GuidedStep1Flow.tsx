@@ -3,14 +3,12 @@ import type { FormState } from "../types";
 import type { Translate } from "../i18n/LanguageContext";
 import { getEffectiveIntake, INTAKE_OTHER_VALUE, INTAKE_PRESETS } from "../lib/intakeTerm";
 
-export type Step1ScreenId = "intake" | "identity" | "environment" | "budget" | "testing" | "scores";
+export type Step1ScreenId = "intake" | "identity" | "environment" | "budget";
 
 type Updater = <K extends keyof FormState>(key: K, value: FormState[K]) => void;
 
-export function getStep1Screens(form: FormState): Step1ScreenId[] {
-  const screens: Step1ScreenId[] = ["intake", "identity", "environment", "budget", "testing"];
-  if (form.testing === "will_submit") screens.push("scores");
-  return screens;
+export function getStep1Screens(_form: FormState): Step1ScreenId[] {
+  return ["intake", "identity", "environment", "budget"];
 }
 
 export function validateStep1Screen(screen: Step1ScreenId, f: FormState, tr: (path: string) => string): string | null {
@@ -26,16 +24,6 @@ export function validateStep1Screen(screen: Step1ScreenId, f: FormState, tr: (pa
     case "budget":
       if (!f.budget) return tr("validation.budget");
       return null;
-    case "testing":
-      if (!f.testing) return tr("validation.testing");
-      return null;
-    case "scores": {
-      if (f.testing !== "will_submit") return null;
-      const hasSat = f.satScore.trim().length > 0;
-      const hasAct = f.actScore.trim().length > 0;
-      if (!hasSat && !hasAct) return tr("validation.testScore");
-      return null;
-    }
     default:
       return null;
   }
@@ -210,68 +198,6 @@ export function GuidedStep1Flow({
             <option value="need_aid">{t("form.opt.budgetAid")}</option>
             <option value="unsure">{t("form.opt.budgetUnsure")}</option>
           </select>
-        </ScreenShell>
-      );
-
-    case "testing":
-      return (
-        <ScreenShell screenId="testing" t={t}>
-          <h2 className="guided-screen__question" id="gq-s1-test">
-            {t("wizard.s1.testing.q")}
-          </h2>
-          <ContextLine screenId="testing" t={t} />
-          <select
-            className="select-modern select-modern--action"
-            aria-labelledby="gq-s1-test"
-            value={form.testing}
-            onChange={(e) => update("testing", e.target.value as FormState["testing"])}
-          >
-            <option value="">{t("form.opt.choose")}</option>
-            <option value="test_optional">{t("form.opt.testOpt")}</option>
-            <option value="will_submit">{t("form.opt.testSubmit")}</option>
-          </select>
-        </ScreenShell>
-      );
-
-    case "scores":
-      return (
-        <ScreenShell screenId="scores" t={t}>
-          <h2 className="guided-screen__question" id="gq-s1-scores">
-            {t("wizard.s1.scores.q")}
-          </h2>
-          <ContextLine screenId="scores" t={t} />
-          <div className="guided-screen__field-stack guided-screen__field-stack--pair">
-            <div>
-              <label className="field-sub-label" htmlFor="sat">
-                {t("form.sat")}
-              </label>
-              <input
-                id="sat"
-                className="input-modern input-modern--action"
-                type="text"
-                inputMode="numeric"
-                autoComplete="off"
-                placeholder={t("form.placeholder.sat")}
-                value={form.satScore}
-                onChange={(e) => update("satScore", e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="field-sub-label" htmlFor="act">
-                {t("form.act")}
-              </label>
-              <input
-                id="act"
-                className="input-modern input-modern--action"
-                type="text"
-                inputMode="numeric"
-                autoComplete="off"
-                placeholder={t("form.placeholder.act")}
-                value={form.actScore}
-                onChange={(e) => update("actScore", e.target.value)}
-              />
-            </div>
-          </div>
         </ScreenShell>
       );
 

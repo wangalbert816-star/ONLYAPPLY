@@ -1189,6 +1189,14 @@ function campusCultureAnalysisHint(pref, locale) {
     : "用户要学业与社交平衡——同档校须同时比较课业强度与社交生活。";
 }
 
+function formatAcademicSpecialLine(body) {
+  const flags = Array.isArray(body?.academicSpecialFlags) ? body.academicSpecialFlags.filter(Boolean) : [];
+  const notes = String(body?.academicSpecialNotes || "").trim();
+  const parts = [...flags];
+  if (notes) parts.push(notes);
+  return parts.join("; ");
+}
+
 function buildUserPayload(body, includeUc = false) {
   const locale = resolveReportLocale(body);
   const isEn = locale === "en";
@@ -1211,6 +1219,8 @@ function buildUserPayload(body, includeUc = false) {
     actScore,
     highSchoolSystem,
     gpa,
+    gpaTrend,
+    languageScores,
     majorPrimary,
     majorSecondary,
     schoolSize,
@@ -1221,6 +1231,7 @@ function buildUserPayload(body, includeUc = false) {
     riskStyle,
     dealbreakers,
   } = body || {};
+  const academicSpecialLine = formatAcademicSpecialLine(body);
 
   const supplementary = normalizeSupplementaryNotes(body?.supplementary_notes);
   const competitionDensity = inferCompetitionDensity({
@@ -1264,6 +1275,9 @@ ${planHorizonLine}
 
 [High school system] ${highSchoolSystem || na}
 [GPA / transcript notes] ${gpa || na}
+[GPA trend] ${gpaTrend || na}
+[Language scores] ${languageScores || na}
+[Transcript special circumstances] ${academicSpecialLine || na}
 [Primary major] ${majorPrimary || na}
 [Alternate major] ${majorSecondary || none}
 [Campus size preference] ${schoolSize || na}
@@ -1296,6 +1310,9 @@ ${planHorizonLine}
 
 【高中体系】${highSchoolSystem || "未填"}
 【GPA/成绩说明】${gpa || "未填"}
+【GPA 趋势】${gpaTrend || "未填"}
+【语言成绩】${languageScores || "未填"}
+【学业特殊情况】${academicSpecialLine || "无"}
 【主申专业】${majorPrimary || "未填"}
 【备选专业】${majorSecondary || "无"}
 【校园规模偏好】${schoolSize || "未填"}

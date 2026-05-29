@@ -183,6 +183,15 @@ export function buildImprovementPersonalizationHints(body, locale) {
   push(isEn ? "- Primary major: " : "- 主申专业：", body.majorPrimary);
   push(isEn ? "- Alternate major: " : "- 备选专业：", body.majorSecondary);
   push(isEn ? "- GPA / transcript: " : "- GPA/成绩：", body.gpa);
+  push(isEn ? "- GPA trend: " : "- GPA 趋势：", body.gpaTrend);
+  push(isEn ? "- Language scores: " : "- 语言成绩：", body.languageScores);
+  {
+    const flags = Array.isArray(body?.academicSpecialFlags) ? body.academicSpecialFlags.filter(Boolean) : [];
+    const notes = String(body?.academicSpecialNotes || "").trim();
+    const specialParts = [...flags];
+    if (notes) specialParts.push(notes);
+    push(isEn ? "- Transcript special notes: " : "- 学业特殊情况：", specialParts.join("; "));
+  }
   push(isEn ? "- Testing strategy: " : "- 标化策略：", body.testing);
   if (body.testing === "will_submit") {
     push("SAT: ", body.satScore);
