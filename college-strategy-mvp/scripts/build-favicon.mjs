@@ -1,6 +1,6 @@
 /**
  * Generate favicon assets from public/onlyapply-favicon-source.png
- * Trim → square → safe inset → fixed-size PNG/ICO (Chrome tab + Google circle crop).
+ * Ink-centroid centering → square canvas → fixed-size PNG/ICO.
  * Usage: npm run build:favicon
  */
 import fs from "node:fs/promises";
@@ -13,41 +13,83 @@ const root = path.resolve(__dirname, "../public");
 const src = path.join(root, "onlyapply-favicon-source.png");
 const bg = { r: 255, g: 255, b: 255, alpha: 1 };
 
-/** Inset after trim so logo survives Google's circular favicon mask */
-const CIRCLE_SAFE_INSET = 0.07;
+/** Padding around centered logo (Google circle crop + tab legibility) */
+const CANVAS_INSET = 0.08;
+
+function isInk(r, g, b, a) {
+  return a > 20 && (r < 245 || g < 245 || b < 245);
+}
+
+async function analyzeInk(image) {
+  const { data, info } = await image.clone().raw().ensureAlpha().toBuffer({ resolveWithObject: true });
+  let minX = info.width;
+  let minY = info.height;
+  let maxX = 0;
+  let maxY = 0;
+  let sumX = 0;
+  let sumY = 0;
+  let n = 0;
+
+  for (let y = 0; y < info.height; y++) {
+    for (let x = 0; x < info.width; x++) {
+      const i = (y * info.width + x) * 4;
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const a = data[i + 3];
+      if (!isInk(r, g, b, a)) continue;
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
+      sumX += x;
+      sumY += y;
+      n += 1;
+    }
+  }
+
+  if (n === 0) throw new Error("No logo ink found in favicon source");
+
+  return {
+    minX,
+    minY,
+    maxX,
+    maxY,
+    cx: sumX / n,
+    cy: sumY / n,
+    width: info.width,
+    height: info.height,
+  };
+}
 
 async function preparedLogoBuffer() {
-  const trimmed = await sharp(src).trim({ threshold: 14 }).png().toBuffer();
-  const meta = await sharp(trimmed).metadata();
-  const w = meta.width ?? 0;
-  const h = meta.height ?? 0;
-  const side = Math.max(w, h);
+  const base = sharp(src);
+  const ink = await analyzeInk(base);
+  const cropW = ink.maxX - ink.minX + 1;
+  const cropH = ink.maxY - ink.minY + 1;
 
-  const padTop = Math.floor((side - h) / 2);
-  const padBottom = side - h - padTop;
-  const padLeft = Math.floor((side - w) / 2);
-  const padRight = side - w - padLeft;
-
-  const squared = await sharp(trimmed)
-    .extend({
-      top: padTop,
-      bottom: padBottom,
-      left: padLeft,
-      right: padRight,
-      background: bg,
-    })
+  const cropped = await base
+    .extract({ left: ink.minX, top: ink.minY, width: cropW, height: cropH })
     .png()
     .toBuffer();
 
-  const inset = Math.max(8, Math.round(side * CIRCLE_SAFE_INSET));
-  return sharp(squared)
-    .extend({
-      top: inset,
-      bottom: inset,
-      left: inset,
-      right: inset,
+  const cxInCrop = ink.cx - ink.minX;
+  const cyInCrop = ink.cy - ink.minY;
+  const contentSide = Math.max(cropW, cropH);
+  const side = Math.round(contentSide * (1 + CANVAS_INSET * 2));
+
+  const left = Math.round(side / 2 - cxInCrop);
+  const top = Math.round(side / 2 - cyInCrop);
+
+  return sharp({
+    create: {
+      width: side,
+      height: side,
+      channels: 4,
       background: bg,
-    })
+    },
+  })
+    .composite([{ input: cropped, left, top }])
     .png()
     .toBuffer();
 }
