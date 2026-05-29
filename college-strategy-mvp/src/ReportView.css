@@ -975,11 +975,42 @@
 }
 
 /* —— 阅读路径（决策顺序） */
+.report-main-layout__content {
+  padding-bottom: 0.5rem;
+}
+
 .report-path {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  margin-bottom: 0.5rem;
+  gap: 1.15rem;
+  margin-bottom: 0.75rem;
+}
+
+/* 报告 step 外层：恢复卡片边界（全局 .card 已去掉描边/阴影） */
+.report-view .report-path-step.card,
+.report-view .report-section-nav.card,
+.report-view .report-path-appendix > .card.report-block,
+.report-view .report-path-appendix .report-path-appendix__card {
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 5px 16px rgba(15, 23, 42, 0.035);
+}
+
+.report-path > .report-path-step.card {
+  margin-bottom: 0;
+  padding: 1.2rem 1.3rem 1.35rem;
+}
+
+/* step 内嵌子卡片：内层 panel，避免与外层重复「大卡片」 */
+.report-view .report-path-step.card .report-path-step__body > .card,
+.report-view .report-path-step.card .report-path-step__body > .expert-consult.card {
+  border: 1px solid #e8ecf1;
+  background: #f8fafc;
+  box-shadow: none;
+  margin-bottom: 0;
+  padding: 1rem 1.1rem;
 }
 
 .report-path-step__head {
@@ -1245,17 +1276,64 @@
 .report-optimize-cta {
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.5rem;
   align-items: stretch;
   margin: 0.15rem 0 0;
-  max-width: 420px;
+  max-width: 440px;
   margin-left: auto;
   margin-right: auto;
 }
 
 .report-optimize-cta__primary,
+.report-optimize-cta__advisor,
 .report-optimize-cta__secondary {
   width: 100%;
+}
+
+.report-optimize-cta__primary,
+.report-optimize-cta__advisor {
+  padding: 0.62rem 1rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.35;
+  border-radius: 10px;
+  border: 1px solid #006644;
+  background: #006644;
+  color: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.report-optimize-cta__primary:hover,
+.report-optimize-cta__advisor:hover {
+  border-color: #004d33;
+  background: #004d33;
+  color: #fff;
+}
+
+.report-optimize-cta__primary:focus-visible,
+.report-optimize-cta__advisor:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.report-optimize-cta__secondary {
+  margin-top: 0.15rem;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.4;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.report-optimize-cta__secondary:hover {
+  color: #334155;
+  background: transparent;
 }
 
 .report-exec-digest {
@@ -1464,12 +1542,22 @@
 @media (prefers-color-scheme: dark) {
   .report-view .card,
   .report-view .report-block,
+  .report-view .report-path-step.card,
+  .report-view .report-section-nav.card,
   .report-view .report-path-step__panel,
+  .report-view .report-path-appendix > .card.report-block,
+  .report-view .report-path-appendix .report-path-appendix__card,
   .report-block--strategy-decision {
     background: #101827;
     border-color: #273449;
     color: #e5e7eb;
     box-shadow: none;
+  }
+
+  .report-view .report-path-step.card .report-path-step__body > .card,
+  .report-view .report-path-step.card .report-path-step__body > .expert-consult.card {
+    background: #151e2f;
+    border-color: #334155;
   }
 
   .report-path-step__head {

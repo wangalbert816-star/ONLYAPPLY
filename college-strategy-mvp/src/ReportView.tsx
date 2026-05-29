@@ -327,6 +327,7 @@ export function ReportView({
       { id: "report-step-verdict", label: t("report.decision.step1Title") },
       { id: "report-step-schools", label: t("report.decision.step4Title") },
       { id: "report-step-action", label: t("report.decision.step5Title") },
+      { id: "report-advisor-support", label: t("report.expertConsult.navLabel") },
       { id: "report-appendix-improve", label: t("report.improveTitle") },
     ],
     [t],
@@ -535,6 +536,12 @@ export function ReportView({
       <div className="report-path" aria-label={t("report.decision.pathAria")}>
         <ReportPathStep step={1} id="report-step-verdict" title={t("report.decision.step1Title")} lead={t("report.decision.step1Lead")}>
           <DecisionVerdictCard verdict={verdict} t={t} />
+          <ExpertConsultSection
+            variant="compact"
+            gapCount={safeReport.information_gaps?.length ?? 0}
+            applicationId={applicationId}
+            reportId={reportId}
+          />
         </ReportPathStep>
 
         <ReportPathStep step={2} id="report-step-gap" title={t("report.decision.step2Title")} lead={t("report.decision.step2Lead")}>
@@ -614,6 +621,7 @@ export function ReportView({
               <ReportOptimizeCtaBar t={t} />
             </>
           ) : (
+            <>
             <section className="card report-block report-path-step__panel preview-gaps-card" id="report-section-gaps">
               <p className="paywall-eyebrow">{t("report.previewGapsEyebrow")}</p>
               <h2>{t("report.previewGapsTitle", { n: safeReport.information_gaps?.length ?? 0 })}</h2>
@@ -633,6 +641,8 @@ export function ReportView({
                 </p>
               )}
             </section>
+            <ReportOptimizeCtaBar t={t} />
+            </>
           )}
         </ReportPathStep>
       </div>
@@ -658,7 +668,12 @@ export function ReportView({
           </section>
         )}
 
-        <ExpertConsultSection gapCount={safeReport.information_gaps?.length ?? 0} applicationId={applicationId} reportId={reportId} />
+        <ExpertConsultSection
+          id="report-advisor-support"
+          gapCount={safeReport.information_gaps?.length ?? 0}
+          applicationId={applicationId}
+          reportId={reportId}
+        />
 
       <ReportCollapsibleSection
         id="report-appendix-risks"

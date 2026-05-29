@@ -3,6 +3,28 @@
   border-color: #e8ecf1;
 }
 
+.expert-consult--full {
+  border-color: rgba(0, 102, 68, 0.18);
+  background: linear-gradient(145deg, rgba(0, 102, 68, 0.045) 0%, #fafbfc 42%, #fff 100%);
+}
+
+.expert-consult__kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #006644;
+}
+
+.expert-consult__headline {
+  margin: 0 0 0.55rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #0f172a;
+}
+
 .expert-consult__title {
   margin: 0 0 0.5rem;
   font-size: 0.72rem;
@@ -20,8 +42,61 @@
   color: #334155;
 }
 
+.expert-consult__benefits {
+  margin: 0 0 0.75rem;
+  padding: 0 0 0 1.1rem;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: #334155;
+}
+
+.expert-consult__benefits li + li {
+  margin-top: 0.35rem;
+}
+
 .expert-consult__guide {
   margin-bottom: 0.85rem;
+  color: #475569;
+}
+
+.expert-consult--compact {
+  margin-top: 0.85rem;
+  border-color: rgba(0, 102, 68, 0.14);
+  background: linear-gradient(135deg, rgba(0, 102, 68, 0.035), #fff);
+}
+
+.expert-consult__compact-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .expert-consult__compact-inner {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+}
+
+.expert-consult__compact-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.expert-consult__compact-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #0f172a;
+}
+
+.expert-consult__compact-lead {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.55;
   color: #475569;
 }
 
@@ -39,16 +114,28 @@
   font-size: 0.85rem;
   font-weight: 600;
   border-radius: 8px;
-  border: 1px solid #0f172a;
-  background: #0f172a;
+  border: 1px solid #006644;
+  background: #006644;
   color: #fff;
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.expert-consult__cta--compact {
+  max-width: none;
+}
+
+@media (min-width: 640px) {
+  .expert-consult__cta--compact {
+    width: auto;
+    min-width: 11.5rem;
+  }
 }
 
 .expert-consult__cta:hover {
-  border-color: #000;
-  background: #000;
+  border-color: #004d33;
+  background: #004d33;
   color: #fff;
 }
 
@@ -174,6 +261,17 @@
     color: var(--color-fg, #e5e7eb);
   }
 
+  .expert-consult--full,
+  .expert-consult--compact {
+    background: var(--color-surface, #111827);
+  }
+
+  .expert-consult__kicker {
+    color: #6ee7b7;
+  }
+
+  .expert-consult__headline,
+  .expert-consult__compact-title,
   .expert-consult__title,
   .expert-consult-modal__title {
     color: var(--color-fg, #e5e7eb);
@@ -181,6 +279,8 @@
 
   .expert-consult__risk,
   .expert-consult__guide,
+  .expert-consult__benefits,
+  .expert-consult__compact-lead,
   .expert-consult-modal__lead,
   .expert-consult-modal__optional {
     color: var(--color-muted, #9ca3af);

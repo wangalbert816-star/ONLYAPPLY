@@ -719,6 +719,15 @@ merge(zhFlat, {
     },
     expertConsult: {
       sectionLabel: "顾问支持",
+      navLabel: "顾问支持",
+      headlineTitle: "需要人帮你看懂这份报告？",
+      compactTitle: "想和顾问在同一份报告上对齐？",
+      compactLead:
+        "读完上面的结论后，可预约免费 30 分钟 1v1：在同一份冲/稳/保结果上，一起梳理下一步与家庭决策。",
+      benefit1: "基于你这份报告，定向解读冲 / 稳 / 保是否合理",
+      benefit2: "梳理活动主线、文书方向与补信息优先级",
+      benefit3: "OnlyApply 官方跟进，不向外部机构转售你的档案",
+      ctaNav: "与顾问对齐这份报告",
       riskWithGaps:
         "本份报告仍标有 {n} 条信息缺口：选校档位与风险提示所依据的约束可能不完整。轮次、国际生政策、奖助与费用等，仍须以各校官网为准核对。",
       riskNoGaps:
@@ -1664,6 +1673,15 @@ merge(enFlat, {
     },
     expertConsult: {
       sectionLabel: "Advisor support",
+      navLabel: "Advisor support",
+      headlineTitle: "Want a human read on this report?",
+      compactTitle: "Align next steps with an advisor?",
+      compactLead:
+        "After the read above, book a free 30‑min 1:1 to walk through the same Reach / Match / Safety output and family decisions.",
+      benefit1: "Focused read on whether your tiers make sense for you",
+      benefit2: "Clarify activity spine, essay direction, and what to fill in first",
+      benefit3: "OnlyApply staff follow-up—we don’t resell your profile externally",
+      ctaNav: "Talk through this report with an advisor",
       riskWithGaps:
         "This report still lists {n} information gaps—so tiering and risk notes may rest on incomplete constraints. Deadlines, int’l policies, aid, and costs must still be verified on each school’s official site.",
       riskNoGaps:
