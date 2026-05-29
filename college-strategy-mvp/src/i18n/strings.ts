@@ -28,6 +28,8 @@ merge(zhFlat, {
       previewAria: "选校报告样例预览",
       previewTabsAria: "报告预览栏目",
       previewGapsLead: "系统会标出还缺哪些关键信息，避免名单建立在猜测上。",
+      previewFiveLead:
+        "五维图展示你在五个关键维度上的相对强弱，帮你看清优势、缺口，以及申请前该优先改进什么。",
       previewActionLabel: "本周建议",
       previewSampleNote: "GPA 口径：加权 4.0；SAT 首考计划 5 月",
       previewReanalyzeDone: "已根据补充重新分析",
@@ -959,6 +961,8 @@ merge(enFlat, {
       previewAria: "Sample school strategy preview",
       previewTabsAria: "Report preview sections",
       previewGapsLead: "The system flags what’s still missing so your list isn’t built on guesses.",
+      previewFiveLead:
+        "The five dimensions show how your profile compares across 5 key categories, helping you identify what’s strong, what’s missing, and what to improve.",
       previewActionLabel: "This week",
       previewSampleNote: "GPA scale: 4.0 weighted; SAT planned for May",
       previewReanalyzeDone: "Re-analyzed with your notes",

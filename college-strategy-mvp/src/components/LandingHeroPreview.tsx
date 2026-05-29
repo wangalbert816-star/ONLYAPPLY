@@ -135,10 +135,6 @@ function FiveSlide({
   isActive: boolean;
   motionOk: boolean;
 }) {
-  const spotlight = useMemo(() => {
-    return dimensions.reduce((min, item) => (item.score < min.score ? item : min), dimensions[0]);
-  }, [dimensions]);
-
   const [animKey, setAnimKey] = useState(0);
   const wasActive = useRef(false);
   useEffect(() => {
@@ -154,7 +150,7 @@ function FiveSlide({
       <div className="landing-hero-preview__radar-wrap">
         <MiniProfileRadar key={animKey} dimensions={dimensions} t={t} animate={isActive && motionOk} />
       </div>
-      <p className="landing-hero-preview__spotlight">{spotlight.judgment}</p>
+      <p className="landing-hero-preview__spotlight">{t("app.hero.previewFiveLead")}</p>
     </div>
   );
 }
