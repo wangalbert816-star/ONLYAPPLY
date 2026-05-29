@@ -1,6 +1,6 @@
 /**
  * Generate favicon assets from public/onlyapply-favicon-source.png
- * Square canvas, logo centered with safe padding for Google's circular crop.
+ * Trim → square → safe inset → fixed-size PNG/ICO (Chrome tab + Google circle crop).
  * Usage: npm run build:favicon
  */
 import fs from "node:fs/promises";
@@ -13,11 +13,12 @@ const root = path.resolve(__dirname, "../public");
 const src = path.join(root, "onlyapply-favicon-source.png");
 const bg = { r: 255, g: 255, b: 255, alpha: 1 };
 
-/** Extra inset so stacked logo stays legible when Google masks favicon as a circle */
-const CIRCLE_SAFE_INSET = 0.1;
+/** Inset after trim so logo survives Google's circular favicon mask */
+const CIRCLE_SAFE_INSET = 0.07;
 
-async function preparedLogo() {
-  const meta = await sharp(src).metadata();
+async function preparedLogoBuffer() {
+  const trimmed = await sharp(src).trim({ threshold: 14 }).png().toBuffer();
+  const meta = await sharp(trimmed).metadata();
   const w = meta.width ?? 0;
   const h = meta.height ?? 0;
   const side = Math.max(w, h);
@@ -27,7 +28,7 @@ async function preparedLogo() {
   const padLeft = Math.floor((side - w) / 2);
   const padRight = side - w - padLeft;
 
-  const squared = await sharp(src)
+  const squared = await sharp(trimmed)
     .extend({
       top: padTop,
       bottom: padBottom,
@@ -38,14 +39,22 @@ async function preparedLogo() {
     .png()
     .toBuffer();
 
-  const inset = Math.round(side * CIRCLE_SAFE_INSET);
-  return sharp(squared).extend({
-    top: inset,
-    bottom: inset,
-    left: inset,
-    right: inset,
-    background: bg,
-  });
+  const inset = Math.max(8, Math.round(side * CIRCLE_SAFE_INSET));
+  return sharp(squared)
+    .extend({
+      top: inset,
+      bottom: inset,
+      left: inset,
+      right: inset,
+      background: bg,
+    })
+    .png()
+    .toBuffer();
+}
+
+async function resizeSquare(size) {
+  const base = await preparedLogoBuffer();
+  return sharp(base).resize(size, size, { fit: "contain", background: bg }).png().toBuffer();
 }
 
 const sizes = [
@@ -57,32 +66,27 @@ const sizes = [
   ["favicon-512x512.png", 512],
 ];
 
-const logo = await preparedLogo();
-
 for (const [name, size] of sizes) {
-  await logo
-    .clone()
-    .resize(size, size, { fit: "contain", background: bg })
-    .png({ compressionLevel: 9 })
-    .toFile(path.join(root, name));
+  const buf = await resizeSquare(size);
+  await fs.writeFile(path.join(root, name), buf);
 }
 
-const png16 = await logo.clone().resize(16, 16, { fit: "contain", background: bg }).png().toBuffer();
-const png32 = await logo.clone().resize(32, 32, { fit: "contain", background: bg }).png().toBuffer();
-const png48 = await logo.clone().resize(48, 48, { fit: "contain", background: bg }).png().toBuffer();
+const png16 = await resizeSquare(16);
+const png32 = await resizeSquare(32);
+const png48 = await resizeSquare(48);
 
-function pngToIco(buffers) {
-  const count = buffers.length;
+function pngToIco(entries) {
+  const count = entries.length;
   const header = Buffer.alloc(6);
   header.writeUInt16LE(0, 0);
   header.writeUInt16LE(1, 2);
   header.writeUInt16LE(count, 4);
   let offset = 6 + count * 16;
   const parts = [header];
-  for (const buf of buffers) {
+  for (const { buf, size } of entries) {
     const entry = Buffer.alloc(16);
-    entry.writeUInt8(32, 0);
-    entry.writeUInt8(32, 1);
+    entry.writeUInt8(size >= 256 ? 0 : size, 0);
+    entry.writeUInt8(size >= 256 ? 0 : size, 1);
     entry.writeUInt8(0, 2);
     entry.writeUInt8(0, 3);
     entry.writeUInt16LE(1, 4);
@@ -92,8 +96,16 @@ function pngToIco(buffers) {
     parts.push(entry);
     offset += buf.length;
   }
-  return Buffer.concat([...parts, ...buffers]);
+  return Buffer.concat([...parts, ...entries.map((e) => e.buf)]);
 }
 
-await fs.writeFile(path.join(root, "favicon.ico"), pngToIco([png16, png32, png48]));
+await fs.writeFile(
+  path.join(root, "favicon.ico"),
+  pngToIco([
+    { buf: png16, size: 16 },
+    { buf: png32, size: 32 },
+    { buf: png48, size: 48 },
+  ]),
+);
+
 console.log("Wrote favicon assets to public/");
