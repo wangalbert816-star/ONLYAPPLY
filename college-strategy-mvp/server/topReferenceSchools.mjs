@@ -80,12 +80,25 @@ function isActivityThin(activities) {
   return t.split(/\n|；|;|•|·/).filter((x) => x.trim().length > 12).length < 2;
 }
 
+/** 问卷 Step 3 结构化活动也算作有效活动证据 */
+function isActivityThinFromBody(body) {
+  const structured = Array.isArray(body?.structuredActivities) ? body.structuredActivities : [];
+  const meaningful = structured.filter((item) => {
+    if (!item || typeof item !== "object") return false;
+    const name = String(item.name || "").trim();
+    const desc = String(item.description || "").trim();
+    return name.length > 0 && desc.length >= 20;
+  });
+  if (meaningful.length >= 1) return false;
+  return isActivityThin(body?.activities);
+}
+
 /** 是否允许输出 top_reference_schools（强背景或罕见证据） */
 export function allowsTopReferenceSchools(body) {
   const { unweighted, weighted } = parseGpaNumbers(body?.gpa);
   const uw = unweighted ?? weighted;
   const w = weighted ?? unweighted;
-  const thin = isActivityThin(body?.activities);
+  const thin = isActivityThinFromBody(body);
   const weakGpa = (uw != null && uw <= 3.35) || (w != null && w <= 3.55);
   const strongGpa = (uw != null && uw >= 3.75) || (w != null && w >= 4.0);
   const blob = [
@@ -204,6 +217,30 @@ function validateTopReferenceBlock(o, body) {
     }
   }
   return { ok: true };
+}
+
+const TOP_REF_STRIPPED_NOTE_ZH =
+  "顶级彩票校（如 MIT/Stanford/Harvard 等）在本方案中仅作方向参考，未列入主名单 reach/match/safety；请以可执行的冲稳保三档为主。";
+const TOP_REF_STRIPPED_NOTE_EN =
+  "Ultra-selective schools (e.g. MIT, Stanford, Harvard) are reference-only for this profile and are not listed in the main reach/match/safety tiers.";
+
+/**
+ * 模型误填 top_reference_schools 时服务端自动清空并写入 strategy_notes，避免整份报告 502。
+ */
+export function autoRepairTopReferenceSchools(parsed, body, locale = "zh") {
+  if (!parsed || typeof parsed !== "object") return parsed;
+  const o = /** @type {Record<string, unknown>} */ (parsed);
+  const raw = o.top_reference_schools;
+  if (!Array.isArray(raw) || raw.length === 0) return parsed;
+  if (allowsTopReferenceSchools(body)) return parsed;
+
+  o.top_reference_schools = [];
+  const note = locale === "en" ? TOP_REF_STRIPPED_NOTE_EN : TOP_REF_STRIPPED_NOTE_ZH;
+  const existing = String(o.strategy_notes || "").trim();
+  if (!existing.includes(note.slice(0, 24))) {
+    o.strategy_notes = existing ? `${existing}\n\n${note}` : note;
+  }
+  return parsed;
 }
 
 /** 主名单 + 顶校参考块校验 */

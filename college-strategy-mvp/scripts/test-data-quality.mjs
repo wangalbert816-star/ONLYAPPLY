@@ -24,6 +24,7 @@ import {
 } from "../server/tierDifferentiationSanitize.mjs";
 import {
   allowsTopReferenceSchools,
+  autoRepairTopReferenceSchools,
   buildValidationRepairMessage,
   isUltraSelectiveSchoolName,
   normalizeTopReferenceSchoolRows,
@@ -267,7 +268,19 @@ check("plan B: valid main nine + top_reference for strong profile", () => {
   if (!v.ok) throw new Error(v.reason);
 });
 
-check("plan B: weak profile rejects top_reference_schools", () => {
+check("plan B: weak profile auto-strips top_reference_schools", () => {
+  const report = baseNineSchoolReport({
+    top_reference_schools: [{ school: "MIT" }],
+    strategy_notes: "原有说明",
+  });
+  autoRepairTopReferenceSchools(report, weakBody, "zh");
+  const v = validateMainSchoolReport(report, weakBody);
+  if (!v.ok) throw new Error(v.reason);
+  if ((report.top_reference_schools?.length ?? 0) !== 0) throw new Error("expected empty top_reference");
+  if (!/顶级彩票校/.test(String(report.strategy_notes))) throw new Error("expected strategy note");
+});
+
+check("plan B: weak profile rejects top_reference_schools before repair", () => {
   const report = baseNineSchoolReport({
     top_reference_schools: [{ school: "MIT" }],
   });

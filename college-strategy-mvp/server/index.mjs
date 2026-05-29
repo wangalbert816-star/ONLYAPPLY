@@ -25,6 +25,7 @@ import {
 import { sanitizeReportTierDifferentiation } from "./tierDifferentiationSanitize.mjs";
 import { coerceStringArray } from "./coerceStringArray.mjs";
 import {
+  autoRepairTopReferenceSchools,
   buildValidationRepairMessage,
   normalizeTopReferenceSchoolRows,
   validateMainSchoolReport,
@@ -1357,6 +1358,7 @@ async function generateReportWithConfig(cfg, body) {
       messages,
     });
     totalMs += llmMs;
+    autoRepairTopReferenceSchools(parsed, body, locale);
     const validation = validateMainSchoolReport(parsed, body);
     if (validation.ok) return { parsed, llmMs: totalMs };
     if (attempt >= 1 || validation.repairable === false) {
