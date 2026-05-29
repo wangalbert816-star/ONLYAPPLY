@@ -434,6 +434,10 @@
   position: relative;
 }
 
+.report-view [id^="report-"] {
+  scroll-margin-top: calc(var(--app-top-chrome-h, 4.25rem) + 1rem);
+}
+
 .report-main-layout {
   width: 100%;
 }
@@ -965,7 +969,7 @@
 }
 
 .profile-five-commit-anchor {
-  scroll-margin-top: 5.5rem;
+  scroll-margin-top: calc(var(--app-top-chrome-h, 4.25rem) + 1rem);
   height: 0;
   overflow: hidden;
 }

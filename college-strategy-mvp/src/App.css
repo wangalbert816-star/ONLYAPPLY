@@ -1,4 +1,8 @@
 /* —— Shell —— */
+:root {
+  --app-top-chrome-h: clamp(3.85rem, 9vh, 4.85rem);
+}
+
 .app {
   position: relative;
   z-index: 1;
@@ -12,7 +16,7 @@
 .app.app--account {
   --account-pad-x: clamp(1rem, 3vw, 2rem);
   --account-shell-max: min(68rem, calc(100vw - 2 * var(--account-pad-x)));
-  --account-top-chrome: clamp(4.25rem, 9vh, 5.25rem);
+  --account-top-chrome: var(--app-top-chrome-h, clamp(4.25rem, 9vh, 5.25rem));
   box-sizing: border-box;
   width: 100%;
   max-width: var(--account-shell-max);
@@ -219,7 +223,12 @@
 }
 
 .app--flow {
-  padding-top: 4.75rem;
+  padding-top: calc(var(--app-top-chrome-h, 4.25rem) + 0.35rem);
+}
+
+.app.report-view,
+.app.app--intro {
+  padding-top: calc(var(--app-top-chrome-h, 4.25rem) + clamp(0.5rem, 1.5vh, 0.85rem));
 }
 
 .landing-sheet {
