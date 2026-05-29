@@ -500,7 +500,8 @@ export const wizardEnNested = {
         },
         special: {
           title: "Step 2 — Special circumstances",
-          context: "Optional. Note C grades, gap years, health issues, etc., for a fairer read.",
+          context:
+            "Optional: You can note C/D grades, gap years, health or personal circumstances, repeated courses, or anything else that may help us better understand your academic record.",
         },
         hs: {
           title: "Step 2 — High school system",
