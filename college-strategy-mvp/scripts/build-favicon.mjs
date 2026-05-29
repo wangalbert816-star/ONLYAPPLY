@@ -1,6 +1,7 @@
 /**
  * Generate favicon assets from public/onlyapply-favicon-source.png
- * Usage: node scripts/build-favicon.mjs
+ * Square canvas, logo centered with safe padding for Google's circular crop.
+ * Usage: npm run build:favicon
  */
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -12,8 +13,39 @@ const root = path.resolve(__dirname, "../public");
 const src = path.join(root, "onlyapply-favicon-source.png");
 const bg = { r: 255, g: 255, b: 255, alpha: 1 };
 
+/** Extra inset so stacked logo stays legible when Google masks favicon as a circle */
+const CIRCLE_SAFE_INSET = 0.1;
+
 async function preparedLogo() {
-  return sharp(src).trim({ threshold: 12 }).png();
+  const meta = await sharp(src).metadata();
+  const w = meta.width ?? 0;
+  const h = meta.height ?? 0;
+  const side = Math.max(w, h);
+
+  const padTop = Math.floor((side - h) / 2);
+  const padBottom = side - h - padTop;
+  const padLeft = Math.floor((side - w) / 2);
+  const padRight = side - w - padLeft;
+
+  const squared = await sharp(src)
+    .extend({
+      top: padTop,
+      bottom: padBottom,
+      left: padLeft,
+      right: padRight,
+      background: bg,
+    })
+    .png()
+    .toBuffer();
+
+  const inset = Math.round(side * CIRCLE_SAFE_INSET);
+  return sharp(squared).extend({
+    top: inset,
+    bottom: inset,
+    left: inset,
+    right: inset,
+    background: bg,
+  });
 }
 
 const sizes = [
