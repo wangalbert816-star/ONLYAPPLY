@@ -262,7 +262,7 @@ export function LandingPageReplica({
   return (
     <div className="landing-page-replica flex min-h-dvh flex-col bg-[var(--landing-page-bg,#ecf3ea)] pb-24 text-neutral-900 antialiased">
       {/* —— Sticky nav —— */}
-      <header className="sticky top-0 z-40 shrink-0 border-b border-[#006644]/12 bg-[var(--landing-page-bg,#ecf3ea)]/95 backdrop-blur-sm">
+      <header className="sticky top-0 z-40 shrink-0 border-b border-[#006644]/12 bg-[var(--landing-page-bg,#ecf3ea)]/55 backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-[var(--landing-page-bg,#ecf3ea)]/45">
         <div className="landing-header-inner mx-auto flex min-h-[52px] max-w-[1320px] min-w-0 items-center justify-between gap-3 px-4 py-2 lg:min-h-[60px] lg:gap-5 lg:px-12">
           <button
             type="button"

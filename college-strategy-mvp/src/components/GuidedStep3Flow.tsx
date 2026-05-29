@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import type { ActivityItem, FormState } from "../types";
 import type { Translate } from "../i18n/LanguageContext";
 import { ExportActivitiesCsvButton } from "./ExportActivitiesCsvButton";
@@ -6,10 +7,12 @@ import {
   DEALBREAKER_PRESET_KEYS,
   GuidedContextLine,
   GuidedScreenShell,
+  activityItemMeetsWizardRequirement,
   createActivityItem,
   riskFeedback,
   splitPresetList,
   toggleDealbreakerPreset,
+  validateStructuredActivities,
 } from "./guidedStepShared";
 
 export type Step3ScreenId = "activities" | "risk" | "deal";
@@ -25,8 +28,7 @@ export function getStep3Screens(): Step3ScreenId[] {
 export function validateStep3Screen(screen: Step3ScreenId, f: FormState, tr: (path: string) => string): string | null {
   switch (screen) {
     case "activities":
-      if (f.activities.length > 600) return tr("validation.activitiesLen");
-      return null;
+      return validateStructuredActivities(f, tr);
     case "risk":
       if (!f.riskStyle) return tr("validation.risk");
       return null;
@@ -52,8 +54,13 @@ export function GuidedStep3Flow({
   guideTouch: GuideTouch;
   markTouch: (k: keyof GuideTouch) => void;
 }) {
-  const actvTouched = Boolean(guideTouch.s3_actv);
   const structuredActivities = form.structuredActivities ?? [];
+
+  useEffect(() => {
+    if (screen !== "activities") return;
+    if ((form.structuredActivities ?? []).length > 0) return;
+    update("structuredActivities", [createActivityItem()]);
+  }, [screen]);
 
   function updateActivity(id: string, patch: Partial<ActivityItem>) {
     update(
@@ -82,48 +89,23 @@ export function GuidedStep3Flow({
             {t("wizard.s3.activities.q")}
           </h2>
           <GuidedContextLine step={3} screenId="activities" t={t} />
-          <textarea
-            id="actv"
-            className="input-modern input-modern--action"
-            maxLength={600}
-            aria-labelledby="gq-s3-act"
-            placeholder={t("form.placeholder.activities")}
-            value={form.activities}
-            onChange={(e) => update("activities", e.target.value)}
-            onBlur={() => markTouch("s3_actv")}
-          />
-          <small className="guided-screen__char-count">{form.activities.length}/600</small>
-          <button
-            type="button"
-            className="field-skip-btn"
-            onClick={() => {
-              update("activities", "");
-              markTouch("s3_actv");
-            }}
-          >
-            {t("wizard.s3.activities.skip")}
-          </button>
-          {actvTouched && (
-            <p className="field-feedback">
-              {form.activities.trim() ? t("wizard.s3.activities.fb") : t("wizard.s3.activities.fbEmpty")}
-            </p>
-          )}
-          <details className="activity-builder activity-builder--guided" open={structuredActivities.length > 0}>
-            <summary>
-              <span>{t("wizard.s3.activities.detailTitle")}</span>
-              <small>{t("wizard.s3.activities.detailHint")}</small>
-            </summary>
+          <p className="activity-builder__required-note">{t("wizard.s3.activities.detailHint")}</p>
+          <div className="activity-builder activity-builder--guided activity-builder--open">
             <div className="activity-builder__body">
-              {structuredActivities.length === 0 ? (
-                <p className="activity-builder__empty">{t("wizard.s3.activities.detailEmpty")}</p>
-              ) : (
-                structuredActivities.map((item, index) => (
-                  <article className="activity-card" key={item.id}>
+              {structuredActivities.map((item, index) => {
+                const complete = activityItemMeetsWizardRequirement(item);
+                return (
+                  <article
+                    className={`activity-card${complete ? "" : " activity-card--incomplete"}`}
+                    key={item.id}
+                  >
                     <div className="activity-card__head">
                       <strong>{t("wizard.s3.activities.cardTitle", { n: index + 1 })}</strong>
-                      <button type="button" className="activity-card__remove" onClick={() => removeActivity(item.id)}>
-                        {t("wizard.s3.activities.remove")}
-                      </button>
+                      {structuredActivities.length > 1 && (
+                        <button type="button" className="activity-card__remove" onClick={() => removeActivity(item.id)}>
+                          {t("wizard.s3.activities.remove")}
+                        </button>
+                      )}
                     </div>
                     <div className="activity-card__grid">
                       <label>
@@ -249,14 +231,14 @@ export function GuidedStep3Flow({
                       </label>
                     </div>
                   </article>
-                ))
-              )}
+                );
+              })}
               <button type="button" className="activity-builder__add" onClick={addActivity}>
                 {t("wizard.s3.activities.add")}
               </button>
               <ExportActivitiesCsvButton activities={structuredActivities} form={form} />
             </div>
-          </details>
+          </div>
         </GuidedScreenShell>
       );
 

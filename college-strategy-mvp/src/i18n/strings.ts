@@ -298,6 +298,9 @@ merge(zhFlat, {
     geo: "请至少选择一项地理偏好",
     risk: "请选择选校风格",
     activitiesLen: "活动摘要请控制在 600 字以内",
+    activitiesRequired: "请至少添加 1 条活动，并填写名称与具体行动说明",
+    activityName: "请填写活动 / 竞赛名称",
+    activityDescription: "请在「你具体做了什么」中写清行动与影响（建议至少 40 字）",
   },
   appLinks: {
     aria: "申请流程导航与常用官网",
@@ -1232,6 +1235,9 @@ merge(enFlat, {
     geo: "Pick at least one geography preference",
     risk: "Select list risk posture",
     activitiesLen: "Activities summary must be ≤ 600 characters",
+    activitiesRequired: "Add at least one activity with a name and a detailed description of what you did",
+    activityName: "Enter the activity or competition name",
+    activityDescription: "Describe what you actually did and the impact (at least 40 characters)",
   },
   appLinks: {
     aria: "Application roadmap and official links",

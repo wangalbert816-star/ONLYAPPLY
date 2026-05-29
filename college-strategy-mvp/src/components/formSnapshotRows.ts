@@ -4,6 +4,7 @@ import { getEffectiveIntake } from "../lib/intakeTerm";
 import type { Step1ScreenId } from "./GuidedStep1Flow";
 import type { Step2ScreenId } from "./GuidedStep2Flow";
 import type { Step3ScreenId } from "./GuidedStep3Flow";
+import { activityItemMeetsWizardRequirement } from "./guidedStepShared";
 
 export type SnapshotRowStatus = "filled" | "pending" | "optional" | "na";
 
@@ -123,17 +124,6 @@ function scoreDisplay(form: FormState): string | null {
 function environmentDisplay(form: FormState): string | null {
   const parts = [form.citizenship?.trim(), form.residenceRegion?.trim()].filter(Boolean);
   return parts.length ? parts.join(" · ") : null;
-}
-
-function activitiesDisplay(form: FormState): string | null {
-  const detailed =
-    form.structuredActivities?.filter((item) => item.name.trim() || item.description.trim()) ?? [];
-  if (detailed.length > 0) {
-    return null; // use activityDetails row
-  }
-  const text = form.activities.trim();
-  if (!text) return null;
-  return text.length > 48 ? `${text.slice(0, 48)}…` : text;
 }
 
 type RowDef = {
@@ -366,15 +356,13 @@ const ROW_DEFS: RowDef[] = [
     labelKey: "wizard.summary.row.activities",
     hintKey: "wizard.summary.hint.activities",
     filled: (f) => {
-      const detailed =
-        f.structuredActivities?.filter((item) => item.name.trim() || item.description.trim()) ?? [];
-      return Boolean(f.activities.trim()) || detailed.length > 0;
+      const complete = (f.structuredActivities ?? []).filter(activityItemMeetsWizardRequirement);
+      return complete.length > 0;
     },
     value: (f, t) => {
-      const detailed =
-        f.structuredActivities?.filter((item) => item.name.trim() || item.description.trim()) ?? [];
-      if (detailed.length > 0) return t("wizard.summary.value.activityCount", { n: detailed.length });
-      return activitiesDisplay(f);
+      const complete = (f.structuredActivities ?? []).filter(activityItemMeetsWizardRequirement);
+      if (complete.length > 0) return t("wizard.summary.value.activityCount", { n: complete.length });
+      return null;
     },
   },
   {

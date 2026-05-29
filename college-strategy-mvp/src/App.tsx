@@ -25,7 +25,7 @@ import {
   validateStep3Screen,
   type Step3ScreenId,
 } from "./components/GuidedStep3Flow";
-import { GuidedFormProgress } from "./components/guidedStepShared";
+import { GuidedFormProgress, validateStructuredActivities } from "./components/guidedStepShared";
 import "./components/GuidedQuestionnaire.css";
 import "./components/QuestionnaireTheme.css";
 import { FullscreenLogoMarquee } from "./components/FullscreenLogoMarquee";
@@ -175,8 +175,9 @@ function validateStep(step: number, f: FormState, tr: (path: string) => string):
     if (f.geoPrefs.length === 0) return tr("validation.geo");
   }
   if (step === 3) {
+    const activitiesErr = validateStructuredActivities(f, tr);
+    if (activitiesErr) return activitiesErr;
     if (!f.riskStyle) return tr("validation.risk");
-    if (f.activities.length > 600) return tr("validation.activitiesLen");
   }
   return null;
 }

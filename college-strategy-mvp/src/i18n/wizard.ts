@@ -57,7 +57,7 @@ export const wizardZhNested = {
         size: "选择偏好的校园规模",
         culture: "选择社区气质偏好",
         geo: "勾选可接受的地区",
-        activities: "简述活动，或使用下方结构化填写",
+        activities: "逐条填写活动详情（名称与行动说明必填）",
         risk: "选择名单风险偏好",
         deal: "可选：填写不愿接受的约束",
       },
@@ -262,7 +262,7 @@ export const wizardZhNested = {
       screens: {
         activities: {
           title: "第 3 步 — 活动与角色",
-          context: "简述即可；需要更细可展开下方卡片逐条填写。",
+          context: "至少 1 条。名称与「你具体做了什么」为必填；信息越完整，判断越准。",
         },
         risk: {
           title: "第 3 步 — 名单风格",
@@ -274,14 +274,14 @@ export const wizardZhNested = {
         },
       },
       activities: {
-        q: "有没有 1–3 个你投入最深、也能讲清成长的活动或角色？（可简述）",
+        q: "请详细填写你的活动与竞赛经历",
         why: "活动不是堆量，而是证明「持续投入 + 影响 + 反思」；这会直接影响文书与档位。",
         fbEmpty: "可以。若暂时空白，我们会更依赖学术主线与风险清单来构建草稿。",
         fb: "好。我们会提炼可验证的亮点，并提示哪些表述需要在材料里落到证据。",
         skip: "暂时没有要补充的活动，继续",
-        detailTitle: "活动 / 竞赛细填（可选）",
-        detailHint: "适合把大段经历拆成几张清楚的卡片",
-        detailEmpty: "如果你有简历或 Common App 活动列表，可以先粘贴上面；想让判断更准，再逐条补细节。",
+        detailTitle: "活动 / 竞赛详情",
+        detailHint: "请尽量写清：你做了什么、持续多久、取得了什么结果。名称与行动说明为必填。",
+        detailEmpty: "点击下方按钮添加第一条活动。",
         add: "添加一条活动 / 竞赛",
         remove: "删除",
         cardTitle: "活动 {n}",
@@ -307,10 +307,10 @@ export const wizardZhNested = {
         majorUnsure: "不确定",
         proof: "最能证明你什么",
         proofPh: "如：长期性、领导力、技术深度、同理心",
-        exportCsv: "导出活动 CSV",
+        exportCsv: "下载活动清单",
         exportHint:
-          "下载对照表，便于复制到 Common App（通常最多 10 条）或 UC（活动与奖项合计最多 20 条）。非官方导入格式。",
-        exportDisabled: "请先添加至少 1 条活动",
+          "保存为表格文件，便于复制到 Common App（通常最多 10 条）或 UC（活动与奖项合计最多 20 条）。非官方导入格式。",
+        exportDisabled: "请先添加至少 1 条活动后再下载",
         kindOpt: {
           activity: "活动",
           competition: "竞赛",
@@ -418,7 +418,7 @@ export const wizardEnNested = {
         size: "Pick preferred campus size",
         culture: "Pick campus culture preference",
         geo: "Select acceptable regions",
-        activities: "Summarize activities or use the structured builder",
+        activities: "Fill in each activity in detail (name and actions required)",
         risk: "Choose list risk posture",
         deal: "Optional: hard constraints to avoid",
       },
@@ -624,7 +624,7 @@ export const wizardEnNested = {
       screens: {
         activities: {
           title: "Step 3 — Activities",
-          context: "A short summary is enough—expand the cards below for detail.",
+          context: "At least one entry required. Name and what you actually did are required—the more detail, the sharper the read.",
         },
         risk: {
           title: "Step 3 — List posture",
@@ -636,14 +636,14 @@ export const wizardEnNested = {
         },
       },
       activities: {
-        q: "Share 1–3 activities or roles you invested in deeply (brief is fine).",
+        q: "Describe your activities and competitions in detail",
         why: "Depth + impact + reflection beats volume; this shapes essays and tier credibility.",
         fbEmpty: "OK. If blank, we’ll lean more on academic spine and risk checks in the draft.",
         fb: "Great. We’ll extract verifiable highlights and flag claims that need evidence.",
         skip: "No activities to add right now, continue",
-        detailTitle: "Activity / competition details (optional)",
-        detailHint: "Use this to turn long activity blocks into clear cards",
-        detailEmpty: "You can paste a resume or Common App activity list above first. Add cards when you want the judgment to be more precise.",
+        detailTitle: "Activity / competition details",
+        detailHint: "Include your role, time commitment, actions, and outcomes. Name and what you did are required.",
+        detailEmpty: "Use the button below to add your first activity.",
         add: "Add Activity / competition",
         remove: "Remove",
         cardTitle: "Activity {n}",
@@ -669,10 +669,10 @@ export const wizardEnNested = {
         majorUnsure: "Unsure",
         proof: "What this proves about you",
         proofPh: "e.g. persistence, leadership, technical depth, empathy",
-        exportCsv: "Export Activities CSV",
+        exportCsv: "Download activity list",
         exportHint:
-          "Download a reference sheet to copy into Common App (usually up to 10) or UC (up to 20 activities and honors combined). Not an official import.",
-        exportDisabled: "Add at least one activity first",
+          "Saves a spreadsheet you can open in Excel or Google Sheets, then copy into Common App (usually up to 10) or UC (up to 20 activities and honors combined). Not an official import.",
+        exportDisabled: "Add at least one activity before downloading",
         kindOpt: {
           activity: "Activity",
           competition: "Competition",

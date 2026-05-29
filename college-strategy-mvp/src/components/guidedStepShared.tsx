@@ -202,6 +202,22 @@ export function cultureFeedback(form: FormState, t: Translate): string | null {
   return t("wizard.s2.culture.fbAny");
 }
 
+const MIN_ACTIVITY_DESCRIPTION_LEN = 40;
+
+export function activityItemMeetsWizardRequirement(item: ActivityItem): boolean {
+  return item.name.trim().length > 0 && item.description.trim().length >= MIN_ACTIVITY_DESCRIPTION_LEN;
+}
+
+export function validateStructuredActivities(form: FormState, tr: Translate): string | null {
+  const items = form.structuredActivities ?? [];
+  const complete = items.filter(activityItemMeetsWizardRequirement);
+  if (complete.length > 0) return null;
+  if (items.length === 0) return tr("validation.activitiesRequired");
+  const needsName = items.some((item) => !item.name.trim());
+  if (needsName) return tr("validation.activityName");
+  return tr("validation.activityDescription");
+}
+
 export function riskFeedback(form: FormState, t: Translate): string | null {
   if (!form.riskStyle) return null;
   if (form.riskStyle === "conservative") return t("wizard.s3.risk.fbCon");

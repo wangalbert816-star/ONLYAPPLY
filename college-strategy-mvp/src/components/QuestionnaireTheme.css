@@ -1,5 +1,10 @@
 /* Questionnaire flow — visual parity with landing (html[data-questionnaire]) */
 
+html[data-questionnaire] .app-top-chrome:not(.app-top-chrome--with-consult) {
+  background: rgba(236, 243, 234, 0.55);
+  border-bottom-color: rgba(0, 102, 68, 0.12);
+}
+
 html[data-questionnaire] .app-disclaimer-fixed {
   background: rgba(236, 243, 234, 0.94);
   border-top: 1px solid rgba(0, 102, 68, 0.1);
