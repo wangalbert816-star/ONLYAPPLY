@@ -1,5 +1,6 @@
 import type { ProfileDimension } from "../../lib/fiveDimensionProfile";
 import type { ReportPayload, SchoolTier } from "../../types";
+import { AccountSnapshotRadar } from "./AccountSnapshotRadar";
 import "./AccountReportSnapshot.css";
 
 function tierLabel(tier: SchoolTier, t: (key: string) => string) {
@@ -53,19 +54,22 @@ export function AccountReportSnapshot({ report, dimensions, t }: Props) {
           )}
         </div>
 
-        <ul className="account-snapshot__dims">
-          {dimensions.map((dim) => (
-            <li key={dim.key} className="account-snapshot__dim">
-              <div className="account-snapshot__dim-head">
-                <span className="account-snapshot__dim-label">{t(`report.profileFive.axis.${dim.key}`)}</span>
-                <span className="account-snapshot__dim-score">{t("report.profileFive.score", { n: dim.score })}</span>
-              </div>
-              <div className="account-snapshot__dim-track" aria-hidden>
-                <span className="account-snapshot__dim-fill" style={{ width: `${Math.max(8, Math.min(100, dim.score))}%` }} />
-              </div>
-            </li>
-          ))}
-        </ul>
+        <div className="account-snapshot__profile-body">
+          <ul className="account-snapshot__dims">
+            {dimensions.map((dim) => (
+              <li key={dim.key} className="account-snapshot__dim">
+                <div className="account-snapshot__dim-head">
+                  <span className="account-snapshot__dim-label">{t(`report.profileFive.axis.${dim.key}`)}</span>
+                  <span className="account-snapshot__dim-score">{t("report.profileFive.score", { n: dim.score })}</span>
+                </div>
+                <div className="account-snapshot__dim-track" aria-hidden>
+                  <span className="account-snapshot__dim-fill" style={{ width: `${Math.max(8, Math.min(100, dim.score))}%` }} />
+                </div>
+              </li>
+            ))}
+          </ul>
+          <AccountSnapshotRadar dimensions={dimensions} weakestKey={weakest?.key} t={t} />
+        </div>
       </section>
     </aside>
   );

@@ -448,10 +448,10 @@ export const wizardEnNested = {
       intake: {
         q: "When do you plan to start college?",
         why: "The year you plan to apply determines your deadlines and which school data we pull to build your list.",
-        fb2027Fall: "Got it—we will align pacing and cutoffs to Fall 2027.",
-        fb2028Fall: "Noted—longer runway lets us emphasize buildable evidence over time.",
-        fb2029Fall: "Understood—more time means we can spell out milestones you can track.",
-        fb2030Fall: "Received—we will separate near-term moves from farther-out goals.",
+        fb2027Fall: "Got it. We will align pacing and cutoffs to Fall 2027.",
+        fb2028Fall: "Noted. Longer runway lets us emphasize buildable evidence over time.",
+        fb2029Fall: "Understood. More time means we can spell out milestones you can track.",
+        fb2030Fall: "Received. We will separate near-term moves from farther-out goals.",
         fbOther: "Understood. Non-standard intakes need school-by-school checks; we will flag uncertainty.",
       },
       identity: {
@@ -469,11 +469,11 @@ export const wizardEnNested = {
       budget: {
         q: "What’s your family’s funding expectation for college?",
         why: "This sets how much of the list is “fully funded‑realistic” vs “needs aid narratives”.",
-        fbFull: "Got it—lists will bias toward clear rules and controllable admissions risk.",
+        fbFull: "Got it. Lists will bias toward clear rules and controllable admissions risk.",
         fbHigh: "Noted. With a high budget but cost sensitivity, we’ll weigh controllability, scholarship upside, and total cost.",
         fbCap: "Understood. With a clear cap, we’ll prioritize value, lower-cost options, and merit scholarship potential.",
-        fbAid: "Noted—we’ll stress verifiable aid fit and matches, not rank‑only optimism.",
-        fbUnsure: "That’s fine—we’ll show both conservative reaches and items that need more financial clarity.",
+        fbAid: "Noted. We’ll stress verifiable aid fit and matches, not rank‑only optimism.",
+        fbUnsure: "That’s fine. We’ll show both conservative reaches and items that need more financial clarity.",
       },
     },
     s2: {
@@ -545,10 +545,10 @@ export const wizardEnNested = {
       gpaTrend: {
         q: "Overall, which best describes your GPA / grade trend?",
         why: "Trend often matters as much as a single snapshot for how officers read your record.",
-        fbUpward: "Noted—an upward trend supports a stronger academic story if rigor stays aligned.",
-        fbStable: "Understood—steady performance reads as consistent; we’ll check rigor vs target schools.",
-        fbDownward: "Got it—with decline, we’ll be more conservative and note what context to add.",
-        fbMixed: "Received—we’ll highlight what’s provable vs what needs explanation.",
+        fbUpward: "Noted. An upward trend supports a stronger academic story if rigor stays aligned.",
+        fbStable: "Understood. Steady performance reads as consistent; we’ll check rigor vs target schools.",
+        fbDownward: "Got it. We’ll take a more conservative approach and note any context behind the decline.",
+        fbMixed: "Got it. We’ll highlight what looks strong and note anything that may need explanation.",
         fbUnsure: "That’s fine—you can add detail later; we’ll flag uncertainty in information gaps.",
       },
       testing: {
@@ -569,7 +569,7 @@ export const wizardEnNested = {
       },
       special: {
         q: "Any special circumstances on your transcript or academic path to note?",
-        why: "e.g. C grades, a gap year, health issues—stating them early avoids misreads.",
+        why: "Optional: You can note C/D grades, gap years, health or personal circumstances, repeated courses, or anything else that may help us better understand your academic record.",
         notesLabel: "Additional notes (optional)",
         skip: "Nothing to note, continue",
       },
@@ -588,7 +588,7 @@ export const wizardEnNested = {
           policy: "Education / Public Policy",
           undecided: "Undecided / Exploring",
         },
-        fb: "Received—we’ll test whether your materials support the arc and where proof is thin.",
+        fb: "Received. We’ll test whether your materials support the arc and where proof is thin.",
       },
       major2: {
         q: "Any second interest or backup direction? (Optional)",
@@ -643,7 +643,7 @@ export const wizardEnNested = {
         detailTitle: "Activity / competition details (optional)",
         detailHint: "Use this to turn long activity blocks into clear cards",
         detailEmpty: "You can paste a resume or Common App activity list above first. Add cards when you want the judgment to be more precise.",
-        add: "Add activity / competition",
+        add: "Add Activity / competition",
         remove: "Remove",
         cardTitle: "Activity {n}",
         name: "Name",
@@ -668,7 +668,7 @@ export const wizardEnNested = {
         majorUnsure: "Unsure",
         proof: "What this proves about you",
         proofPh: "e.g. persistence, leadership, technical depth, empathy",
-        exportCsv: "Export activities CSV",
+        exportCsv: "Export Activities CSV",
         exportHint:
           "Download a reference sheet to copy into Common App (usually up to 10) or UC (up to 20 activities and honors combined). Not an official import.",
         exportDisabled: "Add at least one activity first",

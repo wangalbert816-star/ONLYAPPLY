@@ -181,6 +181,7 @@
 
   .account-hero__panel {
     height: 100%;
+    justify-content: flex-start;
   }
 
   .account-dashboard__workspace--split {

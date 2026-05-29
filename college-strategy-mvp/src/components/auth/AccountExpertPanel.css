@@ -12,6 +12,26 @@
   padding: 1.05rem 1.1rem 1.15rem;
 }
 
+.account-expert-panel--embedded {
+  margin-top: auto;
+  padding: 0.85rem 0.9rem 0.95rem;
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+.account-expert-panel--embedded .account-expert-panel__title,
+.account-expert-panel--embedded .account-expert-panel__name {
+  font-size: clamp(0.98rem, 1.35vw, 1.12rem);
+}
+
+.account-expert-panel--embedded .account-expert-panel__benefits {
+  margin-bottom: 0.75rem;
+}
+
+.account-expert-panel--embedded .account-expert-panel__cta {
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+}
+
 .account-expert-panel__kicker {
   margin: 0 0 0.3rem;
   font-size: 0.72rem;

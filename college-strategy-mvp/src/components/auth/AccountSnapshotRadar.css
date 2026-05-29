@@ -1,0 +1,87 @@
+.account-snapshot-radar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 0;
+  padding: 0.35rem 0 0.15rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.account-snapshot-radar__svg {
+  display: block;
+  width: 100%;
+  max-width: 16.5rem;
+  height: auto;
+  margin: 0 auto;
+}
+
+.account-snapshot-radar__grid {
+  stroke: rgba(148, 163, 184, 0.35);
+  stroke-width: 1;
+}
+
+.account-snapshot-radar__axis {
+  stroke: rgba(148, 163, 184, 0.28);
+  stroke-width: 1;
+}
+
+.account-snapshot-radar__area {
+  fill: rgba(37, 99, 235, 0.14);
+}
+
+.account-snapshot-radar__stroke {
+  fill: none;
+  stroke: #2563eb;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.account-snapshot-radar__label {
+  font-size: 9px;
+  font-weight: 700;
+  fill: #64748b;
+}
+
+.account-snapshot-radar__node {
+  fill: #2563eb;
+  stroke: #fff;
+  stroke-width: 1.5;
+}
+
+.account-snapshot-radar__node--weak {
+  fill: #f59e0b;
+  stroke: #fffbeb;
+}
+
+@media (prefers-color-scheme: dark) {
+  .account-snapshot-radar__grid {
+    stroke: rgba(148, 163, 184, 0.22);
+  }
+
+  .account-snapshot-radar__axis {
+    stroke: rgba(148, 163, 184, 0.18);
+  }
+
+  .account-snapshot-radar__area {
+    fill: rgba(59, 130, 246, 0.2);
+  }
+
+  .account-snapshot-radar__stroke {
+    stroke: #60a5fa;
+  }
+
+  .account-snapshot-radar__label {
+    fill: #94a3b8;
+  }
+
+  .account-snapshot-radar__node {
+    fill: #60a5fa;
+    stroke: rgba(15, 23, 42, 0.9);
+  }
+
+  .account-snapshot-radar__node--weak {
+    fill: #fbbf24;
+    stroke: rgba(15, 23, 42, 0.9);
+  }
+}

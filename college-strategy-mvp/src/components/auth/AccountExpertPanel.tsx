@@ -11,6 +11,7 @@ type Props = {
   applicationId?: string | null;
   reportId?: string | null;
   userEmail?: string | null;
+  embedded?: boolean;
 };
 
 function expertInitials(name: string) {
@@ -63,7 +64,13 @@ function AssignedExpertCard({
   );
 }
 
-export function AccountExpertPanel({ gapCount, applicationId = null, reportId = null, userEmail = null }: Props) {
+export function AccountExpertPanel({
+  gapCount,
+  applicationId = null,
+  reportId = null,
+  userEmail = null,
+  embedded = false,
+}: Props) {
   const { t } = useLanguage();
   const [dialogOpen, setDialogOpen] = useState(false);
   const expert = useMemo(() => getAssignedExpert(), []);
@@ -85,7 +92,10 @@ export function AccountExpertPanel({ gapCount, applicationId = null, reportId = 
       : t("report.expertConsult.riskNoGaps");
 
   return (
-    <aside className="account-expert-panel" aria-labelledby="account-expert-panel-title">
+    <aside
+      className={`account-expert-panel${embedded ? " account-expert-panel--embedded" : ""}`}
+      aria-labelledby="account-expert-panel-title"
+    >
       {expert ? (
         <AssignedExpertCard expert={expert} onContact={openConsult} showCalendlyHint={showCalendlyHint} />
       ) : (

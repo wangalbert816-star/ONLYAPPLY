@@ -576,6 +576,13 @@ export function AccountHome({
                     )}
                   </div>
                   <p className="account-hero__hint">{t("auth.accountAccuracyHint")}</p>
+                  <AccountExpertPanel
+                    embedded
+                    gapCount={latestReport?.report_payload?.information_gaps?.length ?? 0}
+                    applicationId={currentApp?.id ?? null}
+                    reportId={latestReport?.id ?? null}
+                    userEmail={user?.email ?? null}
+                  />
                 </div>
 
                 {latestReport && fiveProfile.length > 0 ? (
@@ -794,7 +801,15 @@ export function AccountHome({
               </details>
             </>
           ) : (
-            <p className="account-home__empty">{loading ? t("auth.accountLoading") : t("auth.accountEmpty")}</p>
+            <>
+              <p className="account-home__empty">{loading ? t("auth.accountLoading") : t("auth.accountEmpty")}</p>
+              <AccountExpertPanel
+                gapCount={0}
+                applicationId={null}
+                reportId={null}
+                userEmail={user?.email ?? null}
+              />
+            </>
           )}
         </section>
 
@@ -806,17 +821,8 @@ export function AccountHome({
           />
         )}
 
-        <div className={`account-dashboard__workspace${currentApp ? " account-dashboard__workspace--split" : ""}`}>
-          <div className="account-dashboard__workspace-col account-dashboard__workspace-col--advisor">
-            <AccountExpertPanel
-              gapCount={latestReport?.report_payload?.information_gaps?.length ?? 0}
-              applicationId={currentApp?.id ?? null}
-              reportId={latestReport?.id ?? null}
-              userEmail={user?.email ?? null}
-            />
-          </div>
-          {currentApp && (
-            <div className="account-dashboard__workspace-col account-dashboard__workspace-col--profile">
+        {currentApp && (
+          <div className="account-dashboard__workspace">
           <section className="account-activity-card" aria-labelledby="account-activity-title">
             <div className="account-activity-card__head">
               <div>
@@ -987,9 +993,8 @@ export function AccountHome({
               </button>
             </div>
           </section>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {err && <p className="account-home__err">{err}</p>}
         {loading && <p className="account-home__muted">{t("auth.accountLoading")}</p>}
