@@ -1378,6 +1378,10 @@ export default function App() {
             t={t}
             guideTouch={guideTouch}
             markTouch={markGuideTouch}
+            onSkipAdvance={() => {
+              setErr(null);
+              next();
+            }}
           />
           <div className="flow-step-foot">
             {err && <div className="error">{err}</div>}
@@ -1413,6 +1417,10 @@ export default function App() {
             t={t}
             guideTouch={guideTouch}
             markTouch={markGuideTouch}
+            onSkipAdvance={() => {
+              setErr(null);
+              next();
+            }}
           />
           <div className="flow-step-foot">
             {err && <div className="error">{err}</div>}

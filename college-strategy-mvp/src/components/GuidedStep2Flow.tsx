@@ -94,6 +94,7 @@ export function GuidedStep2Flow({
   t,
   guideTouch,
   markTouch,
+  onSkipAdvance,
 }: {
   screen: Step2ScreenId;
   form: FormState;
@@ -101,6 +102,7 @@ export function GuidedStep2Flow({
   t: Translate;
   guideTouch: GuideTouch;
   markTouch: (k: keyof GuideTouch) => void;
+  onSkipAdvance: () => void;
 }) {
   const gpaOk = Boolean(guideTouch.s2_gpa && form.gpa.trim());
   const majorOk = Boolean(guideTouch.s2_major && form.majorPrimary.trim());
@@ -239,7 +241,10 @@ export function GuidedStep2Flow({
           <button
             type="button"
             className="field-skip-btn"
-            onClick={() => update("languageScores", "")}
+            onClick={() => {
+              update("languageScores", "");
+              onSkipAdvance();
+            }}
           >
             {t("wizard.s2.language.skip")}
           </button>
@@ -283,6 +288,7 @@ export function GuidedStep2Flow({
             onClick={() => {
               update("academicSpecialFlags", []);
               update("academicSpecialNotes", "");
+              onSkipAdvance();
             }}
           >
             {t("wizard.s2.special.skip")}
@@ -406,6 +412,7 @@ export function GuidedStep2Flow({
             onClick={() => {
               update("majorSecondary", "");
               markTouch("s2_major2");
+              onSkipAdvance();
             }}
           >
             {t("wizard.s2.major2.skip")}

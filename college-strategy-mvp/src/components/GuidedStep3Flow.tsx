@@ -46,6 +46,7 @@ export function GuidedStep3Flow({
   t,
   guideTouch,
   markTouch,
+  onSkipAdvance,
 }: {
   screen: Step3ScreenId;
   form: FormState;
@@ -53,6 +54,7 @@ export function GuidedStep3Flow({
   t: Translate;
   guideTouch: GuideTouch;
   markTouch: (k: keyof GuideTouch) => void;
+  onSkipAdvance: () => void;
 }) {
   const structuredActivities = form.structuredActivities ?? [];
 
@@ -318,6 +320,7 @@ export function GuidedStep3Flow({
             onClick={() => {
               update("dealbreakers", t("wizard.s3.deal.presets.none"));
               markTouch("s3_deal");
+              onSkipAdvance();
             }}
           >
             {t("wizard.s3.deal.skip")}
