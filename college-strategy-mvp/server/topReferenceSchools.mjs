@@ -205,22 +205,79 @@ const TOP_REF_STRIPPED_NOTE_ZH =
 const TOP_REF_STRIPPED_NOTE_EN =
   "Ultra-selective schools (e.g. MIT, Stanford, Harvard) are reference-only for this profile and are not listed in the main reach/match/safety tiers.";
 
+function appendStrategyNote(o, note) {
+  const existing = String(o.strategy_notes || "").trim();
+  const fingerprint = note.slice(0, Math.min(24, note.length));
+  if (fingerprint && existing.includes(fingerprint)) return;
+  o.strategy_notes = existing ? `${existing}\n\n${note}` : note;
+}
+
 /**
- * 模型误填 top_reference_schools 时服务端自动清空并写入 strategy_notes，避免整份报告 502。
+ * 模型误填 top_reference_schools 时服务端自动修正并写入 strategy_notes，避免整份报告 502。
  */
 export function autoRepairTopReferenceSchools(parsed, body, locale = "zh") {
   if (!parsed || typeof parsed !== "object") return parsed;
   const o = /** @type {Record<string, unknown>} */ (parsed);
   const raw = o.top_reference_schools;
   if (!Array.isArray(raw) || raw.length === 0) return parsed;
-  if (allowsTopReferenceSchools(body)) return parsed;
 
-  o.top_reference_schools = [];
-  const note = locale === "en" ? TOP_REF_STRIPPED_NOTE_EN : TOP_REF_STRIPPED_NOTE_ZH;
-  const existing = String(o.strategy_notes || "").trim();
-  if (!existing.includes(note.slice(0, 24))) {
-    o.strategy_notes = existing ? `${existing}\n\n${note}` : note;
+  if (!allowsTopReferenceSchools(body)) {
+    o.top_reference_schools = [];
+    appendStrategyNote(o, locale === "en" ? TOP_REF_STRIPPED_NOTE_EN : TOP_REF_STRIPPED_NOTE_ZH);
+    return parsed;
   }
+
+  const mainKeys = new Set(schoolNamesFromMainTiers(o).map((n) => n.toLowerCase()));
+  const kept = [];
+  const removed = [];
+  const seen = new Set();
+
+  for (const row of raw) {
+    if (!row || typeof row !== "object") {
+      removed.push("(invalid row)");
+      continue;
+    }
+    const name = String(row.school || "").trim();
+    if (!name) {
+      removed.push("(empty school)");
+      continue;
+    }
+    const key = name.toLowerCase();
+    if (seen.has(key)) {
+      removed.push(name);
+      continue;
+    }
+    if (mainKeys.has(key)) {
+      removed.push(name);
+      continue;
+    }
+    if (!isUltraSelectiveSchoolName(name)) {
+      removed.push(name);
+      continue;
+    }
+    seen.add(key);
+    kept.push(row);
+  }
+
+  const trimmed = kept.length > 2;
+  o.top_reference_schools = kept.slice(0, 2);
+
+  if (trimmed) {
+    removed.push("(more than 2 ultra-selective references)");
+  }
+
+  if (removed.length === 0 && !trimmed) return parsed;
+
+  const uniqueRemoved = [...new Set(removed.filter((n) => n !== "(more than 2 ultra-selective references)"))];
+  if (uniqueRemoved.length > 0 || trimmed) {
+    const names = uniqueRemoved.join(locale === "en" ? ", " : "、");
+    const note =
+      locale === "en"
+        ? `Removed from top_reference_schools (not ultra-selective reference tier, duplicated main list, or over limit): ${names || "extra entries"}. Place those schools in reach/match/safety or UC analysis as appropriate.`
+        : `已从 top_reference_schools 移除（非顶级参考校、与主名单重复或超过 2 所）：${names || "多余条目"}。请在 reach/match/safety 或 UC 分析中体现这些学校。`;
+    appendStrategyNote(o, note);
+  }
+
   return parsed;
 }
 

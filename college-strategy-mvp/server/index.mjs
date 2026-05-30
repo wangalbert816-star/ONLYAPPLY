@@ -58,7 +58,7 @@ const LLM_TIMEOUT_MS = (() => {
 })();
 const LLM_MAX_RETRIES = Number(process.env.LLM_MAX_RETRIES ?? 0);
 /** 0 = 不传 max_tokens，由模型默认；报告 JSON 较大，默认给足输出避免截断 */
-const COMPLETION_MAX_TOKENS = Number(process.env.COMPLETION_MAX_TOKENS ?? 8192);
+const COMPLETION_MAX_TOKENS = Number(process.env.COMPLETION_MAX_TOKENS ?? 16384);
 
 const app = express();
 const IS_PROD = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL);
@@ -1568,7 +1568,7 @@ async function generateLlmJsonWithConfig(cfg, { messages, maxTokens, logTag }) {
       const code = e && typeof e === "object" && "code" in e ? e.code : "";
       if (code === "invalid_json" || code === "empty_content") {
         if (attempt === 0 && effectiveMaxTokens > 0) {
-          effectiveMaxTokens = Math.min(Math.round(effectiveMaxTokens * 1.5), 16_384);
+          effectiveMaxTokens = Math.min(Math.round(effectiveMaxTokens * 1.5), 24_576);
         }
         console.warn(
           `[${logTag}] parse_retry attempt=${attempt + 1} provider=${provider} model=${model} max_tokens=${effectiveMaxTokens || "default"}`,

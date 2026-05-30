@@ -294,6 +294,36 @@ check("plan B: weak profile auto-strips top_reference_schools", () => {
   if (!/顶级彩票校/.test(String(report.strategy_notes))) throw new Error("expected strategy note");
 });
 
+check("plan B: auto-repair strips RISD/UCLA from top_reference_schools", () => {
+  const report = baseNineSchoolReport({
+    top_reference_schools: [
+      { school: "Rhode Island School of Design", why_reference_for_you: "艺术方向" },
+      { school: "University of California, Los Angeles", why_reference_for_you: "UC 误填" },
+      { school: "Stanford University", why_reference_for_you: "合法顶校" },
+    ],
+  });
+  autoRepairTopReferenceSchools(report, strongBody, "zh");
+  const v = validateMainSchoolReport(report, strongBody);
+  if (!v.ok) throw new Error(v.reason);
+  if (report.top_reference_schools?.length !== 1) throw new Error("expected 1 ultra row");
+  if (!/Stanford/i.test(String(report.top_reference_schools?.[0]?.school))) throw new Error("expected Stanford kept");
+  if (!/RISD|Rhode Island|UCLA|Los Angeles/.test(String(report.strategy_notes))) throw new Error("expected removal note");
+});
+
+check("plan B: auto-repair strips duplicate top_reference overlapping main list", () => {
+  const report = baseNineSchoolReport({
+    top_reference_schools: [
+      { school: "University of North Carolina at Chapel Hill", why_reference_for_you: "重复" },
+      { school: "Harvard University", why_reference_for_you: "合法" },
+    ],
+  });
+  autoRepairTopReferenceSchools(report, strongBody, "zh");
+  const v = validateMainSchoolReport(report, strongBody);
+  if (!v.ok) throw new Error(v.reason);
+  if (report.top_reference_schools?.length !== 1) throw new Error("expected 1 row");
+  if (!/Harvard/i.test(String(report.top_reference_schools?.[0]?.school))) throw new Error("expected Harvard kept");
+});
+
 check("plan B: weak profile rejects top_reference_schools before repair", () => {
   const report = baseNineSchoolReport({
     top_reference_schools: [{ school: "MIT" }],
