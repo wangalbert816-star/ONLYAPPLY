@@ -27,14 +27,14 @@ function axisShort(key: ProfileDimensionKey, locale: Locale): string {
     academic: "学术",
     testing: "标化",
     activities: "活动",
-    essays: "文书",
+    rigor: "Rigor",
     strategy: "策略",
   };
   const en: Record<ProfileDimensionKey, string> = {
     academic: "GPA",
     testing: "Test",
     activities: "Act.",
-    essays: "Essay",
+    rigor: "Rigor",
     strategy: "List",
   };
   return locale === "en" ? en[key] : zh[key];

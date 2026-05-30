@@ -138,7 +138,7 @@ check("UC legal campus names resolve for selectivity", () => {
 check("UC tier sanitize fixes Davis reach + Berkeley match inversion", () => {
   const body = {
     gpa: "GPA 3.6 unweighted",
-    activities: "暂无详细活动描述，活动列表偏少。",
+    structuredActivities: [],
     satScore: "",
     riskStyle: "balanced",
   };
@@ -238,12 +238,26 @@ function baseNineSchoolReport(overrides = {}) {
 
 const strongBody = {
   gpa: "UW 3.85 / W 4.2",
-  activities: "National math olympiad training camp; ISEF finalist project on ML; school robotics captain 3 years.",
+  structuredActivities: [
+    {
+      name: "Robotics team",
+      description: "Led school robotics team for three years and built competition robots with documented outcomes.",
+      role: "Captain",
+      outcome: "Regional finalist",
+      award: "National math olympiad training camp",
+    },
+    {
+      name: "ML research project",
+      description: "ISEF finalist project on machine learning with reproducible experiments and mentor verification.",
+      role: "Lead researcher",
+      outcome: "ISEF finalist",
+    },
+  ],
 };
 
 const weakBody = {
   gpa: "UW 3.1",
-  activities: "暂无活动",
+  structuredActivities: [],
 };
 
 check("plan B: ultra in reach fails validation (repairable)", () => {

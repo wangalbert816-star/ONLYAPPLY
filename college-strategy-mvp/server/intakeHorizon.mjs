@@ -1,5 +1,10 @@
 /** @typedef {"urgent" | "mid" | "long" | "unknown"} IntakeHorizon */
 
+import {
+  assessActivityStrength,
+  structuredActivityNameSummary,
+} from "./activityEvidence.mjs";
+
 const FALL_APP_SEASON_START_MONTH = 8;
 
 export function parseIntakeEnrollmentYear(intake) {
@@ -63,7 +68,7 @@ const PERSONALIZATION_BLOCK_ZH = `
 - 每一条建议都要像「只写给这位学生」的顾问备忘：先点明依据（问卷里的专业/GPA/标化策略/预算/活动/地理偏好/底线/结构化活动/补充说明），再写具体动作。
 - 全表（三段合计）至少 4 条明确引用问卷事实（可含原文关键词，如主申专业名、活动名、GPA 描述、标化选择）；至少 2 条在定稿 9 校名单后点名 1 所你推荐的学校并写清「要核对什么」（奖助、国际生政策、标化要求等）。
 - 若 information_gaps 非空：至少 2 条 improvement_plan 要直接回应缺口（用「补齐…」的行动，不要重复成问句）。
-- 若活动摘要为空或极短：必须有一条写「先定 1 条可验证的活动主线」并挂钩主申专业，禁止只写「列出所有活动」。
+- 若结构化活动为空或极短：必须有一条写「先定 1 条可验证的活动主线」并挂钩主申专业，禁止只写「列出所有活动」。
 - 活动/竞赛/项目建议须服从下文「竞争力建设」规则（见用户消息中的活动证据厚度）。
 - 若标化为 optional/不递交：不要安排「报名 SAT/ACT」除非用户已表示将考；若 will_submit 且填了分数，建议要围绕其分数与课程是否一致。
 - 若预算为 need_aid / budget_cap：财力相关建议要体现资助/性价比，不要只写「准备财力证明模板」。
@@ -75,25 +80,15 @@ const PERSONALIZATION_BLOCK_EN = `
 - Every bullet is a counselor note for THIS student: cite a questionnaire fact (major, GPA notes, testing strategy, budget, activities, geography, dealbreakers, structured activities, supplementary notes), then the action.
 - Across all three buckets: at least 4 bullets must quote concrete intake facts; at least 2 must name a school from your recommended list and what to verify (aid, intl policy, testing, etc.).
 - If information_gaps is non-empty: at least 2 improvement_plan bullets must address gaps as actions (not repeat them as questions).
-- If activities are empty or very thin: include one bullet to define one verifiable activity thread tied to the stated major—do not only say "list all activities."
+- If structured activities are empty or very thin: include one bullet to define one verifiable activity thread tied to the stated major—do not only say "list all activities."
 - Activity/competition/project suggestions must follow the "competitiveness building" rules below (use activity-evidence thickness from the user message).
 - If testing is optional / not submitting: do not schedule SAT/ACT signup unless the user plans to test; if scores are provided, align advice with score–transcript consistency.
 - If budget is need_aid or budget_cap: aid/value must shape financial steps—not a generic "prepare financial statement template" alone.
 - Forbidden generic copy (do not paste or paraphrase blindly): "list all extracurriculars and awards," "attend info sessions to learn campus culture," "have teachers review all materials," "back up all files"—unless tied to this student's major, schools, or gaps and why now.
 - Do not start 3+ bullets in a row with the same opener; keep each bullet <= ~80 words, restrained and actionable.`;
 
-/** @returns {"thin"|"moderate"|"strong"} */
-export function assessActivityStrength(body) {
-  const text = String(body?.activities ?? "").trim();
-  const structured = Array.isArray(body?.structuredActivities) ? body.structuredActivities : [];
-  const named = structured.filter((a) => a && typeof a === "object" && String(a.name || "").trim()).length;
-  const richStructured = structured.filter(
-    (a) => a && typeof a === "object" && String(a.description || a.outcome || "").trim().length > 20,
-  ).length;
-  if (text.length < 50 && named === 0) return "thin";
-  if (text.length < 180 && named < 2 && richStructured === 0) return "moderate";
-  return "strong";
-}
+/** @returns {"thin"|"moderate"|"strong"} — re-exported via activityEvidence.mjs */
+export { assessActivityStrength };
 
 /** @param {IntakeHorizon} horizon @param {"zh"|"en"} locale */
 function activityCompetitivenessBlock(horizon, locale) {
@@ -199,23 +194,19 @@ export function buildImprovementPersonalizationHints(body, locale) {
   }
   push(isEn ? "- Budget posture: " : "- 预算/经济：", body.budget);
   push(isEn ? "- HS system: " : "- 高中体系：", body.highSchoolSystem);
-  push(isEn ? "- Activities summary: " : "- 活动摘要：", String(body.activities || "").slice(0, 280));
+  push(isEn ? "- Current high school: " : "- 就读学校：", body.currentHighSchool);
+  const actNames = structuredActivityNameSummary(body, 4);
+  if (actNames.length) {
+    push(
+      isEn ? "- Structured activities (names): " : "- 结构化活动（名称）：",
+      actNames.join(isEn ? "; " : "；"),
+    );
+  }
   push(isEn ? "- List posture: " : "- 选校风格：", body.riskStyle);
   push(isEn ? "- Dealbreakers: " : "- 底线：", body.dealbreakers);
   push(isEn ? "- Campus community vibe: " : "- 社区气质偏好：", campusCulturePrefShortLabel(String(body.campusCulturePref || ""), locale));
   const geo = Array.isArray(body.geoPrefs) ? body.geoPrefs.join(isEn ? ", " : "、") : body.geoPrefs;
   push(isEn ? "- Geography prefs: " : "- 地理偏好：", geo);
-
-  const structured = Array.isArray(body.structuredActivities) ? body.structuredActivities : [];
-  const actNames = structured
-    .map((a) => (a && typeof a === "object" ? String(a.name || "").trim() : ""))
-    .filter(Boolean)
-    .slice(0, 3);
-  if (actNames.length) {
-    lines.push(
-      (isEn ? "- Structured activities (names): " : "- 结构化活动（名称）：") + actNames.join(isEn ? "; " : "；"),
-    );
-  }
 
   const supp = Array.isArray(body.supplementary_notes) ? body.supplementary_notes : [];
   if (supp.length) {

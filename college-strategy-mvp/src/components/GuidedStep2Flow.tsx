@@ -21,6 +21,7 @@ export type Step2ScreenId =
   | "language"
   | "special"
   | "hs"
+  | "currentSchool"
   | "major"
   | "major2"
   | "size"
@@ -35,7 +36,7 @@ export function getStep2Screens(form: FormState): Step2ScreenId[] {
   const screens: Step2ScreenId[] = ["gpa", "gpaTrend", "testing"];
   if (form.testing === "will_submit") screens.push("scores");
   if (form.applicantIdentity === "intl") screens.push("language");
-  screens.push("special", "hs", "major", "major2", "size", "culture", "geo");
+  screens.push("special", "hs", "currentSchool", "major", "major2", "size", "culture", "geo");
   return screens;
 }
 
@@ -63,6 +64,9 @@ export function validateStep2Screen(screen: Step2ScreenId, f: FormState, tr: (pa
       return null;
     case "hs":
       if (!f.highSchoolSystem) return tr("validation.hs");
+      return null;
+    case "currentSchool":
+      if (!f.currentHighSchool.trim()) return tr("validation.currentHighSchool");
       return null;
     case "major":
       if (!f.majorPrimary.trim()) return tr("validation.major");
@@ -311,6 +315,27 @@ export function GuidedStep2Flow({
             const fb = hsFeedback(form, t);
             return fb ? <p className="field-feedback">{fb}</p> : null;
           })()}
+        </GuidedScreenShell>
+      );
+
+    case "currentSchool":
+      return (
+        <GuidedScreenShell step={2} screenId="currentSchool" t={t}>
+          <h2 className="guided-screen__question" id="gq-s2-currentSchool">
+            {t("wizard.s2.currentSchool.q")}
+          </h2>
+          <GuidedContextLine step={2} screenId="currentSchool" t={t} />
+          <input
+            id="currentHighSchool"
+            className="input-modern input-modern--action"
+            aria-labelledby="gq-s2-currentSchool"
+            placeholder={t("form.placeholder.currentHighSchool")}
+            value={form.currentHighSchool}
+            onChange={(e) => update("currentHighSchool", e.target.value)}
+          />
+          {form.currentHighSchool.trim() ? (
+            <p className="field-feedback">{t("wizard.s2.currentSchool.fb")}</p>
+          ) : null}
         </GuidedScreenShell>
       );
 

@@ -258,7 +258,7 @@ export function ReportPdfDocument({ form, report, locale, unlocked, recipientNam
               title={zh ? "推荐院校（按冲 / 稳 / 保）" : "Recommended schools (Reach / Match / Safety)"}
               lead={
                 zh
-                  ? "建议优先看「主要风险」，再核对入档理由与官网项。"
+                  ? "建议优先看主要风险，再核对入档理由与官网项。"
                   : "Scan key risks first, then fit and verification."
               }
             />

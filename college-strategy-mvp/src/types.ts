@@ -58,6 +58,8 @@ export interface FormState {
   satScore: string;
   actScore: string;
   highSchoolSystem: string;
+  /** 当前就读高中/中学名称，用于课程 rigor 语境分析 */
+  currentHighSchool: string;
   gpa: string;
   gpaTrend: GpaTrend | "";
   languageScores: string;

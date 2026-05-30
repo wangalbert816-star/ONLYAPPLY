@@ -78,6 +78,12 @@ function residencyVsSchool(form: FormState, school: string, locale: Locale): str
 }
 
 function hsSystemHint(form: FormState, locale: Locale): string | null {
+  const school = form.currentHighSchool.trim();
+  if (school) {
+    return locale === "en"
+      ? `Current HS: ${school}—confirm how this school’s course rigor is read on each college’s admissions page.`
+      : `就读学校：${school}——请在各校招生页核对该校课程 rigor 如何被理解。`;
+  }
   const hs = form.highSchoolSystem.trim().toLowerCase();
   if (!hs) return null;
   if (/ib|a-?level|ap|国际/i.test(hs)) {

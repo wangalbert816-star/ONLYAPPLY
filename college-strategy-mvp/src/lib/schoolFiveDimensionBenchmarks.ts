@@ -10,142 +10,142 @@ type BenchmarkEntry = { patterns: RegExp[]; scores: SchoolBenchmarkScores };
 const CURATED: BenchmarkEntry[] = [
   {
     patterns: [/stanford/i, /斯坦福/],
-    scores: { academic: 96, testing: 94, activities: 95, essays: 92, strategy: 90 },
+    scores: { academic: 96, testing: 94, activities: 95, rigor: 92, strategy: 90 },
   },
   {
     patterns: [/harvard/i, /哈佛/],
-    scores: { academic: 97, testing: 95, activities: 94, essays: 93, strategy: 91 },
+    scores: { academic: 97, testing: 95, activities: 94, rigor: 93, strategy: 91 },
   },
   {
     patterns: [/massachusetts institute|^\s*mit\s*$|麻省理工/i],
-    scores: { academic: 98, testing: 97, activities: 90, essays: 86, strategy: 88 },
+    scores: { academic: 98, testing: 97, activities: 90, rigor: 86, strategy: 88 },
   },
   {
     patterns: [/yale/i, /耶鲁/],
-    scores: { academic: 96, testing: 93, activities: 93, essays: 94, strategy: 90 },
+    scores: { academic: 96, testing: 93, activities: 93, rigor: 94, strategy: 90 },
   },
   {
     patterns: [/princeton/i, /普林斯顿/],
-    scores: { academic: 97, testing: 95, activities: 92, essays: 92, strategy: 90 },
+    scores: { academic: 97, testing: 95, activities: 92, rigor: 92, strategy: 90 },
   },
   {
     patterns: [/columbia/i, /哥伦比亚/],
-    scores: { academic: 95, testing: 92, activities: 92, essays: 91, strategy: 88 },
+    scores: { academic: 95, testing: 92, activities: 92, rigor: 91, strategy: 88 },
   },
   {
     patterns: [/upenn|university of pennsylvania|宾夕法|宾大/i],
-    scores: { academic: 94, testing: 90, activities: 91, essays: 89, strategy: 87 },
+    scores: { academic: 94, testing: 90, activities: 91, rigor: 89, strategy: 87 },
   },
   {
     patterns: [/\bduke\b/i, /杜克/],
-    scores: { academic: 94, testing: 91, activities: 92, essays: 88, strategy: 87 },
+    scores: { academic: 94, testing: 91, activities: 92, rigor: 88, strategy: 87 },
   },
   {
     patterns: [/northwestern/i, /西北大学/],
-    scores: { academic: 93, testing: 90, activities: 91, essays: 89, strategy: 86 },
+    scores: { academic: 93, testing: 90, activities: 91, rigor: 89, strategy: 86 },
   },
   {
     patterns: [/cornell/i, /康奈尔/],
-    scores: { academic: 92, testing: 88, activities: 90, essays: 87, strategy: 85 },
+    scores: { academic: 92, testing: 88, activities: 90, rigor: 87, strategy: 85 },
   },
   {
     patterns: [/\bbrown\b/i, /布朗/],
-    scores: { academic: 91, testing: 86, activities: 91, essays: 92, strategy: 86 },
+    scores: { academic: 91, testing: 86, activities: 91, rigor: 92, strategy: 86 },
   },
   {
     patterns: [/dartmouth/i, /达特茅斯/],
-    scores: { academic: 93, testing: 90, activities: 90, essays: 89, strategy: 86 },
+    scores: { academic: 93, testing: 90, activities: 90, rigor: 89, strategy: 86 },
   },
   {
     patterns: [/uchicago|university of chicago|芝加哥大学/i],
-    scores: { academic: 95, testing: 92, activities: 89, essays: 91, strategy: 87 },
+    scores: { academic: 95, testing: 92, activities: 89, rigor: 91, strategy: 87 },
   },
   {
     patterns: [/berkeley|伯克利/i],
-    scores: { academic: 94, testing: 82, activities: 90, essays: 87, strategy: 85 },
+    scores: { academic: 94, testing: 82, activities: 90, rigor: 87, strategy: 85 },
   },
   {
     patterns: [/\bucla\b|洛杉矶分校/i],
-    scores: { academic: 91, testing: 80, activities: 89, essays: 85, strategy: 83 },
+    scores: { academic: 91, testing: 80, activities: 89, rigor: 85, strategy: 83 },
   },
   {
     patterns: [/uc san diego|ucsd/i],
-    scores: { academic: 88, testing: 78, activities: 84, essays: 82, strategy: 80 },
+    scores: { academic: 88, testing: 78, activities: 84, rigor: 82, strategy: 80 },
   },
   {
     patterns: [/uc irvine|uci/i],
-    scores: { academic: 86, testing: 76, activities: 82, essays: 80, strategy: 78 },
+    scores: { academic: 86, testing: 76, activities: 82, rigor: 80, strategy: 78 },
   },
   {
     patterns: [/uc davis/i],
-    scores: { academic: 84, testing: 74, activities: 80, essays: 78, strategy: 76 },
+    scores: { academic: 84, testing: 74, activities: 80, rigor: 78, strategy: 76 },
   },
   {
     patterns: [/uc santa barbara|ucsb/i],
-    scores: { academic: 85, testing: 75, activities: 81, essays: 79, strategy: 77 },
+    scores: { academic: 85, testing: 75, activities: 81, rigor: 79, strategy: 77 },
   },
   {
     patterns: [/michigan|umich/i, /密歇根/],
-    scores: { academic: 90, testing: 86, activities: 88, essays: 84, strategy: 82 },
+    scores: { academic: 90, testing: 86, activities: 88, rigor: 84, strategy: 82 },
   },
   {
     patterns: [/\bnyu\b|new york university|纽约大学/i],
-    scores: { academic: 88, testing: 84, activities: 87, essays: 86, strategy: 83 },
+    scores: { academic: 88, testing: 84, activities: 87, rigor: 86, strategy: 83 },
   },
   {
     patterns: [/\busc\b|southern california|南加州/i],
-    scores: { academic: 89, testing: 85, activities: 90, essays: 85, strategy: 84 },
+    scores: { academic: 89, testing: 85, activities: 90, rigor: 85, strategy: 84 },
   },
   {
     patterns: [/texas at austin|ut austin|德州奥斯汀/i],
-    scores: { academic: 88, testing: 84, activities: 86, essays: 82, strategy: 81 },
+    scores: { academic: 88, testing: 84, activities: 86, rigor: 82, strategy: 81 },
   },
   {
     patterns: [/\bunc\b|chapel hill|北卡罗来纳/i],
-    scores: { academic: 87, testing: 82, activities: 85, essays: 83, strategy: 80 },
+    scores: { academic: 87, testing: 82, activities: 85, rigor: 83, strategy: 80 },
   },
   {
     patterns: [/georgia tech|georgia institute|佐治亚理工/i],
-    scores: { academic: 92, testing: 90, activities: 84, essays: 80, strategy: 82 },
+    scores: { academic: 92, testing: 90, activities: 84, rigor: 80, strategy: 82 },
   },
   {
     patterns: [/university of illinois|uiuc|伊利诺伊/i],
-    scores: { academic: 90, testing: 88, activities: 82, essays: 79, strategy: 80 },
+    scores: { academic: 90, testing: 88, activities: 82, rigor: 79, strategy: 80 },
   },
   {
     patterns: [/university of washington|\buw\b/i],
-    scores: { academic: 86, testing: 80, activities: 83, essays: 81, strategy: 78 },
+    scores: { academic: 86, testing: 80, activities: 83, rigor: 81, strategy: 78 },
   },
   {
     patterns: [/\bpurdue\b/i, /普渡/],
-    scores: { academic: 87, testing: 85, activities: 80, essays: 77, strategy: 78 },
+    scores: { academic: 87, testing: 85, activities: 80, rigor: 77, strategy: 78 },
   },
   {
     patterns: [/carnegie mellon|\bcmu\b/i, /卡内基梅隆/],
-    scores: { academic: 93, testing: 91, activities: 85, essays: 82, strategy: 84 },
+    scores: { academic: 93, testing: 91, activities: 85, rigor: 82, strategy: 84 },
   },
   {
     patterns: [/vanderbilt/i, /范德堡/],
-    scores: { academic: 91, testing: 88, activities: 88, essays: 86, strategy: 84 },
+    scores: { academic: 91, testing: 88, activities: 88, rigor: 86, strategy: 84 },
   },
   {
     patterns: [/\brice\b/i, /莱斯/],
-    scores: { academic: 92, testing: 89, activities: 87, essays: 85, strategy: 83 },
+    scores: { academic: 92, testing: 89, activities: 87, rigor: 85, strategy: 83 },
   },
   {
     patterns: [/\bemory\b/i, /埃默里/],
-    scores: { academic: 90, testing: 87, activities: 87, essays: 85, strategy: 82 },
+    scores: { academic: 90, testing: 87, activities: 87, rigor: 85, strategy: 82 },
   },
 ];
 
 type SelectivityBand = "ultra" | "high" | "selective" | "moderate" | "accessible";
 
 const BAND_DEFAULTS: Record<SelectivityBand, SchoolBenchmarkScores> = {
-  ultra: { academic: 95, testing: 92, activities: 93, essays: 91, strategy: 89 },
-  high: { academic: 88, testing: 84, activities: 86, essays: 84, strategy: 82 },
-  selective: { academic: 80, testing: 76, activities: 78, essays: 76, strategy: 74 },
-  moderate: { academic: 72, testing: 68, activities: 70, essays: 68, strategy: 66 },
-  accessible: { academic: 64, testing: 60, activities: 62, essays: 62, strategy: 60 },
+  ultra: { academic: 95, testing: 92, activities: 93, rigor: 91, strategy: 89 },
+  high: { academic: 88, testing: 84, activities: 86, rigor: 84, strategy: 82 },
+  selective: { academic: 80, testing: 76, activities: 78, rigor: 76, strategy: 74 },
+  moderate: { academic: 72, testing: 68, activities: 70, rigor: 68, strategy: 66 },
+  accessible: { academic: 64, testing: 60, activities: 62, rigor: 62, strategy: 60 },
 };
 
 function tierToBand(tier: SchoolTier): SelectivityBand {
@@ -194,7 +194,7 @@ export const PROFILE_DIMENSION_KEYS: ProfileDimensionKey[] = [
   "academic",
   "testing",
   "activities",
-  "essays",
+  "rigor",
   "strategy",
 ];
 

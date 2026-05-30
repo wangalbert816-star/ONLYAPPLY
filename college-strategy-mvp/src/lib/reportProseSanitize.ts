@@ -1,11 +1,46 @@
-import type { ReportPayload } from "../types";
+import type { ReportPayload, SchoolRow, TopReferenceSchoolRow, UcAnalysis } from "../types";
 import { sanitizeReportTierDifferentiation } from "./tierDifferentiationSanitize";
 import type { Locale } from "../i18n/strings";
 import { sanitizeUnsourcedStats } from "./admitRateSanitize";
 import { sanitizeUndergradSchoolMentions } from "./undergradCopySanitize";
 
 function cleanLine(text: string, locale: Locale): string {
-  return sanitizeUndergradSchoolMentions(sanitizeUnsourcedStats(text, locale), "", locale);
+  let line = text;
+  if (locale === "zh") line = line.replace(/[「」]/g, "");
+  return sanitizeUndergradSchoolMentions(sanitizeUnsourcedStats(line, locale), "", locale);
+}
+
+function cleanSchoolRow(row: SchoolRow, locale: Locale): SchoolRow {
+  return {
+    ...row,
+    school: cleanLine(row.school, locale),
+    why_reach_for_you: row.why_reach_for_you ? cleanLine(row.why_reach_for_you, locale) : row.why_reach_for_you,
+    why_match_for_you: row.why_match_for_you ? cleanLine(row.why_match_for_you, locale) : row.why_match_for_you,
+    why_safety_for_you: row.why_safety_for_you ? cleanLine(row.why_safety_for_you, locale) : row.why_safety_for_you,
+    campus_vibe: row.campus_vibe ? cleanLine(row.campus_vibe, locale) : row.campus_vibe,
+    differentiation: row.differentiation ? cleanLine(row.differentiation, locale) : row.differentiation,
+    context_note: row.context_note ? cleanLine(row.context_note, locale) : row.context_note,
+    key_fit_signals: row.key_fit_signals.map((x) => cleanLine(x, locale)),
+    key_risks: row.key_risks.map((x) => cleanLine(x, locale)),
+    verification_focus: row.verification_focus.map((x) => cleanLine(x, locale)),
+  };
+}
+
+function cleanTopReferenceRow(row: TopReferenceSchoolRow, locale: Locale): TopReferenceSchoolRow {
+  return {
+    ...row,
+    school: cleanLine(row.school, locale),
+    why_reference_for_you: row.why_reference_for_you ? cleanLine(row.why_reference_for_you, locale) : row.why_reference_for_you,
+    campus_vibe: row.campus_vibe ? cleanLine(row.campus_vibe, locale) : row.campus_vibe,
+    context_note: row.context_note ? cleanLine(row.context_note, locale) : row.context_note,
+    key_fit_signals: row.key_fit_signals?.map((x) => cleanLine(x, locale)),
+    key_risks: row.key_risks?.map((x) => cleanLine(x, locale)),
+    verification_focus: row.verification_focus?.map((x) => cleanLine(x, locale)),
+  };
+}
+
+function cleanSchoolRows(rows: SchoolRow[] | undefined, locale: Locale): SchoolRow[] {
+  return (rows ?? []).map((row) => cleanSchoolRow(row, locale));
 }
 
 /** 报告非校名单字段：清洗 Anderson/Haas 误表述与无来源统计（旧报告展示用） */
@@ -36,6 +71,27 @@ export function sanitizeReportProse(report: ReportPayload, locale: Locale): Repo
       };
     }
 
+    const reach = cleanSchoolRows(report.reach, locale);
+    const match = cleanSchoolRows(report.match, locale);
+    const safety = cleanSchoolRows(report.safety, locale);
+    const top_reference_schools = (report.top_reference_schools ?? []).map((row) => cleanTopReferenceRow(row, locale));
+
+    let uc_analysis: UcAnalysis | null | undefined = report.uc_analysis;
+    if (uc_analysis) {
+      uc_analysis = {
+        ...uc_analysis,
+        overview: cleanLine(uc_analysis.overview, locale),
+        test_blind_note: cleanLine(uc_analysis.test_blind_note, locale),
+        application_note: cleanLine(uc_analysis.application_note, locale),
+        reach: cleanSchoolRows(uc_analysis.reach, locale),
+        match: cleanSchoolRows(uc_analysis.match, locale),
+        safety: cleanSchoolRows(uc_analysis.safety, locale),
+        checklist: (uc_analysis.checklist ?? []).map((x) => cleanLine(x, locale)),
+        piq_directions: (uc_analysis.piq_directions ?? []).map((x) => cleanLine(x, locale)),
+        information_gaps: (uc_analysis.information_gaps ?? []).map((x) => cleanLine(x, locale)),
+      };
+    }
+
     return sanitizeReportTierDifferentiation(
       {
         ...report,
@@ -44,6 +100,11 @@ export function sanitizeReportProse(report: ReportPayload, locale: Locale): Repo
         strategy_notes,
         portfolio_risks,
         improvement_plan,
+        reach,
+        match,
+        safety,
+        top_reference_schools,
+        uc_analysis,
       },
       locale,
     );

@@ -1,4 +1,5 @@
 import type { FormState } from "../types";
+import { isActivityThinFromForm } from "./activityEvidence";
 
 export type UcAcademicBand = "weak" | "mid" | "strong";
 
@@ -34,18 +35,10 @@ function parseSatScore(form: FormState): number | null {
   return null;
 }
 
-export function isActivityThin(activities: string): boolean {
-  const t = activities.trim();
-  if (t.length < 60) return true;
-  if (/暂无|没有|无活动|empty|none|n\/a|几乎|很少|偏少|几乎为空/i.test(t)) return true;
-  const bullets = t.split(/\n|；|;|•|·/).filter((x) => x.trim().length > 12);
-  return bullets.length < 2;
-}
-
 export function assessUcProfileSignals(form: FormState): UcProfileSignals {
   const { unweighted, weighted } = parseGpaNumbers(form.gpa);
   const sat = parseSatScore(form);
-  const activityThin = isActivityThin(form.activities);
+  const activityThin = isActivityThinFromForm(form);
 
   let band: UcAcademicBand = "mid";
   const uw = unweighted ?? weighted;

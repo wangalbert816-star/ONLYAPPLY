@@ -31,6 +31,7 @@ import {
   validateMainSchoolReport,
 } from "./topReferenceSchools.mjs";
 import { CURATED_OFFICIAL_LINK_SCHOOL_COUNT, formatMajorGuideForPrompt } from "./knowledge/majorActivitySnippets.mjs";
+import { structuredActivityBlob } from "./activityEvidence.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // 始终从项目根目录加载 .env（避免从别的 cwd 启动 node 时读不到 OPENAI_BASE_URL，误连 OpenAI 官方导致 401）
@@ -556,17 +557,17 @@ app.post("/api/stripe/create-essay-analysis-checkout-session", async (req, res) 
 
 const SYSTEM_PROMPT_ZH = `你是一位资深美国本科升学顾问（10年+经验），风格：专业、克制、可执行。基于用户问卷生成「选校策略草案」。
 
-【语言】全程简体中文（校名保留英文）。
+【语言】全程简体中文（校名保留英文）。不要使用直角引号「」；需要强调时用逗号、冒号或短句即可。
 
 【顾问感】
 - 先判断信息是否足够；不足则在 information_gaps 列出需补充问题（0-6条）。
-- executive_summary 是「整体结论」：3-5 条，每条必须引用至少 1 个问卷具体事实（主申专业、GPA 描述、标化策略/分数、活动摘要、预算、选校风格、入学季等）；第一条必须是针对该生的一句话判断（≤90 字）。
+- executive_summary 是「整体结论」：3-5 条，每条必须引用至少 1 个问卷具体事实（主申专业、GPA 描述、标化策略/分数、结构化活动、预算、选校风格、入学季等）；第一条必须是针对该生的一句话判断（≤90 字）。
 - 禁止 executive_summary 套话：不要无依据地写「整体画像偏平衡型」「不是缺乏野心」「Top 30–50 主战场」等；若提学校区间，必须说明依据（如课程、活动、标化、预算）。
 - executive_summary 与 reach/match/safety 的理由不得矛盾；可概括档位逻辑，但不要重复粘贴每校理由。
 - 若 GPA 偏低（如未加权≤3.25、SAT≤1280）或活动几乎为空：禁止写「名单均衡/偏稳/可冲顶校」；须点明活动或成绩短板，且与 UC 分档（若有）一致。
 - 若用户消息末含有【用户补充说明】区块：必须结合其更新 reach/match/safety 的入档理由与风险表述；information_gaps 中已被充分覆盖的点应删除或合并；禁止输出与补充说明明显矛盾的内容。
 - 用户补充说明是跨轮次已确认事实：若用户已说明不考/不提交 SAT、ACT，不得再追问对应考试；若已提供 TOEFL/IELTS/Duolingo 等语言成绩或说明无需语言成绩，不得再追问“是否有语言成绩”，只能在必要时追问更具体的未覆盖细节。
-- 至少3处明确引用用户问卷中的具体字段（预算/身份/标化/专业/偏好/活动）；若有补充说明，至少1处明确引用补充中的事实。
+- 至少3处明确引用用户问卷中的具体字段（预算/身份/标化/专业/偏好/结构化活动/就读学校）；若有补充说明，至少1处明确引用补充中的事实。
 - 禁止「保证」「稳进」「必录」；不编造具体截止日期、具体奖学金金额、具体录取率（除非用户提供了且你仅复述）。
 
 【申请环境与竞争密度】
@@ -576,6 +577,11 @@ const SYSTEM_PROMPT_ZH = `你是一位资深美国本科升学顾问（10年+经
 - 若申请环境信息缺失，在 information_gaps 中提醒补充「常驻地区/主要受教育地区」以校准竞争密度。
 
 【易变信息】涉及政策/费用/轮次/国际生要求：写「以学校官网当年公布为准」，verification_focus 写核对项但不要写具体日期数字。
+
+【课程 rigor · 就读学校】
+- 用户会提供当前就读高中/中学名称与课程体系；须结合两者解释课程难度（rigor）如何影响冲/稳/保理由、executive_summary 与 key_risks。
+- 禁止编造该校 profile、排名、录取率或 feeder 数据；可中性提及广为人知的 rigorous 声誉，否则写 verification_focus 中应核对什么（课程清单、学校 profile、counselor 说明）。
+- GPA 说明中的 AP/IB/honors/排名须与就读学校语境一致；若 rigor 与分数看似不匹配，须在风险中点明。
 
 【冲稳保】
 - 冲：必须是「现实可冲」学校，录取不确定性高但仍有可解释的申请理由；不要把几乎不可能的顶级彩票校放进常规冲刺。
@@ -645,7 +651,7 @@ const SYSTEM_PROMPT_EN = `You are a senior U.S. undergraduate admissions counsel
 - If GPA is weak or activities are thin: do NOT call the list “balanced/stable” or imply flagship reaches are reasonable; name the limiting board explicitly and align with uc_analysis tiers if present.
 - If the user message ends with a [User supplementary notes] block: you MUST revise reach/match/safety rationales and risks accordingly; remove or merge gap items that are fully addressed; never contradict those notes.
 - Supplementary notes are confirmed facts across refreshes: if the user already said they will not take/submit SAT or ACT, do not ask about that test again; if they already provided TOEFL/IELTS/Duolingo or said no language score is needed, do not ask whether a language score exists again. Only ask for narrower missing details that are not covered.
-- Reference at least 3 specific questionnaire fields (budget/identity/testing/major/preferences/activities). If supplementary notes exist, reference at least one concrete fact from them.
+- Reference at least 3 specific questionnaire fields (budget/identity/testing/major/preferences/structured activities/current high school). If supplementary notes exist, reference at least one concrete fact from them.
 - Never promise admission ("guaranteed", "sure admit", etc.). Do not invent exact deadlines, exact aid dollar amounts, or exact admit rates unless the user supplied them and you are only repeating.
 
 【Application environment and competition density】
@@ -655,6 +661,11 @@ const SYSTEM_PROMPT_EN = `You are a senior U.S. undergraduate admissions counsel
 - If environment information is missing, add an information_gaps item asking for usual residence/main education region to calibrate competition density.
 
 【Volatile facts】For policies, costs, rounds, international requirements: say "confirm on each school's official site for the application cycle." Put checklist items in verification_focus without inventing specific calendar dates.
+
+【Course rigor · current high school】
+- The user provides their current high school name and curriculum system; combine both to explain how course rigor shapes reach/match/safety rationales, executive_summary, and key_risks.
+- Do NOT invent school profile stats, rankings, admit rates, or feeder data. You may note well-known rigorous reputations neutrally; otherwise state what to verify (course list, school profile, counselor context).
+- AP/IB/honors/rank mentions in GPA notes must align with the school context; flag mismatches in risks.
 
 【Reach / Match / Safety】
 - Reach: realistic stretch only. It may be uncertain, but there must still be a defensible admissions case; do not put nearly-impossible lottery schools into the regular Reach tier.
@@ -776,7 +787,7 @@ function wantsUcFromBody(body) {
     body?.majorPrimary,
     body?.majorSecondary,
     body?.dealbreakers,
-    body?.activities,
+    structuredActivityBlob(body),
     body?.residenceRegion,
     body?.citizenship,
   ]
@@ -1190,6 +1201,21 @@ function campusCultureAnalysisHint(pref, locale) {
     : "用户要学业与社交平衡——同档校须同时比较课业强度与社交生活。";
 }
 
+function academicRigorAnalysisHint(body, locale) {
+  const school = String(body?.currentHighSchool || "").trim();
+  const system = String(body?.highSchoolSystem || "").trim();
+  if (locale === "en") {
+    if (!school) {
+      return "No current high school name—infer course rigor only from curriculum system and GPA notes; flag rigor uncertainty in information_gaps when it affects tiering.";
+    }
+    return `Current high school: ${school}. Combine with curriculum (${system || "unknown"}) to interpret course rigor in executive_summary, tier rationales, and key_risks. Do NOT invent school profile stats, rankings, or admit rates. You may note well-known rigorous reputations in neutral terms; otherwise tell the student what to verify (school profile, counselor context, course list). Cross-check AP/IB/honors mentions in GPA notes against this school context.`;
+  }
+  if (!school) {
+    return "未提供就读学校名称——仅依据课程体系与 GPA 说明推断课程 rigor；若影响档位判断，请在 information_gaps 中提示 rigor 不确定。";
+  }
+  return `当前就读学校：${school}。须与课程体系（${system || "未填"}）结合，在总览、分档理由与 key_risks 中解释课程 rigor 如何影响判断。禁止编造该校 profile 数据、排名或录取率；知名 rigorous 学校可用中性表述，否则应写清需核对项（学校 profile、counselor 说明、课程清单）。GPA 说明中的 AP/IB/honors 须与此校语境交叉验证。`;
+}
+
 function formatAcademicSpecialLine(body) {
   const flags = Array.isArray(body?.academicSpecialFlags) ? body.academicSpecialFlags.filter(Boolean) : [];
   const notes = String(body?.academicSpecialNotes || "").trim();
@@ -1219,6 +1245,7 @@ function buildUserPayload(body, includeUc = false) {
     satScore,
     actScore,
     highSchoolSystem,
+    currentHighSchool,
     gpa,
     gpaTrend,
     languageScores,
@@ -1227,7 +1254,6 @@ function buildUserPayload(body, includeUc = false) {
     schoolSize,
     campusCulturePref,
     geoPrefs,
-    activities,
     structuredActivities,
     riskStyle,
     dealbreakers,
@@ -1245,6 +1271,7 @@ function buildUserPayload(body, includeUc = false) {
   const structuredActivityText = formatStructuredActivities(structuredActivities, locale);
   const budgetLine = budgetPostureLabel(budget, locale);
   const cultureLine = campusCultureAnalysisHint(campusCulturePref, locale);
+  const rigorLine = academicRigorAnalysisHint(body, locale);
   let extra = "";
   if (supplementary.length > 0) {
     if (isEn) {
@@ -1275,6 +1302,8 @@ ${planHorizonLine}
     }
 
 [High school system] ${highSchoolSystem || na}
+[Current high school] ${currentHighSchool || na}
+[Course rigor — analysis instruction] ${rigorLine}
 [GPA / transcript notes] ${gpa || na}
 [GPA trend] ${gpaTrend || na}
 [Language scores] ${languageScores || na}
@@ -1286,9 +1315,7 @@ ${planHorizonLine}
 [Culture preference — analysis instruction] ${cultureLine}
 [Geography preferences] ${geoStr}
 
-[Activities / awards summary] ${activities || na}${
-      structuredActivityText ? `\n[Structured activity / competition details]\n${structuredActivityText}` : ""
-    }
+[Structured activities / competition details] ${structuredActivityText || na}
 [List risk posture] ${riskStyle || na}
 [Hard dealbreakers] ${dealbreakers || none}${
       includeUc
@@ -1310,6 +1337,8 @@ ${planHorizonLine}
 【标化策略】${testing || "未填"}${testing === "will_submit" ? `\nSAT: ${satScore || "未填"}\nACT: ${actScore || "未填"}` : ""}
 
 【高中体系】${highSchoolSystem || "未填"}
+【就读学校】${currentHighSchool || "未填"}
+【课程 rigor · 分析要求】${rigorLine}
 【GPA/成绩说明】${gpa || "未填"}
 【GPA 趋势】${gpaTrend || "未填"}
 【语言成绩】${languageScores || "未填"}
@@ -1321,7 +1350,7 @@ ${planHorizonLine}
 【社区偏好 · 分析要求】${cultureLine}
 【地理偏好】${Array.isArray(geoPrefs) ? geoPrefs.join("、") : geoPrefs || "未填"}
 
-【活动/奖项摘要】${activities || "未提供"}${structuredActivityText ? `\n【活动/竞赛细节】\n${structuredActivityText}` : ""}
+【结构化活动 / 竞赛细节】${structuredActivityText || "未提供"}
 【选校风格】${riskStyle || "未填"}
 【绝对不能接受】${dealbreakers || "无"}${
     includeUc

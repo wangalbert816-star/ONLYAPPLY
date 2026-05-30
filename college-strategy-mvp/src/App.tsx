@@ -62,6 +62,7 @@ const initialForm: FormState = {
   satScore: "",
   actScore: "",
   highSchoolSystem: "",
+  currentHighSchool: "",
   gpa: "",
   gpaTrend: "",
   languageScores: "",
@@ -169,6 +170,7 @@ function validateStep(step: number, f: FormState, tr: (path: string) => string):
       if (!hasSat && !hasAct) return tr("validation.testScore");
     }
     if (!f.highSchoolSystem) return tr("validation.hs");
+    if (!f.currentHighSchool.trim()) return tr("validation.currentHighSchool");
     if (!f.majorPrimary.trim()) return tr("validation.major");
     if (!f.schoolSize) return tr("validation.schoolSize");
     if (!f.campusCulturePref) return tr("validation.campusCulture");

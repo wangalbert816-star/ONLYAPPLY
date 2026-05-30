@@ -14,6 +14,7 @@ export function getSampleForm(locale: Locale): FormState {
     satScore: "1480",
     actScore: "",
     highSchoolSystem: locale === "en" ? "International curriculum" : "国际课程",
+    currentHighSchool: locale === "en" ? "Sample International High School" : "示例国际高中",
     gpa: "3.85",
     gpaTrend: "upward",
     languageScores: locale === "en" ? "TOEFL 108" : "TOEFL 108",
@@ -24,14 +25,32 @@ export function getSampleForm(locale: Locale): FormState {
     schoolSize: "large",
     campusCulturePref: "balanced",
     geoPrefs: ["west"],
-    activities: locale === "en" ? "CS club, regional hackathon" : "计算机社团、区域黑客松",
-    structuredActivities: [],
+    activities: "",
+    structuredActivities: [
+      {
+        id: "sample-act-1",
+        name: locale === "en" ? "CS club" : "计算机社团",
+        kind: "club",
+        grades: locale === "en" ? "10-12" : "10-12 年级",
+        hours: locale === "en" ? "6 hrs/week" : "每周 6 小时",
+        role: locale === "en" ? "Core member" : "核心成员",
+        description:
+          locale === "en"
+            ? "Built weekly workshops and a small open-source tool used by 40+ students."
+            : "组织每周 workshop，并维护一个被 40+ 同学使用的小工具项目。",
+        outcome: locale === "en" ? "Regional hackathon finalist" : "区域黑客松入围",
+        award: "",
+        scope: "school",
+        majorRelated: "yes",
+        proof: locale === "en" ? "GitHub repo + event certificate" : "GitHub 仓库 + 活动证明",
+      },
+    ],
     riskStyle: "balanced",
     dealbreakers: "",
   };
 }
 
-/** 脱敏样例报告：用于「产品介绍」页展示，非真实用户数据 */
+/** 脱敏样例报告：用于产品介绍页展示，非真实用户数据 */
 export function getSampleReport(locale: Locale): ReportPayload {
   if (locale === "en") {
     return {
@@ -147,7 +166,7 @@ export function getSampleReport(locale: Locale): ReportPayload {
 
   return {
     executive_summary: [
-      "整体画像偏「平衡型 STEM」：计算机方向主线清楚，冲刺档应保留现实可解释空间，不宜堆彩票校。",
+      "整体画像偏平衡型 STEM：计算机方向主线清楚，冲刺档应保留现实可解释空间，不宜堆彩票校。",
       "预算与奖助口径会显著影响最终能否入读，需在匹配/保底档提前核对净花费假设。",
       "当前最大信息缺口：活动有方向，但每条主线尚缺可核对的结果（数字、角色、时间范围）。",
     ],
@@ -214,7 +233,7 @@ export function getSampleReport(locale: Locale): ReportPayload {
     strategy_notes: ["以下为脱敏样例，校名为示意。", "UC 校区录取不看 SAT/ACT（test-blind）。"],
     uc_analysis: {
       overview:
-        "样例背景含西部/UC 意向。以下为示意性「校区组合」，不是固定的「前二 + 中间四 + 后三」模板。",
+        "样例背景含西部/UC 意向。以下为示意性校区组合，不是固定的前二 + 中间四 + 后三模板。",
       test_blind_note: "加州大学（UC）本科录取为 test-blind：录取决定中不使用 SAT/ACT。",
       application_note: "所有 UC 校区共用一套 UC Application 与 4 篇 PIQ。",
       reach: [
@@ -238,7 +257,7 @@ export function getSampleReport(locale: Locale): ReportPayload {
       safety: [
         {
           school: "UC Riverside（样例）",
-          why_safety_for_you: "有助于降低「UC 全军覆没」风险，仍与 STEM 相关。",
+          why_safety_for_you: "有助于降低UC 全军覆没风险，仍与 STEM 相关。",
           key_fit_signals: ["组合覆盖面"],
           key_risks: ["仍有选择性"],
           verification_focus: ["专业是否开放"],

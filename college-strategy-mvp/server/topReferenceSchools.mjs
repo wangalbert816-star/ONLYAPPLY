@@ -1,4 +1,5 @@
 import { coerceStringArray } from "./coerceStringArray.mjs";
+import { isActivityThinFromBody, structuredActivityBlob } from "./activityEvidence.mjs";
 
 const ULTRA_SELECTIVE_SCHOOLS = [
   "mit",
@@ -73,26 +74,6 @@ function parseGpaNumbers(gpaText) {
   return { unweighted, weighted };
 }
 
-function isActivityThin(activities) {
-  const t = String(activities || "").trim();
-  if (t.length < 60) return true;
-  if (/暂无|没有|无活动|empty|none|n\/a|几乎|很少|偏少|几乎为空/i.test(t)) return true;
-  return t.split(/\n|；|;|•|·/).filter((x) => x.trim().length > 12).length < 2;
-}
-
-/** 问卷 Step 3 结构化活动也算作有效活动证据 */
-function isActivityThinFromBody(body) {
-  const structured = Array.isArray(body?.structuredActivities) ? body.structuredActivities : [];
-  const meaningful = structured.filter((item) => {
-    if (!item || typeof item !== "object") return false;
-    const name = String(item.name || "").trim();
-    const desc = String(item.description || "").trim();
-    return name.length > 0 && desc.length >= 20;
-  });
-  if (meaningful.length >= 1) return false;
-  return isActivityThin(body?.activities);
-}
-
 /** 是否允许输出 top_reference_schools（强背景或罕见证据） */
 export function allowsTopReferenceSchools(body) {
   const { unweighted, weighted } = parseGpaNumbers(body?.gpa);
@@ -103,7 +84,7 @@ export function allowsTopReferenceSchools(body) {
   const strongGpa = (uw != null && uw >= 3.75) || (w != null && w >= 4.0);
   const blob = [
     body?.gpa,
-    body?.activities,
+    structuredActivityBlob(body),
     body?.majorPrimary,
     body?.majorSecondary,
     body?.dealbreakers,

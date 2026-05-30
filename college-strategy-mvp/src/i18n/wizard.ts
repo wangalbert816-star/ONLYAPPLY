@@ -1,4 +1,4 @@
-/** 问卷「引导式选择」文案；经 merge 扁平化为 wizard.* */
+/** 问卷引导式选择文案；经 merge 扁平化为 wizard.* */
 
 export const wizardZhNested = {
   wizard: {
@@ -25,6 +25,7 @@ export const wizardZhNested = {
         environment: "申请环境",
         budget: "资金预期",
         hs: "高中体系",
+        currentSchool: "就读学校",
         gpa: "成绩说明",
         gpaTrend: "GPA 趋势",
         testing: "标化策略",
@@ -52,6 +53,7 @@ export const wizardZhNested = {
         language: "填写 TOEFL / IELTS / Duolingo 等",
         special: "可选：勾选或说明成绩单特殊情况",
         hs: "选择高中课程体系",
+        currentSchool: "填写当前就读学校全称",
         major: "填写主修或方向",
         major2: "可选：填写第二意向",
         size: "选择偏好的校园规模",
@@ -73,7 +75,7 @@ export const wizardZhNested = {
         },
         identity: {
           title: "第 1 步 — 申请身份",
-          context: "决定国际生政策、奖助路径，以及名单里「现实可达」怎么切。",
+          context: "决定国际生政策、奖助路径，以及名单里现实可达怎么切。",
         },
         environment: {
           title: "第 1 步 — 申请环境",
@@ -89,30 +91,30 @@ export const wizardZhNested = {
         why: "入学季决定截止日与时间轴口径，档位也会按当季规则对齐。",
         fb2027Fall: "好，我们会按 2027 秋季窗口梳理截止日与材料节奏。",
         fb2028Fall: "了解，准备期更长，我们会把可叠加的履历与叙事写得更清楚。",
-        fb2029Fall: "收到，时间更宽裕，我们会把「现在能做的」与远期节点对齐来写。",
+        fb2029Fall: "收到，时间更宽裕，我们会把现在能做的与远期节点对齐来写。",
         fb2030Fall: "明白，长线规划下，我们会把里程碑拆成可检查的小步。",
         fbOther: "收到。非典型入学季更需要逐校核对官网口径，我们会把不确定性标出来。",
       },
       identity: {
         q: "你的申请身份更接近哪一种？",
-        why: "身份会影响国际生政策、奖助学金可用性，以及名单里「现实可达」的切法。",
+        why: "身份会影响国际生政策、奖助学金可用性，以及名单里现实可达的切法。",
         fbIntl: "明白。国际生路径里签证、资金与奖助信息会更关键，我们会据此加重验证点。",
         fbUs: "了解。本州/外州与公民身份会影响学费与部分项目门槛，我们会按此校准档位。",
         fbOther: "收到。身份边界不清晰时，我们会把需要你在官网二次确认的点单独列出。",
       },
       environment: {
         q: "护照地区与常住地（可选）",
-        why: "国籍/护照地区与常驻地区只用于判断申请群体竞争密度；报告里会用「竞争密度」表达，不会简单写成某个地区更难。",
+        why: "国籍/护照地区与常驻地区只用于判断申请群体竞争密度；报告里会用竞争密度表达，不会简单写成某个地区更难。",
         fb: "收到。系统会把它作为申请环境依据，用更中性的方式校准风险判断。",
       },
       budget: {
         q: "读本科时的资金预期，更接近哪一种？",
-        why: "这决定学校名单里「全自费可达」与「需要奖助支撑」的比重与风险提示。",
-        fbFull: "了解。全自费路径下，名单会更偏向「录取规则清晰、对你可控」的组合。",
+        why: "这决定学校名单里全自费可达与需要奖助支撑的比重与风险提示。",
+        fbFull: "了解。全自费路径下，名单会更偏向录取规则清晰、对你可控的组合。",
         fbHigh: "收到。预算较高但仍控成本时，我们会同时看录取可控性、奖学金机会和总成本。",
         fbCap: "明白。有明确上限时，我们会更重视性价比、公立/低成本选择和 merit 奖学金可能性。",
         fbAid: "收到。需要奖助时，我们会更强调可验证的财务叙事与匹配型机会，而不是只看排名。",
-        fbUnsure: "没关系。我们会同时给出「保守可达」与「需要更多信息才安全」的档位提示。",
+        fbUnsure: "没关系。我们会同时给出保守可达与需要更多信息才安全的档位提示。",
       },
     },
     s2: {
@@ -145,6 +147,10 @@ export const wizardZhNested = {
           title: "第 2 步 — 高中体系",
           context: "课程体系决定招生官如何解读你的成绩单与课程难度。",
         },
+        currentSchool: {
+          title: "第 2 步 — 就读学校",
+          context: "学校名称帮助我们把课程 rigor 放进真实语境，而不是只看 GPA 数字。",
+        },
         major: {
           title: "第 2 步 — 主修意向",
           context: "专业方向决定活动与课程是否形成闭环。",
@@ -172,14 +178,19 @@ export const wizardZhNested = {
         fbCn: "了解。普高路径下，课程叙事与可验证的学术证据会更关键。",
         fbUs: "收到。美高语境里年级排名、学校档案与一致性会被看得更重。",
         fbIb: "明白。我们会按 IB 的 HL/SL 与预估分语境来写匹配与风险。",
-        fbAl: "了解。A-Level 组合与预估成绩会进入「学术可信度」的主线叙事。",
+        fbAl: "了解。A-Level 组合与预估成绩会进入学术可信度的主线叙事。",
         fbAp: "收到。AP 体系下，我们会关注课程组合是否与意向专业一致、是否有分数支撑。",
-        fbOther: "收到。非标准体系更需要解释「你学到了什么」，我们会把缺口提示写清楚。",
+        fbOther: "收到。非标准体系更需要解释你学到了什么，我们会把缺口提示写清楚。",
+      },
+      currentSchool: {
+        q: "你目前就读哪所学校？",
+        why: "学校名称与课程体系一起，决定招生官如何理解你的课程难度（rigor）与成绩含金量。",
+        fb: "收到。我们会结合学校与课程体系来解读课程强度，并在报告中说明 rigor 如何影响档位判断。",
       },
       gpa: {
         q: "请用几句话描述你的成绩与年级位置（GPA、排名、核心科目等）。",
         why: "这是招生官判断学术可信度与课程强度的第一手材料，比单一数字更重要。",
-        fb: "好。我们会把这些信息转译成「可验证信号」，并在不匹配处标出风险。",
+        fb: "好。我们会把这些信息转译成可验证信号，并在不匹配处标出风险。",
       },
       gpaTrend: {
         q: "整体来看，你的 GPA / 成绩走势更接近哪一种？",
@@ -194,11 +205,11 @@ export const wizardZhNested = {
         q: "SAT / ACT 你打算怎么交？",
         why: "Test-Optional 与递交分数会显著改变学校组合与材料验证重点。",
         fbOpt: "了解。不强制递交时，我们会更依赖课程强度、叙事与可验证活动来支撑档位。",
-        fbSubmit: "好。有分数时，我们会把分数与课程档案放在一起看「是否互相印证」。",
+        fbSubmit: "好。有分数时，我们会把分数与课程档案放在一起看是否互相印证。",
       },
       scores: {
         q: "填写 SAT 或 ACT（二选一即可）",
-        why: "分数强弱会影响名单里「证据链」是否闭合，以及哪些学校更值得花时间验证。",
+        why: "分数强弱会影响名单里证据链是否闭合，以及哪些学校更值得花时间验证。",
         fb: "收到。我们会把你的分数纳入可达性判断，并在报告里标出需要官网核对的敏感项。",
       },
       language: {
@@ -231,7 +242,7 @@ export const wizardZhNested = {
       },
       major2: {
         q: "是否有第二意向或备选方向？（可留空）",
-        why: "第二意向帮助构建更稳的名单分层，也能避免「一条道走到黑」的策略风险。",
+        why: "第二意向帮助构建更稳的名单分层，也能避免一条道走到黑的策略风险。",
         skip: "没有第二意向，继续",
         fbSkip: "可以。单主线也可以，我们会在名单里留出更清晰的匹配与安全空间。",
         fb: "了解。双意向时，我们会避免两份叙事互相打架，并提示哪些学校更适合哪条线。",
@@ -241,7 +252,7 @@ export const wizardZhNested = {
         why: "规模影响课堂形态、资源可达性与社交密度，是长期就读体验的重要变量。",
         fbSmall: "收到。小班型更看重紧密导师关系与研究机会的可得性。",
         fbMedium: "了解。中等规模往往在资源与关注度之间更平衡。",
-        fbLarge: "明白。大校更需要主动规划路径，我们会把「如何吃到资源」写进验证清单。",
+        fbLarge: "明白。大校更需要主动规划路径，我们会把如何吃到资源写进验证清单。",
         fbAny: "好。我们会把规模当作可调配因子，而不是硬筛条件。",
       },
       culture: {
@@ -262,7 +273,7 @@ export const wizardZhNested = {
       screens: {
         activities: {
           title: "第 3 步 — 活动与角色",
-          context: "至少 1 条。名称与「你具体做了什么」为必填；信息越完整，判断越准。",
+          context: "至少 1 条。名称与你具体做了什么为必填；信息越完整，判断越准。",
         },
         risk: {
           title: "第 3 步 — 名单风格",
@@ -275,7 +286,7 @@ export const wizardZhNested = {
       },
       activities: {
         q: "请详细填写你的活动与竞赛经历",
-        why: "活动不是堆量，而是证明「持续投入 + 影响 + 反思」；这会直接影响文书与档位。",
+        why: "活动不是堆量，而是证明持续投入 + 影响 + 反思；这会直接影响文书与档位。",
         fbEmpty: "可以。若暂时空白，我们会更依赖学术主线与风险清单来构建草稿。",
         fb: "好。我们会提炼可验证的亮点，并提示哪些表述需要在材料里落到证据。",
         skip: "暂时没有要补充的活动，继续",
@@ -333,14 +344,14 @@ export const wizardZhNested = {
       },
       risk: {
         q: "你希望这份学校名单整体更偏哪种风格？",
-        why: "保守/平衡/进取决定「冲刺—匹配—保底」的比例，也决定你愿意承担的不确定性。",
+        why: "保守/平衡/进取决定冲刺—匹配—保底的比例，也决定你愿意承担的不确定性。",
         fbCon: "了解。偏保守时，我们会把可达性与材料闭环放在排名之前。",
         fbBal: "收到。平衡型会同时保留上行空间与可执行的验证路径。",
-        fbAgg: "明白。更进取时，我们会把「赌点」写清楚，并给出对应的补救与验证动作。",
+        fbAgg: "明白。更进取时，我们会把赌点写清楚，并给出对应的补救与验证动作。",
       },
       deal: {
         q: "有没有绝对不能接受的底线？（宗教、气候、城市/村、专业限制等，可留空）",
-        why: "底线越早说清，越能避免生成一份「看起来好但你会痛苦四年」的名单。",
+        why: "底线越早说清，越能避免生成一份看起来好但你会痛苦四年的名单。",
         presetLabel: "常见底线",
         customLabel: "也可以补充更具体的要求",
         presets: {
@@ -386,6 +397,7 @@ export const wizardEnNested = {
         environment: "Application context",
         budget: "Funding posture",
         hs: "High school system",
+        currentSchool: "Current school",
         gpa: "Academic record",
         gpaTrend: "GPA trend",
         testing: "Testing strategy",
@@ -413,6 +425,7 @@ export const wizardEnNested = {
         language: "Enter TOEFL / IELTS / Duolingo, etc.",
         special: "Optional: note transcript special circumstances",
         hs: "Select your high school curriculum",
+        currentSchool: "Enter your current high school name",
         major: "Enter primary major or direction",
         major2: "Optional: secondary interest",
         size: "Pick preferred campus size",
@@ -507,6 +520,10 @@ export const wizardEnNested = {
           title: "Step 2 — High school system",
           context: "Your curriculum shapes how officers read rigor and course difficulty.",
         },
+        currentSchool: {
+          title: "Step 2 — Current school",
+          context: "School name anchors course rigor in real context—not GPA numbers alone.",
+        },
         major: {
           title: "Step 2 — Primary interest",
           context: "Major direction decides whether activities and coursework align.",
@@ -537,6 +554,11 @@ export const wizardEnNested = {
         fbAl: "Received. We’ll treat predicted grades and subject mix as the credibility spine.",
         fbAp: "Understood. We’ll check AP alignment with your intended major and score support.",
         fbOther: "Noted. Nonstandard paths need clearer “what you learned”; we’ll surface gaps explicitly.",
+      },
+      currentSchool: {
+        q: "What high school do you currently attend?",
+        why: "School name plus curriculum system helps admissions read course rigor and how credible your grades are.",
+        fb: "Got it. We’ll use your school with your curriculum to interpret rigor and explain how it affects tiering in the report.",
       },
       gpa: {
         q: "In a few sentences, describe grades and standing (GPA scale, rank, key courses).",

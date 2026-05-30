@@ -1,6 +1,7 @@
 import type { FormState, ReportPayload, SchoolRow, SchoolTier, UcAnalysis } from "../types";
 import type { Locale } from "../i18n/strings";
 import { getCampusDef, pickUcCampusPortfolio, type UcCampusKey } from "./ucCampusPortfolio";
+import { structuredActivityBlob } from "./activityEvidence";
 import { isWeakUcProfile } from "./ucProfileStrength";
 import { sanitizeUcAnalysis, ucAnalysisNeedsFallback } from "./ucAnalysisSanitize";
 
@@ -13,7 +14,7 @@ export function wantsUcAnalysis(form: FormState): boolean {
     form.majorPrimary,
     form.majorSecondary,
     form.dealbreakers,
-    form.activities,
+    structuredActivityBlob(form),
     form.residenceRegion,
     form.citizenship,
   ]
@@ -82,15 +83,15 @@ function buildCampusWhy(
     flagshipReach
       ? isEn
         ? `For ${major}, ${name} is at most a very low-probability reference—not a responsible Reach tier given your current GPA/activities.`
-        : `就「${major}」与当前 GPA/活动而言，${name} 最多作极低概率参考，不宜作为负责任的 UC 冲刺档。`
+        : `就${major}与当前 GPA/活动而言，${name} 最多作极低概率参考，不宜作为负责任的 UC 冲刺档。`
       : tier === "reach"
       ? isEn
         ? `As a reach campus for ${major}, ${name} is highly selective; ${fitNote}.`
-        : `作为「${major}」方向的冲刺校，${name} 选择性很高；${fitNote}。`
+        : `作为${major}方向的冲刺校，${name} 选择性很高；${fitNote}。`
       : tier === "match"
         ? isEn
           ? `As a match campus for ${major}, ${name} is a more realistic main target; ${fitNote}.`
-          : `作为「${major}」方向的稳妥主战场之一，${name} 相对更现实；${fitNote}。`
+          : `作为${major}方向的稳妥主战场之一，${name} 相对更现实；${fitNote}。`
         : isEn
           ? `As a safety floor for your UC portfolio, ${name} helps reduce all-UC-reject risk; ${fitNote}.`
           : `作为 UC 组合的保底档，${name} 有助于降低全军覆没风险；${fitNote}。`;
@@ -110,12 +111,12 @@ function buildCampusWhy(
     : {
         berkeley: ["热门专业可能名额紧张/筛选", "国际生/州外竞争密度高"],
         ucla: ["选择性很高；叙事必须具体", "热门方向可能有额外筛选"],
-        ucsd: ["STEM 需选对学院", "作为「稳」档仍有不小选择性"],
+        ucsd: ["STEM 需选对学院", "作为稳档仍有不小选择性"],
         ucsb: ["理工强—若依赖大城市实习需核对", "部分专业竞争不低"],
         uci: ["CS/商科等路径竞争不低", "需核对专业所属学院"],
         ucdavis: ["校园环境偏小镇—核对底线", "部分专业名额仍有限"],
         ucsc: ["品牌弱于头部 UC—PIQ 仍要扎实", "核对专业开放情况"],
-        ucr: ["并非「随便进」—仍需完整 PIQ", "费用/奖助因家庭而异"],
+        ucr: ["并非随便进—仍需完整 PIQ", "费用/奖助因家庭而异"],
         ucmerced: ["建校较新—核对专业深度", "地理位置不一定适合所有人"],
       };
 
@@ -157,7 +158,7 @@ export function buildUcAnalysisFallback(form: FormState, locale: Locale): UcAnal
   const reachNames = picks.filter((p) => p.tier === "reach").map((p) => campusDisplayName(p.campus.key, locale));
   let overview = isEn
     ? `You showed interest in the UC system. Campus tiers below are chosen from your major (${major}), list posture, and activity/GPA snapshot—not a default "Berkeley + UCLA reach for everyone" template. UC admission is holistic and test-blind.`
-    : `你已表现出 UC 申请意向。下方校区分档依据你的主申专业（${major}）、选校风格与成绩/活动快照生成，不是默认「人人冲刺 Berkeley + UCLA」；录取为 holistic review 且 test-blind。`;
+    : `你已表现出 UC 申请意向。下方校区分档依据你的主申专业（${major}）、选校风格与成绩/活动快照生成，不是默认人人冲刺 Berkeley + UCLA；录取为 holistic review 且 test-blind。`;
 
   if (reachNames.length > 0 && !reachNames.some((n) => /berkeley|ucla|伯克利/i.test(n))) {
     overview += isEn
@@ -171,7 +172,7 @@ export function buildUcAnalysisFallback(form: FormState, locale: Locale): UcAnal
 
   const applicationNote = isEn
     ? "All UC campuses share one UC Application and four PIQs (Personal Insight Questions). Tier labels below are campus-selection strategy, not separate applications."
-    : "所有 UC 校区共用一套 UC Application 与 4 篇 PIQ（Personal Insight Questions）。下面的冲/稳/保是「选哪些校区」，不是 6 份独立申请。";
+    : "所有 UC 校区共用一套 UC Application 与 4 篇 PIQ（Personal Insight Questions）。下面的冲/稳/保是选哪些校区，不是 6 份独立申请。";
 
   const reach: SchoolRow[] = [];
   const match: SchoolRow[] = [];
@@ -222,7 +223,7 @@ export function buildUcAnalysisFallback(form: FormState, locale: Locale): UcAnal
         "PIQ 4: Community contribution or identity thread (avoid repeating PIQ 1)",
       ]
     : [
-        `PIQ 1：用一个具体场景说明「${major}」为何对你变得具体`,
+        `PIQ 1：用一个具体场景说明${major}为何对你变得具体`,
         "PIQ 2：一次带头或发起行动的经历，尽量有可核对的结果",
         "PIQ 3：一次挫折/转折，以及你之后改变了什么",
         "PIQ 4：社区/身份视角（避免与 PIQ 1 重复同一活动）",

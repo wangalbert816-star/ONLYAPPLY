@@ -9,14 +9,14 @@ function axisLabel(key: ProfileDimensionKey, locale: Locale): string {
     academic: "学术",
     testing: "标化",
     activities: "活动",
-    essays: "文书",
+    rigor: "Rigor",
     strategy: "策略",
   };
   const en: Record<ProfileDimensionKey, string> = {
     academic: "Academic",
     testing: "Testing",
     activities: "Activities",
-    essays: "Essays",
+    rigor: "Rigor",
     strategy: "Strategy",
   };
   return (locale === "en" ? en : zh)[key];

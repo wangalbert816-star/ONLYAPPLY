@@ -1,4 +1,5 @@
 import { ucCampusKeyFromSchool } from "./ucCampusSelectivity.mjs";
+import { isActivityThinFromBody } from "./activityEvidence.mjs";
 
 function parseGpaNumbers(gpaText) {
   const t = String(gpaText || "").trim();
@@ -23,17 +24,10 @@ function parseSatFromBody(body) {
   return n >= 400 && n <= 1600 ? n : null;
 }
 
-export function isActivityThin(activities) {
-  const t = String(activities || "").trim();
-  if (t.length < 60) return true;
-  if (/暂无|没有|无活动|empty|none|n\/a|几乎|很少|偏少|几乎为空/i.test(t)) return true;
-  return t.split(/\n|；|;|•|·/).filter((x) => x.trim().length > 12).length < 2;
-}
-
 export function assessUcProfileSignals(body) {
   const { unweighted, weighted } = parseGpaNumbers(body?.gpa);
   const sat = parseSatFromBody(body);
-  const activityThin = isActivityThin(body?.activities);
+  const activityThin = isActivityThinFromBody(body);
   let band = "mid";
   const uw = unweighted ?? weighted;
   const w = weighted ?? unweighted;

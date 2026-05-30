@@ -11,6 +11,7 @@ import {
 } from "../../lib/supabase/accounts";
 import { formatSupabaseError } from "../../lib/supabase/errors";
 import { buildBiggestGapBlock, buildOverallVerdict } from "../../lib/decisionReport";
+import { formatStructuredActivitiesSummary } from "../../lib/activityEvidence";
 import { buildFiveDimensionProfile, type ProfileDimensionKey } from "../../lib/fiveDimensionProfile";
 import type { ActivityItem, FormState, GeoPref, ReportPayload, SupplementaryNote } from "../../types";
 import { BrandLogo } from "../BrandLogo";
@@ -41,14 +42,14 @@ function dimensionLabel(key: ProfileDimensionKey, locale: "zh" | "en") {
     academic: "学术定位",
     testing: "标化策略",
     activities: "活动主线",
-    essays: "文书叙事",
+    rigor: "课程 rigor",
     strategy: "选校策略",
   };
   const en: Record<ProfileDimensionKey, string> = {
     academic: "Academic positioning",
     testing: "Testing strategy",
     activities: "Activity spine",
-    essays: "Essay narrative",
+    rigor: "Course rigor",
     strategy: "List strategy",
   };
   return (locale === "en" ? en : zh)[key];
@@ -129,11 +130,12 @@ function buildApplicationInfoItems(form: FormState, locale: "zh" | "en", t: Retu
     { label: t("auth.accountInfoGpa"), value: compactText(form.gpa) },
     { label: t("auth.accountInfoTesting"), value: compactText(testing) },
     { label: t("auth.accountInfoSchoolSystem"), value: compactText(form.highSchoolSystem) },
+    { label: t("auth.accountInfoCurrentSchool"), value: compactText(form.currentHighSchool) },
     { label: t("auth.accountInfoMajor"), value: compactText([form.majorPrimary, form.majorSecondary].filter(Boolean).join(" / ")) },
     { label: t("auth.accountInfoIdentity"), value: form.applicantIdentity ? optionLabel("identity", form.applicantIdentity, locale) : "" },
     { label: t("auth.accountInfoEnvironment"), value: compactText([form.citizenship ?? "", form.residenceRegion ?? ""].filter(Boolean).join(" / ")) },
     { label: t("auth.accountInfoBudget"), value: form.budget ? optionLabel("budget", form.budget, locale) : "" },
-    { label: t("auth.accountInfoActivities"), value: compactText(form.activities) },
+    { label: t("auth.accountInfoActivities"), value: compactText(formatStructuredActivitiesSummary(form)) },
     { label: t("auth.accountInfoPreferences"), value: compactText([form.schoolSize ? optionLabel("size", form.schoolSize, locale) : "", form.campusCulturePref ? optionLabel("culture", form.campusCulturePref, locale) : "", geo].filter(Boolean).join(" · ")) },
     { label: t("auth.accountInfoRisk"), value: form.riskStyle ? optionLabel("risk", form.riskStyle, locale) : "" },
     { label: t("auth.accountInfoDealbreakers"), value: compactText(form.dealbreakers) },
@@ -628,6 +630,14 @@ export function AccountHome({
                           value={profileDraft.gpa}
                           onChange={(e) => updateProfileDraft("gpa", e.target.value)}
                           placeholder={t("form.placeholder.gpa")}
+                        />
+                      </label>
+                      <label>
+                        <span>{t("form.currentHighSchool")}</span>
+                        <input
+                          value={profileDraft.currentHighSchool}
+                          onChange={(e) => updateProfileDraft("currentHighSchool", e.target.value)}
+                          placeholder={t("form.placeholder.currentHighSchool")}
                         />
                       </label>
                       <label>

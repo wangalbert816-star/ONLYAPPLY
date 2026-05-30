@@ -1,4 +1,5 @@
 import type { FormState, SchoolTier } from "../types";
+import { structuredActivityBlob } from "./activityEvidence";
 import { allowUcFlagshipReach, assessUcProfileSignals, isWeakUcProfile } from "./ucProfileStrength";
 
 export type UcCampusKey =
@@ -134,13 +135,7 @@ const CAMPUSES: CampusDef[] = [
 ];
 
 function profileBlob(form: FormState): string {
-  return [
-    form.majorPrimary,
-    form.majorSecondary,
-    form.activities,
-    form.gpa,
-    form.dealbreakers,
-  ]
+  return [form.majorPrimary, form.majorSecondary, structuredActivityBlob(form), form.gpa, form.dealbreakers]
     .join(" ")
     .toLowerCase();
 }

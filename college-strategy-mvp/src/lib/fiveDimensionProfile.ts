@@ -1,7 +1,8 @@
 import type { ActivityItem, FormState } from "../types";
+import { meaningfulStructuredActivities } from "./activityEvidence";
 import type { Locale } from "../i18n/strings";
 
-export type ProfileDimensionKey = "academic" | "testing" | "activities" | "essays" | "strategy";
+export type ProfileDimensionKey = "academic" | "testing" | "activities" | "rigor" | "strategy";
 
 export type ProfileBand = "low" | "mid" | "high";
 
@@ -26,7 +27,7 @@ const BAND_COPY: Record<ProfileDimensionKey, Record<ProfileBand, BandCopy>> = {
     low: {
       zh: {
         judgment: "你目前成绩单信息偏薄，学术这一档我不好帮你压死。",
-        explain: "成绩单这段现在偏「一句话带过」，顾问很难判断你的课程强度在招生官眼里站哪一档。",
+        explain: "成绩单这段现在偏一句话带过，顾问很难判断你的课程强度在招生官眼里站哪一档。",
         suggest: "把未加权/加权 GPA、年级排名（若有）、核心课列表和难度写进问卷第二步——不用长，但要能对照学校官网的 middle 50%。",
       },
       en: {
@@ -38,7 +39,7 @@ const BAND_COPY: Record<ProfileDimensionKey, Record<ProfileBand, BandCopy>> = {
     mid: {
       zh: {
         judgment: "你目前有大致水平，但课程口径还没对齐，学术可信度会晃。",
-        explain: "能看出大致水平，但还缺「和课程体系对齐」的那几笔，否则冲稳保里学术可信度会摇摆。",
+        explain: "能看出大致水平，但还缺和课程体系对齐的那几笔，否则冲稳保里学术可信度会摇摆。",
         suggest: "补一句：你所在体系里 GPA 怎么算、有没有下滑/上升趋势；若有标化计划，写清首考/二考月份，方便把活动叙事和考试节奏对齐。",
       },
       en: {
@@ -50,13 +51,13 @@ const BAND_COPY: Record<ProfileDimensionKey, Record<ProfileBand, BandCopy>> = {
     high: {
       zh: {
         judgment: "你目前学术画像够清楚，可以正经拿去对齐学校区间了。",
-        explain: "学术画像相对清楚：至少顾问能按「你这套课 + 这条成绩线」去对齐学校区间了。",
-        suggest: "下一步把同一套信息压缩进活动/主文书里可核对的「证据点」：别重复堆数字，挑 2–3 个最能顶住追问的事实。",
+        explain: "学术画像相对清楚：至少顾问能按你这套课 + 这条成绩线去对齐学校区间了。",
+        suggest: "下一步把同一套信息压缩进活动/主文书里可核对的证据点：别重复堆数字，挑 2–3 个最能顶住追问的事实。",
       },
       en: {
         judgment: "Your academic picture is clear enough to align school bands without guessing.",
         explain: "Academic picture is clear enough to align school bands without guessing.",
-        suggest: "Next, translate the same facts into 2–3 verifiable proof points for essays—don’t re-stack stats; pick what survives cross-examination.",
+        suggest: "Next, keep GPA scale and trend checkable against each target school’s profile—short facts beat long paragraphs.",
       },
     },
   },
@@ -65,7 +66,7 @@ const BAND_COPY: Record<ProfileDimensionKey, Record<ProfileBand, BandCopy>> = {
       zh: {
         judgment: "你目前标化这条是短板：要么没定策略，要么说要交分但数字没落地。",
         explain: "标化这条现在是短板：要么没选策略，要么说要交分但数字还没落地。",
-        suggest: "先定「交不交」和考试月份，再把目标区间写进问卷；如果坚定 Test-Optional，就把为什么能在别处补强度写清楚，别留空让模型猜。",
+        suggest: "先定交不交和考试月份，再把目标区间写进问卷；如果坚定 Test-Optional，就把为什么能在别处补强度写清楚，别留空让模型猜。",
       },
       en: {
         judgment: "Testing is your weak link—policy unset, or submit chosen but scores aren’t real yet.",
@@ -76,8 +77,8 @@ const BAND_COPY: Record<ProfileDimensionKey, Record<ProfileBand, BandCopy>> = {
     mid: {
       zh: {
         judgment: "你目前标化策略有了，但分数与送分节奏还没写死，核对会偏保守。",
-        explain: "策略有了，但分数或送分节奏还没写死，名单里「验证型材料」会偏保守。",
-        suggest: "把已出分/计划出分和送分学校清单写进备注里；哪怕只是月份，也能让顾问把核对重点从「猜」改成「查」。",
+        explain: "策略有了，但分数或送分节奏还没写死，名单里验证型材料会偏保守。",
+        suggest: "把已出分/计划出分和送分学校清单写进备注里；哪怕只是月份，也能让顾问把核对重点从猜改成查。",
       },
       en: {
         judgment: "Policy is set, but the score story isn’t nailed down—checklists stay conservative.",
@@ -87,8 +88,8 @@ const BAND_COPY: Record<ProfileDimensionKey, Record<ProfileBand, BandCopy>> = {
     },
     high: {
       zh: {
-        judgment: "你目前标化信息基本闭环，可以进入「核对送分细节」阶段了。",
-        explain: "标化信息基本闭环：至少「交不交 + 大致区间」是站得住的。",
+        judgment: "你目前标化信息基本闭环，可以进入核对送分细节阶段了。",
+        explain: "标化信息基本闭环：至少交不交 + 大致区间是站得住的。",
         suggest: "去 College Board / ACT 官网核对送分代码与加急规则；把最容易踩坑的两条写进自己的表格，别交给申请季当天再查。",
       },
       en: {
@@ -101,8 +102,8 @@ const BAND_COPY: Record<ProfileDimensionKey, Record<ProfileBand, BandCopy>> = {
   activities: {
     low: {
       zh: {
-        judgment: "你目前活动几乎是空的——不是没亮点，是没法帮你挡「模板化」风险。",
-        explain: "活动几乎是空的——不是「没亮点」，是顾问没法帮你挡掉「模板化」风险。",
+        judgment: "你目前活动几乎是空的——不是没亮点，是没法帮你挡模板化风险。",
+        explain: "活动几乎是空的——不是没亮点，是顾问没法帮你挡掉模板化风险。",
         suggest: "先写 3 条：时间跨度、你具体做了什么、有没有可验证结果（人数/金额/名次）。不用文学化，写事实就能抬分。",
       },
       en: {
@@ -114,7 +115,7 @@ const BAND_COPY: Record<ProfileDimensionKey, Record<ProfileBand, BandCopy>> = {
     mid: {
       zh: {
         judgment: "你目前有活动，但更像罗列清单，主线不够尖。",
-        explain: "有材料，但还偏「罗列」，看不出哪一条是你真正押重注的主线。",
+        explain: "有材料，但还偏罗列，看不出哪一条是你真正押重注的主线。",
         suggest: "标出 1 条主线 + 1 条辅线：主线写深（每周几小时、持续多久），辅线一笔带过，别让招生官自己帮你剪枝。",
       },
       en: {
@@ -125,8 +126,8 @@ const BAND_COPY: Record<ProfileDimensionKey, Record<ProfileBand, BandCopy>> = {
     },
     high: {
       zh: {
-        judgment: "你目前活动够具体，能支撑「你不是临时凑简历」。",
-        explain: "活动信息够具体，至少能支撑「你不是临时凑简历」这一判断。",
+        judgment: "你目前活动够具体，能支撑你不是临时凑简历。",
+        explain: "活动信息够具体，至少能支撑你不是临时凑简历这一判断。",
         suggest: "把同一条主线拆成主文书里 2 个场景 + 1 个失败/反思——比再堆一个新活动更能抬录取叙事。",
       },
       en: {
@@ -136,41 +137,41 @@ const BAND_COPY: Record<ProfileDimensionKey, Record<ProfileBand, BandCopy>> = {
       },
     },
   },
-  essays: {
+  rigor: {
     low: {
       zh: {
-        judgment: "你目前文书素材偏薄，动笔很容易写成「漂亮但不贴你」。",
-        explain: "文书潜力现在主要靠猜：活动没写细、专业意向也薄，很难判断你能写出哪种「可信成长弧」。",
-        suggest: "先把活动和主申方向补实，再动笔；否则写出来的稿子容易「漂亮但不贴你」。",
+        judgment: "你目前课程 rigor 语境偏薄，招生官很难判断成绩含金量。",
+        explain: "就读学校或选课难度几乎没落地——GPA 数字缺少在哪所学校、上了什么课的参照。",
+        suggest: "填写就读学校全称，并在 GPA 说明里列出核心 AP/IB/honors 与难度——不用长，但要能对照目标校 profile。",
       },
       en: {
-        judgment: "Essay material is thin—drafts risk sounding polished but not attached to you.",
-        explain: "Essay potential is guessy—thin activities + thin major intent makes a believable arc hard to see.",
-        suggest: "Fill activities and major intent before drafting; otherwise the essay tends to sound polished but not attached to you.",
+        judgment: "Course rigor context is thin—officers can’t tell how hard your transcript reads.",
+        explain: "School name or course difficulty is missing—your GPA number floats without “where” and “what you took.”",
+        suggest: "Add your current school and core AP/IB/honors in Step 2—short is fine, but checkable against each school’s profile.",
       },
     },
     mid: {
       zh: {
-        judgment: "你目前有素材，但叙事脊骨还没露出来，容易变履历复述。",
-        explain: "素材够了，但还没看到「冲突—选择—代价」这条叙事脊骨，文书容易写成履历复述。",
-        suggest: "用 5 句话写：你曾相信什么、哪件事推翻它、你做了什么选择、付出什么、现在怎么看自己——这比形容词有用。",
+        judgment: "你目前有学校或选课线索，但 rigor 还没和课程体系对齐。",
+        explain: "有就读学校或部分选课信息，但还没形成这套课在该校/该体系下算多难的完整语境。",
+        suggest: "把就读学校、课程体系与 GPA 里的选课难度写在一起；若有排名或加权口径，一并注明。",
       },
       en: {
-        judgment: "You have ingredients, but the spine—tension, choice, cost—isn’t visible yet.",
-        explain: "You have ingredients, but the spine—tension, choice, cost—isn’t visible yet; drafts often become resume rewrites.",
-        suggest: "Write five sentences: what you believed, what broke it, what you chose, what it cost, and how you see yourself now—beats adjectives.",
+        judgment: "You have school or course hints, but rigor isn’t aligned with your curriculum system yet.",
+        explain: "School or partial course info exists, but “how hard this reads” in your system isn’t fully anchored.",
+        suggest: "Tie school name + curriculum system + course difficulty in your GPA notes; add rank or weighting if you have it.",
       },
     },
     high: {
       zh: {
-        judgment: "你目前文书可写性不错，剩下主要是取舍和语气。",
-        explain: "文书素材的「可写性」不错：有事实、有时间线，剩下是取舍和语气问题。",
-        suggest: "找一版你信任的人只问一句：「哪一段最像我？」删掉不像你的段落，比再加一个奖项更值钱。",
+        judgment: "你目前课程 rigor 语境够清楚，可以拿去对照目标校了。",
+        explain: "就读学校、课程体系与选课难度基本对齐——至少能按真实语境解读 transcript。",
+        suggest: "去每所目标校 CDS/招生页核对该校如何读你的课程体系；把需验证的两条写进自己的表。",
       },
       en: {
-        judgment: "Essay material is workable—what’s left is taste and cuts.",
-        explain: "Essay material is workable—facts and a timeline exist; what’s left is taste and cuts.",
-        suggest: "Ask one trusted reader: “Which paragraph sounds most like me?” Cut what doesn’t pass—usually beats adding another award.",
+        judgment: "Course rigor context is clear enough to compare against target schools.",
+        explain: "School, curriculum system, and course difficulty line up—transcript rigor can be read in real context.",
+        suggest: "Copy two must-check items per school on how they read your curriculum (CDS/admissions page)—don’t guess at submit time.",
       },
     },
   },
@@ -178,8 +179,8 @@ const BAND_COPY: Record<ProfileDimensionKey, Record<ProfileBand, BandCopy>> = {
     low: {
       zh: {
         judgment: "你目前选校策略还没落地，名单容易飘、风险不好兜。",
-        explain: "选校风格、地理或底线几乎没落地——策略层现在是「空架子」。",
-        suggest: "先把风险档位（冲/稳/保）和地理偏好选实；底线哪怕写一条「绝对不去」也比空着强，能立刻收窄名单噪音。",
+        explain: "选校风格、地理或底线几乎没落地——策略层现在是空架子。",
+        suggest: "先把风险档位（冲/稳/保）和地理偏好选实；底线哪怕写一条绝对不去也比空着强，能立刻收窄名单噪音。",
       },
       en: {
         judgment: "List posture isn’t grounded yet—strategy is still mostly a shell.",
@@ -191,7 +192,7 @@ const BAND_COPY: Record<ProfileDimensionKey, Record<ProfileBand, BandCopy>> = {
       zh: {
         judgment: "你目前有方向，但预算/拍板人没写清，后面一加压名单会摇摆。",
         explain: "大方向有，但家庭约束/预算口径还没写清，后面一加压名单就容易摇摆。",
-        suggest: "把「谁拍板预算」「奖助学金是否一票否决」写进补充说明；顾问才能把保底写成真保底，而不是心理安慰。",
+        suggest: "把谁拍板预算奖助学金是否一票否决写进补充说明；顾问才能把保底写成真保底，而不是心理安慰。",
       },
       en: {
         judgment: "Direction exists, but budget decision-makers aren’t explicit—lists wobble under pressure.",
@@ -203,7 +204,7 @@ const BAND_COPY: Record<ProfileDimensionKey, Record<ProfileBand, BandCopy>> = {
       zh: {
         judgment: "你目前策略输入够扎实，可以拿去对照官网逐条核了。",
         explain: "策略输入比较完整：风险偏好、地理和底线至少有一条能拽住名单。",
-        suggest: "下一步用你自己的表把每所学校的「官网 3 个必核项」抄出来——比再讨论「冲不冲」更能推进决策。",
+        suggest: "下一步用你自己的表把每所学校的官网 3 个必核项抄出来——比再讨论冲不冲更能推进决策。",
       },
       en: {
         judgment: "Strategy inputs are solid enough to steer the list with discipline.",
@@ -236,7 +237,7 @@ function scoreFromRatio(ratio: number, minScore: number, maxScore: number) {
 
 /**
  * 成绩单说明里的可核对信号（主因），不奖励无意义的字数堆砌。
- * 衡量的是「顾问能否据此判断学术档位」，不是 GPA 高低本身。
+ * 衡量的是顾问能否据此判断学术档位，不是 GPA 高低本身。
  */
 function gpaSignalQuality(g: string): number {
   if (!g.trim()) return 0;
@@ -259,7 +260,7 @@ function gpaSignalQuality(g: string): number {
   );
 }
 
-/** 仅区分「过短无法判断」与「够写一两句」；不作为高分主因 */
+/** 仅区分过短无法判断与够写一两句；不作为高分主因 */
 function gpaContextBonus(g: string): number {
   return linearRatio(g.trim().length, 14, 64) * 0.12;
 }
@@ -270,7 +271,7 @@ function scoreAcademic(form: FormState): number {
   const signals = gpaSignalQuality(g);
   const bonus = gpaContextBonus(g);
   let quality = clampScore(signals * 0.88 + bonus, 0, 1);
-  // 字数很多但几乎没有可核对信号 → 封顶，避免「写字凑分」
+  // 字数很多但几乎没有可核对信号 → 封顶，避免写字凑分
   if (g.length > 180 && signals < 0.38) {
     quality = Math.min(quality, 0.48);
   }
@@ -352,37 +353,21 @@ function scoreTesting(form: FormState): number {
 const ACTIVITY_LEADERSHIP_RE =
   /lead|chair|captain|founder|president|national|international|research|paper|专利|主席|队长|创始人|国家|国际|科研/i;
 
-function activityItemHasContent(item: ActivityItem): boolean {
-  return [item.name, item.role, item.description, item.outcome, item.award, item.proof].some((v) => v.trim().length > 0);
-}
-
 function filledStructuredActivities(form: FormState): ActivityItem[] {
-  return (form.structuredActivities ?? []).filter(activityItemHasContent);
+  return meaningfulStructuredActivities(form);
 }
 
-/** 摘要 + 明细拼成一段，用于字数与关键词检测 */
+/** 结构化活动拼成一段，用于字数与关键词检测 */
 function combinedActivityText(form: FormState): string {
-  const parts: string[] = [];
-  const summary = form.activities.trim();
-  if (summary) parts.push(summary);
-  for (const item of filledStructuredActivities(form)) {
-    const line = [
-      item.name,
-      item.kind,
-      item.role,
-      item.description,
-      item.outcome,
-      item.award,
-      item.scope,
-      item.hours,
-      item.proof,
-    ]
-      .map((v) => String(v ?? "").trim())
-      .filter(Boolean)
-      .join(" ");
-    if (line) parts.push(line);
-  }
-  return parts.join("\n");
+  return filledStructuredActivities(form)
+    .map((item) =>
+      [item.name, item.kind, item.role, item.description, item.outcome, item.award, item.scope, item.hours, item.proof]
+        .map((v) => String(v ?? "").trim())
+        .filter(Boolean)
+        .join(" "),
+    )
+    .filter(Boolean)
+    .join("\n");
 }
 
 function activityItemDepthNorm(item: ActivityItem): number {
@@ -446,13 +431,33 @@ function scoreActivities(form: FormState): number {
   return Math.round(clampScore(scoreFromRatio(quality, 38, 92), 38, 92));
 }
 
-function scoreEssays(form: FormState): number {
-  const actMaterial = linearRatio(combinedActivityText(form).length, 0, 200);
-  const major = linearRatio(form.majorPrimary.trim().length, 0, 14);
-  const hs = form.highSchoolSystem ? 1 : 0;
-  const testOptBoost = form.testing === "test_optional" ? gpaSignalQuality(form.gpa.trim()) * 0.08 : 0;
-  const quality = clampScore(actMaterial * 0.42 + major * 0.28 + hs * 0.08 + testOptBoost + 0.22, 0, 1);
-  return Math.round(clampScore(scoreFromRatio(quality, 34, 90), 34, 90));
+function gpaRigorSignalQuality(g: string): number {
+  if (!g.trim()) return 0;
+  const hasRigor =
+    /rank|排名|top|前\s*\d|%\s*|\bUW\b|\bW\b|unweighted|weighted|未加权|加权|AP|IB|honors|honour|a-?level|course|课程|rigor|difficult|honors/i.test(
+      g,
+    )
+      ? 1
+      : 0;
+  const hasRank = /rank|排名|top\s*\d|前\s*\d|percentile|decile|堂|T[1-3]/i.test(g) ? 1 : 0;
+  const hasTrend = /上升|下滑|trend|improv|declin|junior|senior|11\s*年级|12\s*年级|year\s*\d/i.test(g) ? 1 : 0;
+  return clampScore(hasRigor * 0.62 + hasRank * 0.24 + hasTrend * 0.14, 0, 1);
+}
+
+function scoreRigor(form: FormState): number {
+  const school = form.currentHighSchool.trim();
+  const system = form.highSchoolSystem;
+  const schoolNorm = school ? linearRatio(school.length, 3, 28) : 0;
+  const systemNorm = system ? 1 : 0;
+  const courseSignals = gpaRigorSignalQuality(form.gpa.trim());
+  const specialBoost = (form.academicSpecialFlags?.length ?? 0) > 0 ? 0.08 : 0;
+  const trendBoost =
+    form.gpaTrend === "upward" ? 0.06 : form.gpaTrend === "stable" ? 0.03 : form.gpaTrend === "downward" ? 0.01 : 0;
+
+  let quality = clampScore(schoolNorm * 0.32 + systemNorm * 0.24 + courseSignals * 0.36 + specialBoost + trendBoost, 0, 1);
+  if (!school && system) quality = Math.min(quality, 0.58);
+  if (!school && !system) quality = Math.min(quality, 0.4);
+  return Math.round(clampScore(scoreFromRatio(quality, 34, 92), 34, 92));
 }
 
 function scoreStrategy(form: FormState): number {
@@ -473,12 +478,12 @@ function scoreStrategy(form: FormState): number {
 }
 
 export function buildFiveDimensionProfile(form: FormState, locale: Locale): ProfileDimension[] {
-  const keys: ProfileDimensionKey[] = ["academic", "testing", "activities", "essays", "strategy"];
+  const keys: ProfileDimensionKey[] = ["academic", "testing", "activities", "rigor", "strategy"];
   const scores: Record<ProfileDimensionKey, number> = {
     academic: scoreAcademic(form),
     testing: scoreTesting(form),
     activities: scoreActivities(form),
-    essays: scoreEssays(form),
+    rigor: scoreRigor(form),
     strategy: scoreStrategy(form),
   };
   const pack = locale === "en" ? "en" : "zh";

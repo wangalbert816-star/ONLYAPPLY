@@ -14,7 +14,7 @@ import {
 } from "./undergradCopySanitize";
 import { filterUcTestBlindBullets, sanitizeUcTestBlindCopy } from "./ucTestBlindCopySanitize";
 
-/** selectivity 1–2 不宜作弱档案的「保底」 */
+/** selectivity 1–2 不宜作弱档案的保底 */
 const NOT_TRUE_SAFETY_KEYS = new Set<UcCampusKey>([
   "berkeley",
   "ucla",
@@ -341,7 +341,7 @@ export function sanitizeUcAnalysis(uc: UcAnalysis, form: FormState, locale: Loca
     overview =
       locale === "en"
         ? "For your current GPA/testing and thin activities, UC tiers below are tightened: flagship campuses are not default Reach, and mid-tier campuses are not labeled as true safeties."
-        : "按你目前的成绩/标化与活动厚度，下方 UC 分档已收紧：顶校不会默认作冲刺，中档校区也不会被标成「保底」。";
+        : "按你目前的成绩/标化与活动厚度，下方 UC 分档已收紧：顶校不会默认作冲刺，中档校区也不会被标成保底。";
   }
   if (notes.length) {
     overview += (overview ? " " : "") + notes.join(" ");

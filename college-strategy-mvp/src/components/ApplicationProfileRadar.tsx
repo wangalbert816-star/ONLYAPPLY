@@ -17,7 +17,7 @@ const BLANK_DRAFTS: Record<ProfileDimensionKey, string> = {
   academic: "",
   testing: "",
   activities: "",
-  essays: "",
+  rigor: "",
   strategy: "",
 };
 

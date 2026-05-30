@@ -48,7 +48,7 @@ export const MAJOR_ACTIVITY_GUIDES: MajorActivityGuide[] = [
     competitionsEn: ["DECA / FBLA / case competition via school", "Investment or business simulation with clear role", "Small venture or club ops/finance project"],
     projectsZh: ["量化社团成果（筹款额、参与人数、增长率）", "为本地组织做调研或运营改进", "与主申专业相关的实习/影子经历（可验证）"],
     projectsEn: ["Quantified club outcomes (funds raised, growth)", "Research or ops improvement for a local org", "Major-linked internship or shadowing with verification"],
-    avoidZh: "避免空泛「创业想法」；每条须有可核对数字或第三方证明。",
+    avoidZh: "避免空泛创业想法；每条须有可核对数字或第三方证明。",
     avoidEn: "Avoid vague startup ideas—each item needs verifiable numbers or third-party proof.",
   },
   {
@@ -72,7 +72,7 @@ export const MAJOR_ACTIVITY_GUIDES: MajorActivityGuide[] = [
     competitionsEn: ["USABO / Brain Bee by level", "Science Olympiad bio/chem events", "School science club experiment or data contest"],
     projectsZh: ["实验室助理或本地科研（小时+导师+产出）", "公共卫生/社区健康可量化项目", "与课程联动的独立实验记录"],
     projectsEn: ["Lab assistant or local research (hours, mentor, output)", "Public-health project with measurable impact", "Course-linked independent lab notebook"],
-    avoidZh: "付费「科研营」需核对成本与可验证性；优先本地可持续经历。",
+    avoidZh: "付费科研营需核对成本与可验证性；优先本地可持续经历。",
     avoidEn: "Paid research camps need cost/verification check—prefer local sustained experience.",
   },
   {
@@ -84,7 +84,7 @@ export const MAJOR_ACTIVITY_GUIDES: MajorActivityGuide[] = [
     competitionsEn: ["Scholastic Art or regional awards", "Music/theater festival with named role", "Design hackathon or portfolio review"],
     projectsZh: ["Portfolio 网站或公开作品集", "社区演出/展览（时间线+作品链接）", "与主申方向一致的系列创作（3+ 件）"],
     projectsEn: ["Portfolio site or public collection", "Community show/exhibit with timeline + links", "Series of 3+ works aligned to intended major"],
-    avoidZh: "避免仅列「兴趣爱好」；须展示持续产出与外部反馈。",
+    avoidZh: "避免仅列兴趣爱好；须展示持续产出与外部反馈。",
     avoidEn: "Do not list hobbies only—show sustained output and external feedback.",
   },
 ];

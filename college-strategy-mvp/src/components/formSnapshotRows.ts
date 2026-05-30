@@ -309,6 +309,14 @@ const ROW_DEFS: RowDef[] = [
     value: (f, t) => labelHs(f, t) || null,
   },
   {
+    id: "currentSchool",
+    section: 2,
+    labelKey: "wizard.summary.row.currentSchool",
+    hintKey: "wizard.summary.hint.currentSchool",
+    filled: (f) => Boolean(f.currentHighSchool.trim()),
+    value: (f) => f.currentHighSchool.trim() || null,
+  },
+  {
     id: "major",
     section: 2,
     labelKey: "wizard.summary.row.major",
@@ -397,6 +405,7 @@ const STEP2_SCREEN_IDS = new Set<Step2ScreenId>([
   "language",
   "special",
   "hs",
+  "currentSchool",
   "major",
   "major2",
   "size",

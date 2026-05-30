@@ -139,14 +139,14 @@ function axisLabel(key: ProfileDimensionKey, locale: Locale): string {
     academic: "学术（GPA）",
     testing: "标化",
     activities: "活动",
-    essays: "文书",
+    rigor: "Rigor",
     strategy: "策略",
   };
   const en: Record<ProfileDimensionKey, string> = {
     academic: "Academics",
     testing: "Testing",
     activities: "Activities",
-    essays: "Essays",
+    rigor: "Rigor",
     strategy: "Strategy",
   };
   return locale === "en" ? en[key] : zh[key];
@@ -159,7 +159,7 @@ function buildTopActions(form: FormState, dimensions: ProfileDimension[], locale
   if (locale === "en") {
     const fix: Record<ProfileDimensionKey, PdfTopAction> = {
       activities: { title: "Deepen activities first", detail: "One thread: span, role, verifiable outcome." },
-      essays: { title: "Build essay material first", detail: "Activities + direction before drafting." },
+      rigor: { title: "Anchor course rigor first", detail: "School name + AP/IB/honors in GPA notes." },
       academic: { title: "Lock academic facts", detail: "GPA scale, rigor, trend—then align schools." },
       testing: { title: "Lock testing plan", detail: "Submit vs optional + test months on paper." },
       strategy: { title: "Lock list rules", detail: "Budget, aid gates, decision owner." },
@@ -179,7 +179,7 @@ function buildTopActions(form: FormState, dimensions: ProfileDimension[], locale
 
   const fixMap: Record<ProfileDimensionKey, PdfTopAction> = {
     activities: { title: "优先补活动", detail: "写清 3 条：跨度、角色、可验证结果。" },
-    essays: { title: "先补文书素材", detail: "活动与主申方向写具体后再动笔。" },
+    rigor: { title: "先补课程 rigor", detail: "就读学校 + GPA 里的 AP/IB/honors 写清楚。" },
     academic: { title: "先补学术口径", detail: "GPA 算法、核心课、趋势写清楚。" },
     testing: { title: "定标化策略", detail: "交不交分、考试月份、目标区间写死。" },
     strategy: { title: "定选校规则", detail: "预算、奖助底线、谁拍板写清楚。" },

@@ -2,10 +2,11 @@ import type { FormState } from "../types";
 import type { Locale } from "../i18n/strings";
 import type { ProfileDimension, ProfileDimensionKey } from "./fiveDimensionProfile";
 import { getEffectiveIntake } from "./intakeTerm";
+import { hasStructuredActivities } from "./activityEvidence";
 import { isWeakUcProfile } from "./ucProfileStrength";
 
-/** 并列最低分时，优先把「对档位感知更强」的维当作主短板 */
-const WEAK_TIE_ORDER: ProfileDimensionKey[] = ["activities", "essays", "academic", "testing", "strategy"];
+/** 并列最低分时，优先把对档位感知更强的维当作主短板 */
+const WEAK_TIE_ORDER: ProfileDimensionKey[] = ["activities", "rigor", "academic", "testing", "strategy"];
 
 export type OverallVerdict = {
   headline: string;
@@ -55,23 +56,18 @@ export function pickStrongestDimension(dimensions: ProfileDimension[]): ProfileD
   return cands[0];
 }
 
-function hasStructuredActivities(form: FormState): boolean {
-  return (form.structuredActivities ?? []).some((item) =>
-    [item.name, item.role, item.description, item.outcome, item.award].some((value) => value.trim().length > 0),
-  );
-}
-
 function informationCompleteness(form: FormState): number {
   let score = 0;
   if (form.gpa.trim().length > 0) score += 1;
   if (form.highSchoolSystem.trim().length > 0) score += 1;
+  if (form.currentHighSchool.trim().length > 0) score += 1;
   if (form.testing === "test_optional" || form.satScore.trim() || form.actScore.trim()) score += 1;
   if (form.majorPrimary.trim().length > 0) score += 1;
-  if (form.activities.trim().length > 20 || hasStructuredActivities(form)) score += 1;
+  if (hasStructuredActivities(form)) score += 1;
   if (form.riskStyle) score += 1;
   if (form.budget) score += 1;
   if (form.geoPrefs.length > 0 || form.dealbreakers.trim().length > 0) score += 1;
-  return score / 8;
+  return score / 9;
 }
 
 function listMissingFields(form: FormState, locale: Locale): string[] {
@@ -80,8 +76,9 @@ function listMissingFields(form: FormState, locale: Locale): string[] {
   if (!form.gpa.trim()) missing.push(isEn ? "GPA notes" : "GPA/成绩说明");
   if (!form.majorPrimary.trim()) missing.push(isEn ? "primary major" : "主申专业");
   if (!form.testing) missing.push(isEn ? "testing strategy" : "标化策略");
-  if (form.activities.trim().length < 20 && !hasStructuredActivities(form))
-    missing.push(isEn ? "activities" : "活动摘要");
+  if (!form.highSchoolSystem) missing.push(isEn ? "high school system" : "高中体系");
+  if (!form.currentHighSchool.trim()) missing.push(isEn ? "current high school" : "就读学校");
+  if (!hasStructuredActivities(form)) missing.push(isEn ? "structured activities" : "结构化活动");
   if (!form.budget) missing.push(isEn ? "budget posture" : "预算/经济");
   if (!form.riskStyle) missing.push(isEn ? "list posture" : "选校风格");
   return missing.slice(0, 3);
@@ -148,9 +145,7 @@ function extractProfileFacts(form: FormState, locale: Locale): ProfileFacts {
     activitySnippet =
       locale === "en"
         ? structured.name.trim().slice(0, 48)
-        : `结构化活动「${structured.name.trim().slice(0, 32)}」`;
-  } else if (form.activities.trim().length > 12) {
-    activitySnippet = form.activities.trim().slice(0, 56);
+        : `结构化活动${structured.name.trim().slice(0, 32)}`;
   }
   return {
     major: major || (locale === "en" ? "your intended major" : "你的主申方向"),
@@ -169,7 +164,7 @@ function dimension(dimensions: ProfileDimension[], key: ProfileDimensionKey): Pr
   return dimensions.find((d) => d.key === key) ?? dimensions[0];
 }
 
-/** 过滤模型返回的过于空泛的「策略总览」首句 */
+/** 过滤模型返回的过于空泛的策略总览首句 */
 function isUsableExecutiveLead(
   line: string | null | undefined,
   facts: ProfileFacts,
@@ -237,30 +232,30 @@ function headlineFromProfile(form: FormState, dimensions: ProfileDimension[], lo
     return `你主申 ${facts.major}${facts.intake ? `、目标 ${facts.intake}` : ""}，但 ${facts.missingFields.join("、")} 等还没对齐，整体结论只能先按保守初判，别急着锁死冲刺校。`;
   }
   if (academic.score < 48) {
-    return `在「${facts.major}」前提下，成绩单信息仍偏薄，名单不宜先按冲名校排；${facts.gpaSnippet ? `你写的「${facts.gpaSnippet}」` : "GPA 口径"} 还需要能对照官网核对。`;
+    return `在${facts.major}前提下，成绩单信息仍偏薄，名单不宜先按冲名校排；${facts.gpaSnippet ? `你写的${facts.gpaSnippet}` : "GPA 口径"} 还需要能对照官网核对。`;
   }
   if (testing.score < 48 && form.testing === "will_submit") {
     return `你主申 ${facts.major} 且${facts.testingLine ?? "计划递交标化"}，但分数/节奏未落地——在上限没锚定前，不宜把名单推得过激进。`;
   }
   if (activities.score < 50 && !facts.activitySnippet) {
-    return `主申 ${facts.major} 时，学术可能能撑住一部分，但活动几乎为空，暂不适合做「冲名校密集」名单。`;
+    return `主申 ${facts.major} 时，学术可能能撑住一部分，但活动几乎为空，暂不适合做冲名校密集名单。`;
   }
   if (activities.score < 50 && facts.activitySnippet) {
-    return `主申 ${facts.major}，你已有「${facts.activitySnippet}」等线索，但活动深度仍卡上限——依赖名气的冲刺校理由会发虚。`;
+    return `主申 ${facts.major}，你已有${facts.activitySnippet}等线索，但活动深度仍卡上限——依赖名气的冲刺校理由会发虚。`;
   }
   if (form.riskStyle === "aggressive" && weakest.score < 54) {
-    return `你选校风格偏激进，但「${weakLabel}」仍偏短（${facts.major}）——这块不先补，硬顶最顶尖档风险会偏高。`;
+    return `你选校风格偏激进，但${weakLabel}仍偏短（${facts.major}）——这块不先补，硬顶最顶尖档风险会偏高。`;
   }
   if (form.budget === "need_aid" && dimension(dimensions, "strategy").score < 58) {
-    return `你主申 ${facts.major} 且需要奖助支撑；预算与净花费规则没写清前，「冲」校容易看起来很美、落地很难。`;
+    return `你主申 ${facts.major} 且需要奖助支撑；预算与净花费规则没写清前，冲校容易看起来很美、落地很难。`;
   }
   if (strongest.key === "academic" && activities.score >= 62 && facts.gpaSnippet) {
     return `主申 ${facts.major}，学术线（${facts.gpaSnippet}）是目前最稳的锚；名单可以往上探，但冲刺仍需课程+活动证据，不能只看排名。`;
   }
   if (avgScore(dimensions) >= 68 && weakest.score >= 56) {
-    return `就 ${facts.major} 而言，你已在「可规划的选择性区间」内；下一步是补强「${weakLabel}」，而不是再加一所名气更大的学校。`;
+    return `就 ${facts.major} 而言，你已在可规划的选择性区间内；下一步是补强${weakLabel}，而不是再加一所名气更大的学校。`;
   }
-  return `主申 ${facts.major}${facts.intake ? `、${facts.intake}` : ""}：整体可规划，但「${weakLabel}」仍决定你能不能把冲刺档写得让招生官信。`;
+  return `主申 ${facts.major}${facts.intake ? `、${facts.intake}` : ""}：整体可规划，但${weakLabel}仍决定你能不能把冲刺档写得让招生官信。`;
 }
 
 function sublineFromForm(form: FormState, weakest: ProfileDimension, facts: ProfileFacts, locale: Locale): string | null {
@@ -283,7 +278,7 @@ function sublineFromForm(form: FormState, weakest: ProfileDimension, facts: Prof
   const tail =
     locale === "en"
       ? `—fix ${labelEn(weakest.key)} before you treat reach names as free options.`
-      : `——先抬「${labelZh(weakest.key)}」，别把冲刺校当「加了不亏」。`;
+      : `——先抬${labelZh(weakest.key)}，别把冲刺校当加了不亏。`;
   return parts.join(joiner) + tail;
 }
 
@@ -299,8 +294,8 @@ function strategyLineForWeakest(
         return facts.activitySnippet
           ? `Deepen “${facts.activitySnippet}” into one measurable thread for ${major}, then trim reach schools that only work with a vague story.`
           : `Pick one verifiable activity spine for ${major} (role + outcome), then cut reach names that need hype instead of evidence.`;
-      case "essays":
-        return `Lock ${major} + one activity scene before drafting—don’t let the essay invent a persona you haven’t built in the form.`;
+      case "rigor":
+        return `Name your current school and list core AP/IB/honors for ${major}—officers read rigor before rank dreams.`;
       case "academic":
         return `Pin down GPA scale/rigor for ${major}, then rewrite reach rationales so they cite courses—not rank dreams.`;
       case "testing":
@@ -314,14 +309,14 @@ function strategyLineForWeakest(
   switch (weakest) {
     case "activities":
       return facts.activitySnippet
-        ? `先把「${facts.activitySnippet}」收成一条可核对的主线（角色+结果），再收紧与 ${major} 不匹配、只靠名气的冲刺校。`
-        : `先为 ${major} 定 1 条可验证的活动主线，再删那些需要「空叙事」才能成立的冲刺校。`;
-    case "essays":
-      return `先把 ${major} 与 1 个活动场景写实，再动笔主文书——别让文书单独发明人设。`;
+        ? `先把${facts.activitySnippet}收成一条可核对的主线（角色+结果），再收紧与 ${major} 不匹配、只靠名气的冲刺校。`
+        : `先为 ${major} 定 1 条可验证的活动主线，再删那些需要空叙事才能成立的冲刺校。`;
+    case "rigor":
+      return `先把 ${major} 相关的就读学校与核心 AP/IB/honors 写清——招生官先看 rigor，再看排名。`;
     case "academic":
       return `先把 ${major} 相关的 GPA 口径与核心课强度写清，再改冲校理由，让它引用课程而不是排名。`;
     case "testing":
-      return `先把 ${major} 申请链路上的「交不交分、何时考」定死，再把核对清单落到具体月份。`;
+      return `先把 ${major} 申请链路上的交不交分、何时考定死，再把核对清单落到具体月份。`;
     case "strategy":
       return `把 ${major} 申请里的预算/奖助/谁拍板写进补充说明，让保底校成为真保底。`;
     default:
@@ -344,7 +339,7 @@ function advantageLine(strongest: ProfileDimension, facts: ProfileFacts, locale:
   if (locale === "en") {
     return `Strongest board: ${label}${factHook} — ${strongest.judgment}`;
   }
-  return `目前最稳的是「${label}」${factHook}：${strongest.judgment}`;
+  return `目前最稳的是${label}${factHook}：${strongest.judgment}`;
 }
 
 function weaknessLine(weakest: ProfileDimension, facts: ProfileFacts, locale: Locale): string {
@@ -362,7 +357,7 @@ function weaknessLine(weakest: ProfileDimension, facts: ProfileFacts, locale: Lo
   if (locale === "en") {
     return `Biggest drag: ${label}${factHook} — ${weakest.judgment}`;
   }
-  return `目前最大短板在「${label}」${factHook}：${weakest.judgment}`;
+  return `目前最大短板在${label}${factHook}：${weakest.judgment}`;
 }
 
 export type BuildOverallVerdictOptions = {
@@ -399,7 +394,7 @@ function labelZh(k: ProfileDimensionKey): string {
     academic: "学术（GPA）",
     testing: "标化成绩",
     activities: "活动与经历",
-    essays: "文书潜力",
+    rigor: "课程 rigor",
     strategy: "申请策略",
   };
   return m[k];
@@ -410,7 +405,7 @@ function labelEn(k: ProfileDimensionKey): string {
     academic: "Academics (GPA)",
     testing: "Testing",
     activities: "Activities",
-    essays: "Essays",
+    rigor: "Course rigor",
     strategy: "Strategy",
   };
   return m[k];
@@ -421,8 +416,8 @@ function stakeLine(weakest: ProfileDimension, locale: Locale): string {
     switch (weakest.key) {
       case "activities":
         return "This is the main lever that decides whether your tier story looks “real” or generic.";
-      case "essays":
-        return "This is what decides whether your application reads like a person—or a polished outline.";
+      case "rigor":
+        return "This is what decides whether your GPA reads as rigorous—or just a number without school context.";
       case "academic":
         return "This is what admissions will weight first when they sanity-check your Reach list.";
       case "testing":
@@ -435,17 +430,17 @@ function stakeLine(weakest: ProfileDimension, locale: Locale): string {
   }
   switch (weakest.key) {
     case "activities":
-      return "这是决定你「像真人」还是「像模板」的关键杠杆，也会直接拽住冲刺上限。";
-    case "essays":
-      return "这是决定你读起来像不像「你自己」的关键杠杆。";
+      return "这是决定你像真人还是像模板的关键杠杆，也会直接拽住冲刺上限。";
+    case "rigor":
+      return "这是决定你的成绩读起来像有 rigor 语境还是裸数字的关键杠杆。";
     case "academic":
       return "这是招生官最先拿来 sanity check 你冲校名单的那根梁。";
     case "testing":
       return "这会直接改变你核对材料时该保守还是该收紧。";
     case "strategy":
-      return "这是压力下还能不能让「保底」继续成立的那根绳。";
+      return "这是压力下还能不能让保底继续成立的那根绳。";
     default:
-      return "这是把名单从「飘」拉回「可执行」的核心问题。";
+      return "这是把名单从飘拉回可执行的核心问题。";
   }
 }
 
