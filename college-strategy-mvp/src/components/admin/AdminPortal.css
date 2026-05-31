@@ -271,3 +271,120 @@
     grid-template-columns: 1fr;
   }
 }
+
+.admin-portal__library {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-portal__card,
+.admin-portal__library .admin-portal__panel {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 0.75rem;
+  padding: 1rem 1.1rem;
+  background: #fff;
+}
+
+.admin-portal__card h2,
+.admin-portal__library .admin-portal__panel h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+.admin-portal__card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.admin-portal__card-head h2 {
+  margin: 0;
+}
+
+.admin-portal__form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.admin-portal__form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.admin-portal__form-grid input,
+.admin-portal__form-grid select,
+.admin-portal__form-grid textarea {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.45rem;
+  padding: 0.45rem 0.6rem;
+  font: inherit;
+}
+
+.admin-portal__form-span {
+  grid-column: 1 / -1;
+}
+
+.admin-portal__file-label input[type="file"] {
+  width: 100%;
+}
+
+.admin-portal__library-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.admin-portal__library-list li {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 0.6rem;
+  padding: 0.75rem 0.85rem;
+}
+
+.admin-portal__library-list li.is-inactive {
+  opacity: 0.65;
+}
+
+.admin-portal__library-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-portal__badge {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.admin-portal__library-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+}
+
+.admin-portal__library-edit {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.admin-portal__library-edit-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+@media (max-width: 700px) {
+  .admin-portal__form-grid {
+    grid-template-columns: 1fr;
+  }
+}

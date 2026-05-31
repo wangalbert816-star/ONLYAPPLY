@@ -60,6 +60,22 @@ export type AdminCaseMessage = {
   readByStudent: boolean;
 };
 
+export type AdminLibraryItem = {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string;
+  locale: "zh" | "en" | "all";
+  fileName: string;
+  storagePath: string;
+  contentType: string | null;
+  sizeBytes: number | null;
+  active: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
 async function adminFetch<T>(
   path: string,
   accessToken: string,
@@ -191,6 +207,50 @@ export async function sendAdminGroupMessage(
     method: "POST",
     body: JSON.stringify({ body }),
   });
+}
+
+export async function listAdminLibraryItems(accessToken: string): Promise<{ items: AdminLibraryItem[] }> {
+  return adminFetch("/api/admin/crm/library", accessToken);
+}
+
+export async function prepareAdminLibraryUpload(
+  accessToken: string,
+  input: {
+    title: string;
+    description?: string;
+    category: string;
+    locale: "zh" | "en" | "all";
+    fileName: string;
+    contentType?: string;
+    sizeBytes: number;
+  },
+): Promise<{ item: AdminLibraryItem; uploadUrl: string; uploadToken: string }> {
+  return adminFetch("/api/admin/crm/library/prepare-upload", accessToken, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function patchAdminLibraryItem(
+  accessToken: string,
+  id: string,
+  patch: Partial<{
+    title: string;
+    description: string;
+    category: string;
+    locale: "zh" | "en" | "all";
+    active: boolean;
+    sortOrder: number;
+  }>,
+): Promise<{ item: AdminLibraryItem }> {
+  return adminFetch(`/api/admin/crm/library/${id}`, accessToken, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+}
+
+export async function deleteAdminLibraryItem(accessToken: string, id: string): Promise<{ ok: true }> {
+  return adminFetch(`/api/admin/crm/library/${id}`, accessToken, { method: "DELETE" });
 }
 
 export function adminErrorMessage(code: string | undefined, t: (key: string) => string): string {

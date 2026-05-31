@@ -1,11 +1,13 @@
 import { useMemo, useState } from "react";
 import { useLanguage } from "../../i18n/LanguageContext";
-import type { CrmTask, CrmTaskLinkType } from "../../lib/crm/types";
+import type { CrmStoredFile, CrmTask, CrmTaskLinkType } from "../../lib/crm/types";
 import { localizeCrmText } from "../../lib/crm/localizeCrmContent";
+import { TaskAttachmentLinks } from "./TaskAttachmentLinks";
 import "./AccountTaskList.css";
 
 type Props = {
   tasks: CrmTask[];
+  files?: CrmStoredFile[];
   onToggleTask: (taskId: string, done: boolean) => void;
   onTaskNavigate: (linkType: CrmTaskLinkType) => void;
   variant?: "card" | "plain";
@@ -14,6 +16,7 @@ type Props = {
 
 export function AccountTaskList({
   tasks,
+  files = [],
   onToggleTask,
   onTaskNavigate,
   variant = "card",
@@ -59,6 +62,11 @@ export function AccountTaskList({
               {task.description ? (
                 <p className="account-task-list__detail">{localizeCrmText(task.description, locale, t)}</p>
               ) : null}
+              <TaskAttachmentLinks
+                fileIds={task.attachedFileIds}
+                files={files}
+                className="account-task-list__attachments"
+              />
               <div className="account-task-list__meta">
                 {task.dueAt ? <span>{t("crm.due", { date: task.dueAt })}</span> : null}
                 {task.status === "done" ? <span>{t("crm.taskDone")}</span> : null}

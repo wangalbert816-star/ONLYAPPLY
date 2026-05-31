@@ -162,6 +162,7 @@ export function SignedServiceHub({ engagement, counselor, form, userEmail, onBac
                 <h2>{t("crm.myTasks")}</h2>
                 <AccountTaskList
                   tasks={tasks.slice(0, 3)}
+                  files={files}
                   onToggleTask={(taskId, done) => {
                     setTaskDone(taskId, done);
                     notifyCrmStoreChange();
@@ -195,6 +196,7 @@ export function SignedServiceHub({ engagement, counselor, form, userEmail, onBac
             <h2>{t("crm.myTasks")}</h2>
             <AccountTaskList
               tasks={tasks}
+              files={files}
               onToggleTask={(taskId, done) => {
                 setTaskDone(taskId, done);
                 notifyCrmStoreChange();

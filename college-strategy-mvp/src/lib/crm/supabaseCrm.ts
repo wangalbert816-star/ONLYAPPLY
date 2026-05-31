@@ -8,6 +8,7 @@ import type {
   CrmMessageRole,
   CrmPhase,
   CrmFileUploaderRole,
+  CrmLibraryItem,
   CrmStoredFile,
   CrmStoreSnapshot,
   CrmTask,
@@ -190,6 +191,10 @@ function mapMessage(row: Record<string, unknown>): CrmMessage {
 }
 
 function mapTask(row: Record<string, unknown>): CrmTask {
+  const attachedRaw = row.attached_file_ids;
+  const attachedFileIds = Array.isArray(attachedRaw)
+    ? attachedRaw.map((id) => String(id))
+    : undefined;
   return {
     id: String(row.id),
     engagementId: String(row.engagement_id),
@@ -198,6 +203,7 @@ function mapTask(row: Record<string, unknown>): CrmTask {
     dueAt: row.due_at ? String(row.due_at) : undefined,
     status: row.status as CrmTask["status"],
     linkType: row.link_type as CrmTaskLinkType,
+    attachedFileIds: attachedFileIds?.length ? attachedFileIds : undefined,
     createdAt: String(row.created_at),
     completedAt: row.completed_at ? String(row.completed_at) : undefined,
   };
@@ -216,6 +222,7 @@ function mapDocument(row: Record<string, unknown>): CrmApplicationDocument {
 }
 
 const CRM_FILES_BUCKET = "crm-case-files";
+const CRM_LIBRARY_BUCKET = "crm-library-files";
 const MAX_CASE_FILE_BYTES = 20 * 1024 * 1024;
 
 function sanitizeCaseFileName(name: string): string {
@@ -236,6 +243,24 @@ function mapFile(row: Record<string, unknown>): CrmStoredFile {
     uploadedByRole: row.uploaded_by_role ? (String(row.uploaded_by_role) as CrmStoredFile["uploadedByRole"]) : undefined,
     contentType: row.content_type ? String(row.content_type) : undefined,
     sizeBytes: row.size_bytes != null ? Number(row.size_bytes) : undefined,
+  };
+}
+
+function mapLibraryItem(row: Record<string, unknown>): CrmLibraryItem {
+  return {
+    id: String(row.id),
+    title: String(row.title),
+    description: row.description ? String(row.description) : undefined,
+    category: String(row.category),
+    locale: String(row.locale) as CrmLibraryItem["locale"],
+    fileName: String(row.file_name),
+    storagePath: String(row.storage_path),
+    contentType: row.content_type ? String(row.content_type) : undefined,
+    sizeBytes: row.size_bytes != null ? Number(row.size_bytes) : undefined,
+    active: Boolean(row.active),
+    sortOrder: row.sort_order != null ? Number(row.sort_order) : 0,
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
   };
 }
 
@@ -448,6 +473,7 @@ export async function supabaseAddTask(input: {
   description?: string;
   dueAt?: string;
   linkType: CrmTaskLinkType;
+  attachedFileIds?: string[];
 }): Promise<void> {
   const sb = getSupabase();
   if (!sb) return;
@@ -460,6 +486,7 @@ export async function supabaseAddTask(input: {
     due_at: input.dueAt ?? null,
     status: "open",
     link_type: input.linkType,
+    attached_file_ids: input.attachedFileIds?.length ? input.attachedFileIds : [],
     created_at: now,
   });
   await sb.from("engagements").update({ updated_at: now }).eq("id", input.engagementId);
@@ -588,6 +615,60 @@ export async function supabaseGetCaseFileDownloadUrl(fileId: string): Promise<st
     .createSignedUrl(String(data.storage_path), 3600, { download: String(data.name) });
   if (signErr || !signed?.signedUrl) throw signErr ?? new Error("signed_url_failed");
   return signed.signedUrl;
+}
+
+export async function supabaseListLibraryItems(): Promise<CrmLibraryItem[]> {
+  const sb = getSupabase();
+  if (!sb) return [];
+
+  const { data, error } = await sb
+    .from("crm_library_items")
+    .select("*")
+    .eq("active", true)
+    .order("sort_order", { ascending: false })
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((row) => mapLibraryItem(row as Record<string, unknown>));
+}
+
+export async function supabaseAttachLibraryItemToCase(input: {
+  engagementId: string;
+  libraryItemId: string;
+  uploadedByRole: CrmFileUploaderRole;
+}): Promise<CrmStoredFile> {
+  const sb = getSupabase();
+  if (!sb) throw new Error("supabase_not_configured");
+
+  const { data: item, error } = await sb
+    .from("crm_library_items")
+    .select("*")
+    .eq("id", input.libraryItemId)
+    .eq("active", true)
+    .maybeSingle();
+  if (error) throw error;
+  if (!item) throw new Error("library_item_not_found");
+
+  const storagePath = String(item.storage_path);
+  const fileName = String(item.file_name);
+  const { data: signed, error: signErr } = await sb.storage
+    .from(CRM_LIBRARY_BUCKET)
+    .createSignedUrl(storagePath, 300, { download: fileName });
+  if (signErr || !signed?.signedUrl) throw signErr ?? new Error("signed_url_failed");
+
+  const res = await fetch(signed.signedUrl);
+  if (!res.ok) throw new Error("library_download_failed");
+
+  const blob = await res.blob();
+  const file = new File([blob], fileName, {
+    type: item.content_type ? String(item.content_type) : blob.type || "application/octet-stream",
+  });
+
+  return supabaseUploadCaseFile({
+    engagementId: input.engagementId,
+    file,
+    category: String(item.category || "general"),
+    uploadedByRole: input.uploadedByRole,
+  });
 }
 
 export async function supabaseUpdateNextMeetingLabel(engagementId: string, label: string): Promise<void> {

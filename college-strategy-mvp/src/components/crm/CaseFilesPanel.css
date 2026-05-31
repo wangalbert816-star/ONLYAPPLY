@@ -43,3 +43,122 @@
   color: #64748b;
   font-size: 0.88rem;
 }
+
+.counselor-document-library,
+.library-item-picker {
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.counselor-document-library h3,
+.library-item-picker h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.counselor-document-library__list,
+.library-item-picker__list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.counselor-document-library__list li,
+.library-item-picker__list li {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 0.55rem;
+  padding: 0.65rem 0.75rem;
+}
+
+.counselor-document-library__row,
+.library-item-picker__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.counselor-document-library__row strong,
+.library-item-picker__row strong {
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.counselor-document-library__row p,
+.library-item-picker__row p {
+  margin: 0 0 0.25rem;
+}
+
+.library-item-picker__select {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.65rem;
+  cursor: pointer;
+  width: 100%;
+}
+
+.library-item-picker__select input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  min-width: 1rem;
+  margin: 0.15rem 0 0;
+  padding: 0;
+  flex-shrink: 0;
+  accent-color: var(--color-brand, #006644);
+}
+
+.library-item-picker__body {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.library-item-picker__title {
+  display: block;
+  font-weight: 650;
+  color: #0f172a;
+  line-height: 1.35;
+}
+
+.library-item-picker__desc,
+.library-item-picker__meta {
+  display: block;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: #64748b;
+}
+
+.library-item-picker--compact {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.library-item-picker--compact .library-item-picker__list li {
+  padding: 0.55rem 0.65rem;
+}
+
+.library-item-picker--compact h3 {
+  font-size: 0.92rem;
+  margin-top: 0.15rem;
+}
+
+.task-attachment-links,
+.account-task-list__attachments {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+}
+
+.task-attachment-links li,
+.account-task-list__attachments li {
+  margin: 0;
+}

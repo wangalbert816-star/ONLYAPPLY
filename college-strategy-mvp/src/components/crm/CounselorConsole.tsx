@@ -12,6 +12,7 @@ import {
   listDocuments,
   listEngagements,
   listFiles,
+  listLibraryItems,
   listMessages,
   listPinnedMessages,
   listTasks,
@@ -28,6 +29,9 @@ import type { CrmApplicationDocument, CrmEngagement, CrmMessageChannel, CrmTaskL
 import type { FormState } from "../../types";
 import { BrandLogo } from "../BrandLogo";
 import { CaseFilesPanel } from "./CaseFilesPanel";
+import { CounselorDocumentLibrary } from "./CounselorDocumentLibrary";
+import { LibraryItemPicker } from "./LibraryItemPicker";
+import { TaskAttachmentLinks } from "./TaskAttachmentLinks";
 import "./CaseFilesPanel.css";
 import "./CounselorConsole.css";
 import "./SignedServiceHub.css";
@@ -62,6 +66,8 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
   const [taskDetail, setTaskDetail] = useState("");
   const [taskDue, setTaskDue] = useState("");
   const [taskLink, setTaskLink] = useState<CrmTaskLinkType>("none");
+  const [taskLibraryIds, setTaskLibraryIds] = useState<string[]>([]);
+  const [taskSubmitting, setTaskSubmitting] = useState(false);
   const [docNameDraft, setDocNameDraft] = useState("");
   const [docTypeDraft, setDocTypeDraft] = useState("essay");
   const [docDueDraft, setDocDueDraft] = useState("");
@@ -176,6 +182,7 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
     detail: string,
     dueAt: string,
     linkType: CrmTaskLinkType,
+    attachmentNames: string[],
   ) => {
     const lines = [t("crm.console.taskAssigned", { title })];
     if (detail) lines.push(detail);
@@ -183,31 +190,46 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
     if (linkType !== "none") {
       lines.push(t("crm.console.taskAssignedLink", { link: t(`crm.taskLink.${linkType}`) }));
     }
+    if (attachmentNames.length) {
+      lines.push(t("crm.console.taskAssignedFiles", { files: attachmentNames.join(", ") }));
+    }
     return lines.join("\n\n");
   };
 
-  const submitTask = () => {
-    if (!selected || !counselor) return;
+  const submitTask = async () => {
+    if (!selected || !counselor || taskSubmitting) return;
     const title = taskTitle.trim();
     if (!title) return;
     const detail = taskDetail.trim();
-    assignTask({
-      engagementId: selected.id,
-      title,
-      description: detail || undefined,
-      dueAt: taskDue || undefined,
-      linkType: taskLink,
-      message: {
-        authorLabel: counselor.name,
-        body: buildTaskAssignedMessage(title, detail, taskDue, taskLink),
-      },
-    });
-    setTaskTitle("");
-    setTaskDetail("");
-    setTaskDue("");
-    setTaskLink("none");
-    notifyCrmStoreChange();
-    refresh();
+    setTaskSubmitting(true);
+    try {
+      let attachmentNames: string[] = [];
+      if (taskLibraryIds.length) {
+        const libraryItems = await listLibraryItems();
+        attachmentNames = libraryItems.filter((item) => taskLibraryIds.includes(item.id)).map((item) => item.title);
+      }
+      await assignTask({
+        engagementId: selected.id,
+        title,
+        description: detail || undefined,
+        dueAt: taskDue || undefined,
+        linkType: taskLink,
+        libraryItemIds: taskLibraryIds.length ? taskLibraryIds : undefined,
+        message: {
+          authorLabel: counselor.name,
+          body: buildTaskAssignedMessage(title, detail, taskDue, taskLink, attachmentNames),
+        },
+      });
+      setTaskTitle("");
+      setTaskDetail("");
+      setTaskDue("");
+      setTaskLink("none");
+      setTaskLibraryIds([]);
+      notifyCrmStoreChange();
+      refresh();
+    } finally {
+      setTaskSubmitting(false);
+    }
   };
 
   const submitDocument = () => {
@@ -415,6 +437,7 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                             />
                             <strong>{task.title}</strong>
                             {task.description ? <p className="counselor-console__task-detail">{task.description}</p> : null}
+                            <TaskAttachmentLinks fileIds={task.attachedFileIds} files={files} />
                           </label>
                           <span>
                             {task.status === "done" ? t("crm.taskDone") : t("crm.console.taskOpen")}
@@ -453,8 +476,20 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                           <option value="report">{t("crm.taskLink.report")}</option>
                         </select>
                       </label>
-                      <button type="button" className="btn btn-primary" onClick={submitTask} disabled={!taskTitle.trim()}>
-                        {t("crm.console.assignTask")}
+                      <LibraryItemPicker
+                        mode="select"
+                        showHeading
+                        selectedIds={taskLibraryIds}
+                        onSelectionChange={setTaskLibraryIds}
+                        disabled={taskSubmitting}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={() => void submitTask()}
+                        disabled={!taskTitle.trim() || taskSubmitting}
+                      >
+                        {taskSubmitting ? t("crm.console.assigningTask") : t("crm.console.assignTask")}
                       </button>
                     </div>
                   </section>
@@ -614,6 +649,13 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                 {tab === "files" && selected ? (
                   <section className="signed-service-hub__panel">
                     <h2>{t("crm.signedService.filesTitle")}</h2>
+                    <CounselorDocumentLibrary
+                      engagementId={selected.id}
+                      onAttached={() => {
+                        notifyCrmStoreChange();
+                        refresh();
+                      }}
+                    />
                     <CaseFilesPanel
                       engagementId={selected.id}
                       uploadedByRole="counselor"

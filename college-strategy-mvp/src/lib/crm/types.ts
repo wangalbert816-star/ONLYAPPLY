@@ -68,6 +68,24 @@ export type CrmStoredFile = {
   sizeBytes?: number;
 };
 
+export type CrmLibraryLocale = "zh" | "en" | "all";
+
+export type CrmLibraryItem = {
+  id: string;
+  title: string;
+  description?: string;
+  category: string;
+  locale: CrmLibraryLocale;
+  fileName: string;
+  storagePath: string;
+  contentType?: string;
+  sizeBytes?: number;
+  active: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type CrmTask = {
   id: string;
   engagementId: string;
@@ -76,6 +94,7 @@ export type CrmTask = {
   dueAt?: string;
   status: "open" | "done";
   linkType: CrmTaskLinkType;
+  attachedFileIds?: string[];
   createdAt: string;
   completedAt?: string;
 };

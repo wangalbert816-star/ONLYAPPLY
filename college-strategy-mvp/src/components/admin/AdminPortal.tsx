@@ -20,13 +20,14 @@ import {
 } from "../../lib/admin/crmAdminApi";
 import { localizeCrmText } from "../../lib/crm/localizeCrmContent";
 import { BrandLogo } from "../BrandLogo";
+import { AdminLibraryPanel } from "./AdminLibraryPanel";
 import "./AdminPortal.css";
 
 type Props = {
   onBack: () => void;
 };
 
-type TabId = "counselors" | "engagements" | "groupChat";
+type TabId = "counselors" | "engagements" | "groupChat" | "library";
 
 const PHASES = ["onboarding", "planning", "essays", "applications", "done"] as const;
 const STATUSES = ["active", "paused", "completed"] as const;
@@ -195,6 +196,9 @@ export function AdminPortal({ onBack }: Props) {
         <button type="button" className={tab === "groupChat" ? "is-active" : undefined} onClick={() => setTab("groupChat")}>
           {t("admin.groupChat.title")}
         </button>
+        <button type="button" className={tab === "library" ? "is-active" : undefined} onClick={() => setTab("library")}>
+          {t("admin.tabs.library")}
+        </button>
       </nav>
 
       {tab === "engagements" ? (
@@ -220,6 +224,8 @@ export function AdminPortal({ onBack }: Props) {
           onEngagementChange={setGroupChatEngagementId}
           onError={(code) => setNotice(adminErrorMessage(code, t))}
         />
+      ) : tab === "library" ? (
+        <AdminLibraryPanel token={token} busy={busy} onRun={runAction} />
       ) : (
         <AdminCounselorsPanel t={t} locale={locale} busy={busy} counselors={counselors} token={token} onRun={runAction} />
       )}

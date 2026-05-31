@@ -7,8 +7,10 @@ import {
   supabaseAddMessage,
   supabaseAddStoredFile,
   supabaseAddTask,
+  supabaseAttachLibraryItemToCase,
   supabaseCreateDemoEngagement,
   supabaseGetCaseFileDownloadUrl,
+  supabaseListLibraryItems,
   supabaseMarkMessagesReadByStudent,
   supabaseSetTaskDone,
   supabaseToggleFollowUp,
@@ -24,6 +26,7 @@ import type {
   CrmCounselor,
   CrmEngagement,
   CrmFileUploaderRole,
+  CrmLibraryItem,
   CrmMessage,
   CrmMessageChannel,
   CrmMessageRole,
@@ -535,6 +538,27 @@ export async function getCaseFileDownloadUrl(fileId: string): Promise<string> {
   throw new Error("file_download_unavailable");
 }
 
+export async function listLibraryItems(): Promise<CrmLibraryItem[]> {
+  if (crmBackend === "supabase") {
+    return supabaseListLibraryItems();
+  }
+  return [];
+}
+
+export async function attachLibraryItemToCase(input: {
+  engagementId: string;
+  libraryItemId: string;
+  uploadedByRole: CrmFileUploaderRole;
+}): Promise<CrmStoredFile> {
+  if (crmBackend === "supabase") {
+    const stored = await supabaseAttachLibraryItemToCase(input);
+    await persistRefresh();
+    notifyCrmStoreChange();
+    return stored;
+  }
+  throw new Error("library_unavailable");
+}
+
 export function addStoredFile(input: {
   engagementId: string;
   name: string;
@@ -633,6 +657,7 @@ export function addTask(input: {
   description?: string;
   dueAt?: string;
   linkType: CrmTaskLinkType;
+  attachedFileIds?: string[];
 }): CrmTask {
   const createdAt = nowIso();
   const description = input.description?.trim() || undefined;
@@ -644,6 +669,7 @@ export function addTask(input: {
     dueAt: input.dueAt,
     status: "open",
     linkType: input.linkType,
+    attachedFileIds: input.attachedFileIds?.length ? input.attachedFileIds : undefined,
     createdAt,
   };
   if (crmBackend === "supabase") {
@@ -660,20 +686,36 @@ export function addTask(input: {
 }
 
 /** Create task and post a counselor message in one mutation (used from counselor console). */
-export function assignTask(input: {
+export async function assignTask(input: {
   engagementId: string;
   title: string;
   description?: string;
   dueAt?: string;
   linkType: CrmTaskLinkType;
+  libraryItemIds?: string[];
   message: {
     authorLabel: string;
     body: string;
     channel?: CrmMessageChannel;
   };
-}): CrmTask {
+}): Promise<CrmTask> {
   const createdAt = nowIso();
   const description = input.description?.trim() || undefined;
+  const attachedFileIds: string[] = [];
+
+  if (input.libraryItemIds?.length) {
+    if (crmBackend === "supabase") {
+      for (const libraryItemId of input.libraryItemIds) {
+        const file = await attachLibraryItemToCase({
+          engagementId: input.engagementId,
+          libraryItemId,
+          uploadedByRole: "counselor",
+        });
+        attachedFileIds.push(file.id);
+      }
+    }
+  }
+
   const task: CrmTask = {
     id: id(),
     engagementId: input.engagementId,
@@ -682,6 +724,7 @@ export function assignTask(input: {
     dueAt: input.dueAt,
     status: "open",
     linkType: input.linkType,
+    attachedFileIds: attachedFileIds.length ? attachedFileIds : undefined,
     createdAt,
   };
   const messageInput = {
@@ -694,10 +737,17 @@ export function assignTask(input: {
   };
 
   if (crmBackend === "supabase") {
-    afterMutation(async () => {
-      await supabaseAddTask(input);
-      await supabaseAddMessage(messageInput);
+    await supabaseAddTask({
+      engagementId: input.engagementId,
+      title: input.title,
+      description: input.description,
+      dueAt: input.dueAt,
+      linkType: input.linkType,
+      attachedFileIds,
     });
+    await supabaseAddMessage(messageInput);
+    await persistRefresh();
+    notifyCrmStoreChange();
     return task;
   }
 

@@ -685,6 +685,212 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
       res.status(500).json({ error: msg });
     }
   });
+
+  const CRM_LIBRARY_BUCKET = "crm-library-files";
+  const MAX_LIBRARY_FILE_BYTES = 20 * 1024 * 1024;
+
+  function sanitizeLibraryFileName(name) {
+    const trimmed = String(name).trim();
+    const base = trimmed.replace(/[/\\]+/g, "_").replace(/[^a-zA-Z0-9._-]+/g, "_");
+    return (base || "file").slice(0, 180);
+  }
+
+  function mapLibraryItem(row) {
+    return {
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      category: row.category,
+      locale: row.locale,
+      fileName: row.file_name,
+      storagePath: row.storage_path,
+      contentType: row.content_type,
+      sizeBytes: row.size_bytes,
+      active: row.active,
+      sortOrder: row.sort_order,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  }
+
+  app.get("/api/admin/crm/library", async (req, res) => {
+    const ctx = await requireAdmin(req, res, supabaseAdmin);
+    if (!ctx) return;
+    try {
+      const { data, error } = await ctx.admin
+        .from("crm_library_items")
+        .select("*")
+        .order("sort_order", { ascending: false })
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      res.json({ items: (data ?? []).map(mapLibraryItem) });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      res.status(500).json({ error: msg });
+    }
+  });
+
+  app.post("/api/admin/crm/library/prepare-upload", async (req, res) => {
+    const ctx = await requireAdmin(req, res, supabaseAdmin);
+    if (!ctx) return;
+
+    const title = String(req.body?.title ?? "").trim();
+    const description = String(req.body?.description ?? "").trim() || null;
+    const category = String(req.body?.category ?? "general").trim() || "general";
+    const locale = String(req.body?.locale ?? "all").trim();
+    const fileName = String(req.body?.fileName ?? "").trim();
+    const contentType = String(req.body?.contentType ?? "").trim() || null;
+    const sizeBytes = Number(req.body?.sizeBytes ?? 0);
+
+    if (!title) {
+      res.status(400).json({ error: "library_title_required" });
+      return;
+    }
+    if (!fileName) {
+      res.status(400).json({ error: "library_file_required" });
+      return;
+    }
+    if (!["zh", "en", "all"].includes(locale)) {
+      res.status(400).json({ error: "library_locale_invalid" });
+      return;
+    }
+    if (!Number.isFinite(sizeBytes) || sizeBytes <= 0) {
+      res.status(400).json({ error: "library_size_required" });
+      return;
+    }
+    if (sizeBytes > MAX_LIBRARY_FILE_BYTES) {
+      res.status(400).json({ error: "file_too_large" });
+      return;
+    }
+
+    try {
+      const id = crypto.randomUUID();
+      const safeName = sanitizeLibraryFileName(fileName);
+      const storagePath = `library/${id}/${safeName}`;
+      const now = new Date().toISOString();
+
+      const { data: upload, error: uploadErr } = await ctx.admin.storage
+        .from(CRM_LIBRARY_BUCKET)
+        .createSignedUploadUrl(storagePath, { upsert: false });
+      if (uploadErr) throw uploadErr;
+
+      const { data: row, error } = await ctx.admin
+        .from("crm_library_items")
+        .insert({
+          id,
+          title,
+          description,
+          category,
+          locale,
+          file_name: fileName,
+          storage_path: storagePath,
+          content_type: contentType,
+          size_bytes: sizeBytes,
+          active: true,
+          sort_order: 0,
+          created_at: now,
+          updated_at: now,
+        })
+        .select("*")
+        .single();
+      if (error) throw error;
+
+      res.json({
+        item: mapLibraryItem(row),
+        uploadUrl: upload.signedUrl,
+        uploadToken: upload.token,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      res.status(500).json({ error: msg });
+    }
+  });
+
+  app.patch("/api/admin/crm/library/:id", async (req, res) => {
+    const ctx = await requireAdmin(req, res, supabaseAdmin);
+    if (!ctx) return;
+    const id = String(req.params.id ?? "").trim();
+    if (!id) {
+      res.status(400).json({ error: "library_id_required" });
+      return;
+    }
+
+    const patch = {};
+    if (req.body?.title != null) patch.title = String(req.body.title).trim();
+    if (req.body?.description != null) {
+      patch.description = String(req.body.description).trim() || null;
+    }
+    if (req.body?.category != null) patch.category = String(req.body.category).trim() || "general";
+    if (req.body?.locale != null) {
+      const locale = String(req.body.locale).trim();
+      if (!["zh", "en", "all"].includes(locale)) {
+        res.status(400).json({ error: "library_locale_invalid" });
+        return;
+      }
+      patch.locale = locale;
+    }
+    if (req.body?.active != null) patch.active = Boolean(req.body.active);
+    if (req.body?.sortOrder != null) patch.sort_order = Number(req.body.sortOrder) || 0;
+    patch.updated_at = new Date().toISOString();
+
+    if (patch.title === "") {
+      res.status(400).json({ error: "library_title_required" });
+      return;
+    }
+
+    try {
+      const { data, error } = await ctx.admin
+        .from("crm_library_items")
+        .update(patch)
+        .eq("id", id)
+        .select("*")
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) {
+        res.status(404).json({ error: "library_item_not_found" });
+        return;
+      }
+      res.json({ item: mapLibraryItem(data) });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      res.status(500).json({ error: msg });
+    }
+  });
+
+  app.delete("/api/admin/crm/library/:id", async (req, res) => {
+    const ctx = await requireAdmin(req, res, supabaseAdmin);
+    if (!ctx) return;
+    const id = String(req.params.id ?? "").trim();
+    if (!id) {
+      res.status(400).json({ error: "library_id_required" });
+      return;
+    }
+
+    try {
+      const { data: row, error: fetchErr } = await ctx.admin
+        .from("crm_library_items")
+        .select("storage_path")
+        .eq("id", id)
+        .maybeSingle();
+      if (fetchErr) throw fetchErr;
+      if (!row) {
+        res.status(404).json({ error: "library_item_not_found" });
+        return;
+      }
+
+      if (row.storage_path) {
+        await ctx.admin.storage.from(CRM_LIBRARY_BUCKET).remove([String(row.storage_path)]);
+      }
+
+      const { error } = await ctx.admin.from("crm_library_items").delete().eq("id", id);
+      if (error) throw error;
+
+      res.json({ ok: true });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      res.status(500).json({ error: msg });
+    }
+  });
 }
 
 export function crmAdminConfigured() {
