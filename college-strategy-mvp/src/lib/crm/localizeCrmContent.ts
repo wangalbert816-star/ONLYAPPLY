@@ -4,7 +4,9 @@ type TranslateFn = (key: string, vars?: Record<string, string | number>) => stri
 
 /** Known Chinese demo/seed strings stored in Supabase → i18n keys for English UI. */
 const CRM_TEXT_KEYS: Record<string, string> = {
+  "Premium 服务 · 我的申请": "crm.placeholderApplicationTitle",
   "签约服务 · 我的申请": "crm.placeholderApplicationTitle",
+  "标准规划 · Premium 服务": "crm.demoPlanLabel",
   "标准规划 · 签约服务": "crm.demoPlanLabel",
   "标准规划 · 本地演示": "crm.demoPlanLabel",
   "标准规划 · Supabase 演示": "crm.demoPlanLabel",
@@ -14,10 +16,15 @@ const CRM_TEXT_KEYS: Record<string, string> = {
   系统: "crm.console.systemLabel",
   "【置顶】ED 校请在 6/15 前确认；确认后我会更新 reach 校说明。":
     "crm.seed.pinnedEd",
+  "欢迎加入 OnlyApply Premium 服务。本周我们先定 ED 校方向，并在待办里完成 #1。":
+    "crm.seed.welcome",
   "欢迎加入 OnlyApply 签约服务。本周我们先定 ED 校方向，并在待办里完成 #1。":
     "crm.seed.welcome",
+  "Premium 群公告：文书阶段每周三晚 8 点 sync，有冲突请提前在群里说。":
+    "crm.seed.groupNotice",
   "签约群公告：文书阶段每周三晚 8 点 sync，有冲突请提前在群里说。":
     "crm.seed.groupNotice",
+  "Premium 服务已开通 · 阶段：文书准备": "crm.seed.serviceOpened",
   "签约服务已开通 · 阶段：文书准备": "crm.seed.serviceOpened",
   "补 SAT 目标分": "crm.seed.taskSat",
   "PIQ 第一稿": "crm.seed.taskPiq",

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Link a student to a counselor engagement (signed service).
+ * Link a student to a counselor engagement (Premium service).
  *
  * Requires in college-strategy-mvp/.env:
  *   VITE_SUPABASE_URL (or SUPABASE_URL)
@@ -119,7 +119,7 @@ if (!app) {
     .from("saved_applications")
     .insert({
       user_id: student.id,
-      title: "签约服务 · 我的申请",
+      title: "Premium 服务 · 我的申请",
       form_state: EMPTY_FORM_STATE,
       locale: "zh",
       updated_at: new Date().toISOString(),
@@ -163,7 +163,7 @@ const { data: engagement, error: engErr } = await admin
       counselor_id: counselor.id,
       phase: "essays",
       status: "active",
-      plan_label: "标准规划 · 签约服务",
+      plan_label: "标准规划 · Premium 服务",
       next_meeting_label: "6/12 · 已预约",
       updated_at: now,
     },
@@ -198,7 +198,7 @@ if (!msgCount) {
       engagement_id: engagementId,
       author_role: "counselor",
       author_label: counselor.name,
-      body: "欢迎加入 OnlyApply 签约服务。本周我们先定 ED 校方向，并在待办里完成 #1。",
+      body: "欢迎加入 OnlyApply Premium 服务。本周我们先定 ED 校方向，并在待办里完成 #1。",
       channel: "direct",
       pinned: false,
       read_by_student: false,
@@ -208,7 +208,7 @@ if (!msgCount) {
       engagement_id: engagementId,
       author_role: "counselor",
       author_label: counselor.name,
-      body: "签约群公告：文书阶段每周三晚 8 点 sync，有冲突请提前在群里说。",
+      body: "Premium 群公告：文书阶段每周三晚 8 点 sync，有冲突请提前在群里说。",
       channel: "group",
       pinned: true,
       read_by_student: false,
@@ -218,7 +218,7 @@ if (!msgCount) {
       engagement_id: engagementId,
       author_role: "system",
       author_label: "系统",
-      body: "签约服务已开通 · 阶段：文书准备",
+      body: "Premium 服务已开通 · 阶段：文书准备",
       channel: "direct",
       pinned: false,
       read_by_student: true,

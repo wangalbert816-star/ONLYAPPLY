@@ -32,7 +32,7 @@ begin
     insert into public.saved_applications (user_id, title, form_state, locale, updated_at)
     values (
       student_uid,
-      '签约服务 · 我的申请',
+      'Premium 服务 · 我的申请',
       '{
         "intakeTerm": "",
         "intakeOtherDetail": "",
@@ -99,7 +99,7 @@ begin
     counselor_id,
     'essays',
     'active',
-    '标准规划 · 签约服务',
+    '标准规划 · Premium 服务',
     '6/12 · 已预约',
     now_ts
   )
@@ -122,9 +122,9 @@ begin
     insert into public.case_messages (engagement_id, author_role, author_label, body, channel, pinned, read_by_student, created_at)
     values
       (v_engagement_id, 'counselor', counselor_name, '【置顶】ED 校请在 6/15 前确认；确认后我会更新 reach 校说明。', 'direct', true, false, now_ts),
-      (v_engagement_id, 'counselor', counselor_name, '欢迎加入 OnlyApply 签约服务。本周我们先定 ED 校方向，并在待办里完成 #1。', 'direct', false, false, now_ts),
-      (v_engagement_id, 'counselor', counselor_name, '签约群公告：文书阶段每周三晚 8 点 sync，有冲突请提前在群里说。', 'group', true, false, now_ts),
-      (v_engagement_id, 'system', '系统', '签约服务已开通 · 阶段：文书准备', 'direct', false, true, now_ts);
+      (v_engagement_id, 'counselor', counselor_name, '欢迎加入 OnlyApply Premium 服务。本周我们先定 ED 校方向，并在待办里完成 #1。', 'direct', false, false, now_ts),
+      (v_engagement_id, 'counselor', counselor_name, 'Premium 群公告：文书阶段每周三晚 8 点 sync，有冲突请提前在群里说。', 'group', true, false, now_ts),
+      (v_engagement_id, 'system', '系统', 'Premium 服务已开通 · 阶段：文书准备', 'direct', false, true, now_ts);
   end if;
 
   if not exists (select 1 from public.case_tasks t where t.engagement_id = v_engagement_id limit 1) then

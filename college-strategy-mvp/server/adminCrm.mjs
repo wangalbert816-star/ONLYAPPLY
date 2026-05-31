@@ -29,8 +29,8 @@ const EMPTY_FORM_STATE = {
 };
 
 const PLACEHOLDER_TITLES = {
-  en: "Signed service · My application",
-  zh: "签约服务 · 我的申请",
+  en: "Premium service · My application",
+  zh: "Premium 服务 · 我的申请",
 };
 
 function crmAdminEmails() {
