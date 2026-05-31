@@ -41,6 +41,7 @@ import { AuthModal } from "./components/auth/AuthModal";
 import { AccountHome } from "./components/auth/AccountHome";
 import { CounselorPortal } from "./components/crm/CounselorPortal";
 import { SignedServiceHub } from "./components/crm/SignedServiceHub";
+import { AdminPortal } from "./components/admin/AdminPortal";
 import { AuthChromeProvider } from "./auth/AuthChromeContext";
 import { AppTopChrome } from "./components/AppTopChrome";
 import { LegalLinks } from "./components/LegalLinks";
@@ -238,7 +239,7 @@ export default function App() {
   const [step3Screen, setStep3Screen] = useState(0);
   const [form, setForm] = useState<FormState>(initialForm);
   const [guideTouch, setGuideTouch] = useState<GuideTouch>({});
-  const [view, setView] = useState<"form" | "report" | "account" | "intro" | "counselor" | "signed-service">("form");
+  const [view, setView] = useState<"form" | "report" | "account" | "intro" | "counselor" | "signed-service" | "admin">("form");
   const [signedServiceContext, setSignedServiceContext] = useState<{ form: FormState; applicationId: string } | null>(
     null,
   );
@@ -414,14 +415,18 @@ export default function App() {
   );
 
   useEffect(() => {
-    const syncCounselorHash = () => {
+    const syncHashView = () => {
+      if (window.location.hash === "#admin") {
+        setView("admin");
+        return;
+      }
       if (window.location.hash === "#counselor" && isSignedServiceEnabled()) {
         setView("counselor");
       }
     };
-    syncCounselorHash();
-    window.addEventListener("hashchange", syncCounselorHash);
-    return () => window.removeEventListener("hashchange", syncCounselorHash);
+    syncHashView();
+    window.addEventListener("hashchange", syncHashView);
+    return () => window.removeEventListener("hashchange", syncHashView);
   }, []);
 
   const handleInviteRedeem = useCallback(
@@ -1186,6 +1191,18 @@ export default function App() {
           else setView("form");
         }}
         onOpenStudentReport={(engagement) => void handleCounselorOpenReport(engagement)}
+      />
+    );
+  }
+
+  if (view === "admin") {
+    return (
+      <AdminPortal
+        onBack={() => {
+          window.location.hash = "";
+          if (user) setView("account");
+          else setView("form");
+        }}
       />
     );
   }
