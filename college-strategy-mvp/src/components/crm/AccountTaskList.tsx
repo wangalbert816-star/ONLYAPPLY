@@ -3,7 +3,9 @@ import { useLanguage } from "../../i18n/LanguageContext";
 import type { CrmStoredFile, CrmTask, CrmTaskLinkType } from "../../lib/crm/types";
 import { localizeCrmText } from "../../lib/crm/localizeCrmContent";
 import { TaskAttachmentLinks } from "./TaskAttachmentLinks";
+import { TaskTypeBadge, taskItemClass } from "./TaskTypeBadge";
 import "./AccountTaskList.css";
+import "./crmTaskTypes.css";
 
 type Props = {
   tasks: CrmTask[];
@@ -50,7 +52,7 @@ export function AccountTaskList({
       ) : (
         <ul className="account-task-list__items">
           {visibleTasks.map((task) => (
-            <li key={task.id} className={task.status === "done" ? "is-done" : ""}>
+            <li key={task.id} className={taskItemClass(task.linkType, task.status === "done")}>
               <label className="account-task-list__check">
                 <input
                   type="checkbox"
@@ -68,6 +70,7 @@ export function AccountTaskList({
                 className="account-task-list__attachments"
               />
               <div className="account-task-list__meta">
+                <TaskTypeBadge linkType={task.linkType} label={taskLinkLabel[task.linkType]} />
                 {task.dueAt ? <span>{t("crm.due", { date: task.dueAt })}</span> : null}
                 {task.status === "done" ? <span>{t("crm.taskDone")}</span> : null}
                 {task.linkType !== "none" && task.status === "open" ? (

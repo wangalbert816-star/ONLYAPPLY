@@ -509,6 +509,62 @@ export async function supabaseSetTaskDone(taskId: string, done: boolean): Promis
     .eq("id", taskId);
 }
 
+export async function supabaseUpdateTask(
+  taskId: string,
+  patch: {
+    title?: string;
+    description?: string;
+    dueAt?: string | null;
+    linkType?: CrmTaskLinkType;
+  },
+): Promise<void> {
+  const sb = getSupabase();
+  if (!sb) return;
+
+  const { data: task, error: fetchErr } = await sb
+    .from("case_tasks")
+    .select("engagement_id")
+    .eq("id", taskId)
+    .maybeSingle();
+  if (fetchErr) throw fetchErr;
+  if (!task) throw new Error("task_not_found");
+
+  const update: Record<string, unknown> = {};
+  if (patch.title != null) update.title = patch.title.trim();
+  if (patch.description != null) update.description = patch.description.trim() || null;
+  if (patch.dueAt !== undefined) update.due_at = patch.dueAt || null;
+  if (patch.linkType != null) update.link_type = patch.linkType;
+
+  const { error } = await sb.from("case_tasks").update(update).eq("id", taskId);
+  if (error) throw error;
+
+  await sb
+    .from("engagements")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", task.engagement_id);
+}
+
+export async function supabaseDeleteTask(taskId: string): Promise<void> {
+  const sb = getSupabase();
+  if (!sb) return;
+
+  const { data: task, error: fetchErr } = await sb
+    .from("case_tasks")
+    .select("engagement_id")
+    .eq("id", taskId)
+    .maybeSingle();
+  if (fetchErr) throw fetchErr;
+  if (!task) throw new Error("task_not_found");
+
+  const { error } = await sb.from("case_tasks").delete().eq("id", taskId);
+  if (error) throw error;
+
+  await sb
+    .from("engagements")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", task.engagement_id);
+}
+
 export async function supabaseAddDocument(input: {
   engagementId: string;
   name: string;

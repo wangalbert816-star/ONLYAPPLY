@@ -7,6 +7,7 @@ import {
   addDocument,
   addMessage,
   assignTask,
+  deleteTask,
   getCounselor,
   getEngagementById,
   listDocuments,
@@ -24,6 +25,7 @@ import {
   updateDocumentStatus,
   updateInternalNotes,
   updateNextMeetingLabel,
+  updateTask,
 } from "../../lib/crm/store";
 import type { CrmApplicationDocument, CrmEngagement, CrmMessageChannel, CrmTaskLinkType } from "../../lib/crm/types";
 import type { FormState } from "../../types";
@@ -32,7 +34,9 @@ import { CaseFilesPanel } from "./CaseFilesPanel";
 import { CounselorDocumentLibrary } from "./CounselorDocumentLibrary";
 import { LibraryItemPicker } from "./LibraryItemPicker";
 import { TaskAttachmentLinks } from "./TaskAttachmentLinks";
+import { TaskTypeBadge, taskItemClass } from "./TaskTypeBadge";
 import "./CaseFilesPanel.css";
+import "./crmTaskTypes.css";
 import "./CounselorConsole.css";
 import "./SignedServiceHub.css";
 
@@ -68,6 +72,12 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
   const [taskLink, setTaskLink] = useState<CrmTaskLinkType>("none");
   const [taskLibraryIds, setTaskLibraryIds] = useState<string[]>([]);
   const [taskSubmitting, setTaskSubmitting] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editTaskTitle, setEditTaskTitle] = useState("");
+  const [editTaskDetail, setEditTaskDetail] = useState("");
+  const [editTaskDue, setEditTaskDue] = useState("");
+  const [editTaskLink, setEditTaskLink] = useState<CrmTaskLinkType>("none");
+  const [taskActionBusy, setTaskActionBusy] = useState(false);
   const [docNameDraft, setDocNameDraft] = useState("");
   const [docTypeDraft, setDocTypeDraft] = useState("essay");
   const [docDueDraft, setDocDueDraft] = useState("");
@@ -229,6 +239,56 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
       refresh();
     } finally {
       setTaskSubmitting(false);
+    }
+  };
+
+  const startEditTask = (task: (typeof tasks)[number]) => {
+    setEditingTaskId(task.id);
+    setEditTaskTitle(task.title);
+    setEditTaskDetail(task.description ?? "");
+    setEditTaskDue(task.dueAt ?? "");
+    setEditTaskLink(task.linkType);
+  };
+
+  const cancelEditTask = () => {
+    setEditingTaskId(null);
+    setEditTaskTitle("");
+    setEditTaskDetail("");
+    setEditTaskDue("");
+    setEditTaskLink("none");
+  };
+
+  const saveEditTask = async () => {
+    if (!editingTaskId || taskActionBusy) return;
+    const title = editTaskTitle.trim();
+    if (!title) return;
+    setTaskActionBusy(true);
+    try {
+      await updateTask(editingTaskId, {
+        title,
+        description: editTaskDetail.trim(),
+        dueAt: editTaskDue || null,
+        linkType: editTaskLink,
+      });
+      cancelEditTask();
+      notifyCrmStoreChange();
+      refresh();
+    } finally {
+      setTaskActionBusy(false);
+    }
+  };
+
+  const removeTask = async (taskId: string) => {
+    if (taskActionBusy) return;
+    if (!window.confirm(t("crm.console.deleteTaskConfirm"))) return;
+    setTaskActionBusy(true);
+    try {
+      await deleteTask(taskId);
+      if (editingTaskId === taskId) cancelEditTask();
+      notifyCrmStoreChange();
+      refresh();
+    } finally {
+      setTaskActionBusy(false);
     }
   };
 
@@ -394,8 +454,11 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                         ) : (
                           <ul className="counselor-console__task-list">
                             {tasks.slice(0, 3).map((task) => (
-                              <li key={task.id} className={task.status === "done" ? "is-done" : ""}>
-                                <strong>{task.title}</strong>
+                              <li key={task.id} className={taskItemClass(task.linkType, task.status === "done")}>
+                                <div className="counselor-console__task-head">
+                                  <strong>{task.title}</strong>
+                                  <TaskTypeBadge linkType={task.linkType} label={t(`crm.taskLink.${task.linkType}`)} />
+                                </div>
                                 <span>
                                   {task.status === "done" ? t("crm.taskDone") : t("crm.console.taskOpen")}
                                   {task.dueAt ? ` · ${task.dueAt}` : ""}
@@ -424,26 +487,113 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                     <h2>{t("crm.console.studentTasks")}</h2>
                     <ul className="counselor-console__task-list">
                       {tasks.map((task) => (
-                        <li key={task.id} className={task.status === "done" ? "is-done" : ""}>
-                          <label className="counselor-console__task-check">
-                            <input
-                              type="checkbox"
-                              checked={task.status === "done"}
-                              onChange={(e) => {
-                                setTaskDone(task.id, e.target.checked);
-                                notifyCrmStoreChange();
-                                refresh();
-                              }}
-                            />
-                            <strong>{task.title}</strong>
-                            {task.description ? <p className="counselor-console__task-detail">{task.description}</p> : null}
-                            <TaskAttachmentLinks fileIds={task.attachedFileIds} files={files} />
-                          </label>
-                          <span>
-                            {task.status === "done" ? t("crm.taskDone") : t("crm.console.taskOpen")}
-                            {task.dueAt ? ` · ${t("crm.due", { date: task.dueAt })}` : ""}
-                            {task.linkType !== "none" ? ` · ${t(`crm.taskLink.${task.linkType}`)}` : ""}
-                          </span>
+                        <li key={task.id} className={taskItemClass(task.linkType, task.status === "done")}>
+                          {editingTaskId === task.id ? (
+                            <div className="counselor-console__task-edit">
+                              <label>
+                                <span>{t("crm.console.taskTitle")}</span>
+                                <input
+                                  value={editTaskTitle}
+                                  onChange={(e) => setEditTaskTitle(e.target.value)}
+                                  disabled={taskActionBusy}
+                                />
+                              </label>
+                              <label>
+                                <span>{t("crm.console.taskDetail")}</span>
+                                <textarea
+                                  value={editTaskDetail}
+                                  onChange={(e) => setEditTaskDetail(e.target.value)}
+                                  rows={3}
+                                  disabled={taskActionBusy}
+                                />
+                              </label>
+                              <label>
+                                <span>{t("crm.dueLabel")}</span>
+                                <input
+                                  type="date"
+                                  value={editTaskDue}
+                                  onChange={(e) => setEditTaskDue(e.target.value)}
+                                  disabled={taskActionBusy}
+                                />
+                              </label>
+                              <label>
+                                <span>{t("crm.console.taskLink")}</span>
+                                <select
+                                  value={editTaskLink}
+                                  onChange={(e) => setEditTaskLink(e.target.value as CrmTaskLinkType)}
+                                  disabled={taskActionBusy}
+                                >
+                                  <option value="none">{t("crm.taskLink.none")}</option>
+                                  <option value="profile">{t("crm.taskLink.profile")}</option>
+                                  <option value="activities">{t("crm.taskLink.activities")}</option>
+                                  <option value="essay">{t("crm.taskLink.essay")}</option>
+                                  <option value="report">{t("crm.taskLink.report")}</option>
+                                </select>
+                              </label>
+                              <div className="counselor-console__task-actions">
+                                <button
+                                  type="button"
+                                  className="btn btn-primary"
+                                  disabled={taskActionBusy || !editTaskTitle.trim()}
+                                  onClick={() => void saveEditTask()}
+                                >
+                                  {taskActionBusy ? t("crm.console.savingTask") : t("crm.console.saveTask")}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary"
+                                  disabled={taskActionBusy}
+                                  onClick={cancelEditTask}
+                                >
+                                  {t("crm.console.cancel")}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <label className="counselor-console__task-check">
+                                <input
+                                  type="checkbox"
+                                  checked={task.status === "done"}
+                                  disabled={taskActionBusy}
+                                  onChange={(e) => {
+                                    setTaskDone(task.id, e.target.checked);
+                                    notifyCrmStoreChange();
+                                    refresh();
+                                  }}
+                                />
+                                <strong>{task.title}</strong>
+                                {task.description ? (
+                                  <p className="counselor-console__task-detail">{task.description}</p>
+                                ) : null}
+                                <TaskAttachmentLinks fileIds={task.attachedFileIds} files={files} />
+                              </label>
+                              <span>
+                                <TaskTypeBadge linkType={task.linkType} label={t(`crm.taskLink.${task.linkType}`)} />
+                                {" · "}
+                                {task.status === "done" ? t("crm.taskDone") : t("crm.console.taskOpen")}
+                                {task.dueAt ? ` · ${t("crm.due", { date: task.dueAt })}` : ""}
+                              </span>
+                              <div className="counselor-console__task-actions">
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary"
+                                  disabled={taskActionBusy}
+                                  onClick={() => startEditTask(task)}
+                                >
+                                  {t("crm.console.editTask")}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary"
+                                  disabled={taskActionBusy}
+                                  onClick={() => void removeTask(task.id)}
+                                >
+                                  {t("crm.console.deleteTask")}
+                                </button>
+                              </div>
+                            </>
+                          )}
                         </li>
                       ))}
                     </ul>

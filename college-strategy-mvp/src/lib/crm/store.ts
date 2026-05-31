@@ -13,6 +13,8 @@ import {
   supabaseListLibraryItems,
   supabaseMarkMessagesReadByStudent,
   supabaseSetTaskDone,
+  supabaseDeleteTask,
+  supabaseUpdateTask,
   supabaseToggleFollowUp,
   supabaseToggleMessagePin,
   supabaseUpdateDocumentStatus,
@@ -781,6 +783,51 @@ export function setTaskDone(taskId: string, done: boolean): void {
   if (!task) return;
   task.status = done ? "done" : "open";
   task.completedAt = done ? nowIso() : undefined;
+  const engagement = store.engagements.find((e) => e.id === task.engagementId);
+  if (engagement) engagement.updatedAt = nowIso();
+  writeStore(store);
+  notifyCrmStoreChange();
+}
+
+export async function updateTask(
+  taskId: string,
+  patch: {
+    title?: string;
+    description?: string;
+    dueAt?: string | null;
+    linkType?: CrmTaskLinkType;
+  },
+): Promise<void> {
+  if (crmBackend === "supabase") {
+    await supabaseUpdateTask(taskId, patch);
+    await persistRefresh();
+    notifyCrmStoreChange();
+    return;
+  }
+  const store = readStore();
+  const task = store.tasks.find((t) => t.id === taskId);
+  if (!task) return;
+  if (patch.title != null) task.title = patch.title.trim();
+  if (patch.description != null) task.description = patch.description.trim() || undefined;
+  if (patch.dueAt !== undefined) task.dueAt = patch.dueAt || undefined;
+  if (patch.linkType != null) task.linkType = patch.linkType;
+  const engagement = store.engagements.find((e) => e.id === task.engagementId);
+  if (engagement) engagement.updatedAt = nowIso();
+  writeStore(store);
+  notifyCrmStoreChange();
+}
+
+export async function deleteTask(taskId: string): Promise<void> {
+  if (crmBackend === "supabase") {
+    await supabaseDeleteTask(taskId);
+    await persistRefresh();
+    notifyCrmStoreChange();
+    return;
+  }
+  const store = readStore();
+  const task = store.tasks.find((t) => t.id === taskId);
+  if (!task) return;
+  store.tasks = store.tasks.filter((t) => t.id !== taskId);
   const engagement = store.engagements.find((e) => e.id === task.engagementId);
   if (engagement) engagement.updatedAt = nowIso();
   writeStore(store);

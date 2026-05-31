@@ -3,7 +3,9 @@ import { useLanguage } from "../../i18n/LanguageContext";
 import { isCalendlyBookingEnabled, requestExpertConsult } from "../../lib/expertConsultBooking";
 import type { CrmCounselor, CrmEngagement, CrmMessage, CrmTask, CrmTaskLinkType } from "../../lib/crm/types";
 import { localizeCrmText } from "../../lib/crm/localizeCrmContent";
+import { TaskTypeBadge, taskItemClass } from "./TaskTypeBadge";
 import "./AccountServicePanel.css";
+import "./crmTaskTypes.css";
 
 type Props = {
   engagement: CrmEngagement;
@@ -138,7 +140,7 @@ export function AccountServicePanel({
           ) : (
             <ul className="account-service__task-list">
               {visibleTasks.map((task) => (
-                <li key={task.id} className={task.status === "done" ? "is-done" : ""}>
+                <li key={task.id} className={taskItemClass(task.linkType, task.status === "done")}>
                   <label className="account-service__task-check">
                     <input
                       type="checkbox"
@@ -148,6 +150,7 @@ export function AccountServicePanel({
                     <span>{localizeCrmText(task.title, locale, t)}</span>
                   </label>
                   <div className="account-service__task-meta">
+                    <TaskTypeBadge linkType={task.linkType} label={taskLinkLabel[task.linkType]} />
                     {task.dueAt ? <span>{t("crm.due", { date: task.dueAt })}</span> : null}
                     {task.status === "done" ? <span>{t("crm.taskDone")}</span> : null}
                     {task.linkType !== "none" && task.status === "open" ? (
