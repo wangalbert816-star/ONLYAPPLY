@@ -59,6 +59,42 @@ async function findAuthUserByEmail(admin, email) {
   return null;
 }
 
+function validateCounselorPassword(password) {
+  if (!password) return "password_required";
+  if (password.length < 6) return "password_too_short";
+  return null;
+}
+
+/** Create Auth user or update password; returns linked user id. */
+async function ensureAuthUserWithPassword(admin, email, password) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const { data: created, error: createErr } = await admin.auth.admin.createUser({
+    email: normalizedEmail,
+    password,
+    email_confirm: true,
+  });
+
+  if (!createErr && created.user?.id) {
+    return { userId: created.user.id, created: true };
+  }
+
+  const msg = createErr?.message || "";
+  if (!/already|registered|exists/i.test(msg)) {
+    throw createErr || new Error("auth_user_create_failed");
+  }
+
+  const existing = await findAuthUserByEmail(admin, normalizedEmail);
+  if (!existing) throw createErr || new Error("auth_user_not_found");
+
+  const { error: updateErr } = await admin.auth.admin.updateUserById(existing.id, {
+    password,
+    email_confirm: true,
+  });
+  if (updateErr) throw updateErr;
+
+  return { userId: existing.id, created: false };
+}
+
 async function requireAdmin(req, res, supabaseAdmin) {
   const admin = supabaseAdmin();
   if (!admin) {
@@ -174,34 +210,27 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
     const name = String(req.body?.name ?? "").trim();
     const title = String(req.body?.title ?? "").trim();
     const calendlyUrl = String(req.body?.calendlyUrl ?? "").trim() || null;
+    const password = String(req.body?.password ?? "").trim();
 
     if (!email || !name || !title) {
       return res.status(400).json({ error: "email_name_title_required" });
     }
 
+    const passwordError = validateCounselorPassword(password);
+    if (passwordError) {
+      return res.status(400).json({ error: passwordError });
+    }
+
     try {
-      const authUser = await findAuthUserByEmail(ctx.admin, email);
+      const { userId } = await ensureAuthUserWithPassword(ctx.admin, email, password);
       const payload = {
-        user_id: authUser?.id ?? null,
+        user_id: userId,
         name,
         title,
         email,
         calendly_url: calendlyUrl,
         active: true,
       };
-
-      if (authUser) {
-        const { data, error } = await ctx.admin
-          .from("counselors")
-          .upsert(payload, { onConflict: "user_id" })
-          .select("*")
-          .single();
-        if (error) throw error;
-        return res.json({
-          counselor: mapCounselor(data, new Map()),
-          authLinked: true,
-        });
-      }
 
       const { data: existing } = await ctx.admin
         .from("counselors")
@@ -219,15 +248,19 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
         if (error) throw error;
         return res.json({
           counselor: mapCounselor(data, new Map()),
-          authLinked: false,
+          authLinked: true,
         });
       }
 
-      const { data, error } = await ctx.admin.from("counselors").insert(payload).select("*").single();
+      const { data, error } = await ctx.admin
+        .from("counselors")
+        .upsert(payload, { onConflict: "user_id" })
+        .select("*")
+        .single();
       if (error) throw error;
       return res.json({
         counselor: mapCounselor(data, new Map()),
-        authLinked: false,
+        authLinked: true,
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -257,6 +290,30 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
       const authUser = await findAuthUserByEmail(ctx.admin, email);
       if (!authUser) return res.status(404).json({ error: "auth_user_not_found" });
       patch.user_id = authUser.id;
+      if (!patch.email) patch.email = email;
+    }
+
+    if (req.body?.password != null) {
+      const password = String(req.body.password).trim();
+      const passwordError = validateCounselorPassword(password);
+      if (passwordError) {
+        return res.status(400).json({ error: passwordError });
+      }
+
+      let email = String(req.body?.email ?? patch.email ?? "").trim().toLowerCase();
+      if (!email) {
+        const { data: row, error: rowErr } = await ctx.admin
+          .from("counselors")
+          .select("email")
+          .eq("id", id)
+          .maybeSingle();
+        if (rowErr) throw rowErr;
+        email = String(row?.email ?? "").trim().toLowerCase();
+      }
+      if (!email) return res.status(400).json({ error: "email_required_for_password" });
+
+      const { userId } = await ensureAuthUserWithPassword(ctx.admin, email, password);
+      patch.user_id = userId;
       if (!patch.email) patch.email = email;
     }
 

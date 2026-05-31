@@ -148,6 +148,24 @@
   vertical-align: top;
 }
 
+.admin-portal__hint {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.82rem;
+  color: var(--color-muted, #5c6670);
+}
+
+.admin-portal__inline-password {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.admin-portal__inline-password input {
+  min-width: 140px;
+}
+
 .admin-portal__row-actions {
   display: flex;
   flex-wrap: wrap;

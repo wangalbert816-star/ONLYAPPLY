@@ -80,7 +80,7 @@ export async function listAdminCounselors(accessToken: string): Promise<{ counse
 
 export async function createAdminCounselor(
   accessToken: string,
-  input: { email: string; name: string; title: string; calendlyUrl?: string },
+  input: { email: string; name: string; title: string; password: string; calendlyUrl?: string },
 ): Promise<{ counselor: AdminCounselor; authLinked: boolean }> {
   return adminFetch("/api/admin/crm/counselors", accessToken, {
     method: "POST",
@@ -98,6 +98,7 @@ export async function patchAdminCounselor(
     calendlyUrl: string;
     active: boolean;
     linkAuth: boolean;
+    password: string;
   }>,
 ): Promise<{ counselor: AdminCounselor }> {
   return adminFetch(`/api/admin/crm/counselors/${id}`, accessToken, {

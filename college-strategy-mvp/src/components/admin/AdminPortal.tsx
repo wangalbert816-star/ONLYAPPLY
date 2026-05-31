@@ -299,7 +299,13 @@ function AdminCounselorsPanel({
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [title, setTitle] = useState("");
+  const [password, setPassword] = useState("");
   const [calendlyUrl, setCalendlyUrl] = useState("");
+  const [passwordEditId, setPasswordEditId] = useState<string | null>(null);
+  const [resetPassword, setResetPassword] = useState("");
+
+  const passwordValid = password.trim().length >= 6;
+  const resetPasswordValid = resetPassword.trim().length >= 6;
 
   return (
     <div className="admin-portal__grid">
@@ -319,24 +325,36 @@ function AdminCounselorsPanel({
             <input value={title} onChange={(e) => setTitle(e.target.value)} />
           </label>
           <label>
+            {t("admin.counselors.password")}
+            <input
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              type="password"
+              autoComplete="new-password"
+            />
+            <span className="admin-portal__hint">{t("admin.counselors.passwordHint")}</span>
+          </label>
+          <label>
             {t("admin.counselors.calendly")}
             <input value={calendlyUrl} onChange={(e) => setCalendlyUrl(e.target.value)} />
           </label>
           <button
             type="button"
             className="btn btn-primary"
-            disabled={busy || !email || !name || !title}
+            disabled={busy || !email || !name || !title || !passwordValid}
             onClick={() =>
               void onRun(async () => {
                 await createAdminCounselor(token, {
                   email,
                   name,
                   title,
+                  password: password.trim(),
                   calendlyUrl: calendlyUrl || undefined,
                 });
                 setEmail("");
                 setName("");
                 setTitle("");
+                setPassword("");
                 setCalendlyUrl("");
               })
             }
@@ -372,32 +390,87 @@ function AdminCounselorsPanel({
                     <td>{c.userId ? t("admin.counselors.authLinked") : t("admin.counselors.authMissing")}</td>
                     <td>{c.active ? t("admin.counselors.active") : t("admin.counselors.inactive")}</td>
                     <td className="admin-portal__row-actions">
-                      {!c.userId && c.email ? (
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          disabled={busy}
-                          onClick={() =>
-                            void onRun(async () => {
-                              await patchAdminCounselor(token, c.id, { linkAuth: true, email: c.email ?? undefined });
-                            })
-                          }
-                        >
-                          {t("admin.counselors.linkAuth")}
-                        </button>
-                      ) : null}
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        disabled={busy}
-                        onClick={() =>
-                          void onRun(async () => {
-                            await patchAdminCounselor(token, c.id, { active: !c.active });
-                          })
-                        }
-                      >
-                        {c.active ? t("admin.counselors.inactive") : t("admin.counselors.active")}
-                      </button>
+                      {passwordEditId === c.id ? (
+                        <div className="admin-portal__inline-password">
+                          <input
+                            type="password"
+                            value={resetPassword}
+                            onChange={(e) => setResetPassword(e.target.value)}
+                            placeholder={t("admin.counselors.password")}
+                            autoComplete="new-password"
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            disabled={busy || !resetPasswordValid || !c.email}
+                            onClick={() =>
+                              void onRun(async () => {
+                                await patchAdminCounselor(token, c.id, {
+                                  password: resetPassword.trim(),
+                                  email: c.email ?? undefined,
+                                });
+                                setPasswordEditId(null);
+                                setResetPassword("");
+                              })
+                            }
+                          >
+                            {busy ? t("admin.counselors.settingPassword") : t("admin.counselors.savePassword")}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            disabled={busy}
+                            onClick={() => {
+                              setPasswordEditId(null);
+                              setResetPassword("");
+                            }}
+                          >
+                            {t("admin.counselors.cancel")}
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          {!c.userId && c.email ? (
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              disabled={busy}
+                              onClick={() =>
+                                void onRun(async () => {
+                                  await patchAdminCounselor(token, c.id, { linkAuth: true, email: c.email ?? undefined });
+                                })
+                              }
+                            >
+                              {t("admin.counselors.linkAuth")}
+                            </button>
+                          ) : null}
+                          {c.email ? (
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              disabled={busy}
+                              onClick={() => {
+                                setPasswordEditId(c.id);
+                                setResetPassword("");
+                              }}
+                            >
+                              {t("admin.counselors.setPassword")}
+                            </button>
+                          ) : null}
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            disabled={busy}
+                            onClick={() =>
+                              void onRun(async () => {
+                                await patchAdminCounselor(token, c.id, { active: !c.active });
+                              })
+                            }
+                          >
+                            {c.active ? t("admin.counselors.inactive") : t("admin.counselors.active")}
+                          </button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}
