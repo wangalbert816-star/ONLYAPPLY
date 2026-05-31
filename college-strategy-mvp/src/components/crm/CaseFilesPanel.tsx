@@ -84,7 +84,11 @@ export function CaseFilesPanel({ engagementId, uploadedByRole, files, defaultCat
     }
   };
 
-  const download = async (file: CrmStoredFile) => {
+  const openFile = async (file: CrmStoredFile) => {
+    if (file.externalUrl) {
+      window.open(file.externalUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
     if (!file.storagePath) return;
     setError(null);
     try {
@@ -107,15 +111,15 @@ export function CaseFilesPanel({ engagementId, uploadedByRole, files, defaultCat
             <li key={file.id}>
               <div className="case-files-panel__row">
                 <strong>{localizeCrmText(file.name, locale, t)}</strong>
-                {file.storagePath ? (
-                  <button type="button" className="signed-service-hub__link" onClick={() => void download(file)}>
-                    {t("crm.files.download")}
+                {file.externalUrl || file.storagePath ? (
+                  <button type="button" className="signed-service-hub__link" onClick={() => void openFile(file)}>
+                    {file.externalUrl ? t("crm.files.openLink") : t("crm.files.download")}
                   </button>
                 ) : null}
               </div>
               <span>
-                {file.category}
-                {file.sizeBytes ? ` · ${formatBytes(file.sizeBytes)}` : ""}
+                {file.externalUrl ? t("crm.files.kindLink") : file.category}
+                {!file.externalUrl && file.sizeBytes ? ` · ${formatBytes(file.sizeBytes)}` : ""}
                 {" · "}
                 {formatWhen(file.uploadedAt, locale)}
                 {" · "}

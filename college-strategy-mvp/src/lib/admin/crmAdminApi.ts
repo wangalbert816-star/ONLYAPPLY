@@ -66,8 +66,10 @@ export type AdminLibraryItem = {
   description: string | null;
   category: string;
   locale: "zh" | "en" | "all";
-  fileName: string;
-  storagePath: string;
+  itemKind: "file" | "link";
+  fileName: string | null;
+  storagePath: string | null;
+  externalUrl: string | null;
   contentType: string | null;
   sizeBytes: number | null;
   active: boolean;
@@ -226,6 +228,22 @@ export async function prepareAdminLibraryUpload(
   },
 ): Promise<{ item: AdminLibraryItem; uploadUrl: string; uploadToken: string }> {
   return adminFetch("/api/admin/crm/library/prepare-upload", accessToken, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function createAdminLibraryLink(
+  accessToken: string,
+  input: {
+    title: string;
+    description?: string;
+    category: string;
+    locale: "zh" | "en" | "all";
+    externalUrl: string;
+  },
+): Promise<{ item: AdminLibraryItem }> {
+  return adminFetch("/api/admin/crm/library/link", accessToken, {
     method: "POST",
     body: JSON.stringify(input),
   });

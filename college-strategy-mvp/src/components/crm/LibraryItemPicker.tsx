@@ -37,11 +37,15 @@ function shouldShowDescription(item: CrmLibraryItem) {
   const description = item.description?.trim();
   if (!description) return false;
   if (description === item.title.trim()) return false;
-  if (description === item.fileName.trim()) return false;
+  if (item.fileName && description === item.fileName.trim()) return false;
+  if (item.externalUrl && description === item.externalUrl.trim()) return false;
   return true;
 }
 
 function itemMetaLine(item: CrmLibraryItem, t: (key: string) => string) {
+  if (item.itemKind === "link") {
+    return [t("crm.library.kindLink"), categoryLabel(item.category, t)].join(" · ");
+  }
   const parts = [item.fileName, categoryLabel(item.category, t)];
   if (item.sizeBytes) parts.push(formatBytes(item.sizeBytes));
   return parts.join(" · ");

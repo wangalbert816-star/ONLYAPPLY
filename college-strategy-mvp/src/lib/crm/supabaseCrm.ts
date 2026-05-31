@@ -240,6 +240,7 @@ function mapFile(row: Record<string, unknown>): CrmStoredFile {
     uploadedAt: String(row.uploaded_at),
     note: row.note ? String(row.note) : undefined,
     storagePath: row.storage_path ? String(row.storage_path) : undefined,
+    externalUrl: row.external_url ? String(row.external_url) : undefined,
     uploadedByRole: row.uploaded_by_role ? (String(row.uploaded_by_role) as CrmStoredFile["uploadedByRole"]) : undefined,
     contentType: row.content_type ? String(row.content_type) : undefined,
     sizeBytes: row.size_bytes != null ? Number(row.size_bytes) : undefined,
@@ -247,14 +248,17 @@ function mapFile(row: Record<string, unknown>): CrmStoredFile {
 }
 
 function mapLibraryItem(row: Record<string, unknown>): CrmLibraryItem {
+  const itemKind = (String(row.item_kind || "file") as CrmLibraryItem["itemKind"]) || "file";
   return {
     id: String(row.id),
     title: String(row.title),
     description: row.description ? String(row.description) : undefined,
     category: String(row.category),
     locale: String(row.locale) as CrmLibraryItem["locale"],
-    fileName: String(row.file_name),
-    storagePath: String(row.storage_path),
+    itemKind,
+    fileName: row.file_name ? String(row.file_name) : "",
+    storagePath: row.storage_path ? String(row.storage_path) : undefined,
+    externalUrl: row.external_url ? String(row.external_url) : undefined,
     contentType: row.content_type ? String(row.content_type) : undefined,
     sizeBytes: row.size_bytes != null ? Number(row.size_bytes) : undefined,
     active: Boolean(row.active),
@@ -647,6 +651,32 @@ export async function supabaseAttachLibraryItemToCase(input: {
     .maybeSingle();
   if (error) throw error;
   if (!item) throw new Error("library_item_not_found");
+
+  const itemKind = String(item.item_kind || "file");
+  if (itemKind === "link") {
+    const externalUrl = item.external_url ? String(item.external_url) : "";
+    if (!externalUrl) throw new Error("library_link_missing");
+
+    const fileId = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const { data, error: insertErr } = await sb
+      .from("case_files")
+      .insert({
+        id: fileId,
+        engagement_id: input.engagementId,
+        name: String(item.title).trim() || "Google Sheet",
+        category: String(item.category || "general"),
+        external_url: externalUrl,
+        uploaded_by_role: input.uploadedByRole,
+        uploaded_at: now,
+      })
+      .select("*")
+      .single();
+    if (insertErr) throw insertErr;
+
+    await sb.from("engagements").update({ updated_at: now }).eq("id", input.engagementId);
+    return mapFile(data as Record<string, unknown>);
+  }
 
   const storagePath = String(item.storage_path);
   const fileName = String(item.file_name);

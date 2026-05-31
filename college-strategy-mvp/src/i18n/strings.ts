@@ -639,6 +639,15 @@ merge(zhFlat, {
     library: {
       uploadTitle: "上传资料",
       uploadLead: "上传通用模板与材料，顾问可在学生 Case 的文件页一键添加到该学生。",
+      modeFile: "上传文件",
+      modeLink: "Google Sheet 链接",
+      linkLead: "粘贴 Google Sheets 分享链接。学生打开的是在线最新版，请确保 Sheet 已设为「知道链接的任何人可查看/编辑」。",
+      sheetUrl: "Google Sheet 链接",
+      sheetUrlPlaceholder: "https://docs.google.com/spreadsheets/d/…",
+      sheetShareHint: "在 Google Sheets：分享 → 知道链接的任何人 → 查看者或编辑者。",
+      submitLink: "添加链接",
+      kindLink: "Google Sheet",
+      testLink: "测试链接",
       listTitle: "资料库",
       title: "标题",
       description: "说明（可选）",
@@ -694,6 +703,7 @@ merge(zhFlat, {
       library_id_required: "缺少资料 ID。",
       library_api_missing: "资料库 API 未就绪：本地请重启 npm run dev；线上请重新部署后再试。",
       library_table_missing: "资料库数据表未创建。请在 Supabase SQL Editor 运行 supabase/schema-crm-document-library.sql。",
+      library_sheet_url_invalid: "请输入有效的 Google Sheets 链接（https://docs.google.com/spreadsheets/d/…）。",
     },
   },
   crm: {
@@ -802,6 +812,8 @@ merge(zhFlat, {
     files: {
       empty: "还没有文件。",
       download: "下载",
+      openLink: "打开链接",
+      kindLink: "Google Sheet",
       uploading: "上传中…",
       selected: "已选：{name}（{size}）",
       uploadedByCounselor: "顾问上传",
@@ -826,6 +838,7 @@ merge(zhFlat, {
       lead: "从运营资料库选择模板或材料，一键添加到该学生的文件列表。",
       taskAttachTitle: "附加资料",
       taskAttachLead: "勾选要随待办发给学生的模板或材料（会出现在待办附件与学生文件库）。",
+      kindLink: "Google Sheet",
       loading: "加载资料库…",
       empty: "资料库还没有可用文件。",
       attach: "添加到 Case",
@@ -848,6 +861,7 @@ merge(zhFlat, {
     },
     taskAttachments: {
       download: "下载 {name}",
+      openLink: "打开 {name}",
     },
     console: {
       demoBadge: "本地 CRM 演示",
@@ -1957,6 +1971,15 @@ merge(enFlat, {
     library: {
       uploadTitle: "Upload material",
       uploadLead: "Add org-wide templates and materials. Counselors can attach them to a student case from the Files tab.",
+      modeFile: "Upload file",
+      modeLink: "Google Sheet link",
+      linkLead: "Paste a Google Sheets share URL. Students open the live sheet—set sharing to “Anyone with the link” (viewer or editor).",
+      sheetUrl: "Google Sheet URL",
+      sheetUrlPlaceholder: "https://docs.google.com/spreadsheets/d/…",
+      sheetShareHint: "In Google Sheets: Share → Anyone with the link → Viewer or Editor.",
+      submitLink: "Add link",
+      kindLink: "Google Sheet",
+      testLink: "Test link",
       listTitle: "Document library",
       title: "Title",
       description: "Description (optional)",
@@ -2012,6 +2035,7 @@ merge(enFlat, {
       library_id_required: "Library item id is required.",
       library_api_missing: "Document library API is not available. Restart npm run dev locally, or redeploy production.",
       library_table_missing: "Library tables are missing. Run supabase/schema-crm-document-library.sql in Supabase SQL Editor.",
+      library_sheet_url_invalid: "Enter a valid Google Sheets URL (https://docs.google.com/spreadsheets/d/…).",
     },
   },
   crm: {
@@ -2120,6 +2144,8 @@ merge(enFlat, {
     files: {
       empty: "No files yet.",
       download: "Download",
+      openLink: "Open link",
+      kindLink: "Google Sheet",
       uploading: "Uploading…",
       selected: "Selected: {name} ({size})",
       uploadedByCounselor: "Counselor upload",
@@ -2144,6 +2170,7 @@ merge(enFlat, {
       lead: "Pick a template or material from the org library and add it to this student's files.",
       taskAttachTitle: "Attach materials",
       taskAttachLead: "Select templates or materials to send with this task. They appear as task attachments and in the student's Files tab.",
+      kindLink: "Google Sheet",
       loading: "Loading library…",
       empty: "No library items available yet.",
       attach: "Add to case",
@@ -2166,6 +2193,7 @@ merge(enFlat, {
     },
     taskAttachments: {
       download: "Download {name}",
+      openLink: "Open {name}",
     },
     console: {
       demoBadge: "Local CRM MVP",

@@ -14,11 +14,15 @@ export function TaskAttachmentLinks({ fileIds, files, className }: Props) {
 
   const attached = fileIds
     .map((fileId) => files.find((file) => file.id === fileId))
-    .filter((file): file is CrmStoredFile => Boolean(file?.storagePath));
+    .filter((file): file is CrmStoredFile => Boolean(file && (file.storagePath || file.externalUrl)));
 
   if (attached.length === 0) return null;
 
-  const download = async (file: CrmStoredFile) => {
+  const openFile = async (file: CrmStoredFile) => {
+    if (file.externalUrl) {
+      window.open(file.externalUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
     try {
       const url = await getCaseFileDownloadUrl(file.id);
       window.open(url, "_blank", "noopener,noreferrer");
@@ -31,8 +35,10 @@ export function TaskAttachmentLinks({ fileIds, files, className }: Props) {
     <ul className={className ?? "task-attachment-links"}>
       {attached.map((file) => (
         <li key={file.id}>
-          <button type="button" className="signed-service-hub__link" onClick={() => void download(file)}>
-            {t("crm.taskAttachments.download", { name: file.name })}
+          <button type="button" className="signed-service-hub__link" onClick={() => void openFile(file)}>
+            {file.externalUrl
+              ? t("crm.taskAttachments.openLink", { name: file.name })
+              : t("crm.taskAttachments.download", { name: file.name })}
           </button>
         </li>
       ))}

@@ -695,6 +695,23 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
     return (base || "file").slice(0, 180);
   }
 
+  function normalizeGoogleSheetUrl(raw) {
+    const trimmed = String(raw ?? "").trim();
+    if (!trimmed) return null;
+    let url;
+    try {
+      url = new URL(trimmed);
+    } catch {
+      return null;
+    }
+    if (url.protocol !== "https:") return null;
+    const host = url.hostname.replace(/^www\./, "");
+    if (host !== "docs.google.com") return null;
+    const match = url.pathname.match(/^\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+    if (!match?.[1]) return null;
+    return `https://docs.google.com/spreadsheets/d/${match[1]}/edit`;
+  }
+
   function mapLibraryItem(row) {
     return {
       id: row.id,
@@ -702,8 +719,10 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
       description: row.description,
       category: row.category,
       locale: row.locale,
+      itemKind: row.item_kind || "file",
       fileName: row.file_name,
       storagePath: row.storage_path,
+      externalUrl: row.external_url,
       contentType: row.content_type,
       sizeBytes: row.size_bytes,
       active: row.active,
@@ -782,6 +801,7 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
           description,
           category,
           locale,
+          item_kind: "file",
           file_name: fileName,
           storage_path: storagePath,
           content_type: contentType,
@@ -800,6 +820,56 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
         uploadUrl: upload.signedUrl,
         uploadToken: upload.token,
       });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      res.status(500).json({ error: msg });
+    }
+  });
+
+  app.post("/api/admin/crm/library/link", async (req, res) => {
+    const ctx = await requireAdmin(req, res, supabaseAdmin);
+    if (!ctx) return;
+
+    const title = String(req.body?.title ?? "").trim();
+    const description = String(req.body?.description ?? "").trim() || null;
+    const category = String(req.body?.category ?? "general").trim() || "general";
+    const locale = String(req.body?.locale ?? "all").trim();
+    const externalUrl = normalizeGoogleSheetUrl(req.body?.externalUrl);
+
+    if (!title) {
+      res.status(400).json({ error: "library_title_required" });
+      return;
+    }
+    if (!["zh", "en", "all"].includes(locale)) {
+      res.status(400).json({ error: "library_locale_invalid" });
+      return;
+    }
+    if (!externalUrl) {
+      res.status(400).json({ error: "library_sheet_url_invalid" });
+      return;
+    }
+
+    try {
+      const now = new Date().toISOString();
+      const { data: row, error } = await ctx.admin
+        .from("crm_library_items")
+        .insert({
+          title,
+          description,
+          category,
+          locale,
+          item_kind: "link",
+          external_url: externalUrl,
+          active: true,
+          sort_order: 0,
+          created_at: now,
+          updated_at: now,
+        })
+        .select("*")
+        .single();
+      if (error) throw error;
+
+      res.json({ item: mapLibraryItem(row) });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       res.status(500).json({ error: msg });
@@ -869,7 +939,7 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
     try {
       const { data: row, error: fetchErr } = await ctx.admin
         .from("crm_library_items")
-        .select("storage_path")
+        .select("storage_path, item_kind")
         .eq("id", id)
         .maybeSingle();
       if (fetchErr) throw fetchErr;
@@ -878,7 +948,7 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
         return;
       }
 
-      if (row.storage_path) {
+      if (row.storage_path && String(row.item_kind || "file") === "file") {
         await ctx.admin.storage.from(CRM_LIBRARY_BUCKET).remove([String(row.storage_path)]);
       }
 

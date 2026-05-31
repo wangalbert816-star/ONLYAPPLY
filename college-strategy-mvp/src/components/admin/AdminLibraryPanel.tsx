@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLanguage } from "../../i18n/LanguageContext";
 import {
+  createAdminLibraryLink,
   deleteAdminLibraryItem,
   listAdminLibraryItems,
   patchAdminLibraryItem,
   prepareAdminLibraryUpload,
   type AdminLibraryItem,
 } from "../../lib/admin/crmAdminApi";
+import { validateGoogleSheetUrl } from "../../lib/crm/libraryLinks";
 
 const MAX_BYTES = 20 * 1024 * 1024;
 const CATEGORIES = ["template", "worksheet", "checklist", "reference", "general"] as const;
@@ -56,6 +58,8 @@ export function AdminLibraryPanel({ token, busy, onRun }: Props) {
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>("template");
   const [itemLocale, setItemLocale] = useState<(typeof LOCALES)[number]>("all");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [addMode, setAddMode] = useState<"file" | "link">("file");
+  const [sheetUrl, setSheetUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -89,17 +93,38 @@ export function AdminLibraryPanel({ token, busy, onRun }: Props) {
       setPanelError(libraryErrorMessage("library_title_required", t));
       return;
     }
-    if (!selectedFile) {
-      setPanelError(libraryErrorMessage("library_file_required", t));
-      return;
-    }
-    if (selectedFile.size > MAX_BYTES) {
-      setPanelError(libraryErrorMessage("file_too_large", t));
-      return;
-    }
 
     setUploading(true);
     try {
+      if (addMode === "link") {
+        const validated = validateGoogleSheetUrl(sheetUrl);
+        if (!validated.ok) {
+          setPanelError(libraryErrorMessage(validated.code, t));
+          return;
+        }
+        const { item } = await createAdminLibraryLink(token, {
+          title: title.trim(),
+          description: description.trim() || undefined,
+          category,
+          locale: itemLocale,
+          externalUrl: validated.url,
+        });
+        setItems((prev) => [item, ...prev]);
+        setTitle("");
+        setDescription("");
+        setSheetUrl("");
+        return;
+      }
+
+      if (!selectedFile) {
+        setPanelError(libraryErrorMessage("library_file_required", t));
+        return;
+      }
+      if (selectedFile.size > MAX_BYTES) {
+        setPanelError(libraryErrorMessage("file_too_large", t));
+        return;
+      }
+
       const { uploadUrl, item } = await prepareAdminLibraryUpload(token, {
         title: title.trim(),
         description: description.trim() || undefined,
@@ -129,6 +154,26 @@ export function AdminLibraryPanel({ token, busy, onRun }: Props) {
     } finally {
       setUploading(false);
     }
+  };
+
+  const itemSummary = (item: AdminLibraryItem) => {
+    if (item.itemKind === "link") {
+      return [
+        t("admin.library.kindLink"),
+        categoryLabel(item.category),
+        localeLabel(item.locale),
+        formatWhen(item.updatedAt, locale),
+      ].join(" · ");
+    }
+    return [
+      item.fileName,
+      categoryLabel(item.category),
+      localeLabel(item.locale),
+      item.sizeBytes ? formatBytes(item.sizeBytes) : "",
+      formatWhen(item.updatedAt, locale),
+    ]
+      .filter(Boolean)
+      .join(" · ");
   };
 
   const startEdit = (item: AdminLibraryItem) => {
@@ -181,7 +226,27 @@ export function AdminLibraryPanel({ token, busy, onRun }: Props) {
     <div className="admin-portal__library">
       <section className="admin-portal__card">
         <h2>{t("admin.library.uploadTitle")}</h2>
-        <p className="admin-portal__muted">{t("admin.library.uploadLead")}</p>
+        <div className="admin-portal__library-mode">
+          <button
+            type="button"
+            className={addMode === "file" ? "is-active" : undefined}
+            disabled={uploading || busy}
+            onClick={() => setAddMode("file")}
+          >
+            {t("admin.library.modeFile")}
+          </button>
+          <button
+            type="button"
+            className={addMode === "link" ? "is-active" : undefined}
+            disabled={uploading || busy}
+            onClick={() => setAddMode("link")}
+          >
+            {t("admin.library.modeLink")}
+          </button>
+        </div>
+        <p className="admin-portal__muted">
+          {addMode === "link" ? t("admin.library.linkLead") : t("admin.library.uploadLead")}
+        </p>
         <div className="admin-portal__form-grid">
           <label>
             <span>{t("admin.library.title")}</span>
@@ -211,36 +276,58 @@ export function AdminLibraryPanel({ token, busy, onRun }: Props) {
             <span>{t("admin.library.description")}</span>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} disabled={uploading || busy} />
           </label>
-          <label className="admin-portal__form-span admin-portal__file-label">
-            <span>{t("admin.library.file")}</span>
-            <input
-              ref={inputRef}
-              type="file"
-              disabled={uploading || busy}
-              onChange={(e) => {
-                const file = e.target.files?.[0] ?? null;
-                setSelectedFile(file);
-                setPanelError(null);
-              }}
-            />
-            {selectedFile ? (
-              <span className="admin-portal__muted">
-                {t("admin.library.selectedFile", {
-                  name: selectedFile.name,
-                  size: formatBytes(selectedFile.size),
-                })}
-              </span>
-            ) : null}
-          </label>
+          {addMode === "link" ? (
+            <label className="admin-portal__form-span">
+              <span>{t("admin.library.sheetUrl")}</span>
+              <input
+                value={sheetUrl}
+                onChange={(e) => setSheetUrl(e.target.value)}
+                placeholder={t("admin.library.sheetUrlPlaceholder")}
+                disabled={uploading || busy}
+              />
+              <span className="admin-portal__hint">{t("admin.library.sheetShareHint")}</span>
+            </label>
+          ) : (
+            <label className="admin-portal__form-span admin-portal__file-label">
+              <span>{t("admin.library.file")}</span>
+              <input
+                ref={inputRef}
+                type="file"
+                disabled={uploading || busy}
+                onChange={(e) => {
+                  const file = e.target.files?.[0] ?? null;
+                  setSelectedFile(file);
+                  setPanelError(null);
+                }}
+              />
+              {selectedFile ? (
+                <span className="admin-portal__muted">
+                  {t("admin.library.selectedFile", {
+                    name: selectedFile.name,
+                    size: formatBytes(selectedFile.size),
+                  })}
+                </span>
+              ) : null}
+            </label>
+          )}
         </div>
         <div className="admin-portal__library-actions">
           <button
             type="button"
             className="btn btn-primary"
-            disabled={uploading || busy || !title.trim() || !selectedFile}
+            disabled={
+              uploading ||
+              busy ||
+              !title.trim() ||
+              (addMode === "file" ? !selectedFile : !sheetUrl.trim())
+            }
             onClick={() => void submitUpload()}
           >
-            {uploading ? t("admin.library.uploading") : t("admin.library.submit")}
+            {uploading
+              ? t("admin.library.uploading")
+              : addMode === "link"
+                ? t("admin.library.submitLink")
+                : t("admin.library.submit")}
           </button>
         </div>
         {panelError ? <p className="admin-portal__notice">{panelError}</p> : null}
@@ -294,20 +381,22 @@ export function AdminLibraryPanel({ token, busy, onRun }: Props) {
                   <>
                     <div className="admin-portal__library-row">
                       <strong>{item.title}</strong>
+                      {item.itemKind === "link" ? <span className="admin-portal__badge">{t("admin.library.kindLink")}</span> : null}
                       {!item.active ? <span className="admin-portal__badge">{t("admin.library.inactive")}</span> : null}
                     </div>
                     {item.description ? <p className="admin-portal__muted">{item.description}</p> : null}
-                    <p className="admin-portal__muted">
-                      {item.fileName}
-                      {" · "}
-                      {categoryLabel(item.category)}
-                      {" · "}
-                      {localeLabel(item.locale)}
-                      {item.sizeBytes ? ` · ${formatBytes(item.sizeBytes)}` : ""}
-                      {" · "}
-                      {formatWhen(item.updatedAt, locale)}
-                    </p>
+                    <p className="admin-portal__muted">{itemSummary(item)}</p>
                     <div className="admin-portal__library-actions">
+                      {item.itemKind === "link" && item.externalUrl ? (
+                        <a
+                          className="btn btn-secondary"
+                          href={item.externalUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {t("admin.library.testLink")}
+                        </a>
+                      ) : null}
                       <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => startEdit(item)}>
                         {t("admin.library.edit")}
                       </button>

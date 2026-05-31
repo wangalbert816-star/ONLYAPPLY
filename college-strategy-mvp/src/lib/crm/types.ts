@@ -63,6 +63,7 @@ export type CrmStoredFile = {
   uploadedAt: string;
   note?: string;
   storagePath?: string;
+  externalUrl?: string;
   uploadedByRole?: CrmFileUploaderRole;
   contentType?: string;
   sizeBytes?: number;
@@ -70,14 +71,18 @@ export type CrmStoredFile = {
 
 export type CrmLibraryLocale = "zh" | "en" | "all";
 
+export type CrmLibraryItemKind = "file" | "link";
+
 export type CrmLibraryItem = {
   id: string;
   title: string;
   description?: string;
   category: string;
   locale: CrmLibraryLocale;
+  itemKind: CrmLibraryItemKind;
   fileName: string;
-  storagePath: string;
+  storagePath?: string;
+  externalUrl?: string;
   contentType?: string;
   sizeBytes?: number;
   active: boolean;
