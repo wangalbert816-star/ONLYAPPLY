@@ -1,5 +1,6 @@
 import type { Locale } from "../../i18n/strings";
 import type { FormState, ReportPayload, SupplementaryNote } from "../../types";
+import { normalizeFormState } from "../formState";
 import { getEffectiveIntake } from "../intakeTerm";
 import { getSupabase, getSupabaseWithAccessToken } from "./client";
 
@@ -99,7 +100,7 @@ export async function listApplications(): Promise<ApplicationListItem[]> {
     const meta = byApp.get(a.id) ?? { count: 0, latest: null };
     return {
       ...a,
-      form_state: a.form_state as FormState,
+      form_state: normalizeFormState(a.form_state),
       locale: a.locale as Locale,
       report_count: meta.count,
       latest_report_at: meta.latest,
@@ -133,7 +134,7 @@ export async function getApplicationReports(applicationId: string): Promise<{
   return {
     application: {
       ...(application as SavedApplicationRow),
-      form_state: application.form_state as FormState,
+      form_state: normalizeFormState(application.form_state),
       locale: application.locale as Locale,
     },
     reports: (reports ?? []).map((r) => ({
