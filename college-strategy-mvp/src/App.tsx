@@ -39,10 +39,14 @@ import { useLanguage } from "./i18n/LanguageContext";
 import { useAuth } from "./auth/AuthContext";
 import { AuthModal } from "./components/auth/AuthModal";
 import { AccountHome } from "./components/auth/AccountHome";
+import { CounselorPortal } from "./components/crm/CounselorPortal";
+import { SignedServiceHub } from "./components/crm/SignedServiceHub";
 import { AuthChromeProvider } from "./auth/AuthChromeContext";
 import { AppTopChrome } from "./components/AppTopChrome";
 import { LegalLinks } from "./components/LegalLinks";
-import { saveUserSession, fetchUnlockedApplicationIds, redeemInviteCode } from "./lib/supabase/accounts";
+import { saveUserSession, fetchUnlockedApplicationIds, redeemInviteCode, getApplicationReports, listApplications } from "./lib/supabase/accounts";
+import { getCounselor, getEngagementForApplication, isSignedServiceEnabled } from "./lib/crm/store";
+import type { CrmEngagement } from "./lib/crm/types";
 import { getSupabase } from "./lib/supabase/client";
 import { formatSupabaseError } from "./lib/supabase/errors";
 import { clearFormDraft, readFormDraft, writeFormDraft } from "./lib/formDraft";
@@ -234,7 +238,10 @@ export default function App() {
   const [step3Screen, setStep3Screen] = useState(0);
   const [form, setForm] = useState<FormState>(initialForm);
   const [guideTouch, setGuideTouch] = useState<GuideTouch>({});
-  const [view, setView] = useState<"form" | "report" | "account" | "intro">("form");
+  const [view, setView] = useState<"form" | "report" | "account" | "intro" | "counselor" | "signed-service">("form");
+  const [signedServiceContext, setSignedServiceContext] = useState<{ form: FormState; applicationId: string } | null>(
+    null,
+  );
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [currentApplicationId, setCurrentApplicationId] = useState<string | null>(null);
   const [currentReportId, setCurrentReportId] = useState<string | null>(null);
@@ -347,6 +354,75 @@ export default function App() {
       return [];
     }
   }, [cloudEntitlementsEnabled, user, authConfigured]);
+
+  const openCounselorConsole = useCallback(() => {
+    window.location.hash = "counselor";
+    setView("counselor");
+  }, []);
+
+  const openSignedService = useCallback((payload: { form: FormState; applicationId: string }) => {
+    setSignedServiceContext(payload);
+    setForm(payload.form);
+    setCurrentApplicationId(payload.applicationId);
+    setView("signed-service");
+  }, []);
+
+  const handleCounselorOpenReport = useCallback(
+    async (engagement: CrmEngagement) => {
+      if (!user) {
+        setAuthModalOpen(true);
+        return;
+      }
+      try {
+        const { reports } = await getApplicationReports(engagement.applicationId);
+        const latest = reports[0];
+        if (!latest) {
+          window.alert(t("crm.console.reportMissing"));
+          return;
+        }
+        const apps = await listApplications();
+        const app = apps.find((a) => a.id === engagement.applicationId);
+        if (!app) return;
+        const ids =
+          cloudEntitlementsEnabled && user ? await refreshEntitlements() : unlockedApplicationIds;
+        const entitled = cloudEntitlementsEnabled && ids.includes(app.id);
+        setForm(app.form_state);
+        setReport(latest.report_payload);
+        setCurrentApplicationId(app.id);
+        setCurrentReportId(latest.id);
+        answeredGapSupplementaryRef.current = latest.supplementary_notes ?? [];
+        profileFiveSupplementaryRef.current = [];
+        setSessionSaved(true);
+        if (cloudEntitlementsEnabled) {
+          clearUnlockStorage();
+          setReportUnlocked(entitled);
+        } else if (demoUnlockEnabled && latest.report_unlocked) {
+          writeUnlockToStorage();
+          setReportUnlocked(true);
+        } else {
+          clearUnlockStorage();
+          setReportUnlocked(false);
+        }
+        setView("report");
+        window.location.hash = "";
+        queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+      } catch {
+        window.alert(t("crm.console.reportMissing"));
+      }
+    },
+    [user, t, cloudEntitlementsEnabled, unlockedApplicationIds, refreshEntitlements, demoUnlockEnabled],
+  );
+
+  useEffect(() => {
+    const syncCounselorHash = () => {
+      if (window.location.hash === "#counselor" && isSignedServiceEnabled()) {
+        setView("counselor");
+      }
+    };
+    syncCounselorHash();
+    window.addEventListener("hashchange", syncCounselorHash);
+    return () => window.removeEventListener("hashchange", syncCounselorHash);
+  }, []);
 
   const handleInviteRedeem = useCallback(
     async (code: string) => {
@@ -1085,12 +1161,43 @@ export default function App() {
     );
   }
 
+  if (view === "signed-service" && user && signedServiceContext && isSignedServiceEnabled()) {
+    const engagement = getEngagementForApplication(user.id, signedServiceContext.applicationId);
+    const counselor = engagement ? getCounselor(engagement.counselorId) : null;
+    if (engagement && counselor) {
+      return (
+        <SignedServiceHub
+          engagement={engagement}
+          counselor={counselor}
+          form={signedServiceContext.form}
+          userEmail={user.email ?? null}
+          onBack={() => setView("account")}
+        />
+      );
+    }
+  }
+
+  if (view === "counselor" && isSignedServiceEnabled()) {
+    return (
+      <CounselorPortal
+        onBack={() => {
+          window.location.hash = "";
+          if (user) setView("account");
+          else setView("form");
+        }}
+        onOpenStudentReport={(engagement) => void handleCounselorOpenReport(engagement)}
+      />
+    );
+  }
+
   if (view === "account" && user) {
     return withChrome(
       <>
         <AccountHome
           unlockedApplicationIds={unlockedApplicationIds}
           onOpenAppLinks={openApplicationHub}
+          onOpenCounselorConsole={openCounselorConsole}
+          onOpenSignedService={openSignedService}
           onBack={() => {
             if (report) setView("report");
             else if (flowStarted) setView("form");

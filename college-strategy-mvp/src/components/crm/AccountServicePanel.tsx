@@ -1,0 +1,203 @@
+import { useMemo, useState } from "react";
+import { useLanguage } from "../../i18n/LanguageContext";
+import { isCalendlyBookingEnabled, requestExpertConsult } from "../../lib/expertConsultBooking";
+import type { CrmCounselor, CrmEngagement, CrmMessage, CrmTask, CrmTaskLinkType } from "../../lib/crm/types";
+import "./AccountServicePanel.css";
+
+type Props = {
+  engagement: CrmEngagement;
+  counselor: CrmCounselor;
+  messages: CrmMessage[];
+  tasks: CrmTask[];
+  userEmail?: string | null;
+  onSendMessage: (body: string) => void;
+  onToggleTask: (taskId: string, done: boolean) => void;
+  onTaskNavigate: (linkType: CrmTaskLinkType) => void;
+  onFocusMessages?: () => void;
+  onOpenSignedServiceHub?: () => void;
+};
+
+function formatWhen(iso: string, locale: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString(locale === "en" ? "en-US" : "zh-CN", {
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function phaseLabel(phase: CrmEngagement["phase"], t: (k: string) => string) {
+  return t(`crm.phase.${phase}`);
+}
+
+export function AccountServicePanel({
+  engagement,
+  counselor,
+  messages,
+  tasks,
+  userEmail,
+  onSendMessage,
+  onToggleTask,
+  onTaskNavigate,
+  onFocusMessages,
+  onOpenSignedServiceHub,
+}: Props) {
+  const { t, locale } = useLanguage();
+  const [draft, setDraft] = useState("");
+  const [showAllTasks, setShowAllTasks] = useState(false);
+  const [showAllUpdates, setShowAllUpdates] = useState(false);
+
+  const openTasks = tasks.filter((task) => task.status === "open");
+  const visibleTasks = showAllTasks ? tasks : tasks.slice(0, 3);
+  const visibleMessages = showAllUpdates ? messages : messages.slice(0, 3);
+  const unread = messages.filter((m) => m.authorRole === "counselor" && !m.readByStudent).length;
+  const calendlyEnabled = isCalendlyBookingEnabled(counselor.calendlyUrl);
+
+  const taskLinkLabel = useMemo(
+    () =>
+      ({
+        profile: t("crm.taskLink.profile"),
+        activities: t("crm.taskLink.activities"),
+        essay: t("crm.taskLink.essay"),
+        report: t("crm.taskLink.report"),
+        none: t("crm.taskLink.none"),
+      }) satisfies Record<CrmTaskLinkType, string>,
+    [t],
+  );
+
+  const bookMeeting = () => {
+    requestExpertConsult({
+      url: counselor.calendlyUrl ?? null,
+      email: userEmail,
+      source: "crm_service_panel",
+      onFallback: () => onFocusMessages?.(),
+    });
+  };
+
+  const submitMessage = () => {
+    const body = draft.trim();
+    if (!body) return;
+    onSendMessage(body);
+    setDraft("");
+  };
+
+  return (
+    <section className="account-service" aria-labelledby="account-service-title">
+      <div className="account-service__head">
+        <div>
+          <p className="account-service__kicker">{t("crm.serviceKicker")}</p>
+          <h2 id="account-service-title">{t("crm.serviceTitle")}</h2>
+        </div>
+        <div className="account-service__head-actions">
+          {onOpenSignedServiceHub ? (
+            <button type="button" className="btn btn-primary account-service__hub-btn" onClick={onOpenSignedServiceHub}>
+              {t("crm.signedService.openHub")}
+            </button>
+          ) : null}
+          <span className="account-service__phase">{phaseLabel(engagement.phase, t)}</span>
+        </div>
+      </div>
+
+      <div className="account-service__grid">
+        <article className="account-service__counselor">
+          <div className="account-service__avatar" aria-hidden>
+            {counselor.name.slice(0, 1)}
+          </div>
+          <p className="account-service__label">{t("crm.myCounselor")}</p>
+          <h3>{counselor.name}</h3>
+          <p className="account-service__role">{counselor.title}</p>
+          {engagement.nextMeetingLabel && (
+            <p className="account-service__meta">{t("crm.nextMeeting", { when: engagement.nextMeetingLabel })}</p>
+          )}
+          {engagement.planLabel && <p className="account-service__meta">{engagement.planLabel}</p>}
+          <div className="account-service__actions">
+            <button type="button" className="btn btn-secondary" onClick={() => onFocusMessages?.()}>
+              {t("crm.sendMessage")}
+              {unread > 0 ? <span className="account-service__badge">{unread}</span> : null}
+            </button>
+            <button type="button" className="btn btn-primary" onClick={bookMeeting}>
+              {calendlyEnabled ? t("crm.bookMeeting") : t("crm.bookMeetingFallback")}
+            </button>
+          </div>
+        </article>
+
+        <article className="account-service__tasks">
+          <div className="account-service__block-head">
+            <h3>{t("crm.myTasks")}</h3>
+            <span>{t("crm.openTasks", { n: openTasks.length })}</span>
+          </div>
+          {visibleTasks.length === 0 ? (
+            <p className="account-service__empty">{t("crm.noTasks")}</p>
+          ) : (
+            <ul className="account-service__task-list">
+              {visibleTasks.map((task) => (
+                <li key={task.id} className={task.status === "done" ? "is-done" : ""}>
+                  <label className="account-service__task-check">
+                    <input
+                      type="checkbox"
+                      checked={task.status === "done"}
+                      onChange={(e) => onToggleTask(task.id, e.target.checked)}
+                    />
+                    <span>{task.title}</span>
+                  </label>
+                  <div className="account-service__task-meta">
+                    {task.dueAt ? <span>{t("crm.due", { date: task.dueAt })}</span> : null}
+                    {task.status === "done" ? <span>{t("crm.taskDone")}</span> : null}
+                    {task.linkType !== "none" && task.status === "open" ? (
+                      <button type="button" className="account-service__task-link" onClick={() => onTaskNavigate(task.linkType)}>
+                        {taskLinkLabel[task.linkType]}
+                      </button>
+                    ) : null}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+          {tasks.length > 3 ? (
+            <button type="button" className="account-service__more" onClick={() => setShowAllTasks((v) => !v)}>
+              {showAllTasks ? t("crm.showLess") : t("crm.showAllTasks")}
+            </button>
+          ) : null}
+        </article>
+      </div>
+
+      <article className="account-service__updates" id="account-service-updates">
+        <div className="account-service__block-head">
+          <h3>{t("crm.updates")}</h3>
+        </div>
+        {visibleMessages.length === 0 ? (
+          <p className="account-service__empty">{t("crm.noUpdates")}</p>
+        ) : (
+          <ul className="account-service__timeline">
+            {visibleMessages.map((message) => (
+              <li key={message.id} className={`account-service__event account-service__event--${message.authorRole}`}>
+                <p className="account-service__event-meta">
+                  {formatWhen(message.createdAt, locale)} · {message.authorLabel}
+                </p>
+                <p>{message.body}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+        {messages.length > 3 ? (
+          <button type="button" className="account-service__more" onClick={() => setShowAllUpdates((v) => !v)}>
+            {showAllUpdates ? t("crm.showLess") : t("crm.showAllUpdates")}
+          </button>
+        ) : null}
+        <div className="account-service__compose">
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder={t("crm.messagePlaceholder")}
+            rows={2}
+          />
+          <button type="button" className="btn btn-primary" onClick={submitMessage} disabled={!draft.trim()}>
+            {t("crm.send")}
+          </button>
+        </div>
+      </article>
+    </section>
+  );
+}

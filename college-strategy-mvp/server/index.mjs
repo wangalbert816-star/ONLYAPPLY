@@ -2104,6 +2104,57 @@ app.post("/api/consult-lead", (req, res) => {
   });
 });
 
+/** Local dev: create counselor Auth user + counselors row (needs SUPABASE_SERVICE_ROLE_KEY in .env). */
+app.post("/api/dev/seed-counselor", (req, res) => {
+  if (IS_PROD) return res.status(404).json({ error: "not_found" });
+  const admin = supabaseAdmin();
+  if (!admin) {
+    return res.status(503).json({
+      error: "missing_service_role",
+      hint: "Add SUPABASE_SERVICE_ROLE_KEY to .env or run supabase/bootstrap-counselor-weiyiwang.sql in SQL Editor",
+    });
+  }
+  const email = String(req.body?.email || "weiyiwang603@gmail.com").trim();
+  const password = String(req.body?.password || "").trim();
+  if (!password) {
+    return res.status(400).json({ error: "password_required" });
+  }
+  void (async () => {
+    let userId;
+    const { data: created, error: createErr } = await admin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
+    if (createErr) {
+      const { data: list, error: listErr } = await admin.auth.admin.listUsers({ perPage: 1000 });
+      if (listErr) throw listErr;
+      const existing = list.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+      if (!existing) throw createErr;
+      userId = existing.id;
+      await admin.auth.admin.updateUserById(userId, { password, email_confirm: true });
+    } else {
+      userId = created.user?.id;
+    }
+    if (!userId) throw new Error("no_user_id");
+    const { error: insErr } = await admin.from("counselors").upsert(
+      {
+        user_id: userId,
+        name: "王老师",
+        title: "首席留学顾问",
+        email,
+        active: true,
+      },
+      { onConflict: "user_id" },
+    );
+    if (insErr) throw insErr;
+    return res.json({ ok: true, email, userId });
+  })().catch((e) => {
+    const msg = e instanceof Error ? e.message : String(e);
+    return res.status(500).json({ error: msg });
+  });
+});
+
 app.get("/api/health", async (_req, res) => {
   const cfg = resolveLLMConfig();
   const stripeCheckout = stripeReadyForCheckout();

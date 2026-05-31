@@ -17,7 +17,25 @@ import type { ActivityItem, FormState, GeoPref, ReportPayload, SupplementaryNote
 import { BrandLogo } from "../BrandLogo";
 import { ExportActivitiesCsvButton } from "../ExportActivitiesCsvButton";
 import { AccountReportSnapshot } from "./AccountReportSnapshot";
+import { AccountReportBrief } from "./AccountReportBrief";
 import { AccountExpertPanel } from "./AccountExpertPanel";
+import { AccountServicePanel } from "../crm/AccountServicePanel";
+import {
+  addMessage,
+  createDemoEngagement,
+  getCounselor,
+  getEngagementForApplication,
+  initCrmForUser,
+  isCrmDemoUiEnabled,
+  isSignedServiceEnabled,
+  listMessages,
+  listTasks,
+  markMessagesReadByStudent,
+  notifyCrmStoreChange,
+  setTaskDone,
+  subscribeCrmStore,
+} from "../../lib/crm/store";
+import type { CrmTaskLinkType } from "../../lib/crm/types";
 import { SchoolFitComparisonCard } from "./SchoolFitComparisonCard";
 import "./AccountHome.css";
 
@@ -35,6 +53,8 @@ type Props = {
   onEditForm: (payload: { form: FormState; applicationId: string; supplementaryNotes?: SupplementaryNote[]; targetStep?: number }) => void;
   onNewApplication: () => void;
   onOpenAppLinks: (e: MouseEvent<HTMLButtonElement>) => void;
+  onOpenCounselorConsole?: () => void;
+  onOpenSignedService?: (payload: { form: FormState; applicationId: string }) => void;
 };
 
 function dimensionLabel(key: ProfileDimensionKey, locale: "zh" | "en") {
@@ -197,9 +217,14 @@ export function AccountHome({
   onEditForm,
   onNewApplication,
   onOpenAppLinks,
+  onOpenCounselorConsole,
+  onOpenSignedService,
 }: Props) {
   const { t, locale } = useLanguage();
   const { user, signOut, configured } = useAuth();
+  const [crmTick, setCrmTick] = useState(0);
+  const profileSectionRef = useRef<HTMLDetailsElement | null>(null);
+  const activitySectionRef = useRef<HTMLElement | null>(null);
   const [apps, setApps] = useState<ApplicationListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -241,6 +266,101 @@ export function AccountHome({
     [currentApp, locale, t],
   );
   const visibleApps = historyExpanded ? apps : apps.slice(0, 2);
+
+  const engagement = useMemo(() => {
+    if (!user || !currentApp) return null;
+    return getEngagementForApplication(user.id, currentApp.id);
+  }, [user, currentApp, crmTick]);
+
+  const counselor = useMemo(() => (engagement ? getCounselor(engagement.counselorId) : null), [engagement, crmTick]);
+  const crmMessages = useMemo(() => (engagement ? listMessages(engagement.id) : []), [engagement, crmTick]);
+  const crmTasks = useMemo(() => (engagement ? listTasks(engagement.id) : []), [engagement, crmTick]);
+  const signedServiceEnabled = isSignedServiceEnabled();
+  const crmDemoUiEnabled = isCrmDemoUiEnabled();
+
+  useEffect(() => subscribeCrmStore(() => setCrmTick((n) => n + 1)), []);
+
+  useEffect(() => {
+    if (!user || !signedServiceEnabled) return;
+    void initCrmForUser(user.id, "student").then(() => setCrmTick((n) => n + 1));
+  }, [user?.id, signedServiceEnabled]);
+
+  useEffect(() => {
+    if (!engagement) return;
+    markMessagesReadByStudent(engagement.id);
+    setCrmTick((n) => n + 1);
+  }, [engagement?.id]);
+
+  function enableCrmDemo() {
+    if (!user || !currentApp) return;
+    void (async () => {
+      try {
+        await initCrmForUser(user.id, "student");
+        await createDemoEngagement({
+          studentUserId: user.id,
+          studentEmail: user.email ?? "",
+          studentName: user.email?.split("@")[0],
+          applicationId: currentApp.id,
+          applicationTitle: currentApp.title,
+        });
+        notifyCrmStoreChange();
+        setCrmTick((n) => n + 1);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "";
+        if (msg === "no_counselor") {
+          window.alert(t("crm.counselorAuth.noCounselorSeed"));
+        } else {
+          window.alert(t("crm.counselorAuth.demoFailed"));
+        }
+      }
+    })();
+  }
+
+  function openSignedServiceHub() {
+    if (!currentApp || !onOpenSignedService) return;
+    onOpenSignedService({
+      form: profileDraft ?? currentApp.form_state,
+      applicationId: currentApp.id,
+    });
+  }
+
+  function handleCrmSendMessage(body: string) {
+    if (!engagement || !user) return;
+    addMessage({
+      engagementId: engagement.id,
+      authorRole: "student",
+      authorLabel: user.email?.split("@")[0] || t("crm.myCounselor"),
+      body,
+    });
+    notifyCrmStoreChange();
+    setCrmTick((n) => n + 1);
+  }
+
+  function handleCrmToggleTask(taskId: string, done: boolean) {
+    setTaskDone(taskId, done);
+    notifyCrmStoreChange();
+    setCrmTick((n) => n + 1);
+  }
+
+  function handleCrmTaskNavigate(linkType: CrmTaskLinkType) {
+    if (linkType === "report" && currentApp && latestReport) {
+      openReport(currentApp, latestReport);
+      return;
+    }
+    if (linkType === "profile") {
+      setProfileEditorOpen(true);
+      profileSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    if (linkType === "activities" || linkType === "essay") {
+      setActivityEditorOpen(true);
+      activitySectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
+  function focusCrmMessages() {
+    document.getElementById("account-service-updates")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   useEffect(() => {
     const nextActivities = currentApp?.form_state.structuredActivities ?? [];
@@ -530,6 +650,39 @@ export function AccountHome({
           {user?.email && <p className="account-home__email">{user.email}</p>}
         </div>
 
+        {crmDemoUiEnabled && (
+          <div className="account-crm-demo">
+            <p>{t("auth.accountCrmDemoBar")}</p>
+            <div className="account-crm-demo__actions">
+              {!engagement && currentApp ? (
+                <button type="button" className="btn btn-primary" onClick={enableCrmDemo}>
+                  {t("auth.accountCrmEnableDemo")}
+                </button>
+              ) : null}
+              {onOpenCounselorConsole ? (
+                <button type="button" className="btn btn-secondary" onClick={onOpenCounselorConsole}>
+                  {t("auth.accountCrmOpenConsole")}
+                </button>
+              ) : null}
+            </div>
+          </div>
+        )}
+
+        {engagement && counselor ? (
+          <AccountServicePanel
+            engagement={engagement}
+            counselor={counselor}
+            messages={crmMessages}
+            tasks={crmTasks}
+            userEmail={user?.email ?? null}
+            onSendMessage={handleCrmSendMessage}
+            onToggleTask={handleCrmToggleTask}
+            onTaskNavigate={handleCrmTaskNavigate}
+            onFocusMessages={focusCrmMessages}
+            onOpenSignedServiceHub={onOpenSignedService ? openSignedServiceHub : undefined}
+          />
+        ) : null}
+
         <section className="account-hero" aria-labelledby="account-status-title">
           <div className="account-hero__head">
             <div>
@@ -554,7 +707,7 @@ export function AccountHome({
             <>
               <p className="account-hero__position">{status.position}</p>
               <div className="account-hero__main">
-                <div className="account-hero__panel">
+                <div className={`account-hero__panel${latestReport ? " account-hero__panel--with-brief" : ""}`}>
                   <div className="account-hero__insight">
                     <p className="account-hero__weakness-label">{t("auth.accountWeakness")}</p>
                     <p className="account-hero__weakness">{status.weakness}</p>
@@ -578,13 +731,18 @@ export function AccountHome({
                     )}
                   </div>
                   <p className="account-hero__hint">{t("auth.accountAccuracyHint")}</p>
-                  <AccountExpertPanel
-                    embedded
-                    gapCount={latestReport?.report_payload?.information_gaps?.length ?? 0}
-                    applicationId={currentApp?.id ?? null}
-                    reportId={latestReport?.id ?? null}
-                    userEmail={user?.email ?? null}
-                  />
+                  {latestReport ? (
+                    <AccountReportBrief report={latestReport.report_payload} locale={locale} t={t} />
+                  ) : null}
+                  {!engagement ? (
+                    <AccountExpertPanel
+                      embedded
+                      gapCount={latestReport?.report_payload?.information_gaps?.length ?? 0}
+                      applicationId={currentApp?.id ?? null}
+                      reportId={latestReport?.id ?? null}
+                      userEmail={user?.email ?? null}
+                    />
+                  ) : null}
                 </div>
 
                 {latestReport && fiveProfile.length > 0 ? (
@@ -596,7 +754,7 @@ export function AccountHome({
                 )}
               </div>
 
-              <details className="account-info-evidence">
+              <details className="account-info-evidence" ref={profileSectionRef}>
                 <summary>{t("auth.accountInfoToggle")}</summary>
                 <p className="account-info-evidence__lead">{t("auth.accountInfoLead")}</p>
                 {applicationInfoItems.length > 0 ? (
@@ -833,7 +991,7 @@ export function AccountHome({
 
         {currentApp && (
           <div className="account-dashboard__workspace">
-          <section className="account-activity-card" aria-labelledby="account-activity-title">
+          <section className="account-activity-card" aria-labelledby="account-activity-title" ref={activitySectionRef}>
             <div className="account-activity-card__head">
               <div>
                 <p className="account-activity-card__kicker">{t("auth.accountActivityKicker")}</p>

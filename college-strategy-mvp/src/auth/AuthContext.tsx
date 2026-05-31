@@ -18,6 +18,7 @@ type AuthContextValue = {
   session: Session | null;
   signInWithEmail: (email: string) => Promise<{ error?: string }>;
   signInWithGoogle: () => Promise<{ error?: string }>;
+  signInWithPassword: (email: string, password: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
 };
 
@@ -93,6 +94,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return {};
   }, []);
 
+  const signInWithPassword = useCallback(async (email: string, password: string) => {
+    const sb = getSupabase();
+    if (!sb) return { error: "auth_not_configured" };
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) return { error: "email_required" };
+    if (!password) return { error: "password_required" };
+
+    const { error } = await sb.auth.signInWithPassword({
+      email: trimmedEmail,
+      password,
+    });
+    if (error) return { error: error.message };
+    return {};
+  }, []);
+
   const signInWithGoogle = useCallback(async () => {
     const sb = getSupabase();
     if (!sb) return { error: "auth_not_configured" };
@@ -138,9 +154,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       signInWithEmail,
       signInWithGoogle,
+      signInWithPassword,
       signOut,
     }),
-    [configured, loading, user, session, signInWithEmail, signInWithGoogle, signOut],
+    [configured, loading, user, session, signInWithEmail, signInWithGoogle, signInWithPassword, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

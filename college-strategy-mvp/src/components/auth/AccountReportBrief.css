@@ -1,0 +1,109 @@
+.account-report-brief {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.15rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.22);
+  min-height: 0;
+}
+
+.account-report-brief__head {
+  margin: 0;
+}
+
+.account-report-brief__kicker {
+  margin: 0 0 0.2rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.account-report-brief__head h3 {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.account-report-brief__bullets {
+  margin: 0;
+  padding: 0 0 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  list-style: disc;
+}
+
+.account-report-brief__bullets li {
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: #334155;
+}
+
+.account-report-brief__bullets li.is-lead {
+  font-weight: 650;
+  color: #0f172a;
+}
+
+.account-report-brief__tiers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.account-report-brief__tier {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.5rem 0.55rem;
+  border-radius: 10px;
+  background: rgba(248, 250, 252, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  min-width: 0;
+}
+
+.account-report-brief__tier-pill {
+  width: fit-content;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.account-report-brief__tier--reach .account-report-brief__tier-pill {
+  color: #b45309;
+  background: #fffbeb;
+}
+
+.account-report-brief__tier--match .account-report-brief__tier-pill {
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
+.account-report-brief__tier--safety .account-report-brief__tier-pill {
+  color: #047857;
+  background: #ecfdf5;
+}
+
+.account-report-brief__tier-school {
+  font-size: 0.74rem;
+  font-weight: 650;
+  line-height: 1.4;
+  color: #0f172a;
+  word-break: break-word;
+}
+
+@media (max-width: 720px) {
+  .account-report-brief__tiers {
+    grid-template-columns: 1fr;
+  }
+}

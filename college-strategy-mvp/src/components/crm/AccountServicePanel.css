@@ -1,0 +1,250 @@
+.account-service {
+  border: 1px solid rgba(59, 130, 246, 0.22);
+  border-radius: 22px;
+  padding: 1.15rem 1.2rem 1.25rem;
+  background:
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 24rem),
+    linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.06);
+}
+
+.account-service__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.account-service__head-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.45rem;
+}
+
+.account-service__hub-btn {
+  white-space: nowrap;
+  font-size: 0.82rem;
+  padding: 0.45rem 0.75rem;
+}
+
+.account-service__kicker {
+  margin: 0 0 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #2563eb;
+}
+
+.account-service h2 {
+  margin: 0;
+  font-size: clamp(1.05rem, 1.8vw, 1.28rem);
+  color: #0f172a;
+}
+
+.account-service__phase {
+  border-radius: 999px;
+  padding: 0.35rem 0.65rem;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.account-service__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 0.85rem;
+  margin-bottom: 0.85rem;
+}
+
+.account-service__counselor,
+.account-service__tasks,
+.account-service__updates {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.88);
+  padding: 0.95rem 1rem;
+}
+
+.account-service__avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  font-weight: 800;
+  margin-bottom: 0.55rem;
+}
+
+.account-service__label,
+.account-service__block-head span {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.account-service__counselor h3,
+.account-service__block-head h3 {
+  margin: 0.15rem 0 0;
+  font-size: 1.02rem;
+  color: #0f172a;
+}
+
+.account-service__role,
+.account-service__meta,
+.account-service__empty {
+  margin: 0.25rem 0 0;
+  color: #64748b;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.account-service__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.85rem;
+}
+
+.account-service__badge {
+  margin-left: 0.35rem;
+  border-radius: 999px;
+  padding: 0.05rem 0.4rem;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.account-service__block-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.account-service__task-list,
+.account-service__timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.account-service__task-list li {
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  padding-top: 0.55rem;
+}
+
+.account-service__task-list li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.account-service__task-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  font-size: 0.92rem;
+  color: #0f172a;
+}
+
+.account-service__task-list li.is-done .account-service__task-check span {
+  color: #64748b;
+  text-decoration: line-through;
+}
+
+.account-service__task-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.75rem;
+  margin-top: 0.25rem;
+  padding-left: 1.45rem;
+  font-size: 0.76rem;
+  color: #64748b;
+}
+
+.account-service__task-link,
+.account-service__more {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: #2563eb;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.account-service__more {
+  margin-top: 0.55rem;
+}
+
+.account-service__event {
+  border-left: 3px solid #cbd5e1;
+  padding-left: 0.75rem;
+}
+
+.account-service__event--counselor {
+  border-left-color: #2563eb;
+}
+
+.account-service__event--student {
+  border-left-color: #0f766e;
+}
+
+.account-service__event--system {
+  border-left-color: #94a3b8;
+}
+
+.account-service__event-meta {
+  margin: 0 0 0.2rem;
+  font-size: 0.74rem;
+  color: #64748b;
+}
+
+.account-service__event p:last-child {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: #0f172a;
+}
+
+.account-service__compose {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.55rem;
+  margin-top: 0.85rem;
+  align-items: end;
+}
+
+.account-service__compose textarea {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 12px;
+  padding: 0.65rem 0.75rem;
+  font: inherit;
+  resize: vertical;
+  min-height: 3rem;
+}
+
+@media (max-width: 900px) {
+  .account-service__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .account-service__compose {
+    grid-template-columns: 1fr;
+  }
+}

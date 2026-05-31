@@ -1,0 +1,19 @@
+-- Link counselor Auth user to counselors table.
+--
+-- Option A — Dashboard (no script):
+--   1. Authentication → Users → Add user
+--      Email: weiyiwang603@gmail.com
+--      Password: (set in dashboard; do not commit to git)
+--   2. Copy user UUID, paste below, run in SQL Editor.
+--
+-- Option B — Script (needs service_role in .env):
+--   COUNSELOR_EMAIL=weiyiwang603@gmail.com COUNSELOR_PASSWORD='...' node scripts/seed-counselor.mjs
+
+-- insert into public.counselors (user_id, name, title, email, calendly_url)
+-- values (
+--   'PASTE-AUTH-USER-UUID-HERE'::uuid,
+--   '王老师',
+--   '首席留学顾问',
+--   'weiyiwang603@gmail.com',
+--   null
+-- );

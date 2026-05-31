@@ -1,0 +1,304 @@
+.signed-service-hub {
+  min-height: 100vh;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.signed-service-hub__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+  background: #fff;
+}
+
+.signed-service-hub__head-copy {
+  flex: 1;
+  min-width: 200px;
+}
+
+.signed-service-hub__kicker {
+  margin: 0 0 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #2563eb;
+}
+
+.signed-service-hub__head h1 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.signed-service-hub__head-copy > p {
+  margin: 0.25rem 0 0;
+  color: #64748b;
+  font-size: 0.84rem;
+}
+
+.signed-service-hub__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  background: #fff;
+}
+
+.signed-service-hub__nav button {
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 999px;
+  background: #fff;
+  padding: 0.4rem 0.75rem;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: #475569;
+  cursor: pointer;
+}
+
+.signed-service-hub__nav button.is-active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.signed-service-hub__main {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 1rem 1.25rem 2.5rem;
+}
+
+.signed-service-hub__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.signed-service-hub__panel {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 16px;
+  background: #fff;
+  padding: 1rem 1.05rem;
+}
+
+.signed-service-hub__panel h2 {
+  margin: 0 0 0.65rem;
+  font-size: 1rem;
+}
+
+.signed-service-hub__panel--split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.signed-service-hub__muted {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.signed-service-hub__link {
+  border: 0;
+  background: none;
+  padding: 0;
+  margin-top: 0.55rem;
+  color: #2563eb;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.signed-service-hub__pins {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.signed-service-hub__pins li {
+  border-left: 3px solid #f59e0b;
+  padding-left: 0.75rem;
+}
+
+.signed-service-hub__pin-badge {
+  display: inline-block;
+  margin-bottom: 0.25rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.signed-service-hub__table-wrap {
+  overflow-x: auto;
+  margin-top: 0.75rem;
+}
+
+.signed-service-hub__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.signed-service-hub__table th,
+.signed-service-hub__table td {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  padding: 0.55rem 0.45rem;
+  text-align: left;
+}
+
+.signed-service-hub__status {
+  display: inline-block;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.signed-service-hub__status--needed { background: #fef2f2; color: #b91c1c; }
+.signed-service-hub__status--draft { background: #fffbeb; color: #b45309; }
+.signed-service-hub__status--submitted { background: #eff6ff; color: #1d4ed8; }
+.signed-service-hub__status--done { background: #ecfdf5; color: #047857; }
+
+.signed-service-hub__chat-tabs {
+  display: flex;
+  gap: 0.45rem;
+  margin-bottom: 0.75rem;
+}
+
+.signed-service-hub__chat-tabs button {
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 999px;
+  background: #fff;
+  padding: 0.35rem 0.7rem;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.signed-service-hub__chat-tabs button.is-active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.signed-service-hub__timeline {
+  list-style: none;
+  margin: 0 0 0.85rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.signed-service-hub__timeline li {
+  border-left: 3px solid #cbd5e1;
+  padding-left: 0.75rem;
+}
+
+.signed-service-hub__timeline li.is-counselor { border-left-color: #2563eb; }
+.signed-service-hub__timeline li.is-student { border-left-color: #0f766e; }
+
+.signed-service-hub__message-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.74rem;
+  color: #64748b;
+}
+
+.signed-service-hub__compose {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.55rem;
+  align-items: end;
+}
+
+.signed-service-hub__compose textarea,
+.signed-service-hub__upload input {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 12px;
+  padding: 0.65rem 0.75rem;
+  font: inherit;
+}
+
+.signed-service-hub__meeting-card {
+  margin-top: 0.75rem;
+  padding: 0.85rem;
+  border-radius: 12px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  align-items: flex-start;
+}
+
+.signed-service-hub__files {
+  list-style: none;
+  margin: 0.75rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.signed-service-hub__files li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.signed-service-hub__files span {
+  color: #64748b;
+  font-size: 0.76rem;
+}
+
+.signed-service-hub__upload {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.signed-service-hub__info {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.signed-service-hub__info dt {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.signed-service-hub__info dd {
+  margin: 0.15rem 0 0;
+  font-size: 0.88rem;
+  color: #0f172a;
+}
+
+@media (max-width: 760px) {
+  .signed-service-hub__panel--split,
+  .signed-service-hub__info,
+  .signed-service-hub__compose {
+    grid-template-columns: 1fr;
+  }
+}

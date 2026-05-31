@@ -16,6 +16,10 @@ interface ImportMetaEnv {
   readonly VITE_CALENDLY_URL?: string;
   /** "false" opens Calendly in a new tab instead of the popup widget */
   readonly VITE_CALENDLY_USE_POPUP?: string;
+  /** "true" / "1": signed-service hub + counselor portal (Supabase CRM) */
+  readonly VITE_ENABLE_SIGNED_SERVICE?: string;
+  /** "1" / "true": dev demo bar + localStorage CRM fallback */
+  readonly VITE_CRM_DEMO?: string;
 }
 
 interface ImportMeta {
