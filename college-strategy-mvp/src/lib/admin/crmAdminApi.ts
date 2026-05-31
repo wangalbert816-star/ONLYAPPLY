@@ -48,6 +48,18 @@ export type StudentLookupResult = {
   applications: StudentLookupApplication[];
 };
 
+export type AdminCaseMessage = {
+  id: string;
+  engagementId: string;
+  authorRole: "student" | "counselor" | "system" | "admin";
+  authorLabel: string;
+  body: string;
+  channel: "direct" | "group";
+  pinned: boolean;
+  createdAt: string;
+  readByStudent: boolean;
+};
+
 async function adminFetch<T>(
   path: string,
   accessToken: string,
@@ -61,10 +73,18 @@ async function adminFetch<T>(
       ...(init?.headers ?? {}),
     },
   });
-  const body = (await res.json().catch(() => ({}))) as T & { error?: string };
+  const raw = await res.text();
+  let body: T & { error?: string } = {} as T & { error?: string };
+  try {
+    body = raw ? (JSON.parse(raw) as T & { error?: string }) : ({} as T & { error?: string });
+  } catch {
+    body = {
+      error: res.status === 404 ? "api_route_missing" : "request_failed",
+    } as T & { error?: string };
+  }
   if (!res.ok) {
     const err = new Error(body.error || res.statusText || "request_failed");
-    (err as Error & { code?: string }).code = body.error;
+    (err as Error & { code?: string }).code = body.error || (res.status === 404 ? "api_route_missing" : undefined);
     throw err;
   }
   return body;
@@ -152,6 +172,24 @@ export async function patchAdminEngagement(
   return adminFetch(`/api/admin/crm/engagements/${id}`, accessToken, {
     method: "PATCH",
     body: JSON.stringify(patch),
+  });
+}
+
+export async function listAdminGroupMessages(
+  accessToken: string,
+  engagementId: string,
+): Promise<{ messages: AdminCaseMessage[] }> {
+  return adminFetch(`/api/admin/crm/engagements/${engagementId}/messages`, accessToken);
+}
+
+export async function sendAdminGroupMessage(
+  accessToken: string,
+  engagementId: string,
+  body: string,
+): Promise<{ message: AdminCaseMessage }> {
+  return adminFetch(`/api/admin/crm/engagements/${engagementId}/messages`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({ body }),
   });
 }
 

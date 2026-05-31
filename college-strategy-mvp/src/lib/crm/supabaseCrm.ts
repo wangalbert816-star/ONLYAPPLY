@@ -7,6 +7,7 @@ import type {
   CrmMessageChannel,
   CrmMessageRole,
   CrmPhase,
+  CrmFileUploaderRole,
   CrmStoredFile,
   CrmStoreSnapshot,
   CrmTask,
@@ -214,6 +215,15 @@ function mapDocument(row: Record<string, unknown>): CrmApplicationDocument {
   };
 }
 
+const CRM_FILES_BUCKET = "crm-case-files";
+const MAX_CASE_FILE_BYTES = 20 * 1024 * 1024;
+
+function sanitizeCaseFileName(name: string): string {
+  const trimmed = name.trim();
+  const base = trimmed.replace(/[/\\]+/g, "_").replace(/[^a-zA-Z0-9._-]+/g, "_");
+  return (base || "file").slice(0, 180);
+}
+
 function mapFile(row: Record<string, unknown>): CrmStoredFile {
   return {
     id: String(row.id),
@@ -222,6 +232,10 @@ function mapFile(row: Record<string, unknown>): CrmStoredFile {
     category: String(row.category),
     uploadedAt: String(row.uploaded_at),
     note: row.note ? String(row.note) : undefined,
+    storagePath: row.storage_path ? String(row.storage_path) : undefined,
+    uploadedByRole: row.uploaded_by_role ? (String(row.uploaded_by_role) as CrmStoredFile["uploadedByRole"]) : undefined,
+    contentType: row.content_type ? String(row.content_type) : undefined,
+    sizeBytes: row.size_bytes != null ? Number(row.size_bytes) : undefined,
   };
 }
 
@@ -431,15 +445,18 @@ export async function supabaseToggleMessagePin(messageId: string, pinned: boolea
 export async function supabaseAddTask(input: {
   engagementId: string;
   title: string;
+  description?: string;
   dueAt?: string;
   linkType: CrmTaskLinkType;
 }): Promise<void> {
   const sb = getSupabase();
   if (!sb) return;
   const now = new Date().toISOString();
+  const description = input.description?.trim();
   await sb.from("case_tasks").insert({
     engagement_id: input.engagementId,
     title: input.title.trim(),
+    description: description || null,
     due_at: input.dueAt ?? null,
     status: "open",
     link_type: input.linkType,
@@ -510,6 +527,69 @@ export async function supabaseAddStoredFile(input: {
   await sb.from("engagements").update({ updated_at: now }).eq("id", input.engagementId);
 }
 
+export async function supabaseUploadCaseFile(input: {
+  engagementId: string;
+  file: File;
+  category: string;
+  uploadedByRole: CrmFileUploaderRole;
+}): Promise<CrmStoredFile> {
+  const sb = getSupabase();
+  if (!sb) throw new Error("supabase_not_configured");
+  if (input.file.size > MAX_CASE_FILE_BYTES) throw new Error("file_too_large");
+
+  const fileId = crypto.randomUUID();
+  const safeName = sanitizeCaseFileName(input.file.name);
+  const storagePath = `${input.engagementId}/${fileId}/${safeName}`;
+  const now = new Date().toISOString();
+
+  const { error: uploadErr } = await sb.storage.from(CRM_FILES_BUCKET).upload(storagePath, input.file, {
+    contentType: input.file.type || "application/octet-stream",
+    upsert: false,
+  });
+  if (uploadErr) {
+    throw new Error(uploadErr.message || "upload_failed");
+  }
+
+  const { data, error } = await sb
+    .from("case_files")
+    .insert({
+      id: fileId,
+      engagement_id: input.engagementId,
+      name: input.file.name.trim() || safeName,
+      category: input.category.trim() || "general",
+      storage_path: storagePath,
+      uploaded_by_role: input.uploadedByRole,
+      content_type: input.file.type || null,
+      size_bytes: input.file.size,
+      uploaded_at: now,
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    await sb.storage.from(CRM_FILES_BUCKET).remove([storagePath]);
+    throw error;
+  }
+
+  await sb.from("engagements").update({ updated_at: now }).eq("id", input.engagementId);
+  return mapFile(data as Record<string, unknown>);
+}
+
+export async function supabaseGetCaseFileDownloadUrl(fileId: string): Promise<string> {
+  const sb = getSupabase();
+  if (!sb) throw new Error("supabase_not_configured");
+
+  const { data, error } = await sb.from("case_files").select("storage_path, name").eq("id", fileId).maybeSingle();
+  if (error) throw error;
+  if (!data?.storage_path) throw new Error("file_not_stored");
+
+  const { data: signed, error: signErr } = await sb.storage
+    .from(CRM_FILES_BUCKET)
+    .createSignedUrl(String(data.storage_path), 3600, { download: String(data.name) });
+  if (signErr || !signed?.signedUrl) throw signErr ?? new Error("signed_url_failed");
+  return signed.signedUrl;
+}
+
 export async function supabaseUpdateNextMeetingLabel(engagementId: string, label: string): Promise<void> {
   const sb = getSupabase();
   if (!sb) return;
@@ -549,6 +629,29 @@ export async function supabaseMarkMessagesReadByStudent(engagementId: string): P
     .eq("engagement_id", engagementId)
     .eq("author_role", "counselor")
     .eq("read_by_student", false);
+}
+
+export function subscribeCrmRealtime(onEvent: () => void): () => void {
+  const sb = getSupabase();
+  if (!sb) return () => {};
+
+  const channel = sb
+    .channel(`crm-case-messages-${crypto.randomUUID()}`)
+    .on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "case_messages" },
+      () => onEvent(),
+    )
+    .on(
+      "postgres_changes",
+      { event: "UPDATE", schema: "public", table: "case_messages" },
+      () => onEvent(),
+    )
+    .subscribe();
+
+  return () => {
+    void sb.removeChannel(channel);
+  };
 }
 
 export function isSupabaseCrmConfigured(): boolean {

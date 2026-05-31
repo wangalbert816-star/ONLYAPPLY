@@ -8,6 +8,7 @@ import {
   supabaseAddStoredFile,
   supabaseAddTask,
   supabaseCreateDemoEngagement,
+  supabaseGetCaseFileDownloadUrl,
   supabaseMarkMessagesReadByStudent,
   supabaseSetTaskDone,
   supabaseToggleFollowUp,
@@ -15,11 +16,14 @@ import {
   supabaseUpdateDocumentStatus,
   supabaseUpdateInternalNotes,
   supabaseUpdateNextMeetingLabel,
+  supabaseUploadCaseFile,
+  subscribeCrmRealtime,
 } from "./supabaseCrm";
 import type {
   CrmApplicationDocument,
   CrmCounselor,
   CrmEngagement,
+  CrmFileUploaderRole,
   CrmMessage,
   CrmMessageChannel,
   CrmMessageRole,
@@ -40,6 +44,49 @@ let memoryCache: CrmStoreSnapshot | null = null;
 let crmUserId: string | null = null;
 let crmRole: CrmRole | null = null;
 let crmInitPromise: Promise<void> | null = null;
+
+const CRM_POLL_MS = 5000;
+let stopRemoteSync: (() => void) | null = null;
+let syncDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+function stopCrmRemoteSync() {
+  stopRemoteSync?.();
+  stopRemoteSync = null;
+  if (syncDebounceTimer) {
+    clearTimeout(syncDebounceTimer);
+    syncDebounceTimer = null;
+  }
+}
+
+function scheduleCrmRemoteSync() {
+  if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
+  syncDebounceTimer = setTimeout(() => {
+    syncDebounceTimer = null;
+    void persistRefresh().catch((err) => console.error("[crm] remote sync", err));
+  }, 350);
+}
+
+function startCrmRemoteSync() {
+  stopCrmRemoteSync();
+  if (crmBackend !== "supabase") return;
+
+  const intervalId = window.setInterval(() => {
+    if (document.visibilityState !== "hidden") scheduleCrmRemoteSync();
+  }, CRM_POLL_MS);
+
+  const onVisible = () => {
+    if (document.visibilityState === "visible") scheduleCrmRemoteSync();
+  };
+  document.addEventListener("visibilitychange", onVisible);
+
+  const unsubRealtime = subscribeCrmRealtime(scheduleCrmRemoteSync);
+
+  stopRemoteSync = () => {
+    window.clearInterval(intervalId);
+    document.removeEventListener("visibilitychange", onVisible);
+    unsubRealtime();
+  };
+}
 
 function getSnapshot(): CrmStoreSnapshot {
   if (crmBackend === "supabase") return memoryCache ?? emptyStore();
@@ -72,6 +119,7 @@ export async function initCrmForUser(userId: string, role: CrmRole): Promise<Crm
   }
   crmUserId = userId;
   crmRole = role;
+  stopCrmRemoteSync();
   crmInitPromise = (async () => {
     const canUseSupabase = await probeSupabaseCrm();
     if (canUseSupabase) {
@@ -86,6 +134,9 @@ export async function initCrmForUser(userId: string, role: CrmRole): Promise<Crm
     }
   })();
   await crmInitPromise;
+  if (crmBackend === "supabase") {
+    startCrmRemoteSync();
+  }
   return crmBackend;
 }
 
@@ -455,11 +506,43 @@ export function toggleMessagePin(messageId: string): boolean {
   return nextPinned;
 }
 
+export async function uploadCaseFile(input: {
+  engagementId: string;
+  file: File;
+  category: string;
+  uploadedByRole: CrmFileUploaderRole;
+}): Promise<CrmStoredFile> {
+  if (crmBackend === "supabase") {
+    const stored = await supabaseUploadCaseFile(input);
+    await persistRefresh();
+    notifyCrmStoreChange();
+    return stored;
+  }
+  return addStoredFile({
+    engagementId: input.engagementId,
+    name: input.file.name,
+    category: input.category,
+    uploadedByRole: input.uploadedByRole,
+    sizeBytes: input.file.size,
+    contentType: input.file.type || undefined,
+  });
+}
+
+export async function getCaseFileDownloadUrl(fileId: string): Promise<string> {
+  if (crmBackend === "supabase") {
+    return supabaseGetCaseFileDownloadUrl(fileId);
+  }
+  throw new Error("file_download_unavailable");
+}
+
 export function addStoredFile(input: {
   engagementId: string;
   name: string;
   category: string;
   note?: string;
+  uploadedByRole?: CrmFileUploaderRole;
+  sizeBytes?: number;
+  contentType?: string;
 }): CrmStoredFile {
   const file: CrmStoredFile = {
     id: id(),
@@ -468,6 +551,9 @@ export function addStoredFile(input: {
     category: input.category.trim() || "general",
     uploadedAt: nowIso(),
     note: input.note,
+    uploadedByRole: input.uploadedByRole,
+    sizeBytes: input.sizeBytes,
+    contentType: input.contentType,
   };
   if (crmBackend === "supabase") {
     afterMutation(() => supabaseAddStoredFile(input));
@@ -544,14 +630,17 @@ export function updateNextMeetingLabel(engagementId: string, label: string): voi
 export function addTask(input: {
   engagementId: string;
   title: string;
+  description?: string;
   dueAt?: string;
   linkType: CrmTaskLinkType;
 }): CrmTask {
   const createdAt = nowIso();
+  const description = input.description?.trim() || undefined;
   const task: CrmTask = {
     id: id(),
     engagementId: input.engagementId,
     title: input.title.trim(),
+    description,
     dueAt: input.dueAt,
     status: "open",
     linkType: input.linkType,
@@ -563,6 +652,68 @@ export function addTask(input: {
   }
   const store = readStore();
   store.tasks.push(task);
+  const engagement = store.engagements.find((e) => e.id === input.engagementId);
+  if (engagement) engagement.updatedAt = createdAt;
+  writeStore(store);
+  notifyCrmStoreChange();
+  return task;
+}
+
+/** Create task and post a counselor message in one mutation (used from counselor console). */
+export function assignTask(input: {
+  engagementId: string;
+  title: string;
+  description?: string;
+  dueAt?: string;
+  linkType: CrmTaskLinkType;
+  message: {
+    authorLabel: string;
+    body: string;
+    channel?: CrmMessageChannel;
+  };
+}): CrmTask {
+  const createdAt = nowIso();
+  const description = input.description?.trim() || undefined;
+  const task: CrmTask = {
+    id: id(),
+    engagementId: input.engagementId,
+    title: input.title.trim(),
+    description,
+    dueAt: input.dueAt,
+    status: "open",
+    linkType: input.linkType,
+    createdAt,
+  };
+  const messageInput = {
+    engagementId: input.engagementId,
+    authorRole: "counselor" as CrmMessageRole,
+    authorLabel: input.message.authorLabel,
+    body: input.message.body,
+    channel: input.message.channel ?? "direct",
+    readByStudent: false,
+  };
+
+  if (crmBackend === "supabase") {
+    afterMutation(async () => {
+      await supabaseAddTask(input);
+      await supabaseAddMessage(messageInput);
+    });
+    return task;
+  }
+
+  const store = readStore();
+  store.tasks.push(task);
+  store.messages.push(
+    normalizeMessage({
+      engagementId: input.engagementId,
+      authorRole: "counselor",
+      authorLabel: input.message.authorLabel,
+      body: input.message.body,
+      channel: input.message.channel ?? "direct",
+      readByStudent: false,
+      createdAt,
+    }),
+  );
   const engagement = store.engagements.find((e) => e.id === input.engagementId);
   if (engagement) engagement.updatedAt = createdAt;
   writeStore(store);

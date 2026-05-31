@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../../i18n/LanguageContext";
 import { isCalendlyBookingEnabled } from "../../lib/expertConsultBooking";
-import { getEffectiveIntake } from "../../lib/intakeTerm";
-import { listApplications } from "../../lib/supabase/accounts";
+import { buildApplicationInfoRows } from "../../lib/applicationInfoRows";
+import { fetchApplicationFormById } from "../../lib/supabase/accounts";
 import {
   addDocument,
   addMessage,
-  addStoredFile,
-  addTask,
+  assignTask,
   getCounselor,
   getEngagementById,
   listDocuments,
@@ -28,6 +27,8 @@ import {
 import type { CrmApplicationDocument, CrmEngagement, CrmMessageChannel, CrmTaskLinkType } from "../../lib/crm/types";
 import type { FormState } from "../../types";
 import { BrandLogo } from "../BrandLogo";
+import { CaseFilesPanel } from "./CaseFilesPanel";
+import "./CaseFilesPanel.css";
 import "./CounselorConsole.css";
 import "./SignedServiceHub.css";
 
@@ -58,16 +59,16 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
   const [chatChannel, setChatChannel] = useState<CrmMessageChannel>("direct");
   const [messageDraft, setMessageDraft] = useState("");
   const [taskTitle, setTaskTitle] = useState("");
+  const [taskDetail, setTaskDetail] = useState("");
   const [taskDue, setTaskDue] = useState("");
   const [taskLink, setTaskLink] = useState<CrmTaskLinkType>("none");
-  const [fileNameDraft, setFileNameDraft] = useState("");
-  const [fileCategoryDraft, setFileCategoryDraft] = useState("counselor");
   const [docNameDraft, setDocNameDraft] = useState("");
   const [docTypeDraft, setDocTypeDraft] = useState("essay");
   const [docDueDraft, setDocDueDraft] = useState("");
   const [meetingLabelDraft, setMeetingLabelDraft] = useState("");
   const [notesDraft, setNotesDraft] = useState("");
   const [studentForm, setStudentForm] = useState<FormState | null>(null);
+  const [studentFormLoading, setStudentFormLoading] = useState(false);
 
   const refreshEngagements = useCallback(() => {
     const next = listEngagements();
@@ -100,23 +101,30 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
   useEffect(() => {
     setNotesDraft(selected?.internalNotes ?? "");
     setMeetingLabelDraft(selected?.nextMeetingLabel ?? "");
-    setTab("home");
   }, [selected?.id, selected?.internalNotes, selected?.nextMeetingLabel]);
+
+  useEffect(() => {
+    setTab("home");
+  }, [selectedId]);
 
   useEffect(() => {
     if (!selected) {
       setStudentForm(null);
+      setStudentFormLoading(false);
       return;
     }
     let cancelled = false;
-    void listApplications()
-      .then((apps) => {
+    setStudentFormLoading(true);
+    void fetchApplicationFormById(selected.applicationId)
+      .then((form) => {
         if (cancelled) return;
-        const app = apps.find((a) => a.id === selected.applicationId);
-        setStudentForm(app?.form_state ?? null);
+        setStudentForm(form);
       })
       .catch(() => {
         if (!cancelled) setStudentForm(null);
+      })
+      .finally(() => {
+        if (!cancelled) setStudentFormLoading(false);
       });
     return () => {
       cancelled = true;
@@ -137,21 +145,8 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
 
   const studentRows = useMemo(() => {
     if (!studentForm) return [];
-    return [
-      { label: t("auth.accountInfoIntake"), value: getEffectiveIntake(studentForm) },
-      { label: t("auth.accountInfoGpa"), value: studentForm.gpa },
-      {
-        label: t("auth.accountInfoTesting"),
-        value: [studentForm.testing, studentForm.satScore, studentForm.actScore].filter(Boolean).join(" · "),
-      },
-      { label: t("auth.accountInfoCurrentSchool"), value: studentForm.currentHighSchool },
-      {
-        label: t("auth.accountInfoMajor"),
-        value: [studentForm.majorPrimary, studentForm.majorSecondary].filter(Boolean).join(" / "),
-      },
-      { label: t("auth.accountInfoActivities"), value: String(studentForm.structuredActivities?.length ?? 0) },
-    ].filter((row) => row.value?.trim());
-  }, [studentForm, t]);
+    return buildApplicationInfoRows(studentForm, locale, t);
+  }, [studentForm, locale, t]);
 
   const docStatusLabel = (status: string) => {
     const key = `crm.signedService.docStatus.${status}`;
@@ -176,40 +171,41 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
     refresh();
   };
 
-  const submitTask = () => {
-    if (!selected) return;
-    const title = taskTitle.trim();
-    if (!title) return;
-    addTask({
-      engagementId: selected.id,
-      title,
-      dueAt: taskDue || undefined,
-      linkType: taskLink,
-    });
-    addMessage({
-      engagementId: selected.id,
-      authorRole: "system",
-      authorLabel: t("crm.console.systemLabel"),
-      body: t("crm.console.taskAssigned", { title }),
-      readByStudent: false,
-    });
-    setTaskTitle("");
-    setTaskDue("");
-    setTaskLink("none");
-    notifyCrmStoreChange();
-    refresh();
+  const buildTaskAssignedMessage = (
+    title: string,
+    detail: string,
+    dueAt: string,
+    linkType: CrmTaskLinkType,
+  ) => {
+    const lines = [t("crm.console.taskAssigned", { title })];
+    if (detail) lines.push(detail);
+    if (dueAt) lines.push(t("crm.console.taskAssignedDue", { date: dueAt }));
+    if (linkType !== "none") {
+      lines.push(t("crm.console.taskAssignedLink", { link: t(`crm.taskLink.${linkType}`) }));
+    }
+    return lines.join("\n\n");
   };
 
-  const uploadFile = () => {
-    if (!selected) return;
-    const name = fileNameDraft.trim();
-    if (!name) return;
-    addStoredFile({
+  const submitTask = () => {
+    if (!selected || !counselor) return;
+    const title = taskTitle.trim();
+    if (!title) return;
+    const detail = taskDetail.trim();
+    assignTask({
       engagementId: selected.id,
-      name,
-      category: fileCategoryDraft.trim() || "counselor",
+      title,
+      description: detail || undefined,
+      dueAt: taskDue || undefined,
+      linkType: taskLink,
+      message: {
+        authorLabel: counselor.name,
+        body: buildTaskAssignedMessage(title, detail, taskDue, taskLink),
+      },
     });
-    setFileNameDraft("");
+    setTaskTitle("");
+    setTaskDetail("");
+    setTaskDue("");
+    setTaskLink("none");
     notifyCrmStoreChange();
     refresh();
   };
@@ -418,6 +414,7 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                               }}
                             />
                             <strong>{task.title}</strong>
+                            {task.description ? <p className="counselor-console__task-detail">{task.description}</p> : null}
                           </label>
                           <span>
                             {task.status === "done" ? t("crm.taskDone") : t("crm.console.taskOpen")}
@@ -432,6 +429,15 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                       <label>
                         <span>{t("crm.console.taskTitle")}</span>
                         <input value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} />
+                      </label>
+                      <label>
+                        <span>{t("crm.console.taskDetail")}</span>
+                        <textarea
+                          value={taskDetail}
+                          onChange={(e) => setTaskDetail(e.target.value)}
+                          placeholder={t("crm.console.taskDetailPlaceholder")}
+                          rows={3}
+                        />
                       </label>
                       <label>
                         <span>{t("crm.dueLabel")}</span>
@@ -475,7 +481,7 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                               <td>{doc.docType}</td>
                               <td>
                                 <select
-                                  className="counselor-console__status-select"
+                                  className={`counselor-console__status-select counselor-console__status-select--${doc.status}`}
                                   value={doc.status}
                                   onChange={(e) => {
                                     updateDocumentStatus(doc.id, e.target.value as CrmApplicationDocument["status"]);
@@ -605,44 +611,29 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                   </section>
                 )}
 
-                {tab === "files" && (
+                {tab === "files" && selected ? (
                   <section className="signed-service-hub__panel">
                     <h2>{t("crm.signedService.filesTitle")}</h2>
-                    <p className="signed-service-hub__muted">{t("crm.signedService.filesLead")}</p>
-                    <ul className="signed-service-hub__files">
-                      {files.map((file) => (
-                        <li key={file.id}>
-                          <strong>{file.name}</strong>
-                          <span>
-                            {file.category} · {formatWhen(file.uploadedAt, locale)}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="signed-service-hub__upload">
-                      <input
-                        value={fileNameDraft}
-                        onChange={(e) => setFileNameDraft(e.target.value)}
-                        placeholder={t("crm.signedService.fileNamePlaceholder")}
-                      />
-                      <input
-                        value={fileCategoryDraft}
-                        onChange={(e) => setFileCategoryDraft(e.target.value)}
-                        placeholder={t("crm.console.fileCategoryPlaceholder")}
-                        aria-label={t("crm.console.fileCategoryPlaceholder")}
-                      />
-                      <button type="button" className="btn btn-secondary" onClick={uploadFile} disabled={!fileNameDraft.trim()}>
-                        {t("crm.signedService.uploadFile")}
-                      </button>
-                    </div>
+                    <CaseFilesPanel
+                      engagementId={selected.id}
+                      uploadedByRole="counselor"
+                      files={files}
+                      defaultCategory="counselor"
+                      onChange={() => {
+                        notifyCrmStoreChange();
+                        refresh();
+                      }}
+                    />
                   </section>
-                )}
+                ) : null}
 
                 {tab === "student" && (
                   <section className="signed-service-hub__panel">
                     <h2>{t("crm.signedService.studentTitle")}</h2>
                     <p className="signed-service-hub__muted">{t("crm.console.studentLead")}</p>
-                    {studentRows.length > 0 ? (
+                    {studentFormLoading ? (
+                      <p className="signed-service-hub__muted">{t("crm.signedService.studentLoading")}</p>
+                    ) : studentRows.length > 0 ? (
                       <dl className="signed-service-hub__info">
                         {studentRows.map((row) => (
                           <div key={row.label}>

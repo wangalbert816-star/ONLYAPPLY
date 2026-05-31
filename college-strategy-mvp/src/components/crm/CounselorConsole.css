@@ -141,13 +141,39 @@
 
 .counselor-console__inline-form input,
 .counselor-console__inline-form select,
+.counselor-console__inline-form textarea,
 .counselor-console__status-select {
   width: 100%;
   border: 1px solid rgba(148, 163, 184, 0.35);
   border-radius: 10px;
   padding: 0.5rem 0.65rem;
   font: inherit;
+  font-weight: 650;
   background: #fff;
+}
+
+.counselor-console__status-select--needed {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.counselor-console__status-select--draft {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #b45309;
+}
+
+.counselor-console__status-select--submitted {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+.counselor-console__status-select--done {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #047857;
 }
 
 .counselor-console__task-check {
@@ -263,6 +289,14 @@
   border-left-color: #0f766e;
 }
 
+.counselor-console__timeline li.is-admin {
+  border-left-color: #9333ea;
+}
+
+.counselor-console__timeline li.is-system {
+  border-left-color: #94a3b8;
+}
+
 .counselor-console__event-meta {
   margin: 0 0 0.15rem;
   font-size: 0.74rem;
@@ -277,8 +311,14 @@
 .counselor-console__task-list li span {
   display: block;
   margin-top: 0.15rem;
-  color: #64748b;
-  font-size: 0.76rem;
+}
+
+.counselor-console__task-detail {
+  margin: 0.35rem 0 0;
+  font-size: 0.84rem;
+  font-weight: 400;
+  color: #475569;
+  white-space: pre-wrap;
 }
 
 .counselor-console__notes {

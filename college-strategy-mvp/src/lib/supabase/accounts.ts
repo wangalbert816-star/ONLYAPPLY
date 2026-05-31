@@ -69,6 +69,21 @@ function defaultTitle(form: FormState, locale: Locale): string {
   return locale === "en" ? `${intake} · ${date}` : `${intake} · ${date}`;
 }
 
+export async function fetchApplicationFormById(applicationId: string): Promise<FormState | null> {
+  const sb = getSupabase();
+  if (!sb) return null;
+
+  const { data, error } = await sb
+    .from("saved_applications")
+    .select("form_state")
+    .eq("id", applicationId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+  return normalizeFormState(data.form_state);
+}
+
 export async function listApplications(): Promise<ApplicationListItem[]> {
   const sb = getSupabase();
   if (!sb) return [];

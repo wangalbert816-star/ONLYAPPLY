@@ -56,6 +56,9 @@ export function AccountTaskList({
                 />
                 <span>{localizeCrmText(task.title, locale, t)}</span>
               </label>
+              {task.description ? (
+                <p className="account-task-list__detail">{localizeCrmText(task.description, locale, t)}</p>
+              ) : null}
               <div className="account-task-list__meta">
                 {task.dueAt ? <span>{t("crm.due", { date: task.dueAt })}</span> : null}
                 {task.status === "done" ? <span>{t("crm.taskDone")}</span> : null}

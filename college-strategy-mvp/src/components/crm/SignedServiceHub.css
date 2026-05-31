@@ -159,16 +159,36 @@
 
 .signed-service-hub__status {
   display: inline-block;
-  padding: 0.12rem 0.45rem;
+  padding: 0.2rem 0.55rem;
   border-radius: 999px;
   font-size: 0.72rem;
   font-weight: 800;
+  border: 1px solid transparent;
 }
 
-.signed-service-hub__status--needed { background: #fef2f2; color: #b91c1c; }
-.signed-service-hub__status--draft { background: #fffbeb; color: #b45309; }
-.signed-service-hub__status--submitted { background: #eff6ff; color: #1d4ed8; }
-.signed-service-hub__status--done { background: #ecfdf5; color: #047857; }
+.signed-service-hub__status--needed {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.signed-service-hub__status--draft {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #b45309;
+}
+
+.signed-service-hub__status--submitted {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+.signed-service-hub__status--done {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #047857;
+}
 
 .signed-service-hub__chat-tabs {
   display: flex;
@@ -210,6 +230,8 @@
 
 .signed-service-hub__timeline li.is-counselor { border-left-color: #2563eb; }
 .signed-service-hub__timeline li.is-student { border-left-color: #0f766e; }
+.signed-service-hub__timeline li.is-admin { border-left-color: #9333ea; }
+.signed-service-hub__timeline li.is-system { border-left-color: #94a3b8; }
 
 .signed-service-hub__message-head {
   display: flex;
@@ -227,7 +249,12 @@
 }
 
 .signed-service-hub__compose textarea,
-.signed-service-hub__upload input {
+.signed-service-hub__upload input[type="file"] {
+  width: 100%;
+  font: inherit;
+}
+
+.signed-service-hub__upload input:not([type="file"]) {
   width: 100%;
   border: 1px solid rgba(148, 163, 184, 0.35);
   border-radius: 12px;

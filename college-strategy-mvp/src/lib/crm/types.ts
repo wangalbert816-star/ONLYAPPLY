@@ -1,7 +1,7 @@
 export type CrmPhase = "onboarding" | "planning" | "essays" | "applications" | "done";
 export type CrmEngagementStatus = "active" | "paused" | "completed";
 export type CrmTaskLinkType = "profile" | "activities" | "essay" | "report" | "none";
-export type CrmMessageRole = "student" | "counselor" | "system";
+export type CrmMessageRole = "student" | "counselor" | "system" | "admin";
 export type CrmMessageChannel = "direct" | "group";
 
 export type CrmCounselor = {
@@ -53,6 +53,8 @@ export type CrmApplicationDocument = {
   note?: string;
 };
 
+export type CrmFileUploaderRole = "student" | "counselor";
+
 export type CrmStoredFile = {
   id: string;
   engagementId: string;
@@ -60,6 +62,10 @@ export type CrmStoredFile = {
   category: string;
   uploadedAt: string;
   note?: string;
+  storagePath?: string;
+  uploadedByRole?: CrmFileUploaderRole;
+  contentType?: string;
+  sizeBytes?: number;
 };
 
 export type CrmTask = {

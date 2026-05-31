@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { useLanguage } from "../../i18n/LanguageContext";
 import { fetchCounselorByUserId, bootstrapDevCounselorProfile } from "../../lib/crm/supabaseCrm";
@@ -20,26 +20,31 @@ export function CounselorPortal({ onBack, onOpenStudentReport }: Props) {
   const { user, configured, loading: authLoading, signOut } = useAuth();
   const [checking, setChecking] = useState(true);
   const [isCounselor, setIsCounselor] = useState(false);
+  const verifiedUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     async function verify() {
       if (authLoading) return;
-      if (!user) {
+      const userId = user?.id ?? null;
+      const userEmail = user?.email ?? null;
+      if (!userId) {
+        verifiedUserIdRef.current = null;
         setIsCounselor(false);
         setChecking(false);
         return;
       }
-      setChecking(true);
+      const alreadyVerified = verifiedUserIdRef.current === userId;
+      if (!alreadyVerified) setChecking(true);
       try {
         if (configured && isSupabaseConfigured()) {
-          await initCrmForUser(user.id, "counselor");
-          let profile = await fetchCounselorByUserId(user.id);
+          await initCrmForUser(userId, "counselor");
+          let profile = await fetchCounselorByUserId(userId);
           if (
             !profile &&
             isCrmDemoUiEnabled() &&
-            user.email &&
-            DEV_COUNSELOR_EMAILS.has(user.email.toLowerCase())
+            userEmail &&
+            DEV_COUNSELOR_EMAILS.has(userEmail.toLowerCase())
           ) {
             profile = await bootstrapDevCounselorProfile();
           }
@@ -50,14 +55,17 @@ export function CounselorPortal({ onBack, onOpenStudentReport }: Props) {
       } catch {
         if (!cancelled) setIsCounselor(false);
       } finally {
-        if (!cancelled) setChecking(false);
+        if (!cancelled) {
+          verifiedUserIdRef.current = userId;
+          setChecking(false);
+        }
       }
     }
     void verify();
     return () => {
       cancelled = true;
     };
-  }, [user, configured, authLoading]);
+  }, [user?.id, user?.email, configured, authLoading]);
 
   if (!isSignedServiceEnabled()) {
     return (
@@ -82,7 +90,7 @@ export function CounselorPortal({ onBack, onOpenStudentReport }: Props) {
     );
   }
 
-  if (authLoading || (user && checking)) {
+  if (authLoading || (user && checking && !isCounselor)) {
     return (
       <div className="counselor-console__empty-case" style={{ minHeight: "100vh", padding: "2rem" }}>
         {t("auth.accountLoading")}

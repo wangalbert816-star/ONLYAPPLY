@@ -35,7 +35,7 @@ create table if not exists public.engagements (
 create table if not exists public.case_messages (
   id uuid primary key default gen_random_uuid(),
   engagement_id uuid not null references public.engagements (id) on delete cascade,
-  author_role text not null check (author_role in ('student', 'counselor', 'system')),
+  author_role text not null check (author_role in ('student', 'counselor', 'system', 'admin')),
   author_label text not null,
   body text not null,
   channel text not null default 'direct' check (channel in ('direct', 'group')),
@@ -73,6 +73,10 @@ create table if not exists public.case_files (
   name text not null,
   category text not null default 'general',
   note text,
+  storage_path text,
+  uploaded_by_role text check (uploaded_by_role in ('student', 'counselor')),
+  content_type text,
+  size_bytes bigint,
   uploaded_at timestamptz not null default now()
 );
 

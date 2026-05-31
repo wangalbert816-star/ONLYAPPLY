@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { useLanguage } from "../../i18n/LanguageContext";
 import {
@@ -8,9 +8,12 @@ import {
   fetchAdminSession,
   listAdminCounselors,
   listAdminEngagements,
+  listAdminGroupMessages,
   lookupAdminStudent,
   patchAdminCounselor,
   patchAdminEngagement,
+  sendAdminGroupMessage,
+  type AdminCaseMessage,
   type AdminCounselor,
   type AdminEngagement,
   type StudentLookupResult,
@@ -23,7 +26,7 @@ type Props = {
   onBack: () => void;
 };
 
-type TabId = "counselors" | "engagements";
+type TabId = "counselors" | "engagements" | "groupChat";
 
 const PHASES = ["onboarding", "planning", "essays", "applications", "done"] as const;
 const STATUSES = ["active", "paused", "completed"] as const;
@@ -50,6 +53,7 @@ export function AdminPortal({ onBack }: Props) {
   const [counselors, setCounselors] = useState<AdminCounselor[]>([]);
   const [engagements, setEngagements] = useState<AdminEngagement[]>([]);
   const [busy, setBusy] = useState(false);
+  const [groupChatEngagementId, setGroupChatEngagementId] = useState("");
 
   const token = session?.access_token ?? "";
 
@@ -188,6 +192,9 @@ export function AdminPortal({ onBack }: Props) {
         <button type="button" className={tab === "counselors" ? "is-active" : undefined} onClick={() => setTab("counselors")}>
           {t("admin.tabs.counselors")}
         </button>
+        <button type="button" className={tab === "groupChat" ? "is-active" : undefined} onClick={() => setTab("groupChat")}>
+          {t("admin.groupChat.title")}
+        </button>
       </nav>
 
       {tab === "engagements" ? (
@@ -200,6 +207,18 @@ export function AdminPortal({ onBack }: Props) {
           engagements={engagements}
           token={token}
           onRun={runAction}
+          onGroupChatError={(code) => setNotice(adminErrorMessage(code, t))}
+        />
+      ) : tab === "groupChat" ? (
+        <AdminGroupChatPanel
+          t={t}
+          locale={locale}
+          busy={busy}
+          token={token}
+          engagements={engagements}
+          engagementId={groupChatEngagementId}
+          onEngagementChange={setGroupChatEngagementId}
+          onError={(code) => setNotice(adminErrorMessage(code, t))}
         />
       ) : (
         <AdminCounselorsPanel t={t} locale={locale} busy={busy} counselors={counselors} token={token} onRun={runAction} />
@@ -303,9 +322,27 @@ function AdminCounselorsPanel({
   const [calendlyUrl, setCalendlyUrl] = useState("");
   const [passwordEditId, setPasswordEditId] = useState<string | null>(null);
   const [resetPassword, setResetPassword] = useState("");
+  const [profileEditId, setProfileEditId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editTitle, setEditTitle] = useState("");
 
   const passwordValid = password.trim().length >= 6;
   const resetPasswordValid = resetPassword.trim().length >= 6;
+  const profileValid = editName.trim().length > 0 && editTitle.trim().length > 0;
+
+  const startProfileEdit = (c: AdminCounselor) => {
+    setPasswordEditId(null);
+    setResetPassword("");
+    setProfileEditId(c.id);
+    setEditName(c.name);
+    setEditTitle(c.title);
+  };
+
+  const cancelProfileEdit = () => {
+    setProfileEditId(null);
+    setEditName("");
+    setEditTitle("");
+  };
 
   return (
     <div className="admin-portal__grid">
@@ -384,13 +421,55 @@ function AdminCounselorsPanel({
               <tbody>
                 {counselors.map((c) => (
                   <tr key={c.id}>
-                    <td>{localizeCrmText(c.name, locale, t)}</td>
+                    <td>
+                      {profileEditId === c.id ? (
+                        <input
+                          className="admin-portal__table-input"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                        />
+                      ) : (
+                        localizeCrmText(c.name, locale, t)
+                      )}
+                    </td>
                     <td>{c.email}</td>
-                    <td>{localizeCrmText(c.title, locale, t)}</td>
+                    <td>
+                      {profileEditId === c.id ? (
+                        <input
+                          className="admin-portal__table-input"
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                        />
+                      ) : (
+                        localizeCrmText(c.title, locale, t)
+                      )}
+                    </td>
                     <td>{c.userId ? t("admin.counselors.authLinked") : t("admin.counselors.authMissing")}</td>
                     <td>{c.active ? t("admin.counselors.active") : t("admin.counselors.inactive")}</td>
                     <td className="admin-portal__row-actions">
-                      {passwordEditId === c.id ? (
+                      {profileEditId === c.id ? (
+                        <>
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            disabled={busy || !profileValid}
+                            onClick={() =>
+                              void onRun(async () => {
+                                await patchAdminCounselor(token, c.id, {
+                                  name: editName.trim(),
+                                  title: editTitle.trim(),
+                                });
+                                cancelProfileEdit();
+                              })
+                            }
+                          >
+                            {t("admin.engagements.edit")}
+                          </button>
+                          <button type="button" className="btn btn-secondary" disabled={busy} onClick={cancelProfileEdit}>
+                            {t("admin.counselors.cancel")}
+                          </button>
+                        </>
+                      ) : passwordEditId === c.id ? (
                         <div className="admin-portal__inline-password">
                           <input
                             type="password"
@@ -444,12 +523,21 @@ function AdminCounselorsPanel({
                               {t("admin.counselors.linkAuth")}
                             </button>
                           ) : null}
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            disabled={busy}
+                            onClick={() => startProfileEdit(c)}
+                          >
+                            {t("admin.counselors.editProfile")}
+                          </button>
                           {c.email ? (
                             <button
                               type="button"
                               className="btn btn-secondary"
                               disabled={busy}
                               onClick={() => {
+                                setProfileEditId(null);
                                 setPasswordEditId(c.id);
                                 setResetPassword("");
                               }}
@@ -492,6 +580,7 @@ function AdminEngagementsPanel({
   engagements,
   token,
   onRun,
+  onGroupChatError,
 }: {
   t: (key: string, vars?: Record<string, string | number>) => string;
   locale: "zh" | "en";
@@ -501,6 +590,7 @@ function AdminEngagementsPanel({
   engagements: AdminEngagement[];
   token: string;
   onRun: (action: () => Promise<void>) => Promise<void>;
+  onGroupChatError: (code?: string) => void;
 }) {
   const [studentEmail, setStudentEmail] = useState("");
   const [lookup, setLookup] = useState<StudentLookupResult | null>(null);
@@ -515,6 +605,7 @@ function AdminEngagementsPanel({
   const [editCounselorId, setEditCounselorId] = useState("");
   const [editStatus, setEditStatus] = useState<(typeof STATUSES)[number]>("active");
   const [editPhase, setEditPhase] = useState<(typeof PHASES)[number]>("planning");
+  const [expandedGroupChatId, setExpandedGroupChatId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!counselorId && counselors[0]) setCounselorId(counselors[0].id);
@@ -658,7 +749,8 @@ function AdminEngagementsPanel({
               </thead>
               <tbody>
                 {engagements.map((row) => (
-                  <tr key={row.id}>
+                  <Fragment key={row.id}>
+                    <tr>
                     <td>{row.studentEmail}</td>
                     <td>{row.counselorName ?? row.counselorEmail}</td>
                     <td>{localizeCrmText(row.applicationTitle, locale, t)}</td>
@@ -727,25 +819,256 @@ function AdminEngagementsPanel({
                           </button>
                         </>
                       ) : (
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          onClick={() => {
-                            setEditId(row.id);
-                            setEditCounselorId(row.counselorId);
-                            setEditStatus(row.status as (typeof STATUSES)[number]);
-                            setEditPhase(row.phase as (typeof PHASES)[number]);
-                          }}
-                        >
-                          {t("admin.engagements.edit")}
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            className={`btn btn-secondary${expandedGroupChatId === row.id ? " is-active" : ""}`}
+                            onClick={() =>
+                              setExpandedGroupChatId(expandedGroupChatId === row.id ? null : row.id)
+                            }
+                          >
+                            {expandedGroupChatId === row.id
+                              ? t("admin.engagements.closeGroupChat")
+                              : t("admin.engagements.openGroupChat")}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => {
+                              setEditId(row.id);
+                              setEditCounselorId(row.counselorId);
+                              setEditStatus(row.status as (typeof STATUSES)[number]);
+                              setEditPhase(row.phase as (typeof PHASES)[number]);
+                            }}
+                          >
+                            {t("admin.engagements.edit")}
+                          </button>
+                        </>
                       )}
                     </td>
                   </tr>
+                  {expandedGroupChatId === row.id ? (
+                    <tr className="admin-portal__chat-row">
+                      <td colSpan={7}>
+                        <div className="admin-portal__chat-inline">
+                          <p className="admin-portal__muted">{t("admin.groupChat.lead")}</p>
+                          <AdminGroupChatThread
+                            t={t}
+                            locale={locale}
+                            busy={busy}
+                            token={token}
+                            engagementId={row.id}
+                            onError={onGroupChatError}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ) : null}
+                  </Fragment>
                 ))}
               </tbody>
             </table>
           </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function authorRoleLabel(role: AdminCaseMessage["authorRole"], t: (key: string) => string) {
+  switch (role) {
+    case "student":
+      return t("admin.groupChat.roleStudent");
+    case "counselor":
+      return t("admin.groupChat.roleCounselor");
+    case "admin":
+      return t("admin.groupChat.roleAdmin");
+    default:
+      return t("admin.groupChat.roleSystem");
+  }
+}
+
+function AdminGroupChatThread({
+  t,
+  locale,
+  busy,
+  token,
+  engagementId,
+  onError,
+}: {
+  t: (key: string, vars?: Record<string, string | number>) => string;
+  locale: "zh" | "en";
+  busy: boolean;
+  token: string;
+  engagementId: string;
+  onError: (code?: string) => void;
+}) {
+  const [messages, setMessages] = useState<AdminCaseMessage[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [draft, setDraft] = useState("");
+
+  const loadMessages = useCallback(
+    async (opts?: { silent?: boolean }) => {
+      if (!token || !engagementId) {
+        setMessages([]);
+        return;
+      }
+      if (!opts?.silent) setLoading(true);
+      try {
+        const res = await listAdminGroupMessages(token, engagementId);
+        setMessages(res.messages);
+      } catch (e) {
+        const code = (e as Error & { code?: string }).code;
+        if (!opts?.silent) onError(code);
+        if (!opts?.silent) setMessages([]);
+      } finally {
+        if (!opts?.silent) setLoading(false);
+      }
+    },
+    [token, engagementId, onError],
+  );
+
+  useEffect(() => {
+    void loadMessages();
+  }, [loadMessages]);
+
+  useEffect(() => {
+    if (!engagementId) return;
+    const timer = window.setInterval(() => {
+      void loadMessages({ silent: true });
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [engagementId, loadMessages]);
+
+  const send = async () => {
+    const body = draft.trim();
+    if (!body || !engagementId || sending) return;
+    setSending(true);
+    try {
+      await sendAdminGroupMessage(token, engagementId, body);
+      setDraft("");
+      await loadMessages({ silent: true });
+    } catch (e) {
+      const code = (e as Error & { code?: string }).code;
+      onError(code);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="admin-portal__chat-toolbar">
+        <button
+          type="button"
+          className="btn btn-secondary"
+          disabled={!engagementId || loading}
+          onClick={() => void loadMessages()}
+        >
+          {t("admin.groupChat.refresh")}
+        </button>
+      </div>
+      {loading ? (
+        <p className="admin-portal__muted">{t("admin.loading")}</p>
+      ) : messages.length === 0 ? (
+        <p className="admin-portal__muted">{t("admin.groupChat.empty")}</p>
+      ) : (
+        <ul className="admin-portal__chat-timeline">
+          {[...messages].reverse().map((message) => (
+            <li key={message.id} className={`is-${message.authorRole}`}>
+              <div className="admin-portal__chat-head">
+                <span>
+                  {formatWhen(message.createdAt, locale)} · {authorRoleLabel(message.authorRole, t)} ·{" "}
+                  {message.authorLabel}
+                </span>
+              </div>
+              <p>{message.body}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="admin-portal__chat-compose">
+        <textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder={t("admin.groupChat.placeholder")}
+          rows={3}
+          disabled={!engagementId || sending || busy}
+        />
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => void send()}
+          disabled={!engagementId || !draft.trim() || sending || busy}
+        >
+          {sending ? t("admin.groupChat.sending") : t("admin.groupChat.send")}
+        </button>
+      </div>
+    </>
+  );
+}
+function AdminGroupChatPanel({
+  t,
+  locale,
+  busy,
+  token,
+  engagements,
+  engagementId,
+  onEngagementChange,
+  onError,
+}: {
+  t: (key: string, vars?: Record<string, string | number>) => string;
+  locale: "zh" | "en";
+  busy: boolean;
+  token: string;
+  engagements: AdminEngagement[];
+  engagementId: string;
+  onEngagementChange: (id: string) => void;
+  onError: (code?: string) => void;
+}) {
+  useEffect(() => {
+    if (!engagementId && engagements[0]) onEngagementChange(engagements[0].id);
+  }, [engagementId, engagements, onEngagementChange]);
+
+  const selected = engagements.find((e) => e.id === engagementId);
+
+  return (
+    <div className="admin-portal__stack">
+      <section className="admin-portal__panel">
+        <h2>{t("admin.groupChat.title")}</h2>
+        <p className="admin-portal__muted">{t("admin.groupChat.lead")}</p>
+        {engagements.length === 0 ? (
+          <p className="admin-portal__muted">{t("admin.engagements.empty")}</p>
+        ) : (
+          <>
+            <label className="admin-portal__form">
+              <span>{t("admin.groupChat.selectEngagement")}</span>
+              <select value={engagementId} onChange={(e) => onEngagementChange(e.target.value)}>
+                {engagements.map((row) => (
+                  <option key={row.id} value={row.id}>
+                    {row.studentEmail} · {localizeCrmText(row.applicationTitle, locale, t)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {selected ? (
+              <p className="admin-portal__muted">
+                {selected.studentEmail} ·{" "}
+                {localizeCrmText(selected.counselorName ?? selected.counselorEmail ?? "", locale, t)}
+              </p>
+            ) : null}
+            {engagementId ? (
+              <AdminGroupChatThread
+                t={t}
+                locale={locale}
+                busy={busy}
+                token={token}
+                engagementId={engagementId}
+                onError={onError}
+              />
+            ) : null}
+          </>
         )}
       </section>
     </div>

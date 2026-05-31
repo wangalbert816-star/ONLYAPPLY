@@ -139,6 +139,22 @@ function mapCounselor(row, engagementCounts) {
   };
 }
 
+const ADMIN_GROUP_CHAT_LABEL = "OnlyApply Admin";
+
+function mapCaseMessage(row) {
+  return {
+    id: row.id,
+    engagementId: row.engagement_id,
+    authorRole: row.author_role,
+    authorLabel: row.author_label,
+    body: row.body,
+    channel: row.channel,
+    pinned: row.pinned,
+    createdAt: row.created_at,
+    readByStudent: row.read_by_student,
+  };
+}
+
 function mapEngagement(row, counselorsById) {
   const counselor = counselorsById.get(row.counselor_id);
   return {
@@ -277,8 +293,16 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
 
     /** @type {Record<string, unknown>} */
     const patch = {};
-    if (req.body?.name != null) patch.name = String(req.body.name).trim();
-    if (req.body?.title != null) patch.title = String(req.body.title).trim();
+    if (req.body?.name != null) {
+      const name = String(req.body.name).trim();
+      if (!name) return res.status(400).json({ error: "email_name_title_required" });
+      patch.name = name;
+    }
+    if (req.body?.title != null) {
+      const title = String(req.body.title).trim();
+      if (!title) return res.status(400).json({ error: "email_name_title_required" });
+      patch.title = title;
+    }
     if (req.body?.email != null) patch.email = String(req.body.email).trim().toLowerCase();
     if (req.body?.calendlyUrl !== undefined) {
       patch.calendly_url = String(req.body.calendlyUrl ?? "").trim() || null;
@@ -570,6 +594,92 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
       const counselorsById = new Map(counselorRow ? [[counselorRow.id, counselorRow]] : []);
 
       res.json({ engagement: mapEngagement(data, counselorsById) });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      res.status(500).json({ error: msg });
+    }
+  });
+
+  app.get("/api/admin/crm/engagements/:id/messages", async (req, res) => {
+    const ctx = await requireAdmin(req, res, supabaseAdmin);
+    if (!ctx) return;
+    const engagementId = String(req.params.id ?? "").trim();
+    if (!engagementId) {
+      res.status(400).json({ error: "engagement_id_required" });
+      return;
+    }
+    try {
+      const { data: engagement, error: engErr } = await ctx.admin
+        .from("engagements")
+        .select("id")
+        .eq("id", engagementId)
+        .maybeSingle();
+      if (engErr) throw engErr;
+      if (!engagement) {
+        res.status(404).json({ error: "engagement_not_found" });
+        return;
+      }
+
+      const { data: rows, error } = await ctx.admin
+        .from("case_messages")
+        .select("*")
+        .eq("engagement_id", engagementId)
+        .eq("channel", "group")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+
+      res.json({ messages: (rows ?? []).map(mapCaseMessage) });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      res.status(500).json({ error: msg });
+    }
+  });
+
+  app.post("/api/admin/crm/engagements/:id/messages", async (req, res) => {
+    const ctx = await requireAdmin(req, res, supabaseAdmin);
+    if (!ctx) return;
+    const engagementId = String(req.params.id ?? "").trim();
+    const body = String(req.body?.body ?? "").trim();
+    if (!engagementId) {
+      res.status(400).json({ error: "engagement_id_required" });
+      return;
+    }
+    if (!body) {
+      res.status(400).json({ error: "message_body_required" });
+      return;
+    }
+    try {
+      const { data: engagement, error: engErr } = await ctx.admin
+        .from("engagements")
+        .select("id")
+        .eq("id", engagementId)
+        .maybeSingle();
+      if (engErr) throw engErr;
+      if (!engagement) {
+        res.status(404).json({ error: "engagement_not_found" });
+        return;
+      }
+
+      const now = new Date().toISOString();
+      const { data: row, error } = await ctx.admin
+        .from("case_messages")
+        .insert({
+          engagement_id: engagementId,
+          author_role: "admin",
+          author_label: ADMIN_GROUP_CHAT_LABEL,
+          body,
+          channel: "group",
+          pinned: false,
+          read_by_student: false,
+          created_at: now,
+        })
+        .select("*")
+        .single();
+      if (error) throw error;
+
+      await ctx.admin.from("engagements").update({ updated_at: now }).eq("id", engagementId);
+
+      res.json({ message: mapCaseMessage(row) });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       res.status(500).json({ error: msg });

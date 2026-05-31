@@ -148,6 +148,15 @@
   vertical-align: top;
 }
 
+.admin-portal__table-input {
+  width: 100%;
+  min-width: 7rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.4rem;
+  font: inherit;
+}
+
 .admin-portal__hint {
   display: block;
   margin-top: 0.25rem;
@@ -186,6 +195,71 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.admin-portal__chat-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0.5rem 0;
+}
+
+.admin-portal__chat-inline {
+  padding: 0.75rem 0 0.25rem;
+}
+
+.admin-portal__chat-row td {
+  background: #f8fafc;
+  border-top: none;
+  padding-top: 0;
+}
+
+.admin-portal__row-actions .btn.is-active {
+  background: var(--color-brand, #006644);
+  color: #fff;
+  border-color: transparent;
+}
+
+.admin-portal__chat-timeline {
+  list-style: none;
+  margin: 0.75rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.admin-portal__chat-timeline li {
+  border-left: 3px solid #cbd5e1;
+  padding-left: 0.75rem;
+}
+
+.admin-portal__chat-timeline li.is-counselor { border-left-color: #2563eb; }
+.admin-portal__chat-timeline li.is-student { border-left-color: #0f766e; }
+.admin-portal__chat-timeline li.is-admin { border-left-color: #9333ea; }
+.admin-portal__chat-timeline li.is-system { border-left-color: #94a3b8; }
+
+.admin-portal__chat-head {
+  font-size: 0.74rem;
+  color: #64748b;
+  margin-bottom: 0.2rem;
+}
+
+.admin-portal__chat-compose {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.55rem;
+  align-items: end;
+  margin-top: 0.75rem;
+}
+
+.admin-portal__chat-compose textarea {
+  width: 100%;
+  font: inherit;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.45rem;
 }
 
 @media (max-width: 900px) {

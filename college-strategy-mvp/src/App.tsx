@@ -45,7 +45,7 @@ import { AdminPortal } from "./components/admin/AdminPortal";
 import { AuthChromeProvider } from "./auth/AuthChromeContext";
 import { AppTopChrome } from "./components/AppTopChrome";
 import { LegalLinks } from "./components/LegalLinks";
-import { saveUserSession, fetchUnlockedApplicationIds, redeemInviteCode, getApplicationReports, listApplications } from "./lib/supabase/accounts";
+import { saveUserSession, fetchUnlockedApplicationIds, redeemInviteCode, getApplicationReports } from "./lib/supabase/accounts";
 import { getCounselor, getEngagementForApplication, isSignedServiceEnabled } from "./lib/crm/store";
 import type { CrmEngagement } from "./lib/crm/types";
 import { getSupabase } from "./lib/supabase/client";
@@ -375,21 +375,18 @@ export default function App() {
         return;
       }
       try {
-        const { reports } = await getApplicationReports(engagement.applicationId);
+        const { application, reports } = await getApplicationReports(engagement.applicationId);
         const latest = reports[0];
         if (!latest) {
           window.alert(t("crm.console.reportMissing"));
           return;
         }
-        const apps = await listApplications();
-        const app = apps.find((a) => a.id === engagement.applicationId);
-        if (!app) return;
         const ids =
           cloudEntitlementsEnabled && user ? await refreshEntitlements() : unlockedApplicationIds;
-        const entitled = cloudEntitlementsEnabled && ids.includes(app.id);
-        setForm(app.form_state);
+        const entitled = cloudEntitlementsEnabled && ids.includes(application.id);
+        setForm(application.form_state);
         setReport(latest.report_payload);
-        setCurrentApplicationId(app.id);
+        setCurrentApplicationId(application.id);
         setCurrentReportId(latest.id);
         answeredGapSupplementaryRef.current = latest.supplementary_notes ?? [];
         profileFiveSupplementaryRef.current = [];

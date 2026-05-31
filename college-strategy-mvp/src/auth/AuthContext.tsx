@@ -42,8 +42,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const syncSession = async () => {
       const { data } = await sb.auth.getSession();
       if (!mounted) return;
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
+      setSession((prev) => {
+        const next = data.session;
+        if (prev?.access_token === next?.access_token && prev?.user?.id === next?.user?.id) return prev;
+        return next;
+      });
+      setUser((prev) => {
+        const next = data.session?.user ?? null;
+        if (prev?.id === next?.id && prev?.email === next?.email) return prev;
+        return next;
+      });
       setLoading(false);
     };
 
@@ -52,8 +60,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = sb.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-      setUser(nextSession?.user ?? null);
+      setSession((prev) => {
+        if (prev?.access_token === nextSession?.access_token && prev?.user?.id === nextSession?.user?.id) {
+          return prev;
+        }
+        return nextSession;
+      });
+      setUser((prev) => {
+        const next = nextSession?.user ?? null;
+        if (prev?.id === next?.id && prev?.email === next?.email) return prev;
+        return next;
+      });
       setLoading(false);
     });
 

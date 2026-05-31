@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../../i18n/LanguageContext";
+import { buildApplicationInfoRows } from "../../lib/applicationInfoRows";
+import { localizeCrmText } from "../../lib/crm/localizeCrmContent";
 import { isCalendlyBookingEnabled, requestExpertConsult } from "../../lib/expertConsultBooking";
-import { getEffectiveIntake } from "../../lib/intakeTerm";
 import {
   addMessage,
-  addStoredFile,
   listDocuments,
   listFiles,
   listMessages,
@@ -16,10 +16,11 @@ import {
   toggleMessagePin,
 } from "../../lib/crm/store";
 import type { CrmCounselor, CrmEngagement, CrmMessageChannel, CrmTaskLinkType } from "../../lib/crm/types";
-import { localizeCrmText } from "../../lib/crm/localizeCrmContent";
 import type { FormState } from "../../types";
 import { BrandLogo } from "../BrandLogo";
 import { AccountTaskList } from "./AccountTaskList";
+import { CaseFilesPanel } from "./CaseFilesPanel";
+import "./CaseFilesPanel.css";
 import "./SignedServiceHub.css";
 
 type TabId = "home" | "todos" | "documents" | "chat" | "meetings" | "files" | "student";
@@ -48,7 +49,6 @@ export function SignedServiceHub({ engagement, counselor, form, userEmail, onBac
   const [tab, setTab] = useState<TabId>("home");
   const [chatChannel, setChatChannel] = useState<CrmMessageChannel>("direct");
   const [messageDraft, setMessageDraft] = useState("");
-  const [fileNameDraft, setFileNameDraft] = useState("");
   const [tick, setTick] = useState(0);
 
   const refresh = useCallback(() => setTick((n) => n + 1), []);
@@ -74,18 +74,7 @@ export function SignedServiceHub({ engagement, counselor, form, userEmail, onBac
     { id: "student", label: t("crm.signedService.tabs.student") },
   ];
 
-  const studentRows = useMemo(
-    () =>
-      [
-        { label: t("auth.accountInfoIntake"), value: getEffectiveIntake(form) },
-        { label: t("auth.accountInfoGpa"), value: form.gpa },
-        { label: t("auth.accountInfoTesting"), value: [form.testing, form.satScore, form.actScore].filter(Boolean).join(" · ") },
-        { label: t("auth.accountInfoCurrentSchool"), value: form.currentHighSchool },
-        { label: t("auth.accountInfoMajor"), value: [form.majorPrimary, form.majorSecondary].filter(Boolean).join(" / ") },
-        { label: t("auth.accountInfoActivities"), value: String(form.structuredActivities?.length ?? 0) },
-      ].filter((row) => row.value?.trim()),
-    [form, t],
-  );
+  const studentRows = useMemo(() => buildApplicationInfoRows(form, locale, t), [form, locale, t]);
 
   const sendChat = () => {
     const body = messageDraft.trim();
@@ -98,15 +87,6 @@ export function SignedServiceHub({ engagement, counselor, form, userEmail, onBac
       channel: chatChannel,
     });
     setMessageDraft("");
-    notifyCrmStoreChange();
-    refresh();
-  };
-
-  const uploadFile = () => {
-    const name = fileNameDraft.trim();
-    if (!name) return;
-    addStoredFile({ engagementId: engagement.id, name, category: "upload" });
-    setFileNameDraft("");
     notifyCrmStoreChange();
     refresh();
   };
@@ -343,25 +323,16 @@ export function SignedServiceHub({ engagement, counselor, form, userEmail, onBac
         {tab === "files" && (
           <section className="signed-service-hub__panel">
             <h2>{t("crm.signedService.filesTitle")}</h2>
-            <p className="signed-service-hub__muted">{t("crm.signedService.filesLead")}</p>
-            <ul className="signed-service-hub__files">
-              {files.map((file) => (
-                <li key={file.id}>
-                  <strong>{localizeCrmText(file.name, locale, t)}</strong>
-                  <span>{file.category} · {formatWhen(file.uploadedAt, locale)}</span>
-                </li>
-              ))}
-            </ul>
-            <div className="signed-service-hub__upload">
-              <input
-                value={fileNameDraft}
-                onChange={(e) => setFileNameDraft(e.target.value)}
-                placeholder={t("crm.signedService.fileNamePlaceholder")}
-              />
-              <button type="button" className="btn btn-secondary" onClick={uploadFile} disabled={!fileNameDraft.trim()}>
-                {t("crm.signedService.uploadFile")}
-              </button>
-            </div>
+            <CaseFilesPanel
+              engagementId={engagement.id}
+              uploadedByRole="student"
+              files={files}
+              defaultCategory="student"
+              onChange={() => {
+                notifyCrmStoreChange();
+                refresh();
+              }}
+            />
           </section>
         )}
 

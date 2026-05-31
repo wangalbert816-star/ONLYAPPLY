@@ -1,0 +1,45 @@
+.case-files-panel__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.case-files-panel__upload {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.case-files-panel__picked {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  color: #475569;
+}
+
+.case-files-panel__error {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  color: #b91c1c;
+}
+
+.case-files-panel__success {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  color: #047857;
+}
+
+.case-files-panel__file-label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: #475569;
+}
+
+.case-files-panel__file-label input[type="file"] {
+  width: 100%;
+}
+
+.signed-service-hub__files-empty {
+  color: #64748b;
+  font-size: 0.88rem;
+}
