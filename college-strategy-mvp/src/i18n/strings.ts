@@ -560,6 +560,9 @@ merge(zhFlat, {
     signInRequired: "请先登录 Admin 账号。",
     forbidden: "当前账号无 Admin 权限。",
     notConfigured: "服务端未配置 CRM_ADMIN_EMAILS 或 SUPABASE_SERVICE_ROLE_KEY。",
+    missingServiceRole:
+      "请在 college-strategy-mvp/.env 填入 SUPABASE_SERVICE_ROLE_KEY（Supabase → Settings → API → service_role），保存后重启 npm run dev。",
+    missingAdminEmails: "请在 .env 设置 CRM_ADMIN_EMAILS=onlyapplysupport@gmail.com 并重启 npm run dev。",
     loading: "加载中…",
     refresh: "刷新",
     tabs: { counselors: "顾问", engagements: "签约学生" },
@@ -1746,6 +1749,9 @@ merge(enFlat, {
     signInRequired: "Sign in with your admin account first.",
     forbidden: "This account does not have admin access.",
     notConfigured: "Server missing CRM_ADMIN_EMAILS or SUPABASE_SERVICE_ROLE_KEY.",
+    missingServiceRole:
+      "Add SUPABASE_SERVICE_ROLE_KEY to college-strategy-mvp/.env (Supabase → Settings → API → service_role), then restart npm run dev.",
+    missingAdminEmails: "Set CRM_ADMIN_EMAILS=onlyapplysupport@gmail.com in .env and restart npm run dev.",
     loading: "Loading…",
     refresh: "Refresh",
     tabs: { counselors: "Counselors", engagements: "Engagements" },

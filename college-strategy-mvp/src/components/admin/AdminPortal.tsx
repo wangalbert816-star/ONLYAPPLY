@@ -44,6 +44,7 @@ export function AdminPortal({ onBack }: Props) {
   const { user, session, configured, loading: authLoading, signInWithGoogle, signInWithPassword } = useAuth();
   const [tab, setTab] = useState<TabId>("engagements");
   const [gate, setGate] = useState<"idle" | "loading" | "ok" | "forbidden" | "misconfigured">("idle");
+  const [misconfigReason, setMisconfigReason] = useState<"service_role" | "admin_emails" | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   const [counselors, setCounselors] = useState<AdminCounselor[]>([]);
@@ -76,7 +77,11 @@ export function AdminPortal({ onBack }: Props) {
       } catch (e) {
         if (cancelled) return;
         const code = (e as Error & { code?: string }).code;
-        if (code === "crm_admin_not_configured" || code === "supabase_admin_missing") {
+        if (code === "supabase_admin_missing") {
+          setMisconfigReason("service_role");
+          setGate("misconfigured");
+        } else if (code === "crm_admin_not_configured") {
+          setMisconfigReason("admin_emails");
           setGate("misconfigured");
         } else {
           setGate("forbidden");
@@ -113,9 +118,15 @@ export function AdminPortal({ onBack }: Props) {
   }
 
   if (gate === "misconfigured") {
+    const detail =
+      misconfigReason === "service_role"
+        ? t("admin.missingServiceRole")
+        : misconfigReason === "admin_emails"
+          ? t("admin.missingAdminEmails")
+          : t("admin.notConfigured");
     return (
       <div className="admin-portal admin-portal--center">
-        <p>{t("admin.notConfigured")}</p>
+        <p>{detail}</p>
         <button type="button" className="btn btn-secondary" onClick={onBack}>
           {t("admin.back")}
         </button>
