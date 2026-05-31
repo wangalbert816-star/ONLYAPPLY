@@ -681,13 +681,13 @@ function envFlag(value: string | undefined): boolean {
   return value === "1" || value === "true";
 }
 
-/** Production: set VITE_ENABLE_SIGNED_SERVICE=true on Vercel. */
+/** Production: explicit VITE_ENABLE_SIGNED_SERVICE, or auto-on when Supabase is configured. */
 export function isSignedServiceEnabled(): boolean {
-  return (
-    import.meta.env.DEV ||
-    envFlag(import.meta.env.VITE_ENABLE_SIGNED_SERVICE) ||
-    envFlag(import.meta.env.VITE_CRM_DEMO)
-  );
+  if (import.meta.env.DEV) return true;
+  if (envFlag(import.meta.env.VITE_ENABLE_SIGNED_SERVICE) || envFlag(import.meta.env.VITE_CRM_DEMO)) {
+    return true;
+  }
+  return Boolean(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
 }
 
 /** Demo bar + localStorage fallback — dev or VITE_CRM_DEMO only. */
