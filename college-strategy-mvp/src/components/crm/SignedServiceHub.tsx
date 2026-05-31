@@ -16,6 +16,7 @@ import {
   toggleMessagePin,
 } from "../../lib/crm/store";
 import type { CrmCounselor, CrmEngagement, CrmMessageChannel, CrmTaskLinkType } from "../../lib/crm/types";
+import { localizeCrmText } from "../../lib/crm/localizeCrmContent";
 import type { FormState } from "../../types";
 import { BrandLogo } from "../BrandLogo";
 import { AccountTaskList } from "./AccountTaskList";
@@ -131,8 +132,10 @@ export function SignedServiceHub({ engagement, counselor, form, userEmail, onBac
         <BrandLogo />
         <div className="signed-service-hub__head-copy">
           <p className="signed-service-hub__kicker">{t("crm.serviceKicker")}</p>
-          <h1>{engagement.applicationTitle}</h1>
-          <p>{counselor.name} · {t(`crm.phase.${engagement.phase}`)}</p>
+          <h1>{localizeCrmText(engagement.applicationTitle, locale, t)}</h1>
+          <p>
+            {localizeCrmText(counselor.name, locale, t)} · {t(`crm.phase.${engagement.phase}`)}
+          </p>
         </div>
         <button type="button" className="btn btn-secondary" onClick={onBack}>
           {t("crm.signedService.backToAccount")}
@@ -164,9 +167,9 @@ export function SignedServiceHub({ engagement, counselor, form, userEmail, onBac
                   {pins.map((pin) => (
                     <li key={pin.id}>
                       <span className="signed-service-hub__pin-badge">{t("crm.signedService.pin")}</span>
-                      <p>{pin.body}</p>
+                      <p>{localizeCrmText(pin.body, locale, t)}</p>
                       <span className="signed-service-hub__muted">
-                        {formatWhen(pin.createdAt, locale)} · {pin.authorLabel}
+                        {formatWhen(pin.createdAt, locale)} · {localizeCrmText(pin.authorLabel, locale, t)}
                         {pin.channel === "group" ? ` · ${t("crm.signedService.groupChat")}` : ""}
                       </span>
                     </li>
@@ -194,7 +197,11 @@ export function SignedServiceHub({ engagement, counselor, form, userEmail, onBac
               </div>
               <div>
                 <h2>{t("crm.signedService.nextMeeting")}</h2>
-                <p>{engagement.nextMeetingLabel || t("crm.signedService.noMeetingScheduled")}</p>
+                <p>
+                  {engagement.nextMeetingLabel
+                    ? localizeCrmText(engagement.nextMeetingLabel, locale, t)
+                    : t("crm.signedService.noMeetingScheduled")}
+                </p>
                 <button type="button" className="btn btn-primary" onClick={bookMeeting}>
                   {isCalendlyBookingEnabled(counselor.calendlyUrl) ? t("crm.bookMeeting") : t("crm.bookMeetingFallback")}
                 </button>
@@ -239,7 +246,7 @@ export function SignedServiceHub({ engagement, counselor, form, userEmail, onBac
                 <tbody>
                   {documents.map((doc) => (
                     <tr key={doc.id}>
-                      <td>{doc.name}</td>
+                      <td>{localizeCrmText(doc.name, locale, t)}</td>
                       <td>{doc.docType}</td>
                       <td>
                         <span className={`signed-service-hub__status signed-service-hub__status--${doc.status}`}>
@@ -277,7 +284,9 @@ export function SignedServiceHub({ engagement, counselor, form, userEmail, onBac
               {[...chatMessages].reverse().map((message) => (
                 <li key={message.id} className={`is-${message.authorRole}`}>
                   <div className="signed-service-hub__message-head">
-                    <span>{formatWhen(message.createdAt, locale)} · {message.authorLabel}</span>
+                    <span>
+                      {formatWhen(message.createdAt, locale)} · {localizeCrmText(message.authorLabel, locale, t)}
+                    </span>
                     <button
                       type="button"
                       className="signed-service-hub__link"
@@ -290,7 +299,7 @@ export function SignedServiceHub({ engagement, counselor, form, userEmail, onBac
                       {message.pinned ? t("crm.signedService.unpin") : t("crm.signedService.pin")}
                     </button>
                   </div>
-                  <p>{message.body}</p>
+                  <p>{localizeCrmText(message.body, locale, t)}</p>
                 </li>
               ))}
             </ul>
@@ -313,9 +322,16 @@ export function SignedServiceHub({ engagement, counselor, form, userEmail, onBac
             <h2>{t("crm.signedService.meetingsTitle")}</h2>
             <p className="signed-service-hub__muted">{t("crm.signedService.meetingsLead")}</p>
             <div className="signed-service-hub__meeting-card">
-              <p><strong>{counselor.name}</strong> · {counselor.title}</p>
+              <p>
+                <strong>{localizeCrmText(counselor.name, locale, t)}</strong> ·{" "}
+                {localizeCrmText(counselor.title, locale, t)}
+              </p>
               {engagement.nextMeetingLabel ? (
-                <p>{t("crm.nextMeeting", { when: engagement.nextMeetingLabel })}</p>
+                <p>
+                  {t("crm.nextMeeting", {
+                    when: localizeCrmText(engagement.nextMeetingLabel, locale, t),
+                  })}
+                </p>
               ) : null}
               <button type="button" className="btn btn-primary" onClick={bookMeeting}>
                 {isCalendlyBookingEnabled(counselor.calendlyUrl) ? t("crm.bookMeeting") : t("crm.bookMeetingFallback")}
@@ -331,7 +347,7 @@ export function SignedServiceHub({ engagement, counselor, form, userEmail, onBac
             <ul className="signed-service-hub__files">
               {files.map((file) => (
                 <li key={file.id}>
-                  <strong>{file.name}</strong>
+                  <strong>{localizeCrmText(file.name, locale, t)}</strong>
                   <span>{file.category} · {formatWhen(file.uploadedAt, locale)}</span>
                 </li>
               ))}

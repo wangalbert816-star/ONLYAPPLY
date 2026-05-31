@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useLanguage } from "../../i18n/LanguageContext";
 import type { CrmTask, CrmTaskLinkType } from "../../lib/crm/types";
+import { localizeCrmText } from "../../lib/crm/localizeCrmContent";
 import "./AccountTaskList.css";
 
 type Props = {
@@ -18,7 +19,7 @@ export function AccountTaskList({
   variant = "card",
   maxCollapsed = 3,
 }: Props) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [showAll, setShowAll] = useState(false);
 
   const openTasks = tasks.filter((task) => task.status === "open");
@@ -53,7 +54,7 @@ export function AccountTaskList({
                   checked={task.status === "done"}
                   onChange={(e) => onToggleTask(task.id, e.target.checked)}
                 />
-                <span>{task.title}</span>
+                <span>{localizeCrmText(task.title, locale, t)}</span>
               </label>
               <div className="account-task-list__meta">
                 {task.dueAt ? <span>{t("crm.due", { date: task.dueAt })}</span> : null}

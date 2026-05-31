@@ -1,6 +1,7 @@
 import { useLanguage } from "../../i18n/LanguageContext";
 import type { CrmCounselor, CrmEngagement } from "../../lib/crm/types";
 import { countOpenTasks, countUnreadCounselorMessages } from "../../lib/crm/store";
+import { localizeCrmText } from "../../lib/crm/localizeCrmContent";
 import "./SignedServiceEntryCard.css";
 
 type Props = {
@@ -10,7 +11,7 @@ type Props = {
 };
 
 export function SignedServiceEntryCard({ engagement, counselor, onOpen }: Props) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const openTasks = countOpenTasks(engagement.id);
   const unread = countUnreadCounselorMessages(engagement.id);
 
@@ -27,9 +28,10 @@ export function SignedServiceEntryCard({ engagement, counselor, onOpen }: Props)
 
       <div className="signed-service-entry__meta">
         <p>
-          <strong>{counselor.name}</strong> · {counselor.title}
+          <strong>{localizeCrmText(counselor.name, locale, t)}</strong> ·{" "}
+          {localizeCrmText(counselor.title, locale, t)}
         </p>
-        {engagement.planLabel ? <p>{engagement.planLabel}</p> : null}
+        {engagement.planLabel ? <p>{localizeCrmText(engagement.planLabel, locale, t)}</p> : null}
         <p>
           {t("crm.signedService.entryStats", { tasks: openTasks, unread })}
         </p>

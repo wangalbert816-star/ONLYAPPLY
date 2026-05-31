@@ -36,6 +36,7 @@ import {
   subscribeCrmStore,
 } from "../../lib/crm/store";
 import type { CrmTaskLinkType } from "../../lib/crm/types";
+import { localizeCrmText } from "../../lib/crm/localizeCrmContent";
 import { SchoolFitComparisonCard } from "./SchoolFitComparisonCard";
 import "./AccountHome.css";
 
@@ -687,7 +688,9 @@ export function AccountHome({
           <div className="account-hero__head">
             <div>
               <p className="account-hero__kicker">{t("auth.accountStatusKicker")}</p>
-              <h2 id="account-status-title">{currentApp?.title ?? t("auth.accountNoCurrentTitle")}</h2>
+              <h2 id="account-status-title">
+                {currentApp ? localizeCrmText(currentApp.title, locale, t) : t("auth.accountNoCurrentTitle")}
+              </h2>
               {currentApp && latestReport && (
                 <p className="account-hero__meta">
                   {t("auth.accountHeroUpdated", {
@@ -1191,7 +1194,7 @@ export function AccountHome({
             <li key={app.id} className="account-list__item">
               <div className="account-list__row">
                 <button type="button" className="account-list__main" onClick={() => void toggleExpand(app.id)}>
-                  <strong>{app.title}</strong>
+                  <strong>{localizeCrmText(app.title, locale, t)}</strong>
                   <span className="account-list__meta">
                     {t("auth.accountReportCount", { n: app.report_count })} · {t("auth.accountUpdated", { date: formatDate(app.updated_at) })}
                   </span>

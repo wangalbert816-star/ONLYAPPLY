@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useLanguage } from "../../i18n/LanguageContext";
 import { isCalendlyBookingEnabled, requestExpertConsult } from "../../lib/expertConsultBooking";
 import type { CrmCounselor, CrmEngagement, CrmMessage, CrmTask, CrmTaskLinkType } from "../../lib/crm/types";
+import { localizeCrmText } from "../../lib/crm/localizeCrmContent";
 import "./AccountServicePanel.css";
 
 type Props = {
@@ -106,12 +107,16 @@ export function AccountServicePanel({
             {counselor.name.slice(0, 1)}
           </div>
           <p className="account-service__label">{t("crm.myCounselor")}</p>
-          <h3>{counselor.name}</h3>
-          <p className="account-service__role">{counselor.title}</p>
+          <h3>{localizeCrmText(counselor.name, locale, t)}</h3>
+          <p className="account-service__role">{localizeCrmText(counselor.title, locale, t)}</p>
           {engagement.nextMeetingLabel && (
-            <p className="account-service__meta">{t("crm.nextMeeting", { when: engagement.nextMeetingLabel })}</p>
+            <p className="account-service__meta">
+              {t("crm.nextMeeting", { when: localizeCrmText(engagement.nextMeetingLabel, locale, t) })}
+            </p>
           )}
-          {engagement.planLabel && <p className="account-service__meta">{engagement.planLabel}</p>}
+          {engagement.planLabel && (
+            <p className="account-service__meta">{localizeCrmText(engagement.planLabel, locale, t)}</p>
+          )}
           <div className="account-service__actions">
             <button type="button" className="btn btn-secondary" onClick={() => onFocusMessages?.()}>
               {t("crm.sendMessage")}
@@ -140,7 +145,7 @@ export function AccountServicePanel({
                       checked={task.status === "done"}
                       onChange={(e) => onToggleTask(task.id, e.target.checked)}
                     />
-                    <span>{task.title}</span>
+                    <span>{localizeCrmText(task.title, locale, t)}</span>
                   </label>
                   <div className="account-service__task-meta">
                     {task.dueAt ? <span>{t("crm.due", { date: task.dueAt })}</span> : null}
@@ -174,9 +179,9 @@ export function AccountServicePanel({
             {visibleMessages.map((message) => (
               <li key={message.id} className={`account-service__event account-service__event--${message.authorRole}`}>
                 <p className="account-service__event-meta">
-                  {formatWhen(message.createdAt, locale)} · {message.authorLabel}
+                  {formatWhen(message.createdAt, locale)} · {localizeCrmText(message.authorLabel, locale, t)}
                 </p>
-                <p>{message.body}</p>
+                <p>{localizeCrmText(message.body, locale, t)}</p>
               </li>
             ))}
           </ul>
