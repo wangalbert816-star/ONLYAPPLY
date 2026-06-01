@@ -19,6 +19,7 @@ import {
   type StudentLookupResult,
 } from "../../lib/admin/crmAdminApi";
 import { localizeCrmText } from "../../lib/crm/localizeCrmContent";
+import { LanguageToggle } from "../../i18n/LanguageToggle";
 import { BrandLogo } from "../BrandLogo";
 import { AdminLibraryPanel } from "./AdminLibraryPanel";
 import "./AdminPortal.css";
@@ -41,6 +42,20 @@ function formatWhen(iso: string, locale: string) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function engagementStatusLabel(status: string, t: (key: string) => string) {
+  const key = `admin.engagements.status.${status}`;
+  const label = t(key);
+  return label === key ? status : label;
+}
+
+function AdminLangBar() {
+  return (
+    <div className="admin-portal__lang">
+      <LanguageToggle />
+    </div>
+  );
 }
 
 export function AdminPortal({ onBack }: Props) {
@@ -102,6 +117,7 @@ export function AdminPortal({ onBack }: Props) {
   if (!configured) {
     return (
       <div className="admin-portal admin-portal--center">
+        <AdminLangBar />
         <p>{t("crm.counselorAuth.notConfigured")}</p>
         <button type="button" className="btn btn-secondary" onClick={onBack}>
           {t("admin.back")}
@@ -113,6 +129,7 @@ export function AdminPortal({ onBack }: Props) {
   if (authLoading || (user && gate === "loading")) {
     return (
       <div className="admin-portal admin-portal--center">
+        <AdminLangBar />
         <p>{t("admin.loading")}</p>
       </div>
     );
@@ -131,6 +148,7 @@ export function AdminPortal({ onBack }: Props) {
           : t("admin.notConfigured");
     return (
       <div className="admin-portal admin-portal--center">
+        <AdminLangBar />
         <p>{detail}</p>
         <button type="button" className="btn btn-secondary" onClick={onBack}>
           {t("admin.back")}
@@ -142,6 +160,7 @@ export function AdminPortal({ onBack }: Props) {
   if (gate === "forbidden") {
     return (
       <div className="admin-portal admin-portal--center">
+        <AdminLangBar />
         <p>{t("admin.forbidden")}</p>
         <button type="button" className="btn btn-secondary" onClick={onBack}>
           {t("admin.back")}
@@ -169,12 +188,13 @@ export function AdminPortal({ onBack }: Props) {
       <header className="admin-portal__head">
         <BrandLogo />
         <div>
-          <p className="admin-portal__kicker">OnlyApply Admin</p>
+          <p className="admin-portal__kicker">{t("admin.kicker")}</p>
           <h1>{t("admin.title")}</h1>
           <p className="admin-portal__lead">{t("admin.lead")}</p>
           <p className="admin-portal__email">{user.email}</p>
         </div>
         <div className="admin-portal__head-actions">
+          <LanguageToggle />
           <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => void refreshAll()}>
             {t("admin.refresh")}
           </button>
@@ -250,6 +270,7 @@ function AdminSignIn({
 
   return (
     <div className="admin-portal admin-portal--center">
+      <AdminLangBar />
       <div className="admin-portal__signin">
         <h1>{t("admin.title")}</h1>
         <p>{t("admin.signInRequired")}</p>
@@ -295,7 +316,7 @@ function AdminSignIn({
               });
             }}
           >
-            Google
+            {t("auth.google")}
           </button>
           <button type="button" className="btn btn-secondary" onClick={onBack}>
             {t("admin.back")}
@@ -419,7 +440,7 @@ function AdminCounselorsPanel({
                   <th>{t("admin.counselors.name")}</th>
                   <th>{t("admin.counselors.email")}</th>
                   <th>{t("admin.counselors.title")}</th>
-                  <th>Auth</th>
+                  <th>{t("admin.counselors.colAuth")}</th>
                   <th>{t("admin.engagements.colStatus")}</th>
                   <th />
                 </tr>
@@ -679,8 +700,8 @@ function AdminEngagementsPanel({
           <label>
             {t("admin.engagements.placeholderLocale")}
             <select value={placeholderLocale} onChange={(e) => setPlaceholderLocale(e.target.value as "en" | "zh")}>
-              <option value="en">English</option>
-              <option value="zh">中文</option>
+              <option value="en">{t("lang.en")}</option>
+              <option value="zh">{t("lang.zh")}</option>
             </select>
           </label>
           <label>
@@ -768,12 +789,12 @@ function AdminEngagementsPanel({
                         >
                           {STATUSES.map((s) => (
                             <option key={s} value={s}>
-                              {s}
+                              {engagementStatusLabel(s, t)}
                             </option>
                           ))}
                         </select>
                       ) : (
-                        row.status
+                        engagementStatusLabel(row.status, t)
                       )}
                     </td>
                     <td>
@@ -799,7 +820,7 @@ function AdminEngagementsPanel({
                           <select value={editCounselorId} onChange={(e) => setEditCounselorId(e.target.value)}>
                             {allCounselors.filter((c) => c.active || c.id === row.counselorId).map((c) => (
                               <option key={c.id} value={c.id}>
-                                {c.name}
+                                {localizeCrmText(c.name, locale, t)}
                               </option>
                             ))}
                           </select>

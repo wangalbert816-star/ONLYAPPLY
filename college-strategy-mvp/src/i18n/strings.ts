@@ -554,6 +554,7 @@ merge(zhFlat, {
     accountReportBriefTitle: "简易摘要",
   },
   admin: {
+    kicker: "OnlyApply Admin",
     title: "CRM 运营后台",
     lead: "管理顾问与 Premium 学生，无需手动跑 SQL。",
     back: "返回站点",
@@ -590,6 +591,7 @@ merge(zhFlat, {
       students: "{n} 位学生",
       empty: "还没有顾问。",
       editProfile: "编辑资料",
+      colAuth: "登录账号",
     },
     engagements: {
       listTitle: "Premium 列表",
@@ -620,6 +622,11 @@ merge(zhFlat, {
       editing: "保存中…",
       openGroupChat: "Premium 群",
       closeGroupChat: "关闭",
+      status: {
+        active: "进行中",
+        paused: "已暂停",
+        completed: "已完成",
+      },
     },
     groupChat: {
       title: "Premium 群",
@@ -1895,6 +1902,7 @@ merge(enFlat, {
     accountReportBriefTitle: "Quick summary",
   },
   admin: {
+    kicker: "OnlyApply Admin",
     title: "CRM Admin",
     lead: "Manage counselors and Premium students without running SQL.",
     back: "Back to site",
@@ -1931,6 +1939,7 @@ merge(enFlat, {
       students: "{n} students",
       empty: "No counselors yet.",
       editProfile: "Edit profile",
+      colAuth: "Auth",
     },
     engagements: {
       listTitle: "Engagements",
@@ -1961,6 +1970,11 @@ merge(enFlat, {
       editing: "Saving…",
       openGroupChat: "Group chat",
       closeGroupChat: "Close",
+      status: {
+        active: "Active",
+        paused: "Paused",
+        completed: "Completed",
+      },
     },
     groupChat: {
       title: "Group chat",
