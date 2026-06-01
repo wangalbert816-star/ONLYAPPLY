@@ -79,28 +79,6 @@
   --crm-task-bg: rgba(37, 99, 235, 0.14);
 }
 
-.counselor-console__task-list li.crm-task--none,
-.counselor-console__task-list li.crm-task--profile,
-.counselor-console__task-list li.crm-task--activities,
-.counselor-console__task-list li.crm-task--essay,
-.counselor-console__task-list li.crm-task--report {
-  border-left: 3px solid var(--crm-task-accent);
-  background: var(--crm-task-bg);
-  padding: 0.55rem 0.75rem 0.55rem 0.85rem;
-}
-
-.account-task-list__items li.crm-task--none,
-.account-task-list__items li.crm-task--profile,
-.account-task-list__items li.crm-task--activities,
-.account-task-list__items li.crm-task--essay,
-.account-task-list__items li.crm-task--report {
-  border-left: 3px solid var(--crm-task-accent);
-  background: var(--crm-task-bg);
-  border-bottom: 0;
-  padding: 0.65rem 0.75rem 0.65rem 0.85rem;
-  margin-bottom: 0.15rem;
-}
-
 .account-service__task-list li.crm-task--none,
 .account-service__task-list li.crm-task--profile,
 .account-service__task-list li.crm-task--activities,

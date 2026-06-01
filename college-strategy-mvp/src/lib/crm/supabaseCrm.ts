@@ -14,7 +14,7 @@ import type {
   CrmTask,
   CrmTaskLinkType,
 } from "./types";
-import { toGoogleCopyUrl } from "./libraryLinks";
+import { parseGoogleDocsUrl, toGoogleCopyUrl, validateGoogleDocsUrl } from "./libraryLinks";
 
 type EngagementRow = {
   id: string;
@@ -196,6 +196,10 @@ function mapTask(row: Record<string, unknown>): CrmTask {
   const attachedFileIds = Array.isArray(attachedRaw)
     ? attachedRaw.map((id) => String(id))
     : undefined;
+  const submittedRaw = row.submitted_file_ids;
+  const submittedFileIds = Array.isArray(submittedRaw)
+    ? submittedRaw.map((id) => String(id))
+    : undefined;
   return {
     id: String(row.id),
     engagementId: String(row.engagement_id),
@@ -205,9 +209,76 @@ function mapTask(row: Record<string, unknown>): CrmTask {
     status: row.status as CrmTask["status"],
     linkType: row.link_type as CrmTaskLinkType,
     attachedFileIds: attachedFileIds?.length ? attachedFileIds : undefined,
+    submittedFileIds: submittedFileIds?.length ? submittedFileIds : undefined,
+    returnedAt: row.returned_at ? String(row.returned_at) : undefined,
+    returnNote: row.return_note ? String(row.return_note) : undefined,
     createdAt: String(row.created_at),
     completedAt: row.completed_at ? String(row.completed_at) : undefined,
   };
+}
+
+export async function supabaseAppendTaskSubmissionFile(taskId: string, fileId: string): Promise<void> {
+  const sb = getSupabase();
+  if (!sb) throw new Error("supabase_not_configured");
+
+  const { data: row, error: readErr } = await sb
+    .from("case_tasks")
+    .select("submitted_file_ids")
+    .eq("id", taskId)
+    .maybeSingle();
+  if (readErr) throw readErr;
+  if (!row) throw new Error("task_not_found");
+
+  const existing = Array.isArray(row.submitted_file_ids)
+    ? row.submitted_file_ids.map((id: string) => String(id))
+    : [];
+  if (existing.includes(fileId)) return;
+
+  const { error: updateErr } = await sb
+    .from("case_tasks")
+    .update({
+      submitted_file_ids: [...existing, fileId],
+      returned_at: null,
+      return_note: null,
+    })
+    .eq("id", taskId);
+  if (updateErr) {
+    const msg = (updateErr.message ?? "").toLowerCase();
+    if (msg.includes("submitted_file_ids") && msg.includes("column")) {
+      throw new Error("task_submissions_schema_missing");
+    }
+    if (msg.includes("returned_at") || msg.includes("return_note")) {
+      const { error: fallbackErr } = await sb
+        .from("case_tasks")
+        .update({ submitted_file_ids: [...existing, fileId] })
+        .eq("id", taskId);
+      if (fallbackErr) throw fallbackErr;
+      return;
+    }
+    throw updateErr;
+  }
+}
+
+export async function supabaseReturnTaskSubmission(taskId: string, note?: string): Promise<void> {
+  const sb = getSupabase();
+  if (!sb) throw new Error("supabase_not_configured");
+
+  const { error } = await sb
+    .from("case_tasks")
+    .update({
+      status: "open",
+      completed_at: null,
+      returned_at: new Date().toISOString(),
+      return_note: note?.trim() ? note.trim() : null,
+    })
+    .eq("id", taskId);
+  if (error) {
+    const msg = (error.message ?? "").toLowerCase();
+    if (msg.includes("returned_at") || msg.includes("return_note")) {
+      throw new Error("task_return_schema_missing");
+    }
+    throw error;
+  }
 }
 
 function mapDocument(row: Record<string, unknown>): CrmApplicationDocument {
@@ -245,6 +316,7 @@ function mapFile(row: Record<string, unknown>): CrmStoredFile {
     uploadedByRole: row.uploaded_by_role ? (String(row.uploaded_by_role) as CrmStoredFile["uploadedByRole"]) : undefined,
     contentType: row.content_type ? String(row.content_type) : undefined,
     sizeBytes: row.size_bytes != null ? Number(row.size_bytes) : undefined,
+    taskId: row.task_id ? String(row.task_id) : undefined,
   };
 }
 
@@ -615,11 +687,79 @@ export async function supabaseAddStoredFile(input: {
   await sb.from("engagements").update({ updated_at: now }).eq("id", input.engagementId);
 }
 
+function isMissingTaskIdColumnError(error: { message?: string; code?: string } | null): boolean {
+  const msg = (error?.message ?? "").toLowerCase();
+  return msg.includes("task_id") && (msg.includes("column") || msg.includes("schema cache"));
+}
+
+async function insertCaseFileRow(
+  sb: NonNullable<ReturnType<typeof getSupabase>>,
+  row: Record<string, unknown>,
+  taskId?: string,
+) {
+  const withTask = taskId ? { ...row, task_id: taskId } : row;
+  let result = await sb.from("case_files").insert(withTask).select("*").single();
+  if (result.error && taskId && isMissingTaskIdColumnError(result.error)) {
+    result = await sb.from("case_files").insert(row).select("*").single();
+  }
+  if (result.error) throw result.error;
+  return mapFile(result.data as Record<string, unknown>);
+}
+
+export async function supabaseSubmitCaseFileGoogleLink(input: {
+  engagementId: string;
+  url: string;
+  name?: string;
+  category: string;
+  uploadedByRole: CrmFileUploaderRole;
+  taskId?: string;
+}): Promise<CrmStoredFile> {
+  const sb = getSupabase();
+  if (!sb) throw new Error("supabase_not_configured");
+
+  const validated = validateGoogleDocsUrl(input.url);
+  if (!validated.ok) throw new Error(validated.code);
+
+  const fileId = crypto.randomUUID();
+  const now = new Date().toISOString();
+  const title = (input.name || "").trim() || defaultGoogleDocFileName(validated.url);
+
+  const stored = await insertCaseFileRow(
+    sb,
+    {
+      id: fileId,
+      engagement_id: input.engagementId,
+      name: title,
+      category: input.category.trim() || "general",
+      external_url: validated.url,
+      uploaded_by_role: input.uploadedByRole,
+      uploaded_at: now,
+    },
+    input.taskId,
+  );
+
+  await sb.from("engagements").update({ updated_at: now }).eq("id", input.engagementId);
+  return stored;
+}
+
+function defaultGoogleDocFileName(editUrl: string): string {
+  const parsed = parseGoogleDocsUrl(editUrl);
+  if (!parsed) return "Google Doc";
+  const labels: Record<string, string> = {
+    document: "Google Doc",
+    spreadsheets: "Google Sheet",
+    presentation: "Google Slides",
+    forms: "Google Form",
+  };
+  return labels[parsed.kind] ?? "Google Doc";
+}
+
 export async function supabaseUploadCaseFile(input: {
   engagementId: string;
   file: File;
   category: string;
   uploadedByRole: CrmFileUploaderRole;
+  taskId?: string;
 }): Promise<CrmStoredFile> {
   const sb = getSupabase();
   if (!sb) throw new Error("supabase_not_configured");
@@ -638,29 +778,95 @@ export async function supabaseUploadCaseFile(input: {
     throw new Error(uploadErr.message || "upload_failed");
   }
 
-  const { data, error } = await sb
-    .from("case_files")
-    .insert({
-      id: fileId,
-      engagement_id: input.engagementId,
-      name: input.file.name.trim() || safeName,
-      category: input.category.trim() || "general",
-      storage_path: storagePath,
-      uploaded_by_role: input.uploadedByRole,
-      content_type: input.file.type || null,
-      size_bytes: input.file.size,
-      uploaded_at: now,
-    })
-    .select("*")
-    .single();
-
-  if (error) {
+  try {
+    const stored = await insertCaseFileRow(
+      sb,
+      {
+        id: fileId,
+        engagement_id: input.engagementId,
+        name: input.file.name.trim() || safeName,
+        category: input.category.trim() || "general",
+        storage_path: storagePath,
+        uploaded_by_role: input.uploadedByRole,
+        content_type: input.file.type || null,
+        size_bytes: input.file.size,
+        uploaded_at: now,
+      },
+      input.taskId,
+    );
+    await sb.from("engagements").update({ updated_at: now }).eq("id", input.engagementId);
+    return stored;
+  } catch (error) {
     await sb.storage.from(CRM_FILES_BUCKET).remove([storagePath]);
     throw error;
   }
+}
 
-  await sb.from("engagements").update({ updated_at: now }).eq("id", input.engagementId);
-  return mapFile(data as Record<string, unknown>);
+export async function supabaseDeleteCaseFile(fileId: string): Promise<void> {
+  const sb = getSupabase();
+  if (!sb) throw new Error("supabase_not_configured");
+
+  const { data: file, error: fetchErr } = await sb
+    .from("case_files")
+    .select("id, engagement_id, storage_path")
+    .eq("id", fileId)
+    .maybeSingle();
+  if (fetchErr) throw fetchErr;
+  if (!file) throw new Error("file_not_found");
+
+  const engagementId = String(file.engagement_id);
+
+  const { data: tasks, error: tasksErr } = await sb
+    .from("case_tasks")
+    .select("id, attached_file_ids, submitted_file_ids")
+    .eq("engagement_id", engagementId);
+  if (tasksErr) throw tasksErr;
+
+  for (const task of tasks ?? []) {
+    const attached = Array.isArray(task.attached_file_ids)
+      ? task.attached_file_ids.map((id: string) => String(id))
+      : [];
+    const submitted = Array.isArray(task.submitted_file_ids)
+      ? task.submitted_file_ids.map((id: string) => String(id))
+      : [];
+    const nextAttached = attached.filter((id) => id !== fileId);
+    const nextSubmitted = submitted.filter((id) => id !== fileId);
+    if (nextAttached.length !== attached.length) {
+      const { error: attachedErr } = await sb
+        .from("case_tasks")
+        .update({ attached_file_ids: nextAttached })
+        .eq("id", task.id);
+      if (attachedErr) throw attachedErr;
+    }
+    if (nextSubmitted.length !== submitted.length) {
+      const { error: submittedErr } = await sb
+        .from("case_tasks")
+        .update({ submitted_file_ids: nextSubmitted })
+        .eq("id", task.id);
+      if (submittedErr) {
+        const msg = (submittedErr.message ?? "").toLowerCase();
+        if (!msg.includes("submitted_file_ids") || !msg.includes("column")) {
+          throw submittedErr;
+        }
+      }
+    }
+  }
+
+  const storagePath = file.storage_path ? String(file.storage_path) : "";
+  if (storagePath) {
+    const { error: storageErr } = await sb.storage.from(CRM_FILES_BUCKET).remove([storagePath]);
+    if (storageErr) {
+      const msg = (storageErr.message ?? "").toLowerCase();
+      if (!msg.includes("not found") && !msg.includes("object not found")) {
+        throw storageErr;
+      }
+    }
+  }
+
+  const { error: delErr } = await sb.from("case_files").delete().eq("id", fileId);
+  if (delErr) throw delErr;
+
+  await sb.from("engagements").update({ updated_at: new Date().toISOString() }).eq("id", engagementId);
 }
 
 export async function supabaseGetCaseFileDownloadUrl(fileId: string): Promise<string> {
@@ -804,19 +1010,15 @@ export function subscribeCrmRealtime(onEvent: () => void): () => void {
   const sb = getSupabase();
   if (!sb) return () => {};
 
-  const channel = sb
-    .channel(`crm-case-messages-${crypto.randomUUID()}`)
-    .on(
-      "postgres_changes",
-      { event: "INSERT", schema: "public", table: "case_messages" },
-      () => onEvent(),
-    )
-    .on(
-      "postgres_changes",
-      { event: "UPDATE", schema: "public", table: "case_messages" },
-      () => onEvent(),
-    )
-    .subscribe();
+  const tables = ["case_messages", "case_files", "case_tasks"] as const;
+  let channel = sb.channel(`crm-live-${crypto.randomUUID()}`);
+  for (const table of tables) {
+    channel = channel
+      .on("postgres_changes", { event: "INSERT", schema: "public", table }, () => onEvent())
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table }, () => onEvent())
+      .on("postgres_changes", { event: "DELETE", schema: "public", table }, () => onEvent());
+  }
+  channel.subscribe();
 
   return () => {
     void sb.removeChannel(channel);

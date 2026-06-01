@@ -1,15 +1,16 @@
 import { useMemo, useState } from "react";
 import { useLanguage } from "../../i18n/LanguageContext";
 import type { CrmStoredFile, CrmTask, CrmTaskLinkType } from "../../lib/crm/types";
-import { localizeCrmText } from "../../lib/crm/localizeCrmContent";
-import { TaskAttachmentLinks } from "./TaskAttachmentLinks";
-import { TaskTypeBadge, taskItemClass } from "./TaskTypeBadge";
+import { StudentTaskCard } from "./StudentTaskCard";
 import "./AccountTaskList.css";
 import "./crmTaskTypes.css";
 
 type Props = {
   tasks: CrmTask[];
   files?: CrmStoredFile[];
+  engagementId?: string;
+  allowSubmit?: boolean;
+  onSubmitted?: () => void;
   onToggleTask: (taskId: string, done: boolean) => void;
   onTaskNavigate: (linkType: CrmTaskLinkType) => void;
   variant?: "card" | "plain";
@@ -19,12 +20,15 @@ type Props = {
 export function AccountTaskList({
   tasks,
   files = [],
+  engagementId,
+  allowSubmit = false,
+  onSubmitted,
   onToggleTask,
   onTaskNavigate,
   variant = "card",
   maxCollapsed = 3,
 }: Props) {
-  const { t, locale } = useLanguage();
+  const { t } = useLanguage();
   const [showAll, setShowAll] = useState(false);
 
   const openTasks = tasks.filter((task) => task.status === "open");
@@ -52,33 +56,17 @@ export function AccountTaskList({
       ) : (
         <ul className="account-task-list__items">
           {visibleTasks.map((task) => (
-            <li key={task.id} className={taskItemClass(task.linkType, task.status === "done")}>
-              <label className="account-task-list__check">
-                <input
-                  type="checkbox"
-                  checked={task.status === "done"}
-                  onChange={(e) => onToggleTask(task.id, e.target.checked)}
-                />
-                <span>{localizeCrmText(task.title, locale, t)}</span>
-              </label>
-              {task.description ? (
-                <p className="account-task-list__detail">{localizeCrmText(task.description, locale, t)}</p>
-              ) : null}
-              <TaskAttachmentLinks
-                fileIds={task.attachedFileIds}
+            <li key={task.id} className="account-task-list__item">
+              <StudentTaskCard
+                task={task}
                 files={files}
-                className="account-task-list__attachments"
+                engagementId={engagementId}
+                allowSubmit={allowSubmit}
+                linkLabel={taskLinkLabel[task.linkType]}
+                onToggleDone={(done) => onToggleTask(task.id, done)}
+                onTaskNavigate={onTaskNavigate}
+                onSubmitted={onSubmitted}
               />
-              <div className="account-task-list__meta">
-                <TaskTypeBadge linkType={task.linkType} label={taskLinkLabel[task.linkType]} />
-                {task.dueAt ? <span>{t("crm.due", { date: task.dueAt })}</span> : null}
-                {task.status === "done" ? <span>{t("crm.taskDone")}</span> : null}
-                {task.linkType !== "none" && task.status === "open" ? (
-                  <button type="button" className="account-task-list__link" onClick={() => onTaskNavigate(task.linkType)}>
-                    {taskLinkLabel[task.linkType]}
-                  </button>
-                ) : null}
-              </div>
             </li>
           ))}
         </ul>

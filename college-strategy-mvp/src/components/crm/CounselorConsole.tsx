@@ -18,6 +18,8 @@ import {
   listPinnedMessages,
   listTasks,
   notifyCrmStoreChange,
+  refreshCrmCache,
+  returnTaskSubmission,
   setTaskDone,
   subscribeCrmStore,
   toggleFollowUp,
@@ -33,8 +35,8 @@ import { BrandLogo } from "../BrandLogo";
 import { CaseFilesPanel } from "./CaseFilesPanel";
 import { CounselorDocumentLibrary } from "./CounselorDocumentLibrary";
 import { LibraryItemPicker } from "./LibraryItemPicker";
-import { TaskAttachmentLinks } from "./TaskAttachmentLinks";
-import { TaskTypeBadge, taskItemClass } from "./TaskTypeBadge";
+import { CounselorTaskSubmissionsOverview } from "./CounselorTaskSubmissionsOverview";
+import { CounselorTaskCard } from "./CounselorTaskCard";
 import "./CaseFilesPanel.css";
 import "./crmTaskTypes.css";
 import "./CounselorConsole.css";
@@ -101,6 +103,12 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
   }, [refreshEngagements]);
 
   useEffect(() => subscribeCrmStore(refresh), [refresh]);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    if (tab !== "todos" && tab !== "files" && tab !== "home") return;
+    void refreshCrmCache().then(() => refresh());
+  }, [selectedId, tab, refresh]);
 
   const selected = selectedId ? getEngagementById(selectedId) : null;
   const counselor = selected ? getCounselor(selected.counselorId) : null;
@@ -292,6 +300,18 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
     }
   };
 
+  const handleReturnTask = async (taskId: string, note: string) => {
+    if (taskActionBusy) return;
+    setTaskActionBusy(true);
+    try {
+      await returnTaskSubmission(taskId, note);
+      notifyCrmStoreChange();
+      refresh();
+    } finally {
+      setTaskActionBusy(false);
+    }
+  };
+
   const submitDocument = () => {
     if (!selected) return;
     const name = docNameDraft.trim();
@@ -454,15 +474,19 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                         ) : (
                           <ul className="counselor-console__task-list">
                             {tasks.slice(0, 3).map((task) => (
-                              <li key={task.id} className={taskItemClass(task.linkType, task.status === "done")}>
-                                <div className="counselor-console__task-head">
-                                  <strong>{task.title}</strong>
-                                  <TaskTypeBadge linkType={task.linkType} label={t(`crm.taskLink.${task.linkType}`)} />
-                                </div>
-                                <span>
-                                  {task.status === "done" ? t("crm.taskDone") : t("crm.console.taskOpen")}
-                                  {task.dueAt ? ` · ${task.dueAt}` : ""}
-                                </span>
+                              <li key={task.id} className="counselor-console__task-list-item">
+                                <CounselorTaskCard
+                                  task={task}
+                                  files={files}
+                                  compact
+                                  onToggleDone={(done) => {
+                                    setTaskDone(task.id, done);
+                                    notifyCrmStoreChange();
+                                    refresh();
+                                  }}
+                                  onEdit={() => setTab("todos")}
+                                  onDelete={() => void removeTask(task.id)}
+                                />
                               </li>
                             ))}
                           </ul>
@@ -487,7 +511,7 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                     <h2>{t("crm.console.studentTasks")}</h2>
                     <ul className="counselor-console__task-list">
                       {tasks.map((task) => (
-                        <li key={task.id} className={taskItemClass(task.linkType, task.status === "done")}>
+                        <li key={task.id} className="counselor-console__task-list-item">
                           {editingTaskId === task.id ? (
                             <div className="counselor-console__task-edit">
                               <label>
@@ -550,49 +574,19 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                               </div>
                             </div>
                           ) : (
-                            <>
-                              <label className="counselor-console__task-check">
-                                <input
-                                  type="checkbox"
-                                  checked={task.status === "done"}
-                                  disabled={taskActionBusy}
-                                  onChange={(e) => {
-                                    setTaskDone(task.id, e.target.checked);
-                                    notifyCrmStoreChange();
-                                    refresh();
-                                  }}
-                                />
-                                <strong>{task.title}</strong>
-                                {task.description ? (
-                                  <p className="counselor-console__task-detail">{task.description}</p>
-                                ) : null}
-                                <TaskAttachmentLinks fileIds={task.attachedFileIds} files={files} />
-                              </label>
-                              <span>
-                                <TaskTypeBadge linkType={task.linkType} label={t(`crm.taskLink.${task.linkType}`)} />
-                                {" · "}
-                                {task.status === "done" ? t("crm.taskDone") : t("crm.console.taskOpen")}
-                                {task.dueAt ? ` · ${t("crm.due", { date: task.dueAt })}` : ""}
-                              </span>
-                              <div className="counselor-console__task-actions">
-                                <button
-                                  type="button"
-                                  className="btn btn-secondary"
-                                  disabled={taskActionBusy}
-                                  onClick={() => startEditTask(task)}
-                                >
-                                  {t("crm.console.editTask")}
-                                </button>
-                                <button
-                                  type="button"
-                                  className="btn btn-secondary"
-                                  disabled={taskActionBusy}
-                                  onClick={() => void removeTask(task.id)}
-                                >
-                                  {t("crm.console.deleteTask")}
-                                </button>
-                              </div>
-                            </>
+                            <CounselorTaskCard
+                              task={task}
+                              files={files}
+                              busy={taskActionBusy}
+                              onToggleDone={(done) => {
+                                setTaskDone(task.id, done);
+                                notifyCrmStoreChange();
+                                refresh();
+                              }}
+                              onEdit={() => startEditTask(task)}
+                              onDelete={() => void removeTask(task.id)}
+                              onReturn={(note) => handleReturnTask(task.id, note)}
+                            />
                           )}
                         </li>
                       ))}
@@ -799,6 +793,7 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                 {tab === "files" && selected ? (
                   <section className="signed-service-hub__panel">
                     <h2>{t("crm.signedService.filesTitle")}</h2>
+                    <CounselorTaskSubmissionsOverview tasks={tasks} files={files} />
                     <CounselorDocumentLibrary
                       engagementId={selected.id}
                       onAttached={() => {

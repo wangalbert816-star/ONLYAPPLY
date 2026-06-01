@@ -32,11 +32,18 @@ export function parseGoogleDocsUrl(raw: string): { fileId: string; kind: GoogleD
   return null;
 }
 
+/** Canonical https edit link for Docs / Sheets / Slides / Forms. */
+export function normalizeGoogleDocsEditUrl(raw: string): string | null {
+  const parsed = parseGoogleDocsUrl(raw);
+  if (!parsed) return null;
+  return `https://docs.google.com/${parsed.kind}/d/${parsed.fileId}/edit`;
+}
+
 /** Normalize a Google Sheets share URL to a canonical https edit link. */
 export function normalizeGoogleSheetUrl(raw: string): string | null {
   const parsed = parseGoogleDocsUrl(raw);
   if (!parsed || parsed.kind !== "spreadsheets") return null;
-  return `https://docs.google.com/spreadsheets/d/${parsed.fileId}/edit`;
+  return normalizeGoogleDocsEditUrl(raw);
 }
 
 export function validateGoogleSheetUrl(raw: string): { ok: true; url: string } | { ok: false; code: "library_sheet_url_invalid" } {
@@ -59,4 +66,32 @@ export function isGoogleDocsUrl(raw: string | undefined | null): boolean {
 
 export function openGoogleLibraryLink(raw: string): void {
   window.open(toGoogleCopyUrl(raw), "_blank", "noopener,noreferrer");
+}
+
+export function validateGoogleDocsUrl(
+  raw: string,
+): { ok: true; url: string } | { ok: false; code: "google_doc_url_invalid" } {
+  const normalized = normalizeGoogleDocsEditUrl(raw);
+  if (!normalized) return { ok: false, code: "google_doc_url_invalid" };
+  return { ok: true, url: normalized };
+}
+
+/** Open a case-file Google link: templates use /copy; student submissions use /edit. */
+export function openCaseFileExternalUrl(raw: string): void {
+  const trimmed = raw.trim();
+  if (!isGoogleDocsUrl(trimmed)) {
+    window.open(trimmed, "_blank", "noopener,noreferrer");
+    return;
+  }
+  if (trimmed.includes("/copy")) {
+    window.open(toGoogleCopyUrl(trimmed), "_blank", "noopener,noreferrer");
+    return;
+  }
+  const edit = normalizeGoogleDocsEditUrl(trimmed);
+  window.open(edit ?? trimmed, "_blank", "noopener,noreferrer");
+}
+
+export function isGoogleCopyUrl(raw: string | undefined | null): boolean {
+  if (!raw) return false;
+  return isGoogleDocsUrl(raw) && raw.includes("/copy");
 }

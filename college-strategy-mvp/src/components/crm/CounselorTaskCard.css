@@ -1,0 +1,229 @@
+.counselor-task-card {
+  --task-accent: #64748b;
+  --task-bg: rgba(100, 116, 139, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 12px;
+  background: #fff;
+  padding: 0.85rem 0.95rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.counselor-task-card.crm-task--profile {
+  --task-accent: #0d9488;
+  --task-bg: rgba(13, 148, 136, 0.06);
+}
+
+.counselor-task-card.crm-task--activities {
+  --task-accent: #d97706;
+  --task-bg: rgba(217, 119, 6, 0.06);
+}
+
+.counselor-task-card.crm-task--essay {
+  --task-accent: #7c3aed;
+  --task-bg: rgba(124, 58, 237, 0.06);
+}
+
+.counselor-task-card.crm-task--report {
+  --task-accent: #2563eb;
+  --task-bg: rgba(37, 99, 235, 0.06);
+}
+
+.counselor-task-card.crm-task--none {
+  --task-accent: #64748b;
+  --task-bg: rgba(100, 116, 139, 0.05);
+}
+
+.counselor-task-card.is-done {
+  opacity: 0.92;
+}
+
+.counselor-task-card__header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.65rem;
+  align-items: start;
+}
+
+.counselor-task-card__check {
+  display: flex;
+  padding-top: 0.2rem;
+  cursor: pointer;
+}
+
+.counselor-task-card__check input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--task-accent, #006644);
+}
+
+.counselor-task-card__head-main {
+  min-width: 0;
+}
+
+.counselor-task-card__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #0f172a;
+}
+
+.counselor-task-card.is-done .counselor-task-card__title {
+  color: #64748b;
+  text-decoration: line-through;
+}
+
+.counselor-task-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.counselor-task-card__status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.counselor-task-card__status--done {
+  color: #047857;
+}
+
+.counselor-task-card__due {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.counselor-task-card__turned-in-pill {
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #047857;
+  background: rgba(4, 120, 87, 0.12);
+}
+
+.counselor-task-card__returned-pill {
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #b45309;
+  background: rgba(180, 83, 9, 0.14);
+}
+
+.counselor-task-card__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+
+.counselor-task-card__toolbar .btn-sm {
+  padding: 0.28rem 0.55rem;
+  font-size: 0.78rem;
+}
+
+.counselor-task-card__detail {
+  margin: 0.65rem 0 0;
+  padding-left: 1.65rem;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: #475569;
+  white-space: pre-wrap;
+}
+
+.counselor-task-card__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.counselor-task-card__grid--single {
+  grid-template-columns: 1fr;
+}
+
+.counselor-task-card__section {
+  min-width: 0;
+  padding: 0.65rem 0.7rem;
+  border-radius: 8px;
+  background: var(--task-bg);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.counselor-task-card__section--submission {
+  background: rgba(4, 120, 87, 0.05);
+  border-color: rgba(4, 120, 87, 0.18);
+}
+
+.counselor-task-card__section-title {
+  margin: 0 0 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.counselor-task-card__section--submission .counselor-task-card__section-title {
+  color: #047857;
+}
+
+.counselor-task-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.counselor-task-card__empty {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.counselor-task-card--compact .counselor-task-card__grid {
+  margin-top: 0.55rem;
+  padding-top: 0.55rem;
+}
+
+.counselor-task-card--compact .counselor-task-card__detail {
+  display: none;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 720px) {
+  .counselor-task-card__header {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .counselor-task-card__toolbar {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    padding-left: 1.65rem;
+  }
+
+  .counselor-task-card__grid {
+    grid-template-columns: 1fr;
+  }
+}

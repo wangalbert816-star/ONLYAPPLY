@@ -295,10 +295,13 @@
   gap: 0.65rem;
 }
 
-.counselor-console__timeline li,
-.counselor-console__task-list li {
+.counselor-console__timeline li {
   border-left: 3px solid #cbd5e1;
   padding-left: 0.75rem;
+}
+
+.counselor-console__task-list-item {
+  list-style: none;
 }
 
 .counselor-console__timeline li.is-counselor {
@@ -321,41 +324,6 @@
   margin: 0 0 0.15rem;
   font-size: 0.74rem;
   color: #64748b;
-}
-
-.counselor-console__task-list li.is-done strong {
-  color: #64748b;
-  text-decoration: line-through;
-}
-
-.counselor-console__task-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.45rem 0.65rem;
-}
-
-.counselor-console__task-list li span {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.35rem;
-  margin-top: 0.15rem;
-}
-
-.counselor-console__task-detail {
-  margin: 0.35rem 0 0;
-  font-size: 0.84rem;
-  font-weight: 400;
-  color: #475569;
-  white-space: pre-wrap;
-}
-
-.counselor-console__task-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  margin-top: 0.55rem;
 }
 
 .counselor-console__task-edit {

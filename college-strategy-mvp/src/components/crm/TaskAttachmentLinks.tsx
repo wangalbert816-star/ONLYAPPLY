@@ -1,15 +1,17 @@
 import { useLanguage } from "../../i18n/LanguageContext";
-import { isGoogleDocsUrl, openGoogleLibraryLink } from "../../lib/crm/libraryLinks";
+import { isGoogleCopyUrl, openCaseFileExternalUrl } from "../../lib/crm/libraryLinks";
 import { getCaseFileDownloadUrl } from "../../lib/crm/store";
 import type { CrmStoredFile } from "../../lib/crm/types";
+import "./taskFileChip.css";
 
 type Props = {
   fileIds?: string[];
   files: CrmStoredFile[];
   className?: string;
+  linkVariant?: "link" | "chip";
 };
 
-export function TaskAttachmentLinks({ fileIds, files, className }: Props) {
+export function TaskAttachmentLinks({ fileIds, files, className, linkVariant = "link" }: Props) {
   const { t } = useLanguage();
   if (!fileIds?.length) return null;
 
@@ -21,11 +23,7 @@ export function TaskAttachmentLinks({ fileIds, files, className }: Props) {
 
   const openFile = async (file: CrmStoredFile) => {
     if (file.externalUrl) {
-      if (isGoogleDocsUrl(file.externalUrl)) {
-        openGoogleLibraryLink(file.externalUrl);
-      } else {
-        window.open(file.externalUrl, "_blank", "noopener,noreferrer");
-      }
+      openCaseFileExternalUrl(file.externalUrl);
       return;
     }
     try {
@@ -40,10 +38,19 @@ export function TaskAttachmentLinks({ fileIds, files, className }: Props) {
     <ul className={className ?? "task-attachment-links"}>
       {attached.map((file) => (
         <li key={file.id}>
-          <button type="button" className="signed-service-hub__link" onClick={() => void openFile(file)}>
-            {file.externalUrl
-              ? t("crm.taskAttachments.openCopy", { name: file.name })
-              : t("crm.taskAttachments.download", { name: file.name })}
+          <button
+            type="button"
+            className={linkVariant === "chip" ? "task-file-chip" : "signed-service-hub__link"}
+            onClick={() => void openFile(file)}
+            title={file.name}
+          >
+            {linkVariant === "chip"
+              ? file.name
+              : file.externalUrl
+                ? isGoogleCopyUrl(file.externalUrl)
+                  ? t("crm.taskAttachments.openCopy", { name: file.name })
+                  : t("crm.taskAttachments.openGoogleDoc", { name: file.name })
+                : t("crm.taskAttachments.download", { name: file.name })}
           </button>
         </li>
       ))}

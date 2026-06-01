@@ -6,6 +6,8 @@ import {
   supabaseAddDocument,
   supabaseAddMessage,
   supabaseAddStoredFile,
+  supabaseAppendTaskSubmissionFile,
+  supabaseReturnTaskSubmission,
   supabaseAddTask,
   supabaseAttachLibraryItemToCase,
   supabaseCreateDemoEngagement,
@@ -13,6 +15,7 @@ import {
   supabaseListLibraryItems,
   supabaseMarkMessagesReadByStudent,
   supabaseSetTaskDone,
+  supabaseDeleteCaseFile,
   supabaseDeleteTask,
   supabaseUpdateTask,
   supabaseToggleFollowUp,
@@ -20,6 +23,7 @@ import {
   supabaseUpdateDocumentStatus,
   supabaseUpdateInternalNotes,
   supabaseUpdateNextMeetingLabel,
+  supabaseSubmitCaseFileGoogleLink,
   supabaseUploadCaseFile,
   subscribeCrmRealtime,
 } from "./supabaseCrm";
@@ -516,6 +520,7 @@ export async function uploadCaseFile(input: {
   file: File;
   category: string;
   uploadedByRole: CrmFileUploaderRole;
+  taskId?: string;
 }): Promise<CrmStoredFile> {
   if (crmBackend === "supabase") {
     const stored = await supabaseUploadCaseFile(input);
@@ -531,6 +536,98 @@ export async function uploadCaseFile(input: {
     sizeBytes: input.file.size,
     contentType: input.file.type || undefined,
   });
+}
+
+export async function submitCaseFileGoogleLink(input: {
+  engagementId: string;
+  url: string;
+  name?: string;
+  category: string;
+  uploadedByRole: CrmFileUploaderRole;
+  taskId?: string;
+}): Promise<CrmStoredFile> {
+  if (crmBackend === "supabase") {
+    const stored = await supabaseSubmitCaseFileGoogleLink(input);
+    await persistRefresh();
+    notifyCrmStoreChange();
+    return stored;
+  }
+  throw new Error("google_link_unavailable");
+}
+
+const TASK_SUBMISSION_CATEGORY = "task-submission";
+
+export async function submitTaskGoogleLink(input: {
+  taskId: string;
+  engagementId: string;
+  url: string;
+  name?: string;
+}): Promise<CrmStoredFile> {
+  if (crmBackend === "supabase") {
+    const stored = await supabaseSubmitCaseFileGoogleLink({
+      engagementId: input.engagementId,
+      url: input.url,
+      name: input.name,
+      category: TASK_SUBMISSION_CATEGORY,
+      uploadedByRole: "student",
+      taskId: input.taskId,
+    });
+    await supabaseAppendTaskSubmissionFile(input.taskId, stored.id);
+    await supabaseSetTaskDone(input.taskId, true);
+    await persistRefresh();
+    notifyCrmStoreChange();
+    return stored;
+  }
+  throw new Error("google_link_unavailable");
+}
+
+export async function submitTaskFile(input: {
+  taskId: string;
+  engagementId: string;
+  file: File;
+}): Promise<CrmStoredFile> {
+  if (crmBackend === "supabase") {
+    const stored = await supabaseUploadCaseFile({
+      engagementId: input.engagementId,
+      file: input.file,
+      category: TASK_SUBMISSION_CATEGORY,
+      uploadedByRole: "student",
+      taskId: input.taskId,
+    });
+    await supabaseAppendTaskSubmissionFile(input.taskId, stored.id);
+    await supabaseSetTaskDone(input.taskId, true);
+    await persistRefresh();
+    notifyCrmStoreChange();
+    return stored;
+  }
+  throw new Error("task_submit_unavailable");
+}
+
+export async function deleteCaseFile(fileId: string): Promise<void> {
+  if (crmBackend === "supabase") {
+    await supabaseDeleteCaseFile(fileId);
+    await persistRefresh();
+    notifyCrmStoreChange();
+    return;
+  }
+  const store = readStore();
+  const file = store.files.find((f) => f.id === fileId);
+  if (!file) return;
+  for (const task of store.tasks) {
+    if (task.attachedFileIds?.length) {
+      task.attachedFileIds = task.attachedFileIds.filter((id) => id !== fileId);
+      if (!task.attachedFileIds.length) task.attachedFileIds = undefined;
+    }
+    if (task.submittedFileIds?.length) {
+      task.submittedFileIds = task.submittedFileIds.filter((id) => id !== fileId);
+      if (!task.submittedFileIds.length) task.submittedFileIds = undefined;
+    }
+  }
+  store.files = store.files.filter((f) => f.id !== fileId);
+  const engagement = store.engagements.find((e) => e.id === file.engagementId);
+  if (engagement) engagement.updatedAt = nowIso();
+  writeStore(store);
+  notifyCrmStoreChange();
 }
 
 export async function getCaseFileDownloadUrl(fileId: string): Promise<string> {
@@ -771,6 +868,27 @@ export async function assignTask(input: {
   writeStore(store);
   notifyCrmStoreChange();
   return task;
+}
+
+export async function returnTaskSubmission(taskId: string, note?: string): Promise<void> {
+  if (crmBackend === "supabase") {
+    await supabaseReturnTaskSubmission(taskId, note);
+    await persistRefresh();
+    notifyCrmStoreChange();
+    return;
+  }
+  const store = readStore();
+  const task = store.tasks.find((t) => t.id === taskId);
+  if (!task) throw new Error("task_not_found");
+  const now = nowIso();
+  task.status = "open";
+  task.completedAt = undefined;
+  task.returnedAt = now;
+  task.returnNote = note?.trim() ? note.trim() : undefined;
+  const engagement = store.engagements.find((e) => e.id === task.engagementId);
+  if (engagement) engagement.updatedAt = now;
+  writeStore(store);
+  notifyCrmStoreChange();
 }
 
 export function setTaskDone(taskId: string, done: boolean): void {

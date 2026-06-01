@@ -5,6 +5,100 @@
   gap: 0.75rem;
 }
 
+.case-files-panel__row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  flex-shrink: 0;
+}
+
+.case-files-panel__delete {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #b91c1c;
+  cursor: pointer;
+}
+
+.case-files-panel__delete:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.case-files-panel__delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.case-files-panel__submit-card,
+.case-files-panel__google {
+  display: grid;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+  padding: 1rem 1.05rem;
+  border: 1px solid rgba(0, 102, 68, 0.22);
+  border-radius: 0.65rem;
+  background: rgba(0, 102, 68, 0.04);
+}
+
+.case-files-panel__submit-title {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #0f172a;
+}
+
+.case-files-panel__submit-btn {
+  justify-self: start;
+  margin-top: 0.15rem;
+}
+
+.case-files-panel__field {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: #334155;
+}
+
+.case-files-panel__field input:not([type="file"]) {
+  width: 100%;
+  padding: 0.5rem 0.55rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.45rem;
+  background: #fff;
+  font-size: 0.88rem;
+  box-sizing: border-box;
+}
+
+.case-files-panel__hint {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.case-files-panel__hint--warn {
+  color: #b45309;
+}
+
+.case-files-panel__list-title {
+  margin: 0.5rem 0 0.65rem;
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+.case-files-panel__google-lead {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.case-files-panel__google input[type="url"],
+.case-files-panel__google input:not([type="file"]) {
+  width: 100%;
+}
+
 .case-files-panel__upload {
   display: grid;
   gap: 0.5rem;
@@ -35,8 +129,19 @@
   color: #475569;
 }
 
-.case-files-panel__file-label input[type="file"] {
+.case-files-panel__file-label input[type="file"],
+.case-files-panel__file-input {
   width: 100%;
+  padding: 0.5rem 0.55rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.45rem;
+  background: #fff;
+  font-size: 0.88rem;
+  box-sizing: border-box;
+}
+
+.case-files-panel__file-field {
+  margin: 0;
 }
 
 .signed-service-hub__files-empty {

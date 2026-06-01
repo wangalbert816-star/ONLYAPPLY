@@ -64,6 +64,7 @@ export type CrmStoredFile = {
   note?: string;
   storagePath?: string;
   externalUrl?: string;
+  taskId?: string;
   uploadedByRole?: CrmFileUploaderRole;
   contentType?: string;
   sizeBytes?: number;
@@ -100,6 +101,9 @@ export type CrmTask = {
   status: "open" | "done";
   linkType: CrmTaskLinkType;
   attachedFileIds?: string[];
+  submittedFileIds?: string[];
+  returnedAt?: string;
+  returnNote?: string;
   createdAt: string;
   completedAt?: string;
 };

@@ -163,12 +163,18 @@ export function SignedServiceHub({ engagement, counselor, form, userEmail, onBac
                 <AccountTaskList
                   tasks={tasks.slice(0, 3)}
                   files={files}
+                  engagementId={engagement.id}
+                  allowSubmit
+                  onSubmitted={() => {
+                    notifyCrmStoreChange();
+                    refresh();
+                  }}
                   onToggleTask={(taskId, done) => {
                     setTaskDone(taskId, done);
                     notifyCrmStoreChange();
                     refresh();
                   }}
-                  onTaskNavigate={() => setTab("student")}
+                  onTaskNavigate={() => setTab("todos")}
                   variant="card"
                   maxCollapsed={3}
                 />
@@ -197,6 +203,12 @@ export function SignedServiceHub({ engagement, counselor, form, userEmail, onBac
             <AccountTaskList
               tasks={tasks}
               files={files}
+              engagementId={engagement.id}
+              allowSubmit
+              onSubmitted={() => {
+                notifyCrmStoreChange();
+                refresh();
+              }}
               onToggleTask={(taskId, done) => {
                 setTaskDone(taskId, done);
                 notifyCrmStoreChange();

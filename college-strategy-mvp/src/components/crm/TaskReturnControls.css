@@ -1,0 +1,71 @@
+.task-return {
+  margin-top: 0.55rem;
+  padding-top: 0.55rem;
+  border-top: 1px dashed rgba(148, 163, 184, 0.35);
+}
+
+.task-return__title {
+  margin: 0 0 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.task-return__field {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: #475569;
+}
+
+.task-return__field textarea {
+  width: 100%;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.84rem;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.task-return__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+}
+
+.task-return__actions .btn-sm {
+  padding: 0.28rem 0.55rem;
+  font-size: 0.78rem;
+}
+
+.task-return__error {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: #b91c1c;
+}
+
+.task-return__returned {
+  margin-top: 0.55rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  background: rgba(180, 83, 9, 0.08);
+  border: 1px solid rgba(180, 83, 9, 0.22);
+}
+
+.task-return__returned-label {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #b45309;
+}
+
+.task-return__returned-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #78350f;
+  white-space: pre-wrap;
+}
