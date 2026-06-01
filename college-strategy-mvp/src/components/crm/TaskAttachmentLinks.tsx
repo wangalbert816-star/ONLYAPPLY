@@ -1,4 +1,5 @@
 import { useLanguage } from "../../i18n/LanguageContext";
+import { isGoogleDocsUrl, openGoogleLibraryLink } from "../../lib/crm/libraryLinks";
 import { getCaseFileDownloadUrl } from "../../lib/crm/store";
 import type { CrmStoredFile } from "../../lib/crm/types";
 
@@ -20,7 +21,11 @@ export function TaskAttachmentLinks({ fileIds, files, className }: Props) {
 
   const openFile = async (file: CrmStoredFile) => {
     if (file.externalUrl) {
-      window.open(file.externalUrl, "_blank", "noopener,noreferrer");
+      if (isGoogleDocsUrl(file.externalUrl)) {
+        openGoogleLibraryLink(file.externalUrl);
+      } else {
+        window.open(file.externalUrl, "_blank", "noopener,noreferrer");
+      }
       return;
     }
     try {
@@ -37,7 +42,7 @@ export function TaskAttachmentLinks({ fileIds, files, className }: Props) {
         <li key={file.id}>
           <button type="button" className="signed-service-hub__link" onClick={() => void openFile(file)}>
             {file.externalUrl
-              ? t("crm.taskAttachments.openLink", { name: file.name })
+              ? t("crm.taskAttachments.openCopy", { name: file.name })
               : t("crm.taskAttachments.download", { name: file.name })}
           </button>
         </li>

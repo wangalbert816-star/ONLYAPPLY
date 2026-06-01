@@ -813,6 +813,7 @@ merge(zhFlat, {
       empty: "还没有文件。",
       download: "下载",
       openLink: "打开链接",
+      openCopy: "创建副本",
       kindLink: "Google Sheet",
       uploading: "上传中…",
       selected: "已选：{name}（{size}）",
@@ -843,6 +844,8 @@ merge(zhFlat, {
       empty: "资料库还没有可用文件。",
       attach: "添加到 Case",
       attaching: "添加中…",
+      makeCopy: "创建副本",
+      copyLead: "Google 模板会以「创建副本」方式打开，副本保存在您自己的 Google Drive，不会修改原件。模板需设为「知道链接的任何人 · 查看者」。",
       attachSuccess: "已添加：{name}",
       attachFailed: "无法添加该资料，请稍后重试。",
       loadFailed: "无法加载资料库。",
@@ -862,6 +865,7 @@ merge(zhFlat, {
     taskAttachments: {
       download: "下载 {name}",
       openLink: "打开 {name}",
+      openCopy: "创建副本 · {name}",
     },
     console: {
       demoBadge: "本地 CRM 演示",
@@ -2150,6 +2154,7 @@ merge(enFlat, {
       empty: "No files yet.",
       download: "Download",
       openLink: "Open link",
+      openCopy: "Make a copy",
       kindLink: "Google Sheet",
       uploading: "Uploading…",
       selected: "Selected: {name} ({size})",
@@ -2180,6 +2185,8 @@ merge(enFlat, {
       empty: "No library items available yet.",
       attach: "Add to case",
       attaching: "Adding…",
+      makeCopy: "Make a copy",
+      copyLead: "Google templates open with “Make a copy” so each person gets their own file in Google Drive. Set templates to “Anyone with the link · Viewer”.",
       attachSuccess: "Added: {name}",
       attachFailed: "Could not add this item. Try again.",
       loadFailed: "Could not load the document library.",
@@ -2199,6 +2206,7 @@ merge(enFlat, {
     taskAttachments: {
       download: "Download {name}",
       openLink: "Open {name}",
+      openCopy: "Make a copy · {name}",
     },
     console: {
       demoBadge: "Local CRM MVP",

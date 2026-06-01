@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useLanguage } from "../../i18n/LanguageContext";
 import { localizeCrmText } from "../../lib/crm/localizeCrmContent";
+import { isGoogleDocsUrl, openGoogleLibraryLink } from "../../lib/crm/libraryLinks";
 import { getCaseFileDownloadUrl, getCrmBackend, uploadCaseFile } from "../../lib/crm/store";
 import type { CrmFileUploaderRole, CrmStoredFile } from "../../lib/crm/types";
 
@@ -86,7 +87,11 @@ export function CaseFilesPanel({ engagementId, uploadedByRole, files, defaultCat
 
   const openFile = async (file: CrmStoredFile) => {
     if (file.externalUrl) {
-      window.open(file.externalUrl, "_blank", "noopener,noreferrer");
+      if (isGoogleDocsUrl(file.externalUrl)) {
+        openGoogleLibraryLink(file.externalUrl);
+      } else {
+        window.open(file.externalUrl, "_blank", "noopener,noreferrer");
+      }
       return;
     }
     if (!file.storagePath) return;
@@ -113,7 +118,7 @@ export function CaseFilesPanel({ engagementId, uploadedByRole, files, defaultCat
                 <strong>{localizeCrmText(file.name, locale, t)}</strong>
                 {file.externalUrl || file.storagePath ? (
                   <button type="button" className="signed-service-hub__link" onClick={() => void openFile(file)}>
-                    {file.externalUrl ? t("crm.files.openLink") : t("crm.files.download")}
+                    {file.externalUrl ? t("crm.files.openCopy") : t("crm.files.download")}
                   </button>
                 ) : null}
               </div>

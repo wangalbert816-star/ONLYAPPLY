@@ -14,6 +14,7 @@ import type {
   CrmTask,
   CrmTaskLinkType,
 } from "./types";
+import { toGoogleCopyUrl } from "./libraryLinks";
 
 type EngagementRow = {
   id: string;
@@ -710,8 +711,9 @@ export async function supabaseAttachLibraryItemToCase(input: {
 
   const itemKind = String(item.item_kind || "file");
   if (itemKind === "link") {
-    const externalUrl = item.external_url ? String(item.external_url) : "";
-    if (!externalUrl) throw new Error("library_link_missing");
+    const templateUrl = item.external_url ? String(item.external_url) : "";
+    if (!templateUrl) throw new Error("library_link_missing");
+    const externalUrl = toGoogleCopyUrl(templateUrl);
 
     const fileId = crypto.randomUUID();
     const now = new Date().toISOString();

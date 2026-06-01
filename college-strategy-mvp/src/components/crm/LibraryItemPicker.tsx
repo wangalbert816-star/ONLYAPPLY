@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../../i18n/LanguageContext";
 import { attachLibraryItemToCase, getCrmBackend, listLibraryItems } from "../../lib/crm/store";
+import { openGoogleLibraryLink } from "../../lib/crm/libraryLinks";
 import type { CrmLibraryItem } from "../../lib/crm/types";
 
 function formatBytes(bytes: number | undefined) {
@@ -90,6 +91,11 @@ export function LibraryItemPicker(props: Props) {
     [items, locale],
   );
 
+  const hasLinkItems = useMemo(
+    () => visibleItems.some((item) => item.itemKind === "link" && item.externalUrl),
+    [visibleItems],
+  );
+
   const toggleSelect = (itemId: string) => {
     if (props.mode !== "select" || props.disabled) return;
     const next = props.selectedIds.includes(itemId)
@@ -134,6 +140,9 @@ export function LibraryItemPicker(props: Props) {
           <p className="signed-service-hub__muted">
             {props.mode === "select" ? t("crm.library.taskAttachLead") : t("crm.library.lead")}
           </p>
+          {props.mode === "attach" && hasLinkItems ? (
+            <p className="signed-service-hub__muted">{t("crm.library.copyLead")}</p>
+          ) : null}
         </>
       ) : null}
       {loading ? <p className="signed-service-hub__muted">{t("crm.library.loading")}</p> : null}
@@ -161,7 +170,7 @@ export function LibraryItemPicker(props: Props) {
                   </span>
                 </label>
               ) : (
-                <div className="library-item-picker__row">
+                  <div className="library-item-picker__row">
                   <div className="library-item-picker__body">
                     <span className="library-item-picker__title">{item.title}</span>
                     {shouldShowDescription(item) ? (
@@ -169,14 +178,25 @@ export function LibraryItemPicker(props: Props) {
                     ) : null}
                     <span className="library-item-picker__meta">{itemMetaLine(item, t)}</span>
                   </div>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    disabled={busyId === item.id}
-                    onClick={() => void attach(item)}
-                  >
-                    {busyId === item.id ? t("crm.library.attaching") : t("crm.library.attach")}
-                  </button>
+                  <div className="library-item-picker__actions">
+                    {item.itemKind === "link" && item.externalUrl ? (
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => openGoogleLibraryLink(item.externalUrl!)}
+                      >
+                        {t("crm.library.makeCopy")}
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      disabled={busyId === item.id}
+                      onClick={() => void attach(item)}
+                    >
+                      {busyId === item.id ? t("crm.library.attaching") : t("crm.library.attach")}
+                    </button>
+                  </div>
                 </div>
               )}
             </li>
