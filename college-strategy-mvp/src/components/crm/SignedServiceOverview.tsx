@@ -1,5 +1,4 @@
 import { useLanguage } from "../../i18n/LanguageContext";
-import { isCalendlyBookingEnabled } from "../../lib/expertConsultBooking";
 import { localizeCrmText } from "../../lib/crm/localizeCrmContent";
 import { countOpenTasks, getCounselor } from "../../lib/crm/store";
 import type { CrmCounselor, CrmEngagement, CrmMeetingRecap, CrmMessage, CrmStoredFile, CrmTask } from "../../lib/crm/types";
@@ -20,7 +19,7 @@ type Props = {
   onTabChange: (tab: TabId) => void;
   onToggleTask: (taskId: string, done: boolean) => void;
   onSubmitted: () => void;
-  onBookMeeting: () => void;
+  onJoinMeeting?: () => void;
   onOpenActionItems?: () => void;
   formatWhen: (iso: string) => string;
   studentDisplayName?: string;
@@ -37,7 +36,7 @@ export function SignedServiceOverview({
   onTabChange,
   onToggleTask,
   onSubmitted,
-  onBookMeeting,
+  onJoinMeeting,
   onOpenActionItems,
   formatWhen,
   studentDisplayName,
@@ -51,7 +50,7 @@ export function SignedServiceOverview({
   const meetingLabel = engagement.nextMeetingLabel
     ? localizeCrmText(engagement.nextMeetingLabel, locale, t)
     : t("crm.signedService.noMeetingScheduled");
-  const calendlyEnabled = isCalendlyBookingEnabled(counselor.calendlyUrl);
+  const meetingJoinUrl = engagement.meetingJoinUrl?.trim() || "";
 
   return (
     <div className="hub-overview">
@@ -130,9 +129,25 @@ export function SignedServiceOverview({
           <section className="hub-overview__card hub-overview__card--meeting">
             <p className="hub-overview__eyebrow">{t("crm.signedService.nextMeeting")}</p>
             <p className="hub-overview__meeting-when">{meetingLabel}</p>
-            <button type="button" className="btn btn-primary hub-overview__meeting-btn" onClick={onBookMeeting}>
-              {calendlyEnabled ? t("crm.bookMeeting") : t("crm.bookMeetingFallback")}
-            </button>
+            {meetingJoinUrl ? (
+              <>
+                <a
+                  className="hub-overview__meeting-link"
+                  href={meetingJoinUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {meetingJoinUrl}
+                </a>
+                {onJoinMeeting ? (
+                  <button type="button" className="btn btn-primary hub-overview__meeting-btn" onClick={onJoinMeeting}>
+                    {t("crm.meetings.joinMeeting")}
+                  </button>
+                ) : null}
+              </>
+            ) : (
+              <p className="signed-service-hub__muted">{t("crm.meetings.noSharedLinkYet")}</p>
+            )}
           </section>
 
           <section className="hub-overview__card hub-overview__card--recaps">

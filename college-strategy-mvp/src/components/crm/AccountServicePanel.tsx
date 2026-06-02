@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { useLanguage } from "../../i18n/LanguageContext";
-import { isCalendlyBookingEnabled, requestExpertConsult } from "../../lib/expertConsultBooking";
 import type { CrmCounselor, CrmEngagement, CrmMessage, CrmTask, CrmTaskLinkType } from "../../lib/crm/types";
 import { localizeCrmText } from "../../lib/crm/localizeCrmContent";
 import { isTaskAction, isTaskResource } from "../../lib/crm/taskItemKind";
@@ -44,7 +43,6 @@ export function AccountServicePanel({
   counselor,
   messages,
   tasks,
-  userEmail,
   onSendMessage,
   onToggleTask,
   onTaskNavigate,
@@ -60,7 +58,7 @@ export function AccountServicePanel({
   const visibleTasks = showAllTasks ? tasks : tasks.slice(0, 3);
   const visibleMessages = showAllUpdates ? messages : messages.slice(0, 3);
   const unread = messages.filter((m) => m.authorRole === "counselor" && !m.readByStudent).length;
-  const calendlyEnabled = isCalendlyBookingEnabled(counselor.calendlyUrl);
+  const meetingJoinUrl = engagement.meetingJoinUrl?.trim() || "";
   const counselorNames = (engagement.counselorIds ?? [engagement.counselorId])
     .map((id) => getCounselor(id))
     .filter(Boolean)
@@ -78,13 +76,9 @@ export function AccountServicePanel({
     [t],
   );
 
-  const bookMeeting = () => {
-    requestExpertConsult({
-      url: counselor.calendlyUrl ?? null,
-      email: userEmail,
-      source: "crm_service_panel",
-      onFallback: () => onFocusMessages?.(),
-    });
+  const joinMeeting = () => {
+    if (!meetingJoinUrl) return;
+    window.open(meetingJoinUrl, "_blank", "noopener,noreferrer");
   };
 
   const submitMessage = () => {
@@ -135,9 +129,11 @@ export function AccountServicePanel({
               {t("crm.sendMessage")}
               {unread > 0 ? <span className="account-service__badge">{unread}</span> : null}
             </button>
-            <button type="button" className="btn btn-primary" onClick={bookMeeting}>
-              {calendlyEnabled ? t("crm.bookMeeting") : t("crm.bookMeetingFallback")}
-            </button>
+            {meetingJoinUrl ? (
+              <button type="button" className="btn btn-primary" onClick={joinMeeting}>
+                {t("crm.meetings.joinMeeting")}
+              </button>
+            ) : null}
           </div>
         </article>
 

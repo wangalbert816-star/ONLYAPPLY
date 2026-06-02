@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../../i18n/LanguageContext";
 import { buildApplicationInfoRows } from "../../lib/applicationInfoRows";
 import { localizeCrmText } from "../../lib/crm/localizeCrmContent";
-import { requestExpertConsult } from "../../lib/expertConsultBooking";
 import {
   addMessage,
   countUnreadCounselorMessages,
@@ -122,13 +121,10 @@ export function SignedServiceHub({ engagement, counselor, form, studentUserId, u
     refresh();
   };
 
-  const bookMeeting = () => {
-    requestExpertConsult({
-      url: counselor.calendlyUrl ?? null,
-      email: userEmail,
-      source: "signed_service_hub",
-      onFallback: () => setTab("chat"),
-    });
+  const joinMeeting = () => {
+    const url = engagement.meetingJoinUrl?.trim();
+    if (!url) return;
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const docStatusLabel = (status: string) => {
@@ -199,7 +195,7 @@ export function SignedServiceHub({ engagement, counselor, form, studentUserId, u
               notifyCrmStoreChange();
               refresh();
             }}
-            onBookMeeting={bookMeeting}
+            onJoinMeeting={engagement.meetingJoinUrl ? joinMeeting : undefined}
             onOpenActionItems={() => setTab("todos")}
             formatWhen={(iso) => formatWhen(iso, locale)}
           />
@@ -328,7 +324,7 @@ export function SignedServiceHub({ engagement, counselor, form, studentUserId, u
               counselor={counselor}
               recaps={meetingRecaps}
               studentDisplayName={studentDisplayName}
-              onBookMeeting={bookMeeting}
+              onJoinMeeting={engagement.meetingJoinUrl ? joinMeeting : undefined}
               onOpenActionItems={() => setTab("todos")}
             />
           </section>

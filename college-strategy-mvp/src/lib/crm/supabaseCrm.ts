@@ -1,5 +1,6 @@
 import { apiUrl } from "../apiBase";
 import { getSupabase, isSupabaseConfigured } from "../supabase/client";
+import { normalizeMeetingUrl } from "./meetingBooking";
 import type {
   CrmApplicationDocument,
   CrmCounselor,
@@ -33,6 +34,7 @@ type EngagementRow = {
   needs_follow_up: boolean;
   internal_notes: string;
   next_meeting_label: string | null;
+  meeting_join_url: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -45,6 +47,7 @@ type CounselorRow = {
   bio: string | null;
   email: string | null;
   calendly_url: string | null;
+  meeting_url: string | null;
 };
 
 function mapCounselor(row: CounselorRow): CrmCounselor {
@@ -55,7 +58,38 @@ function mapCounselor(row: CounselorRow): CrmCounselor {
     bio: row.bio ?? undefined,
     email: row.email ?? undefined,
     calendlyUrl: row.calendly_url ?? undefined,
+    meetingUrl: row.meeting_url ?? undefined,
   };
+}
+
+export async function supabaseUpdateOwnCounselorBooking(input: {
+  calendlyUrl?: string;
+  meetingUrl?: string;
+}): Promise<void> {
+  const sb = getSupabase();
+  if (!sb) throw new Error("supabase_not_configured");
+
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) throw new Error("auth_required");
+
+  const profile = await fetchCounselorByUserId(user.id);
+  if (!profile) throw new Error("counselor_not_found");
+
+  const patch: Record<string, string | null> = {};
+  if (input.calendlyUrl !== undefined) {
+    const normalized = input.calendlyUrl.trim();
+    patch.calendly_url = normalized || null;
+  }
+  if (input.meetingUrl !== undefined) {
+    patch.meeting_url = normalizeMeetingUrl(input.meetingUrl);
+  }
+
+  if (Object.keys(patch).length === 0) return;
+
+  const { error } = await sb.from("counselors").update(patch).eq("id", profile.id);
+  if (error) throw error;
 }
 
 function mapEngagement(row: EngagementRow, counselorIdsByEngagementId?: Map<string, string[]>): CrmEngagement {
@@ -78,6 +112,7 @@ function mapEngagement(row: EngagementRow, counselorIdsByEngagementId?: Map<stri
     needsFollowUp: row.needs_follow_up,
     internalNotes: row.internal_notes,
     nextMeetingLabel: row.next_meeting_label ?? undefined,
+    meetingJoinUrl: row.meeting_join_url ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -107,7 +142,7 @@ export async function fetchCounselorByUserId(userId: string): Promise<CrmCounsel
   if (!sb) return null;
   const { data, error } = await sb
     .from("counselors")
-    .select("id, user_id, name, title, bio, email, calendly_url")
+    .select("id, user_id, name, title, bio, email, calendly_url, meeting_url")
     .eq("user_id", userId)
     .eq("active", true)
     .maybeSingle();
@@ -125,7 +160,7 @@ export async function fetchCounselorByUserId(userId: string): Promise<CrmCounsel
 
   const { data: byEmail, error: emailErr } = await sb
     .from("counselors")
-    .select("id, user_id, name, title, bio, email, calendly_url")
+    .select("id, user_id, name, title, bio, email, calendly_url, meeting_url")
     .ilike("email", email)
     .eq("active", true);
   if (emailErr) {
@@ -257,7 +292,7 @@ async function loadSnapshotForEngagements(
   const counselorIds = [...allCounselorIds].filter(Boolean);
 
   const [counselorRes, messagesRes, tasksRes, documentsRes, filesRes, recapsRes] = await Promise.all([
-    sb.from("counselors").select("id, user_id, name, title, bio, email, calendly_url").in("id", counselorIds),
+    sb.from("counselors").select("id, user_id, name, title, bio, email, calendly_url, meeting_url").in("id", counselorIds),
     sb.from("case_messages").select("*").in("engagement_id", engagementIds),
     sb.from("case_tasks").select("*").in("engagement_id", engagementIds),
     sb.from("case_documents").select("*").in("engagement_id", engagementIds),
@@ -489,7 +524,7 @@ export async function supabaseCreateDemoEngagement(input: {
 
   const { data: counselorRow, error: counselorErr } = await sb
     .from("counselors")
-    .select("id, user_id, name, title, bio, email, calendly_url")
+    .select("id, user_id, name, title, bio, email, calendly_url, meeting_url")
     .eq("active", true)
     .order("created_at", { ascending: true })
     .limit(1)
@@ -1115,6 +1150,18 @@ export async function supabaseUpdateNextMeetingLabel(engagementId: string, label
     .from("engagements")
     .update({
       next_meeting_label: label.trim() || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", engagementId);
+}
+
+export async function supabaseUpdateMeetingJoinUrl(engagementId: string, url: string | null): Promise<void> {
+  const sb = getSupabase();
+  if (!sb) return;
+  await sb
+    .from("engagements")
+    .update({
+      meeting_join_url: url,
       updated_at: new Date().toISOString(),
     })
     .eq("id", engagementId);

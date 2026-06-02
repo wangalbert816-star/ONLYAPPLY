@@ -1,7 +1,6 @@
 import { useLanguage } from "../../i18n/LanguageContext";
 import type { CrmMeetingRecapDraft } from "../../lib/crm/meetingRecapFormat";
 import { localizeCrmText } from "../../lib/crm/localizeCrmContent";
-import { isCalendlyBookingEnabled } from "../../lib/expertConsultBooking";
 import type { CrmCounselor, CrmEngagement, CrmMeetingRecap } from "../../lib/crm/types";
 import { MeetingRecapsPanel } from "./MeetingRecapsPanel";
 import "./MeetingsTabPanel.css";
@@ -13,16 +12,25 @@ type Props = {
   studentDisplayName?: string;
   canEditRecaps?: boolean;
   recapBusy?: boolean;
-  onBookMeeting: () => void;
   onOpenActionItems?: () => void;
   onAddRecap?: (input: CrmMeetingRecapDraft) => Promise<void>;
   onDeleteRecap?: (recapId: string) => Promise<void>;
+  /** Counselor console: edit next-meeting label */
   meetingLabelDraft?: string;
   onMeetingLabelDraftChange?: (value: string) => void;
   onSaveMeetingLabel?: () => void;
   showMeetingLabelEditor?: boolean;
-  bookButtonLabel?: string;
-  bookingCalendlyUrl?: string | null;
+  /** Counselor: save Google Meet link on own profile */
+  showMeetingUrlEditor?: boolean;
+  meetingUrlDraft?: string;
+  onMeetingUrlDraftChange?: (value: string) => void;
+  onSaveMeetingUrl?: () => void;
+  meetingUrlSaveBusy?: boolean;
+  /** Counselor: push link to this student */
+  onShareMeetingLink?: () => void;
+  canShareMeetingLink?: boolean;
+  /** Student: open shared join link */
+  onJoinMeeting?: () => void;
 };
 
 export function MeetingsTabPanel({
@@ -32,7 +40,6 @@ export function MeetingsTabPanel({
   studentDisplayName,
   canEditRecaps = false,
   recapBusy = false,
-  onBookMeeting,
   onOpenActionItems,
   onAddRecap,
   onDeleteRecap,
@@ -40,14 +47,21 @@ export function MeetingsTabPanel({
   onMeetingLabelDraftChange,
   onSaveMeetingLabel,
   showMeetingLabelEditor = false,
-  bookButtonLabel,
-  bookingCalendlyUrl,
+  showMeetingUrlEditor = false,
+  meetingUrlDraft,
+  onMeetingUrlDraftChange,
+  onSaveMeetingUrl,
+  meetingUrlSaveBusy = false,
+  onShareMeetingLink,
+  canShareMeetingLink = false,
+  onJoinMeeting,
 }: Props) {
   const { t, locale } = useLanguage();
   const meetingLabel = engagement.nextMeetingLabel
     ? localizeCrmText(engagement.nextMeetingLabel, locale, t)
     : t("crm.signedService.noMeetingScheduled");
-  const calendlyEnabled = isCalendlyBookingEnabled(bookingCalendlyUrl ?? counselor.calendlyUrl);
+  const sharedUrl = engagement.meetingJoinUrl?.trim() || "";
+  const isCounselorView = Boolean(onShareMeetingLink || showMeetingUrlEditor);
 
   return (
     <>
@@ -60,11 +74,64 @@ export function MeetingsTabPanel({
           <span className="meetings-tab__next-label">{t("crm.signedService.nextMeeting")}</span>
           <span className="meetings-tab__next-value">{meetingLabel}</span>
         </p>
-        <button type="button" className="btn btn-primary" onClick={onBookMeeting}>
-          {bookButtonLabel ??
-            (calendlyEnabled ? t("crm.bookMeeting") : t("crm.bookMeetingFallback"))}
-        </button>
+
+        {sharedUrl ? (
+          <div className="meetings-tab__join">
+            <p className="meetings-tab__join-label">{t("crm.meetings.sharedLinkLabel")}</p>
+            <a
+              className="meetings-tab__join-url"
+              href={sharedUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {sharedUrl}
+            </a>
+            {onJoinMeeting ? (
+              <button type="button" className="btn btn-primary" onClick={onJoinMeeting}>
+                {t("crm.meetings.joinMeeting")}
+              </button>
+            ) : null}
+            {isCounselorView ? (
+              <p className="meetings-tab__join-hint">{t("crm.console.meetingLinkSharedHint")}</p>
+            ) : null}
+          </div>
+        ) : !isCounselorView ? (
+          <p className="meetings-tab__join-empty">{t("crm.meetings.noSharedLinkYet")}</p>
+        ) : null}
+
+        {onShareMeetingLink ? (
+          <button
+            type="button"
+            className="btn btn-primary meetings-tab__share-btn"
+            onClick={onShareMeetingLink}
+            disabled={!canShareMeetingLink}
+          >
+            {t("crm.console.sendMeetingLink")}
+          </button>
+        ) : null}
       </div>
+
+      {showMeetingUrlEditor && onMeetingUrlDraftChange && onSaveMeetingUrl ? (
+        <div className="counselor-console__inline-form meetings-tab__meeting-url-form">
+          <p className="meetings-tab__booking-links-title">{t("crm.console.myMeetingLink")}</p>
+          <label>
+            <span>{t("crm.console.meetingUrl")}</span>
+            <input
+              value={meetingUrlDraft ?? ""}
+              onChange={(e) => onMeetingUrlDraftChange(e.target.value)}
+              placeholder={t("crm.console.meetingUrlPlaceholder")}
+            />
+          </label>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={meetingUrlSaveBusy}
+            onClick={onSaveMeetingUrl}
+          >
+            {t("crm.console.saveMeetingUrl")}
+          </button>
+        </div>
+      ) : null}
 
       {showMeetingLabelEditor && onMeetingLabelDraftChange && onSaveMeetingLabel ? (
         <div className="counselor-console__inline-form meetings-tab__label-form">

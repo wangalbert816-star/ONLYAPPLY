@@ -12,6 +12,8 @@ export type CrmCounselor = {
   bio?: string;
   email?: string;
   calendlyUrl?: string;
+  /** Google Meet / Zoom / other persistent meeting room link */
+  meetingUrl?: string;
 };
 
 export type CrmEngagement = {
@@ -29,6 +31,8 @@ export type CrmEngagement = {
   needsFollowUp: boolean;
   internalNotes: string;
   nextMeetingLabel?: string;
+  /** Meet link shared with this student (set when counselor sends meeting link). */
+  meetingJoinUrl?: string;
   createdAt: string;
   updatedAt: string;
 };

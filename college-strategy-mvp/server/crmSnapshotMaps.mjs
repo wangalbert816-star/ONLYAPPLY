@@ -8,6 +8,7 @@ export function mapCounselor(row) {
     bio: row.bio ?? undefined,
     email: row.email ?? undefined,
     calendlyUrl: row.calendly_url ?? undefined,
+    meetingUrl: row.meeting_url ?? undefined,
   };
 }
 
@@ -31,6 +32,7 @@ export function mapEngagement(row, counselorIdsByEngagementId) {
     needsFollowUp: row.needs_follow_up,
     internalNotes: row.internal_notes,
     nextMeetingLabel: row.next_meeting_label ?? undefined,
+    meetingJoinUrl: row.meeting_join_url ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -147,7 +149,7 @@ export async function loadCrmSnapshotForEngagementRows(admin, engagementRows) {
   const counselorIds = [...allCounselorIds].filter(Boolean);
 
   const [counselorRes, messagesRes, tasksRes, documentsRes, filesRes, recapsRes] = await Promise.all([
-    admin.from("counselors").select("id, user_id, name, title, bio, email, calendly_url").in("id", counselorIds),
+    admin.from("counselors").select("id, user_id, name, title, bio, email, calendly_url, meeting_url").in("id", counselorIds),
     admin.from("case_messages").select("*").in("engagement_id", engagementIds),
     admin.from("case_tasks").select("*").in("engagement_id", engagementIds),
     admin.from("case_documents").select("*").in("engagement_id", engagementIds),

@@ -14,7 +14,7 @@ function bearerToken(req) {
 export async function resolveCounselorForAuthUser(admin, user) {
   if (!user?.id) return null;
 
-  const selectCols = "id, user_id, name, title, bio, email, calendly_url, active";
+  const selectCols = "id, user_id, name, title, bio, email, calendly_url, meeting_url, active";
 
   const { data: byUser, error: userErr } = await admin
     .from("counselors")
@@ -83,7 +83,7 @@ export async function loadCounselorCrmSnapshot(admin, counselorId) {
   if (engagementIds.length === 0) {
     const { data: counselorRow, error: cErr } = await admin
       .from("counselors")
-      .select("id, user_id, name, title, bio, email, calendly_url")
+      .select("id, user_id, name, title, bio, email, calendly_url, meeting_url")
       .eq("id", counselorId)
       .maybeSingle();
     if (cErr) throw cErr;
@@ -112,7 +112,7 @@ export async function loadCounselorCrmSnapshot(admin, counselorId) {
   if (!snapshot.counselors.some((c) => c.id === counselorId)) {
     const { data: counselorRow, error: cErr } = await admin
       .from("counselors")
-      .select("id, user_id, name, title, bio, email, calendly_url")
+      .select("id, user_id, name, title, bio, email, calendly_url, meeting_url")
       .eq("id", counselorId)
       .maybeSingle();
     if (cErr) throw cErr;

@@ -26,8 +26,10 @@ import {
   supabaseUpdateDocumentStatus,
   supabaseUpdateInternalNotes,
   supabaseUpdateNextMeetingLabel,
+  supabaseUpdateMeetingJoinUrl,
   supabaseSubmitCaseFileGoogleLink,
   supabaseUploadCaseFile,
+  supabaseUpdateOwnCounselorBooking,
   subscribeCrmRealtime,
 } from "./supabaseCrm";
 import type {
@@ -47,7 +49,7 @@ import type {
   CrmTaskItemKind,
   CrmTaskLinkType,
 } from "./types";
-import { getCalendlyBookingUrl } from "../expertConsultBooking";
+import { normalizeMeetingUrl, resolveBookingLinkForEngagement } from "./meetingBooking";
 import { isTaskAction } from "./taskItemKind";
 import type { CrmMeetingRecapDraft } from "./meetingRecapFormat";
 import { serializeMeetingRecapBody } from "./meetingRecapFormat";
@@ -378,24 +380,42 @@ export function getActingCounselorForEngagement(engagement: CrmEngagement): CrmC
   return getCounselor(engagement.counselorId) ?? acting;
 }
 
-/** Calendly for this case: acting counselor → primary → any teammate → site default. */
 export function resolveCalendlyUrlForEngagement(
   engagement: CrmEngagement,
   acting?: CrmCounselor | null,
 ): string | null {
-  const fromActing = getCalendlyBookingUrl(acting?.calendlyUrl);
-  if (fromActing) return fromActing;
+  const link = resolveBookingLinkForEngagement(engagement, acting, getCounselor);
+  return link?.kind === "calendly" ? link.url : null;
+}
 
-  const fromPrimary = getCalendlyBookingUrl(getCounselor(engagement.counselorId)?.calendlyUrl);
-  if (fromPrimary) return fromPrimary;
+export function resolveBookingLinkForEngagementFromStore(
+  engagement: CrmEngagement,
+  acting?: CrmCounselor | null,
+) {
+  return resolveBookingLinkForEngagement(engagement, acting, getCounselor);
+}
 
-  const teamIds = engagement.counselorIds?.length ? engagement.counselorIds : [engagement.counselorId];
-  for (const id of teamIds) {
-    const url = getCalendlyBookingUrl(getCounselor(id)?.calendlyUrl);
-    if (url) return url;
+export function shareMeetingLinkWithStudent(engagementId: string, rawUrl: string): void {
+  const url = normalizeMeetingUrl(rawUrl);
+  if (!url) return;
+  patchEngagementMeetingJoinUrlLocal(engagementId, url);
+  if (crmBackend === "supabase") {
+    afterMutation(() => supabaseUpdateMeetingJoinUrl(engagementId, url));
+    return;
   }
+}
 
-  return getCalendlyBookingUrl(null);
+export async function updateOwnCounselorMeetingUrl(meetingUrl: string): Promise<void> {
+  await supabaseUpdateOwnCounselorBooking({ meetingUrl });
+  await persistRefresh();
+}
+
+export async function updateOwnCounselorBooking(input: {
+  calendlyUrl?: string;
+  meetingUrl?: string;
+}): Promise<void> {
+  await supabaseUpdateOwnCounselorBooking(input);
+  await persistRefresh();
 }
 
 export function listEngagements(): CrmEngagement[] {
@@ -804,6 +824,17 @@ export function updateNextMeetingLabel(engagementId: string, label: string): voi
   const engagement = store.engagements.find((e) => e.id === engagementId);
   if (!engagement) return;
   engagement.nextMeetingLabel = label.trim() || undefined;
+  engagement.updatedAt = nowIso();
+  writeStore(store);
+  notifyCrmStoreChange();
+}
+
+/** Optimistic local patch so student UI updates immediately after counselor shares link. */
+export function patchEngagementMeetingJoinUrlLocal(engagementId: string, url: string | null): void {
+  const store = readStore();
+  const engagement = store.engagements.find((e) => e.id === engagementId);
+  if (!engagement) return;
+  engagement.meetingJoinUrl = url ?? undefined;
   engagement.updatedAt = nowIso();
   writeStore(store);
   notifyCrmStoreChange();

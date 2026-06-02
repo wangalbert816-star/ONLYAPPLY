@@ -133,6 +133,7 @@ function mapCounselor(row, engagementCounts) {
     bio: row.bio,
     email: row.email,
     calendlyUrl: row.calendly_url,
+    meetingUrl: row.meeting_url ?? null,
     active: row.active,
     createdAt: row.created_at,
     studentCount: engagementCounts.get(row.id) ?? 0,
@@ -230,6 +231,7 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
     const name = String(req.body?.name ?? "").trim();
     const title = String(req.body?.title ?? "").trim();
     const calendlyUrl = String(req.body?.calendlyUrl ?? "").trim() || null;
+    const meetingUrl = String(req.body?.meetingUrl ?? "").trim() || null;
     const password = String(req.body?.password ?? "").trim();
 
     if (!email || !name || !title) {
@@ -249,6 +251,7 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
         title,
         email,
         calendly_url: calendlyUrl,
+        meeting_url: meetingUrl,
         active: true,
       };
 
@@ -310,6 +313,9 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
     if (req.body?.email != null) patch.email = String(req.body.email).trim().toLowerCase();
     if (req.body?.calendlyUrl !== undefined) {
       patch.calendly_url = String(req.body.calendlyUrl ?? "").trim() || null;
+    }
+    if (req.body?.meetingUrl !== undefined) {
+      patch.meeting_url = String(req.body.meetingUrl ?? "").trim() || null;
     }
     if (typeof req.body?.active === "boolean") patch.active = req.body.active;
     if (req.body?.linkAuth === true) {

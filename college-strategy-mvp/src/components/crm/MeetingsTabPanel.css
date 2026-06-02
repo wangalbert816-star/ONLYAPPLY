@@ -32,3 +32,54 @@
 .meetings-tab__label-form {
   margin-top: 1rem;
 }
+
+.meetings-tab__booking-links {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.meetings-tab__booking-links-title {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.meetings-tab__join {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.meetings-tab__join-label {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.meetings-tab__join-url {
+  font-size: 0.88rem;
+  word-break: break-all;
+  color: #1d4ed8;
+}
+
+.meetings-tab__join-hint,
+.meetings-tab__join-empty {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.meetings-tab__share-btn {
+  margin-top: 0.25rem;
+}
+
+.meetings-tab__meeting-url-form {
+  margin-top: 1rem;
+}

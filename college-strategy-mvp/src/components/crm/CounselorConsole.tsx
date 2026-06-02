@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../../i18n/LanguageContext";
-import { isCalendlyBookingEnabled, openCalendlyBooking } from "../../lib/expertConsultBooking";
+import { normalizeMeetingUrl } from "../../lib/crm/meetingBooking";
 import { buildApplicationInfoRows } from "../../lib/applicationInfoRows";
 import { fetchApplicationFormById } from "../../lib/supabase/accounts";
 import {
@@ -12,7 +12,8 @@ import {
   deleteTask,
   getActingCounselorForEngagement,
   getEngagementById,
-  resolveCalendlyUrlForEngagement,
+  shareMeetingLinkWithStudent,
+  updateOwnCounselorMeetingUrl,
   listDocuments,
   listEngagements,
   listFiles,
@@ -93,6 +94,8 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
   const [docDueDraft, setDocDueDraft] = useState("");
   const [meetingLabelDraft, setMeetingLabelDraft] = useState("");
   const [recapBusy, setRecapBusy] = useState(false);
+  const [meetingUrlSaveBusy, setMeetingUrlSaveBusy] = useState(false);
+  const [meetingUrlDraft, setMeetingUrlDraft] = useState("");
   const [notesDraft, setNotesDraft] = useState("");
   const [studentForm, setStudentForm] = useState<FormState | null>(null);
   const [studentFormLoading, setStudentFormLoading] = useState(false);
@@ -121,10 +124,7 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
 
   const selected = selectedId ? getEngagementById(selectedId) : null;
   const counselor = selected ? getActingCounselorForEngagement(selected) : null;
-  const meetingCalendlyUrl = useMemo(
-    () => (selected && counselor ? resolveCalendlyUrlForEngagement(selected, counselor) : null),
-    [selected, counselor],
-  );
+  const canShareMeetingLink = Boolean(normalizeMeetingUrl(counselor?.meetingUrl));
 
   const tasks = useMemo(() => (selected ? listTasks(selected.id) : []), [selected?.id, tick]);
   const documents = useMemo(() => (selected ? listDocuments(selected.id) : []), [selected?.id, tick]);
@@ -147,6 +147,11 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
   useEffect(() => {
     setTab("home");
   }, [selectedId]);
+
+  useEffect(() => {
+    if (!counselor) return;
+    setMeetingUrlDraft(counselor.meetingUrl ?? "");
+  }, [counselor?.id, counselor?.meetingUrl]);
 
   useEffect(() => {
     if (!selected) {
@@ -350,24 +355,34 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
     refresh();
   };
 
-  const openMeeting = () => {
+  const shareMeetingLink = () => {
     if (!selected || !counselor) return;
-    const url = meetingCalendlyUrl ?? resolveCalendlyUrlForEngagement(selected, counselor);
+    const url = normalizeMeetingUrl(counselor.meetingUrl);
     if (!url) {
-      window.alert(t("crm.console.noCalendly"));
+      window.alert(t("crm.console.noMeetingUrl"));
       return;
     }
-    const opened = openCalendlyBooking({ url, email: selected.studentEmail });
-    if (!opened) window.open(url, "_blank", "noopener,noreferrer");
+    shareMeetingLinkWithStudent(selected.id, url);
     addMessage({
       engagementId: selected.id,
       authorRole: "counselor",
       authorLabel: counselor.name,
-      body: t("crm.console.meetingLinkBody", { url, name: counselor.name }),
+      body: t("crm.console.meetingLinkBody", { url }),
       readByStudent: false,
     });
     notifyCrmStoreChange();
     refresh();
+  };
+
+  const saveMeetingUrl = () => {
+    setMeetingUrlSaveBusy(true);
+    void updateOwnCounselorMeetingUrl(meetingUrlDraft)
+      .then(() => {
+        notifyCrmStoreChange();
+        refresh();
+      })
+      .catch(() => window.alert(t("crm.console.saveMeetingUrlFailed")))
+      .finally(() => setMeetingUrlSaveBusy(false));
   };
 
   const saveMeetingLabel = () => {
@@ -848,7 +863,8 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                       studentDisplayName={selected.studentName || selected.studentEmail.split("@")[0]}
                       canEditRecaps
                       recapBusy={recapBusy}
-                      onBookMeeting={openMeeting}
+                      onShareMeetingLink={shareMeetingLink}
+                      canShareMeetingLink={canShareMeetingLink}
                       onOpenActionItems={() => setTab("todos")}
                       onAddRecap={addRecap}
                       onDeleteRecap={removeRecap}
@@ -856,12 +872,11 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                       onMeetingLabelDraftChange={setMeetingLabelDraft}
                       onSaveMeetingLabel={saveMeetingLabel}
                       showMeetingLabelEditor
-                      bookButtonLabel={
-                        isCalendlyBookingEnabled(meetingCalendlyUrl)
-                          ? t("crm.console.sendCalendly")
-                          : t("crm.console.noCalendly")
-                      }
-                      bookingCalendlyUrl={meetingCalendlyUrl}
+                      showMeetingUrlEditor
+                      meetingUrlDraft={meetingUrlDraft}
+                      onMeetingUrlDraftChange={setMeetingUrlDraft}
+                      onSaveMeetingUrl={saveMeetingUrl}
+                      meetingUrlSaveBusy={meetingUrlSaveBusy}
                     />
                   </section>
                 ) : null}

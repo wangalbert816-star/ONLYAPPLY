@@ -363,12 +363,14 @@ function AdminCounselorsPanel({
   const [title, setTitle] = useState("");
   const [password, setPassword] = useState("");
   const [calendlyUrl, setCalendlyUrl] = useState("");
+  const [meetingUrl, setMeetingUrl] = useState("");
   const [passwordEditId, setPasswordEditId] = useState<string | null>(null);
   const [resetPassword, setResetPassword] = useState("");
   const [profileEditId, setProfileEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editTitle, setEditTitle] = useState("");
   const [editCalendlyUrl, setEditCalendlyUrl] = useState("");
+  const [editMeetingUrl, setEditMeetingUrl] = useState("");
 
   const passwordValid = password.trim().length >= 6;
   const resetPasswordValid = resetPassword.trim().length >= 6;
@@ -381,6 +383,7 @@ function AdminCounselorsPanel({
     setEditName(c.name);
     setEditTitle(c.title);
     setEditCalendlyUrl(c.calendlyUrl ?? "");
+    setEditMeetingUrl(c.meetingUrl ?? "");
   };
 
   const cancelProfileEdit = () => {
@@ -388,6 +391,7 @@ function AdminCounselorsPanel({
     setEditName("");
     setEditTitle("");
     setEditCalendlyUrl("");
+    setEditMeetingUrl("");
   };
 
   return (
@@ -418,6 +422,14 @@ function AdminCounselorsPanel({
             <span className="admin-portal__hint">{t("admin.counselors.passwordHint")}</span>
           </label>
           <label>
+            {t("admin.counselors.meetingUrl")}
+            <input
+              value={meetingUrl}
+              onChange={(e) => setMeetingUrl(e.target.value)}
+              placeholder="https://meet.google.com/..."
+            />
+          </label>
+          <label>
             {t("admin.counselors.calendly")}
             <input value={calendlyUrl} onChange={(e) => setCalendlyUrl(e.target.value)} />
           </label>
@@ -433,12 +445,14 @@ function AdminCounselorsPanel({
                   title,
                   password: password.trim(),
                   calendlyUrl: calendlyUrl || undefined,
+                  meetingUrl: meetingUrl || undefined,
                 });
                 setEmail("");
                 setName("");
                 setTitle("");
                 setPassword("");
                 setCalendlyUrl("");
+                setMeetingUrl("");
               })
             }
           >
@@ -459,6 +473,7 @@ function AdminCounselorsPanel({
                   <th>{t("admin.counselors.name")}</th>
                   <th>{t("admin.counselors.email")}</th>
                   <th>{t("admin.counselors.title")}</th>
+                  <th>{t("admin.counselors.meetingUrlCol")}</th>
                   <th>{t("admin.counselors.calendly")}</th>
                   <th>{t("admin.counselors.colAuth")}</th>
                   <th>{t("admin.engagements.colStatus")}</th>
@@ -495,6 +510,22 @@ function AdminCounselorsPanel({
                       {profileEditId === c.id ? (
                         <input
                           className="admin-portal__table-input"
+                          value={editMeetingUrl}
+                          onChange={(e) => setEditMeetingUrl(e.target.value)}
+                          placeholder="https://meet.google.com/..."
+                        />
+                      ) : c.meetingUrl ? (
+                        <span className="admin-portal__muted" title={c.meetingUrl}>
+                          Meet ✓
+                        </span>
+                      ) : (
+                        <span className="admin-portal__muted">—</span>
+                      )}
+                    </td>
+                    <td>
+                      {profileEditId === c.id ? (
+                        <input
+                          className="admin-portal__table-input"
                           value={editCalendlyUrl}
                           onChange={(e) => setEditCalendlyUrl(e.target.value)}
                           placeholder="https://calendly.com/..."
@@ -522,6 +553,7 @@ function AdminCounselorsPanel({
                                   name: editName.trim(),
                                   title: editTitle.trim(),
                                   calendlyUrl: editCalendlyUrl.trim(),
+                                  meetingUrl: editMeetingUrl.trim(),
                                 });
                                 cancelProfileEdit();
                               })
