@@ -109,8 +109,7 @@ export async function loadCounselorCrmSnapshot(admin, counselorId) {
   if (engErr) throw engErr;
 
   const snapshot = await loadCrmSnapshotForEngagementRows(admin, engagementRows ?? []);
-  const self = snapshot.counselors.find((c) => c.id === counselorId);
-  if (!self) {
+  if (!snapshot.counselors.some((c) => c.id === counselorId)) {
     const { data: counselorRow, error: cErr } = await admin
       .from("counselors")
       .select("id, user_id, name, title, bio, email, calendly_url")
@@ -118,8 +117,6 @@ export async function loadCounselorCrmSnapshot(admin, counselorId) {
       .maybeSingle();
     if (cErr) throw cErr;
     if (counselorRow) snapshot.counselors = [mapCounselor(counselorRow), ...snapshot.counselors];
-  } else {
-    snapshot.counselors = [self];
   }
 
   return { snapshot, engagementIds };

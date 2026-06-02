@@ -10,7 +10,7 @@ import {
   assignTask,
   deleteMeetingRecap,
   deleteTask,
-  getCounselor,
+  getActingCounselorForEngagement,
   getEngagementById,
   listDocuments,
   listEngagements,
@@ -119,7 +119,7 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
   }, [selectedId, tab, refresh]);
 
   const selected = selectedId ? getEngagementById(selectedId) : null;
-  const counselor = selected ? getCounselor(selected.counselorId) : null;
+  const counselor = selected ? getActingCounselorForEngagement(selected) : null;
 
   const tasks = useMemo(() => (selected ? listTasks(selected.id) : []), [selected?.id, tick]);
   const documents = useMemo(() => (selected ? listDocuments(selected.id) : []), [selected?.id, tick]);

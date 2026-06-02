@@ -1,5 +1,6 @@
 import { getAssignedExpert } from "../assignedExpert";
 import {
+  fetchCounselorByUserId,
   fetchCrmSnapshotForCounselor,
   fetchCrmSnapshotForStudent,
   probeSupabaseCrm,
@@ -59,6 +60,7 @@ let crmBackend: CrmBackend = "local";
 let memoryCache: CrmStoreSnapshot | null = null;
 let crmUserId: string | null = null;
 let crmRole: CrmRole | null = null;
+let crmActingCounselorId: string | null = null;
 let crmInitPromise: Promise<void> | null = null;
 
 const CRM_POLL_MS = 5000;
@@ -115,6 +117,12 @@ async function persistRefresh(): Promise<void> {
     crmRole === "counselor"
       ? await fetchCrmSnapshotForCounselor(crmUserId)
       : await fetchCrmSnapshotForStudent(crmUserId);
+  if (crmRole === "counselor") {
+    const profile = await fetchCounselorByUserId(crmUserId);
+    crmActingCounselorId = profile?.id ?? null;
+  } else {
+    crmActingCounselorId = null;
+  }
   notifyCrmStoreChange();
 }
 
@@ -354,6 +362,19 @@ function seedEngagementExtras(store: CrmStoreSnapshot, engagementId: string, cou
 
 export function getCounselor(counselorId: string): CrmCounselor | null {
   return getSnapshot().counselors.find((c) => c.id === counselorId) ?? null;
+}
+
+/** Logged-in counselor (primary or collaborator) for counselor-console actions. */
+export function getActingCounselor(): CrmCounselor | null {
+  if (crmActingCounselorId) return getCounselor(crmActingCounselorId);
+  return getSnapshot().counselors[0] ?? null;
+}
+
+export function getActingCounselorForEngagement(engagement: CrmEngagement): CrmCounselor | null {
+  const teamIds = engagement.counselorIds?.length ? engagement.counselorIds : [engagement.counselorId];
+  const acting = getActingCounselor();
+  if (acting && teamIds.includes(acting.id)) return acting;
+  return getCounselor(engagement.counselorId) ?? acting;
 }
 
 export function listEngagements(): CrmEngagement[] {

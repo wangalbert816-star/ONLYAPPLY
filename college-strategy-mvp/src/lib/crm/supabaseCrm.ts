@@ -212,7 +212,9 @@ export async function fetchCrmSnapshotForCounselor(userId: string): Promise<CrmS
   if (engErr) throw engErr;
 
   const snapshot = await loadSnapshotForEngagements(sb, (engagementRows ?? []) as EngagementRow[]);
-  snapshot.counselors = [counselor];
+  if (!snapshot.counselors.some((c) => c.id === counselor.id)) {
+    snapshot.counselors = [counselor, ...snapshot.counselors];
+  }
   return snapshot;
 }
 
