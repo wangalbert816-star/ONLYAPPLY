@@ -124,7 +124,8 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
 
   const selected = selectedId ? getEngagementById(selectedId) : null;
   const counselor = selected ? getActingCounselorForEngagement(selected) : null;
-  const canShareMeetingLink = Boolean(normalizeMeetingUrl(counselor?.meetingUrl));
+  const resolvedMeetingUrl = normalizeMeetingUrl(meetingUrlDraft || counselor?.meetingUrl);
+  const canShareMeetingLink = Boolean(resolvedMeetingUrl);
 
   const tasks = useMemo(() => (selected ? listTasks(selected.id) : []), [selected?.id, tick]);
   const documents = useMemo(() => (selected ? listDocuments(selected.id) : []), [selected?.id, tick]);
@@ -357,7 +358,7 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
 
   const shareMeetingLink = () => {
     if (!selected || !counselor) return;
-    const url = normalizeMeetingUrl(counselor.meetingUrl);
+    const url = normalizeMeetingUrl(meetingUrlDraft || counselor.meetingUrl);
     if (!url) {
       window.alert(t("crm.console.noMeetingUrl"));
       return;
@@ -376,7 +377,7 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
 
   const saveMeetingUrl = () => {
     setMeetingUrlSaveBusy(true);
-    void updateOwnCounselorMeetingUrl(meetingUrlDraft)
+    void updateOwnCounselorMeetingUrl(meetingUrlDraft, selected?.id)
       .then(() => {
         notifyCrmStoreChange();
         refresh();

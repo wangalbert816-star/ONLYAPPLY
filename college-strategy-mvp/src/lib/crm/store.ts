@@ -405,9 +405,37 @@ export function shareMeetingLinkWithStudent(engagementId: string, rawUrl: string
   }
 }
 
-export async function updateOwnCounselorMeetingUrl(meetingUrl: string): Promise<void> {
-  await supabaseUpdateOwnCounselorBooking({ meetingUrl });
-  await persistRefresh();
+/** Save counselor Meet link; if this engagement already has a shared link, update it for the student too. */
+export async function updateOwnCounselorMeetingUrl(
+  meetingUrl: string,
+  syncEngagementId?: string | null,
+): Promise<void> {
+  const url = normalizeMeetingUrl(meetingUrl);
+  const engagementId = syncEngagementId?.trim() || null;
+  const hadSharedLink =
+    engagementId && Boolean(getEngagementById(engagementId)?.meetingJoinUrl?.trim());
+
+  if (hadSharedLink && engagementId && url) {
+    patchEngagementMeetingJoinUrlLocal(engagementId, url);
+  }
+
+  if (crmBackend === "supabase") {
+    await supabaseUpdateOwnCounselorBooking({ meetingUrl });
+    if (hadSharedLink && engagementId && url) {
+      await supabaseUpdateMeetingJoinUrl(engagementId, url);
+    }
+    await persistRefresh();
+    return;
+  }
+
+  const store = readStore();
+  const acting = getActingCounselor();
+  if (acting) {
+    const c = store.counselors.find((x) => x.id === acting.id);
+    if (c) c.meetingUrl = url ?? undefined;
+  }
+  writeStore(store);
+  notifyCrmStoreChange();
 }
 
 export async function updateOwnCounselorBooking(input: {

@@ -1127,7 +1127,7 @@ merge(zhFlat, {
       saveMeetingUrl: "保存会议链接",
       saveMeetingUrlFailed: "保存失败，请稍后重试。",
       sendMeetingLink: "发送会议链接给学生",
-      meetingLinkSharedHint: "学生可在 Meetings 页看到此链接。",
+      meetingLinkSharedHint: "学生可在 Meetings 页看到此链接。保存下方链接后，已发送的链接会同步更新。",
       meetingLinkBody: "会议链接：\n{url}",
       systemLabel: "系统",
       meetingLinkSent: "已发送 Meeting 预约链接。",
@@ -2701,7 +2701,8 @@ merge(enFlat, {
       saveMeetingUrl: "Save meeting link",
       saveMeetingUrlFailed: "Could not save. Please try again.",
       sendMeetingLink: "Share meeting link with student",
-      meetingLinkSharedHint: "The student can see this link on the Meetings tab.",
+      meetingLinkSharedHint:
+        "The student sees this on Meetings. Saving your link below also updates an already-shared link.",
       meetingLinkBody: "Meeting link:\n{url}",
       systemLabel: "System",
       meetingLinkSent: "Meeting booking link sent.",
