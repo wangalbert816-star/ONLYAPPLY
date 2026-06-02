@@ -192,7 +192,13 @@ export function AccountHome({
     return getEngagementForApplication(user.id, currentApp.id);
   }, [user, currentApp, crmTick]);
 
-  const counselor = useMemo(() => (engagement ? getCounselor(engagement.counselorId) : null), [engagement, crmTick]);
+  const counselor = useMemo(() => {
+    if (!engagement) return null;
+    const primary = getCounselor(engagement.counselorId);
+    if (primary) return primary;
+    const first = (engagement.counselorIds ?? []).map((id) => getCounselor(id)).find(Boolean) ?? null;
+    return first;
+  }, [engagement, crmTick]);
   const crmMessages = useMemo(() => (engagement ? listMessages(engagement.id) : []), [engagement, crmTick]);
   const crmTasks = useMemo(() => (engagement ? listTasks(engagement.id) : []), [engagement, crmTick]);
   const signedServiceEnabled = isSignedServiceEnabled();

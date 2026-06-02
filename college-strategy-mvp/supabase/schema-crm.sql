@@ -117,7 +117,7 @@ as $$
     where e.id = p_engagement_id
       and (
         e.student_user_id = auth.uid()
-        or e.counselor_id = public.crm_my_counselor_id()
+        or public.crm_counselor_can_access_engagement(public.crm_my_counselor_id(), e.id)
       )
   );
 $$;
@@ -127,7 +127,11 @@ drop policy if exists counselors_select on public.counselors;
 create policy counselors_select on public.counselors for select using (
   user_id = auth.uid()
   or id in (
-    select counselor_id from public.engagements where student_user_id = auth.uid()
+    select ec.counselor_id
+    from public.engagement_counselors ec
+    join public.engagements e on e.id = ec.engagement_id
+    where e.student_user_id = auth.uid()
+      and ec.active = true
   )
 );
 
@@ -137,7 +141,7 @@ create policy counselors_update_own on public.counselors for update using (user_
 -- engagements
 drop policy if exists engagements_select on public.engagements;
 create policy engagements_select on public.engagements for select using (
-  student_user_id = auth.uid() or counselor_id = public.crm_my_counselor_id()
+  student_user_id = auth.uid() or public.crm_counselor_can_access_engagement(public.crm_my_counselor_id(), id)
 );
 
 drop policy if exists engagements_insert_student on public.engagements;
@@ -151,7 +155,7 @@ create policy engagements_insert_student on public.engagements for insert with c
 
 drop policy if exists engagements_update on public.engagements;
 create policy engagements_update on public.engagements for update using (
-  student_user_id = auth.uid() or counselor_id = public.crm_my_counselor_id()
+  student_user_id = auth.uid() or public.crm_counselor_can_access_engagement(public.crm_my_counselor_id(), id)
 );
 
 -- case_messages

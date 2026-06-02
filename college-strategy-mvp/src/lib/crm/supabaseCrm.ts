@@ -57,7 +57,11 @@ function mapCounselor(row: CounselorRow): CrmCounselor {
   };
 }
 
-function mapEngagement(row: EngagementRow): CrmEngagement {
+function mapEngagement(row: EngagementRow, counselorIdsByEngagementId?: Map<string, string[]>): CrmEngagement {
+  const collaboratorIds = counselorIdsByEngagementId?.get(row.id) ?? [];
+  const merged = [row.counselor_id, ...collaboratorIds].filter(Boolean);
+  const uniq: string[] = [];
+  for (const id of merged) if (!uniq.includes(id)) uniq.push(id);
   return {
     id: row.id,
     studentUserId: row.student_user_id,
@@ -66,6 +70,7 @@ function mapEngagement(row: EngagementRow): CrmEngagement {
     applicationId: row.application_id,
     applicationTitle: row.application_title,
     counselorId: row.counselor_id,
+    counselorIds: uniq.length ? uniq : [row.counselor_id],
     phase: row.phase as CrmPhase,
     status: row.status as CrmEngagement["status"],
     planLabel: row.plan_label ?? undefined,
@@ -130,10 +135,23 @@ export async function fetchCrmSnapshotForCounselor(userId: string): Promise<CrmS
   const counselor = await fetchCounselorByUserId(userId);
   if (!counselor) return emptySnapshot();
 
+  const { data: collabs, error: collabErr } = await sb
+    .from("engagement_counselors")
+    .select("engagement_id")
+    .eq("counselor_id", counselor.id)
+    .eq("active", true);
+  if (collabErr) throw collabErr;
+  const engagementIds = (collabs ?? []).map((r) => r.engagement_id).filter(Boolean);
+  if (engagementIds.length === 0) {
+    const snapshot = emptySnapshot();
+    snapshot.counselors = [counselor];
+    return snapshot;
+  }
+
   const { data: engagementRows, error: engErr } = await sb
     .from("engagements")
     .select("*")
-    .eq("counselor_id", counselor.id)
+    .in("id", engagementIds)
     .order("updated_at", { ascending: false });
   if (engErr) throw engErr;
 
@@ -161,7 +179,24 @@ async function loadSnapshotForEngagements(
   if (engagementRows.length === 0) return emptySnapshot();
 
   const engagementIds = engagementRows.map((e) => e.id);
-  const counselorIds = [...new Set(engagementRows.map((e) => e.counselor_id))];
+  const { data: collabs, error: collabErr } = await sb
+    .from("engagement_counselors")
+    .select("engagement_id, counselor_id, role, active")
+    .in("engagement_id", engagementIds)
+    .eq("active", true);
+  if (collabErr) throw collabErr;
+
+  const counselorIdsByEngagementId = new Map<string, string[]>();
+  for (const row of collabs ?? []) {
+    const list = counselorIdsByEngagementId.get(String(row.engagement_id)) ?? [];
+    list.push(String(row.counselor_id));
+    counselorIdsByEngagementId.set(String(row.engagement_id), list);
+  }
+
+  const allCounselorIds = new Set<string>();
+  for (const e of engagementRows) allCounselorIds.add(e.counselor_id);
+  for (const ids of counselorIdsByEngagementId.values()) for (const id of ids) allCounselorIds.add(id);
+  const counselorIds = [...allCounselorIds].filter(Boolean);
 
   const [counselorRes, messagesRes, tasksRes, documentsRes, filesRes, recapsRes] = await Promise.all([
     sb.from("counselors").select("id, user_id, name, title, bio, email, calendly_url").in("id", counselorIds),
@@ -190,7 +225,7 @@ async function loadSnapshotForEngagements(
 
   return {
     counselors: ((counselorRes.data ?? []) as CounselorRow[]).map(mapCounselor),
-    engagements: engagementRows.map(mapEngagement),
+    engagements: engagementRows.map((row) => mapEngagement(row, counselorIdsByEngagementId)),
     messages: ((messagesRes.data ?? []) as Record<string, unknown>[]).map(mapMessage),
     tasks: ((tasksRes.data ?? []) as Record<string, unknown>[]).map(mapTask),
     documents: ((documentsRes.data ?? []) as Record<string, unknown>[]).map(mapDocument),
@@ -426,7 +461,18 @@ export async function supabaseCreateDemoEngagement(input: {
     .single();
   if (insertErr) throw insertErr;
 
-  const engagement = mapEngagement(engagementRow as EngagementRow);
+  // Backfill collaborator row for the seeded counselor in demo/dev.
+  await sb.from("engagement_counselors").upsert(
+    {
+      engagement_id: engagementRow.id,
+      counselor_id: counselor.id,
+      role: "primary",
+      active: true,
+    },
+    { onConflict: "engagement_id,counselor_id" },
+  );
+
+  const engagement = mapEngagement(engagementRow as EngagementRow, new Map([[String(engagementRow.id), [counselor.id]]])); // seed includes primary
   await seedSupabaseEngagementExtras(sb, engagement.id, counselor.name, now);
   return engagement;
 }

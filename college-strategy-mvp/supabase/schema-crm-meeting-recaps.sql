@@ -29,7 +29,7 @@ create policy case_meeting_recaps_insert on public.case_meeting_recaps
       select 1
       from public.engagements e
       where e.id = engagement_id
-        and e.counselor_id = public.crm_my_counselor_id()
+        and public.crm_counselor_can_access_engagement(public.crm_my_counselor_id(), e.id)
     )
   );
 
@@ -41,7 +41,7 @@ create policy case_meeting_recaps_update on public.case_meeting_recaps
       select 1
       from public.engagements e
       where e.id = engagement_id
-        and e.counselor_id = public.crm_my_counselor_id()
+        and public.crm_counselor_can_access_engagement(public.crm_my_counselor_id(), e.id)
     )
   );
 
@@ -53,6 +53,6 @@ create policy case_meeting_recaps_delete on public.case_meeting_recaps
       select 1
       from public.engagements e
       where e.id = engagement_id
-        and e.counselor_id = public.crm_my_counselor_id()
+        and public.crm_counselor_can_access_engagement(public.crm_my_counselor_id(), e.id)
     )
   );

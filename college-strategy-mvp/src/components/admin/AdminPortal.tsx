@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { useLanguage } from "../../i18n/LanguageContext";
 import {
@@ -630,9 +630,11 @@ function AdminEngagementsPanel({
   const [nextMeetingLabel, setNextMeetingLabel] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [editCounselorId, setEditCounselorId] = useState("");
+  const [addCollaboratorIdByEngagement, setAddCollaboratorIdByEngagement] = useState<Record<string, string>>({});
   const [editStatus, setEditStatus] = useState<(typeof STATUSES)[number]>("active");
   const [editPhase, setEditPhase] = useState<(typeof PHASES)[number]>("planning");
   const [expandedGroupChatId, setExpandedGroupChatId] = useState<string | null>(null);
+  const counselorSelectRef = useRef<HTMLSelectElement | null>(null);
 
   useEffect(() => {
     if (!counselorId && counselors[0]) setCounselorId(counselors[0].id);
@@ -779,7 +781,11 @@ function AdminEngagementsPanel({
                   <Fragment key={row.id}>
                     <tr>
                     <td>{row.studentEmail}</td>
-                    <td>{row.counselorName ?? row.counselorEmail}</td>
+                    <td>
+                      {(row.counselorNames?.length ? row.counselorNames : [row.counselorName ?? row.counselorEmail ?? ""])
+                        .filter(Boolean)
+                        .join(", ")}
+                    </td>
                     <td>{localizeCrmText(row.applicationTitle, locale, t)}</td>
                     <td>
                       {editId === row.id ? (
@@ -817,13 +823,47 @@ function AdminEngagementsPanel({
                     <td className="admin-portal__row-actions">
                       {editId === row.id ? (
                         <>
-                          <select value={editCounselorId} onChange={(e) => setEditCounselorId(e.target.value)}>
+                          <select
+                            ref={counselorSelectRef}
+                            value={editCounselorId}
+                            onChange={(e) => setEditCounselorId(e.target.value)}
+                          >
                             {allCounselors.filter((c) => c.active || c.id === row.counselorId).map((c) => (
                               <option key={c.id} value={c.id}>
                                 {localizeCrmText(c.name, locale, t)}
                               </option>
                             ))}
                           </select>
+                          <select
+                            value={addCollaboratorIdByEngagement[row.id] ?? ""}
+                            onChange={(e) =>
+                              setAddCollaboratorIdByEngagement((prev) => ({ ...prev, [row.id]: e.target.value }))
+                            }
+                          >
+                            <option value="">{t("admin.engagements.addCollaborator")}</option>
+                            {allCounselors
+                              .filter((c) => c.active && !(row.counselorIds ?? []).includes(c.id))
+                              .map((c) => (
+                                <option key={c.id} value={c.id}>
+                                  {localizeCrmText(c.name, locale, t)}
+                                </option>
+                              ))}
+                          </select>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            disabled={busy || !(addCollaboratorIdByEngagement[row.id] ?? "")}
+                            onClick={() =>
+                              void onRun(async () => {
+                                const nextId = addCollaboratorIdByEngagement[row.id] ?? "";
+                                if (!nextId) return;
+                                await patchAdminEngagement(token, row.id, { addCounselorId: nextId });
+                                setAddCollaboratorIdByEngagement((prev) => ({ ...prev, [row.id]: "" }));
+                              })
+                            }
+                          >
+                            {t("admin.engagements.add")}
+                          </button>
                           <button
                             type="button"
                             className="btn btn-primary"
@@ -844,9 +884,61 @@ function AdminEngagementsPanel({
                           <button type="button" className="btn btn-secondary" onClick={() => setEditId(null)}>
                             {t("crm.console.cancel")}
                           </button>
+                          {(row.counselorNames?.length ? row.counselorNames : [])
+                            .map((_, idx) => {
+                              const cid = row.counselorIds?.[idx];
+                              const label = row.counselorNames?.[idx] ?? "";
+                              if (!cid || cid === row.counselorId) return null;
+                              return (
+                                <button
+                                  key={cid}
+                                  type="button"
+                                  className="btn btn-secondary"
+                                  disabled={busy}
+                                  onClick={() =>
+                                    void onRun(async () => {
+                                      await patchAdminEngagement(token, row.id, { removeCounselorId: cid });
+                                    })
+                                  }
+                                >
+                                  {t("admin.engagements.removeCollaborator", { name: label })}
+                                </button>
+                              );
+                            })
+                            .filter(Boolean)}
                         </>
                       ) : (
                         <>
+                          <select
+                            value={addCollaboratorIdByEngagement[row.id] ?? ""}
+                            onChange={(e) =>
+                              setAddCollaboratorIdByEngagement((prev) => ({ ...prev, [row.id]: e.target.value }))
+                            }
+                          >
+                            <option value="">{t("admin.engagements.addCollaborator")}</option>
+                            {allCounselors
+                              .filter((c) => c.active && !(row.counselorIds ?? []).includes(c.id))
+                              .map((c) => (
+                                <option key={c.id} value={c.id}>
+                                  {localizeCrmText(c.name, locale, t)}
+                                </option>
+                              ))}
+                          </select>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            disabled={busy || !(addCollaboratorIdByEngagement[row.id] ?? "")}
+                            onClick={() =>
+                              void onRun(async () => {
+                                const nextId = addCollaboratorIdByEngagement[row.id] ?? "";
+                                if (!nextId) return;
+                                await patchAdminEngagement(token, row.id, { addCounselorId: nextId });
+                                setAddCollaboratorIdByEngagement((prev) => ({ ...prev, [row.id]: "" }));
+                              })
+                            }
+                          >
+                            {t("admin.engagements.add")}
+                          </button>
                           <button
                             type="button"
                             className={`btn btn-secondary${expandedGroupChatId === row.id ? " is-active" : ""}`}
@@ -866,6 +958,33 @@ function AdminEngagementsPanel({
                               setEditCounselorId(row.counselorId);
                               setEditStatus(row.status as (typeof STATUSES)[number]);
                               setEditPhase(row.phase as (typeof PHASES)[number]);
+                              window.setTimeout(() => counselorSelectRef.current?.focus(), 0);
+                            }}
+                          >
+                            {t("admin.engagements.changeCounselor")}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            disabled={busy || row.status === "closed"}
+                            onClick={() => {
+                              if (!window.confirm(t("admin.engagements.endConfirm"))) return;
+                              void onRun(async () => {
+                                await patchAdminEngagement(token, row.id, { status: "closed" });
+                              });
+                            }}
+                          >
+                            {t("admin.engagements.endEngagement")}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => {
+                              setEditId(row.id);
+                              setEditCounselorId(row.counselorId);
+                              setEditStatus(row.status as (typeof STATUSES)[number]);
+                              setEditPhase(row.phase as (typeof PHASES)[number]);
+                              setAddCollaboratorIdByEngagement((prev) => ({ ...prev, [row.id]: "" }));
                             }}
                           >
                             {t("admin.engagements.edit")}

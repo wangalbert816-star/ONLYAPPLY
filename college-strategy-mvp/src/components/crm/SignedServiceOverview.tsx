@@ -1,7 +1,7 @@
 import { useLanguage } from "../../i18n/LanguageContext";
 import { isCalendlyBookingEnabled } from "../../lib/expertConsultBooking";
 import { localizeCrmText } from "../../lib/crm/localizeCrmContent";
-import { countOpenTasks } from "../../lib/crm/store";
+import { countOpenTasks, getCounselor } from "../../lib/crm/store";
 import type { CrmCounselor, CrmEngagement, CrmMeetingRecap, CrmMessage, CrmStoredFile, CrmTask } from "../../lib/crm/types";
 import { CrmUnreadBadge } from "../../lib/crm/CrmUnreadBadge";
 import { AccountTaskList } from "./AccountTaskList";
@@ -44,6 +44,10 @@ export function SignedServiceOverview({
 }: Props) {
   const { t, locale } = useLanguage();
   const openTasks = countOpenTasks(engagement.id);
+  const counselorNames = (engagement.counselorIds ?? [engagement.counselorId])
+    .map((id) => getCounselor(id))
+    .filter(Boolean)
+    .map((c) => localizeCrmText((c as CrmCounselor).name, locale, t));
   const meetingLabel = engagement.nextMeetingLabel
     ? localizeCrmText(engagement.nextMeetingLabel, locale, t)
     : t("crm.signedService.noMeetingScheduled");
@@ -58,7 +62,7 @@ export function SignedServiceOverview({
           </div>
           <div className="hub-overview__counselor-copy">
             <p className="hub-overview__eyebrow">{t("crm.myCounselor")}</p>
-            <h2>{localizeCrmText(counselor.name, locale, t)}</h2>
+            <h2>{counselorNames.join(", ") || localizeCrmText(counselor.name, locale, t)}</h2>
             <p className="hub-overview__role">{localizeCrmText(counselor.title, locale, t)}</p>
           </div>
         </div>

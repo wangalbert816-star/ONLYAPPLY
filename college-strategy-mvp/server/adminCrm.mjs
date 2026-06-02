@@ -167,6 +167,9 @@ function mapEngagement(row, counselorsById) {
     counselorId: row.counselor_id,
     counselorName: counselor?.name ?? null,
     counselorEmail: counselor?.email ?? null,
+    counselorIds: row.counselor_ids ?? [row.counselor_id].filter(Boolean),
+    counselorNames: row.counselor_names ?? (counselor?.name ? [counselor.name] : []),
+    counselorEmails: row.counselor_emails ?? (counselor?.email ? [counselor.email] : []),
     status: row.status,
     phase: row.phase,
     planLabel: row.plan_label,
@@ -199,13 +202,14 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
       if (cErr) throw cErr;
 
       const { data: engagements, error: eErr } = await ctx.admin
-        .from("engagements")
-        .select("counselor_id, status");
+        .from("engagement_counselors")
+        .select("counselor_id, active, engagements!inner(status)")
+        .eq("active", true);
       if (eErr) throw eErr;
 
       const counts = new Map();
       for (const row of engagements ?? []) {
-        if (row.status !== "active") continue;
+        if (row.engagements?.status !== "active") continue;
         counts.set(row.counselor_id, (counts.get(row.counselor_id) ?? 0) + 1);
       }
 
@@ -374,8 +378,43 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
         .order("updated_at", { ascending: false });
       if (eErr) throw eErr;
 
+      const ids = (rows ?? []).map((r) => r.id).filter(Boolean);
+      const collabByEngagement = new Map();
+      if (ids.length > 0) {
+        const { data: collabs, error: collabErr } = await ctx.admin
+          .from("engagement_counselors")
+          .select("engagement_id, counselor_id, active, role, counselors(id, name, email)")
+          .in("engagement_id", ids)
+          .eq("active", true);
+        if (collabErr) throw collabErr;
+        for (const row of collabs ?? []) {
+          const list = collabByEngagement.get(row.engagement_id) ?? [];
+          list.push(row);
+          collabByEngagement.set(row.engagement_id, list);
+        }
+      }
+
+      const enriched = (rows ?? []).map((row) => {
+        const collabs = collabByEngagement.get(row.id) ?? [];
+        // Order: primary first, then by name.
+        collabs.sort((a, b) => {
+          const ar = a.role === "primary" ? 0 : 1;
+          const br = b.role === "primary" ? 0 : 1;
+          if (ar !== br) return ar - br;
+          const an = a.counselors?.name ?? "";
+          const bn = b.counselors?.name ?? "";
+          return an.localeCompare(bn);
+        });
+        return {
+          ...row,
+          counselor_ids: collabs.map((c) => c.counselor_id),
+          counselor_names: collabs.map((c) => c.counselors?.name).filter(Boolean),
+          counselor_emails: collabs.map((c) => c.counselors?.email).filter(Boolean),
+        };
+      });
+
       res.json({
-        engagements: (rows ?? []).map((row) => mapEngagement(row, counselorsById)),
+        engagements: enriched.map((row) => mapEngagement(row, counselorsById)),
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -519,6 +558,18 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
         .single();
       if (engErr) throw engErr;
 
+      // Ensure primary counselor is an active collaborator on this engagement.
+      const { error: collabErr } = await ctx.admin.from("engagement_counselors").upsert(
+        {
+          engagement_id: engagement.id,
+          counselor_id: counselorId,
+          role: "primary",
+          active: true,
+        },
+        { onConflict: "engagement_id,counselor_id" },
+      );
+      if (collabErr) throw collabErr;
+
       const { data: counselorRow } = await ctx.admin
         .from("counselors")
         .select("id, name, email")
@@ -543,6 +594,8 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
     /** @type {Record<string, unknown>} */
     const patch = { updated_at: new Date().toISOString() };
     if (req.body?.counselorId != null) patch.counselor_id = String(req.body.counselorId).trim();
+    const addCounselorId = req.body?.addCounselorId != null ? String(req.body.addCounselorId).trim() : "";
+    const removeCounselorId = req.body?.removeCounselorId != null ? String(req.body.removeCounselorId).trim() : "";
     if (req.body?.status != null) patch.status = String(req.body.status).trim();
     if (req.body?.phase != null) patch.phase = String(req.body.phase).trim();
     if (req.body?.planLabel !== undefined) {
@@ -561,30 +614,95 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
       return res.status(400).json({ error: "invalid_phase" });
     }
 
-    if (Object.keys(patch).length <= 1) {
+    if (Object.keys(patch).length <= 1 && !addCounselorId && !removeCounselorId) {
       return res.status(400).json({ error: "no_fields" });
     }
 
     try {
-      if (patch.counselor_id) {
+      const validateCounselorActive = async (id) => {
         const { data: counselor, error: cErr } = await ctx.admin
           .from("counselors")
           .select("id, active")
-          .eq("id", patch.counselor_id)
+          .eq("id", id)
           .maybeSingle();
         if (cErr) throw cErr;
         if (!counselor || !counselor.active) {
+          return false;
+        }
+        return true;
+      };
+
+      if (patch.counselor_id) {
+        if (!(await validateCounselorActive(patch.counselor_id))) {
           return res.status(400).json({ error: "counselor_not_found" });
         }
       }
+      if (addCounselorId && !(await validateCounselorActive(addCounselorId))) {
+        return res.status(400).json({ error: "counselor_not_found" });
+      }
+      if (removeCounselorId && removeCounselorId === patch.counselor_id) {
+        return res.status(400).json({ error: "invalid_counselor_change" });
+      }
 
-      const { data, error } = await ctx.admin
-        .from("engagements")
-        .update(patch)
-        .eq("id", id)
-        .select("*")
-        .single();
-      if (error) throw error;
+      let data = null;
+      if (Object.keys(patch).length > 1) {
+        const { data: updated, error } = await ctx.admin
+          .from("engagements")
+          .update(patch)
+          .eq("id", id)
+          .select("*")
+          .single();
+        if (error) throw error;
+        data = updated;
+      } else {
+        const { data: existing, error } = await ctx.admin.from("engagements").select("*").eq("id", id).single();
+        if (error) throw error;
+        data = existing;
+      }
+
+      if (patch.counselor_id) {
+        // Move primary role to the new counselor.
+        const { error: upErr } = await ctx.admin.from("engagement_counselors").upsert(
+          { engagement_id: id, counselor_id: patch.counselor_id, role: "primary", active: true },
+          { onConflict: "engagement_id,counselor_id" },
+        );
+        if (upErr) throw upErr;
+        await ctx.admin
+          .from("engagement_counselors")
+          .update({ role: "collaborator" })
+          .eq("engagement_id", id)
+          .neq("counselor_id", patch.counselor_id);
+      }
+
+      if (addCounselorId) {
+        const { error: addErr } = await ctx.admin.from("engagement_counselors").upsert(
+          { engagement_id: id, counselor_id: addCounselorId, role: "collaborator", active: true },
+          { onConflict: "engagement_id,counselor_id" },
+        );
+        if (addErr) throw addErr;
+      }
+
+      if (removeCounselorId) {
+        const { data: activeRows, error: listErr } = await ctx.admin
+          .from("engagement_counselors")
+          .select("counselor_id")
+          .eq("engagement_id", id)
+          .eq("active", true);
+        if (listErr) throw listErr;
+        const activeIds = new Set((activeRows ?? []).map((r) => r.counselor_id));
+        if (activeIds.size <= 1) {
+          return res.status(400).json({ error: "cannot_remove_last_counselor" });
+        }
+        if (removeCounselorId === data.counselor_id) {
+          return res.status(400).json({ error: "cannot_remove_primary_counselor" });
+        }
+        const { error: remErr } = await ctx.admin
+          .from("engagement_counselors")
+          .update({ active: false })
+          .eq("engagement_id", id)
+          .eq("counselor_id", removeCounselorId);
+        if (remErr) throw remErr;
+      }
 
       const { data: counselorRow } = await ctx.admin
         .from("counselors")

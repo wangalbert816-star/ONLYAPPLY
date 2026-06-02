@@ -400,6 +400,7 @@ export async function createDemoEngagement(input: {
     applicationId: input.applicationId,
     applicationTitle: input.applicationTitle,
     counselorId: counselor.id,
+    counselorIds: [counselor.id],
     phase: "essays",
     status: "active",
     planLabel: "标准规划 · 本地演示",

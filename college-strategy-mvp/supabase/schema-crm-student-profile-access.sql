@@ -9,7 +9,7 @@ create policy applications_select_engaged_counselor on public.saved_applications
       select 1
       from public.engagements e
       where e.application_id = saved_applications.id
-        and e.counselor_id = public.crm_my_counselor_id()
+        and public.crm_counselor_can_access_engagement(public.crm_my_counselor_id(), e.id)
     )
   );
 
@@ -21,6 +21,6 @@ create policy reports_select_engaged_counselor on public.saved_reports
       select 1
       from public.engagements e
       where e.application_id = saved_reports.application_id
-        and e.counselor_id = public.crm_my_counselor_id()
+        and public.crm_counselor_can_access_engagement(public.crm_my_counselor_id(), e.id)
     )
   );

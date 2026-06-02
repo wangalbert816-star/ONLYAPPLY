@@ -22,6 +22,7 @@ export type CrmEngagement = {
   applicationId: string;
   applicationTitle: string;
   counselorId: string;
+  counselorIds: string[];
   phase: CrmPhase;
   status: CrmEngagementStatus;
   planLabel?: string;

@@ -5,6 +5,7 @@ import type { CrmCounselor, CrmEngagement, CrmMessage, CrmTask, CrmTaskLinkType 
 import { localizeCrmText } from "../../lib/crm/localizeCrmContent";
 import { isTaskAction, isTaskResource } from "../../lib/crm/taskItemKind";
 import { CrmUnreadBadge } from "../../lib/crm/CrmUnreadBadge";
+import { getCounselor } from "../../lib/crm/store";
 import "../../lib/crm/crmUnreadBadge.css";
 import { TaskTypeBadge, taskItemClass } from "./TaskTypeBadge";
 import "./AccountServicePanel.css";
@@ -60,6 +61,10 @@ export function AccountServicePanel({
   const visibleMessages = showAllUpdates ? messages : messages.slice(0, 3);
   const unread = messages.filter((m) => m.authorRole === "counselor" && !m.readByStudent).length;
   const calendlyEnabled = isCalendlyBookingEnabled(counselor.calendlyUrl);
+  const counselorNames = (engagement.counselorIds ?? [engagement.counselorId])
+    .map((id) => getCounselor(id))
+    .filter(Boolean)
+    .map((c) => localizeCrmText((c as CrmCounselor).name, locale, t));
 
   const taskLinkLabel = useMemo(
     () =>
@@ -115,7 +120,7 @@ export function AccountServicePanel({
             {counselor.name.slice(0, 1)}
           </div>
           <p className="account-service__label">{t("crm.myCounselor")}</p>
-          <h3>{localizeCrmText(counselor.name, locale, t)}</h3>
+          <h3>{counselorNames.join(", ") || localizeCrmText(counselor.name, locale, t)}</h3>
           <p className="account-service__role">{localizeCrmText(counselor.title, locale, t)}</p>
           {engagement.nextMeetingLabel && (
             <p className="account-service__meta">

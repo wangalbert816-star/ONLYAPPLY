@@ -23,6 +23,9 @@ export type AdminEngagement = {
   counselorId: string;
   counselorName: string | null;
   counselorEmail: string | null;
+  counselorIds: string[];
+  counselorNames: string[];
+  counselorEmails: string[];
   status: string;
   phase: string;
   planLabel: string | null;
@@ -181,6 +184,8 @@ export async function patchAdminEngagement(
   id: string,
   patch: Partial<{
     counselorId: string;
+    addCounselorId: string;
+    removeCounselorId: string;
     status: string;
     phase: string;
     planLabel: string;
