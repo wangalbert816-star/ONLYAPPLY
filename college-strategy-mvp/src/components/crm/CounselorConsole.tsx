@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../../i18n/LanguageContext";
-import { isCalendlyBookingEnabled } from "../../lib/expertConsultBooking";
+import { isCalendlyBookingEnabled, openCalendlyBooking } from "../../lib/expertConsultBooking";
 import { buildApplicationInfoRows } from "../../lib/applicationInfoRows";
 import { fetchApplicationFormById } from "../../lib/supabase/accounts";
 import {
@@ -12,6 +12,7 @@ import {
   deleteTask,
   getActingCounselorForEngagement,
   getEngagementById,
+  resolveCalendlyUrlForEngagement,
   listDocuments,
   listEngagements,
   listFiles,
@@ -120,6 +121,10 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
 
   const selected = selectedId ? getEngagementById(selectedId) : null;
   const counselor = selected ? getActingCounselorForEngagement(selected) : null;
+  const meetingCalendlyUrl = useMemo(
+    () => (selected && counselor ? resolveCalendlyUrlForEngagement(selected, counselor) : null),
+    [selected, counselor],
+  );
 
   const tasks = useMemo(() => (selected ? listTasks(selected.id) : []), [selected?.id, tick]);
   const documents = useMemo(() => (selected ? listDocuments(selected.id) : []), [selected?.id, tick]);
@@ -346,22 +351,23 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
   };
 
   const openMeeting = () => {
-    if (!counselor?.calendlyUrl) {
+    if (!selected || !counselor) return;
+    const url = meetingCalendlyUrl ?? resolveCalendlyUrlForEngagement(selected, counselor);
+    if (!url) {
       window.alert(t("crm.console.noCalendly"));
       return;
     }
-    window.open(counselor.calendlyUrl, "_blank", "noopener,noreferrer");
-    if (selected) {
-      addMessage({
-        engagementId: selected.id,
-        authorRole: "system",
-        authorLabel: t("crm.console.systemLabel"),
-        body: t("crm.console.meetingLinkSent"),
-        readByStudent: false,
-      });
-      notifyCrmStoreChange();
-      refresh();
-    }
+    const opened = openCalendlyBooking({ url, email: selected.studentEmail });
+    if (!opened) window.open(url, "_blank", "noopener,noreferrer");
+    addMessage({
+      engagementId: selected.id,
+      authorRole: "counselor",
+      authorLabel: counselor.name,
+      body: t("crm.console.meetingLinkBody", { url, name: counselor.name }),
+      readByStudent: false,
+    });
+    notifyCrmStoreChange();
+    refresh();
   };
 
   const saveMeetingLabel = () => {
@@ -851,10 +857,11 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                       onSaveMeetingLabel={saveMeetingLabel}
                       showMeetingLabelEditor
                       bookButtonLabel={
-                        isCalendlyBookingEnabled(counselor.calendlyUrl)
+                        isCalendlyBookingEnabled(meetingCalendlyUrl)
                           ? t("crm.console.sendCalendly")
                           : t("crm.console.noCalendly")
                       }
+                      bookingCalendlyUrl={meetingCalendlyUrl}
                     />
                   </section>
                 ) : null}

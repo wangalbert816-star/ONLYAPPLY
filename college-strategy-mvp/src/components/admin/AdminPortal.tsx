@@ -368,6 +368,7 @@ function AdminCounselorsPanel({
   const [profileEditId, setProfileEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editTitle, setEditTitle] = useState("");
+  const [editCalendlyUrl, setEditCalendlyUrl] = useState("");
 
   const passwordValid = password.trim().length >= 6;
   const resetPasswordValid = resetPassword.trim().length >= 6;
@@ -379,12 +380,14 @@ function AdminCounselorsPanel({
     setProfileEditId(c.id);
     setEditName(c.name);
     setEditTitle(c.title);
+    setEditCalendlyUrl(c.calendlyUrl ?? "");
   };
 
   const cancelProfileEdit = () => {
     setProfileEditId(null);
     setEditName("");
     setEditTitle("");
+    setEditCalendlyUrl("");
   };
 
   return (
@@ -456,6 +459,7 @@ function AdminCounselorsPanel({
                   <th>{t("admin.counselors.name")}</th>
                   <th>{t("admin.counselors.email")}</th>
                   <th>{t("admin.counselors.title")}</th>
+                  <th>{t("admin.counselors.calendly")}</th>
                   <th>{t("admin.counselors.colAuth")}</th>
                   <th>{t("admin.engagements.colStatus")}</th>
                   <th />
@@ -487,6 +491,22 @@ function AdminCounselorsPanel({
                         localizeCrmText(c.title, locale, t)
                       )}
                     </td>
+                    <td>
+                      {profileEditId === c.id ? (
+                        <input
+                          className="admin-portal__table-input"
+                          value={editCalendlyUrl}
+                          onChange={(e) => setEditCalendlyUrl(e.target.value)}
+                          placeholder="https://calendly.com/..."
+                        />
+                      ) : c.calendlyUrl ? (
+                        <span className="admin-portal__muted" title={c.calendlyUrl}>
+                          Calendly ✓
+                        </span>
+                      ) : (
+                        <span className="admin-portal__muted">—</span>
+                      )}
+                    </td>
                     <td>{c.userId ? t("admin.counselors.authLinked") : t("admin.counselors.authMissing")}</td>
                     <td>{c.active ? t("admin.counselors.active") : t("admin.counselors.inactive")}</td>
                     <td className="admin-portal__row-actions">
@@ -501,6 +521,7 @@ function AdminCounselorsPanel({
                                 await patchAdminCounselor(token, c.id, {
                                   name: editName.trim(),
                                   title: editTitle.trim(),
+                                  calendlyUrl: editCalendlyUrl.trim(),
                                 });
                                 cancelProfileEdit();
                               })

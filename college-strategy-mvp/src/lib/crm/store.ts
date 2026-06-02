@@ -47,6 +47,7 @@ import type {
   CrmTaskItemKind,
   CrmTaskLinkType,
 } from "./types";
+import { getCalendlyBookingUrl } from "../expertConsultBooking";
 import { isTaskAction } from "./taskItemKind";
 import type { CrmMeetingRecapDraft } from "./meetingRecapFormat";
 import { serializeMeetingRecapBody } from "./meetingRecapFormat";
@@ -375,6 +376,26 @@ export function getActingCounselorForEngagement(engagement: CrmEngagement): CrmC
   const acting = getActingCounselor();
   if (acting && teamIds.includes(acting.id)) return acting;
   return getCounselor(engagement.counselorId) ?? acting;
+}
+
+/** Calendly for this case: acting counselor → primary → any teammate → site default. */
+export function resolveCalendlyUrlForEngagement(
+  engagement: CrmEngagement,
+  acting?: CrmCounselor | null,
+): string | null {
+  const fromActing = getCalendlyBookingUrl(acting?.calendlyUrl);
+  if (fromActing) return fromActing;
+
+  const fromPrimary = getCalendlyBookingUrl(getCounselor(engagement.counselorId)?.calendlyUrl);
+  if (fromPrimary) return fromPrimary;
+
+  const teamIds = engagement.counselorIds?.length ? engagement.counselorIds : [engagement.counselorId];
+  for (const id of teamIds) {
+    const url = getCalendlyBookingUrl(getCounselor(id)?.calendlyUrl);
+    if (url) return url;
+  }
+
+  return getCalendlyBookingUrl(null);
 }
 
 export function listEngagements(): CrmEngagement[] {

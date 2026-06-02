@@ -22,6 +22,7 @@ type Props = {
   onSaveMeetingLabel?: () => void;
   showMeetingLabelEditor?: boolean;
   bookButtonLabel?: string;
+  bookingCalendlyUrl?: string | null;
 };
 
 export function MeetingsTabPanel({
@@ -40,12 +41,13 @@ export function MeetingsTabPanel({
   onSaveMeetingLabel,
   showMeetingLabelEditor = false,
   bookButtonLabel,
+  bookingCalendlyUrl,
 }: Props) {
   const { t, locale } = useLanguage();
   const meetingLabel = engagement.nextMeetingLabel
     ? localizeCrmText(engagement.nextMeetingLabel, locale, t)
     : t("crm.signedService.noMeetingScheduled");
-  const calendlyEnabled = isCalendlyBookingEnabled(counselor.calendlyUrl);
+  const calendlyEnabled = isCalendlyBookingEnabled(bookingCalendlyUrl ?? counselor.calendlyUrl);
 
   return (
     <>
