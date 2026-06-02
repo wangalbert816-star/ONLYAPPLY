@@ -1158,13 +1158,35 @@ export async function supabaseUpdateNextMeetingLabel(engagementId: string, label
 export async function supabaseUpdateMeetingJoinUrl(engagementId: string, url: string | null): Promise<void> {
   const sb = getSupabase();
   if (!sb) return;
-  await sb
+
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
+  const token = session?.access_token;
+  if (token) {
+    const res = await fetch(apiUrl(`/api/counselor/crm/engagements/${encodeURIComponent(engagementId)}/meeting-join-url`), {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ meetingJoinUrl: url }),
+    });
+    if (res.ok) return;
+    const body = await res.text().catch(() => "");
+    if (res.status !== 404 && res.status !== 503) {
+      throw new Error(body || `meeting_join_update_failed_${res.status}`);
+    }
+  }
+
+  const { error } = await sb
     .from("engagements")
     .update({
       meeting_join_url: url,
       updated_at: new Date().toISOString(),
     })
     .eq("id", engagementId);
+  if (error) throw error;
 }
 
 export async function supabaseToggleFollowUp(engagementId: string, needsFollowUp: boolean): Promise<void> {

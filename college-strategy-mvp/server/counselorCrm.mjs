@@ -123,6 +123,45 @@ export async function loadCounselorCrmSnapshot(admin, counselorId) {
 }
 
 /**
+ * @param {import("@supabase/supabase-js").SupabaseClient} admin
+ * @param {string} counselorId
+ * @param {string} engagementId
+ */
+async function counselorCanAccessEngagement(admin, counselorId, engagementId) {
+  const { data: eng, error: engErr } = await admin
+    .from("engagements")
+    .select("id, counselor_id")
+    .eq("id", engagementId)
+    .maybeSingle();
+  if (engErr) throw engErr;
+  if (!eng) return false;
+  if (String(eng.counselor_id) === String(counselorId)) return true;
+
+  const { data: collab, error: collabErr } = await admin
+    .from("engagement_counselors")
+    .select("engagement_id")
+    .eq("engagement_id", engagementId)
+    .eq("counselor_id", counselorId)
+    .eq("active", true)
+    .maybeSingle();
+  if (collabErr) throw collabErr;
+  return Boolean(collab);
+}
+
+function normalizeMeetingJoinUrl(raw) {
+  const trimmed = String(raw ?? "").trim();
+  if (!trimmed) return null;
+  try {
+    const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    const u = new URL(withScheme);
+    if (u.protocol !== "https:" && u.protocol !== "http:") return null;
+    return u.toString();
+  } catch {
+    return null;
+  }
+}
+
+/**
  * @param {import("express").Express} app
  * @param {{ supabaseAdmin: () => import("@supabase/supabase-js").SupabaseClient | null }} deps
  */
@@ -156,6 +195,64 @@ export function registerCounselorCrmRoutes(app, { supabaseAdmin }) {
         linkedAuth: resolved.linkedAuth,
         engagementIds,
         snapshot,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      res.status(500).json({ error: msg });
+    }
+  });
+
+  app.patch("/api/counselor/crm/engagements/:id/meeting-join-url", async (req, res) => {
+    const admin = supabaseAdmin();
+    if (!admin) {
+      return res.status(503).json({ error: "supabase_admin_missing" });
+    }
+
+    const token = bearerToken(req);
+    if (!token) {
+      return res.status(401).json({ error: "auth_required" });
+    }
+
+    const engagementId = String(req.params.id ?? "").trim();
+    if (!engagementId) {
+      return res.status(400).json({ error: "id_required" });
+    }
+
+    const url = normalizeMeetingJoinUrl(req.body?.meetingJoinUrl);
+    if (!url && String(req.body?.meetingJoinUrl ?? "").trim()) {
+      return res.status(400).json({ error: "invalid_meeting_url" });
+    }
+
+    try {
+      const { data: userData, error: userErr } = await admin.auth.getUser(token);
+      if (userErr || !userData.user) {
+        return res.status(401).json({ error: "invalid_session" });
+      }
+
+      const resolved = await resolveCounselorForAuthUser(admin, userData.user);
+      if (!resolved) {
+        return res.status(403).json({ error: "counselor_not_found" });
+      }
+
+      const allowed = await counselorCanAccessEngagement(admin, resolved.counselor.id, engagementId);
+      if (!allowed) {
+        return res.status(403).json({ error: "engagement_access_denied" });
+      }
+
+      const { data, error } = await admin
+        .from("engagements")
+        .update({
+          meeting_join_url: url,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", engagementId)
+        .select("id, meeting_join_url")
+        .single();
+      if (error) throw error;
+
+      res.json({
+        engagementId: data.id,
+        meetingJoinUrl: data.meeting_join_url ?? null,
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);

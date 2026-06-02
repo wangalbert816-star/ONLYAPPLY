@@ -405,34 +405,42 @@ export function shareMeetingLinkWithStudent(engagementId: string, rawUrl: string
   }
 }
 
-/** Save counselor Meet link; if this engagement already has a shared link, update it for the student too. */
+/** Save counselor Meet link; when viewing a student, sync their shared meeting link too. */
 export async function updateOwnCounselorMeetingUrl(
   meetingUrl: string,
   syncEngagementId?: string | null,
 ): Promise<void> {
   const url = normalizeMeetingUrl(meetingUrl);
-  const engagementId = syncEngagementId?.trim() || null;
-  const hadSharedLink =
-    engagementId && Boolean(getEngagementById(engagementId)?.meetingJoinUrl?.trim());
-
-  if (hadSharedLink && engagementId && url) {
-    patchEngagementMeetingJoinUrlLocal(engagementId, url);
+  if (!url && meetingUrl.trim()) {
+    throw new Error("invalid_meeting_url");
   }
+  const engagementId = syncEngagementId?.trim() || null;
+  const acting = getActingCounselor();
 
   if (crmBackend === "supabase") {
     await supabaseUpdateOwnCounselorBooking({ meetingUrl });
-    if (hadSharedLink && engagementId && url) {
+    if (acting && url) patchCounselorMeetingUrlInSnapshot(acting.id, url);
+
+    if (engagementId && url) {
+      patchEngagementMeetingJoinUrlLocal(engagementId, url);
       await supabaseUpdateMeetingJoinUrl(engagementId, url);
     }
+
     await persistRefresh();
+
+    if (acting && url) patchCounselorMeetingUrlInSnapshot(acting.id, url);
+    if (engagementId && url) patchEngagementMeetingJoinUrlLocal(engagementId, url);
     return;
   }
 
   const store = readStore();
-  const acting = getActingCounselor();
   if (acting) {
     const c = store.counselors.find((x) => x.id === acting.id);
     if (c) c.meetingUrl = url ?? undefined;
+  }
+  if (engagementId && url) {
+    const engagement = store.engagements.find((e) => e.id === engagementId);
+    if (engagement) engagement.meetingJoinUrl = url;
   }
   writeStore(store);
   notifyCrmStoreChange();
@@ -857,8 +865,32 @@ export function updateNextMeetingLabel(engagementId: string, label: string): voi
   notifyCrmStoreChange();
 }
 
-/** Optimistic local patch so student UI updates immediately after counselor shares link. */
+function patchCounselorMeetingUrlInSnapshot(counselorId: string, url: string | null): void {
+  if (crmBackend === "supabase") {
+    if (!memoryCache) return;
+    const counselor = memoryCache.counselors.find((c) => c.id === counselorId);
+    if (!counselor) return;
+    counselor.meetingUrl = url ?? undefined;
+    return;
+  }
+  const store = readStore();
+  const counselor = store.counselors.find((c) => c.id === counselorId);
+  if (!counselor) return;
+  counselor.meetingUrl = url ?? undefined;
+  writeStore(store);
+}
+
+/** Optimistic patch — updates in-memory snapshot in Supabase mode (not localStorage). */
 export function patchEngagementMeetingJoinUrlLocal(engagementId: string, url: string | null): void {
+  if (crmBackend === "supabase") {
+    if (!memoryCache) return;
+    const engagement = memoryCache.engagements.find((e) => e.id === engagementId);
+    if (!engagement) return;
+    engagement.meetingJoinUrl = url ?? undefined;
+    engagement.updatedAt = nowIso();
+    notifyCrmStoreChange();
+    return;
+  }
   const store = readStore();
   const engagement = store.engagements.find((e) => e.id === engagementId);
   if (!engagement) return;
