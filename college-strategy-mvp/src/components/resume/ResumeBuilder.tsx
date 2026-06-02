@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useLanguage } from "../../i18n/LanguageContext";
 import {
   downloadResumeBlob,
@@ -129,6 +129,15 @@ export function ResumeBuilder({
 }: Props) {
   const { t } = useLanguage();
   const persistKey = engagementId || storageKey || "";
+  const loadKey = persistKey ? `${persistKey}:${editorRole}` : "";
+  const formRef = useRef(form);
+  formRef.current = form;
+  const userEmailRef = useRef(userEmail);
+  userEmailRef.current = userEmail;
+  const displayNameRef = useRef(displayName);
+  displayNameRef.current = displayName;
+  const loadedKeyRef = useRef<string | null>(null);
+  const lastSavedRef = useRef("");
   const [draft, setDraft] = useState<ResumeFormData>(() => createEmptyResumeForm());
   const [readyToPersist, setReadyToPersist] = useState(false);
   const [loading, setLoading] = useState(Boolean(persistKey));
@@ -139,9 +148,17 @@ export function ResumeBuilder({
 
   useEffect(() => {
     if (!persistKey) {
-      setDraft(prefillResumeFromForm(form, { email: userEmail, displayName }));
+      const prefilled = prefillResumeFromForm(formRef.current, {
+        email: userEmailRef.current,
+        displayName: displayNameRef.current,
+      });
+      setDraft(prefilled);
       setReadyToPersist(true);
       setLoading(false);
+      return;
+    }
+
+    if (loadedKeyRef.current === loadKey) {
       return;
     }
 
@@ -150,6 +167,12 @@ export function ResumeBuilder({
     setReadyToPersist(false);
 
     void (async () => {
+      const prefillFromProfile = () =>
+        prefillResumeFromForm(formRef.current, {
+          email: userEmailRef.current,
+          displayName: displayNameRef.current,
+        });
+
       try {
         const remote = isResumeServerSyncEnabled()
           ? await loadRemoteResumeDraft(persistKey, editorRole)
@@ -159,6 +182,8 @@ export function ResumeBuilder({
         if (remote && hasResumeDraftContent(remote)) {
           setDraft(remote);
           saveResumeDraftToStorage(persistKey, remote);
+          lastSavedRef.current = JSON.stringify(remote);
+          loadedKeyRef.current = loadKey;
           setReadyToPersist(true);
           return;
         }
@@ -166,6 +191,8 @@ export function ResumeBuilder({
         const local = loadResumeDraftFromStorage(persistKey);
         if (local && hasResumeDraftContent(local)) {
           setDraft(local);
+          lastSavedRef.current = JSON.stringify(local);
+          loadedKeyRef.current = loadKey;
           if (isResumeServerSyncEnabled()) {
             void saveRemoteResumeDraft(persistKey, local, editorRole).catch(() => {
               /* best-effort migrate local draft to server */
@@ -175,16 +202,19 @@ export function ResumeBuilder({
           return;
         }
 
-        setDraft(prefillResumeFromForm(form, { email: userEmail, displayName }));
+        const prefilled = prefillFromProfile();
+        setDraft(prefilled);
+        lastSavedRef.current = JSON.stringify(prefilled);
+        loadedKeyRef.current = loadKey;
         setReadyToPersist(true);
       } catch {
         if (cancelled) return;
         const local = loadResumeDraftFromStorage(persistKey);
-        setDraft(
-          local && hasResumeDraftContent(local)
-            ? local
-            : prefillResumeFromForm(form, { email: userEmail, displayName }),
-        );
+        const next =
+          local && hasResumeDraftContent(local) ? local : prefillFromProfile();
+        setDraft(next);
+        lastSavedRef.current = JSON.stringify(next);
+        loadedKeyRef.current = loadKey;
         setReadyToPersist(true);
       } finally {
         if (!cancelled) setLoading(false);
@@ -194,7 +224,7 @@ export function ResumeBuilder({
     return () => {
       cancelled = true;
     };
-  }, [persistKey, editorRole, form, userEmail, displayName]);
+  }, [persistKey, editorRole, loadKey]);
 
   useEffect(() => {
     if (!persistKey || !readyToPersist) return;
@@ -202,10 +232,16 @@ export function ResumeBuilder({
 
     if (!isResumeServerSyncEnabled()) return;
 
+    const serialized = JSON.stringify(draft);
+    if (serialized === lastSavedRef.current) return;
+
     setSyncState("saving");
     const timer = window.setTimeout(() => {
       void saveRemoteResumeDraft(persistKey, draft, editorRole)
-        .then(() => setSyncState("saved"))
+        .then(() => {
+          lastSavedRef.current = serialized;
+          setSyncState("saved");
+        })
         .catch(() => setSyncState("error"));
     }, 700);
 

@@ -57,6 +57,34 @@ type Props = {
 
 type TabId = "home" | "todos" | "documents" | "chat" | "meetings" | "files" | "resume" | "student";
 
+const EMPTY_STUDENT_FORM: FormState = {
+  intakeTerm: "",
+  intakeOtherDetail: "",
+  applicantIdentity: "",
+  citizenship: "",
+  residenceRegion: "",
+  budget: "",
+  testing: "",
+  satScore: "",
+  actScore: "",
+  highSchoolSystem: "",
+  currentHighSchool: "",
+  gpa: "",
+  gpaTrend: "",
+  languageScores: "",
+  academicSpecialFlags: [],
+  academicSpecialNotes: "",
+  majorPrimary: "",
+  majorSecondary: "",
+  schoolSize: "",
+  campusCulturePref: "",
+  geoPrefs: [],
+  activities: "",
+  structuredActivities: [],
+  riskStyle: "",
+  dealbreakers: "",
+};
+
 function formatWhen(iso: string, locale: string) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
@@ -914,35 +942,7 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                       <p className="signed-service-hub__muted">{t("crm.signedService.studentLoading")}</p>
                     ) : (
                       <ResumeBuilder
-                        form={
-                          studentForm ?? {
-                            intakeTerm: "",
-                            intakeOtherDetail: "",
-                            applicantIdentity: "",
-                            citizenship: "",
-                            residenceRegion: "",
-                            budget: "",
-                            testing: "",
-                            satScore: "",
-                            actScore: "",
-                            highSchoolSystem: "",
-                            currentHighSchool: "",
-                            gpa: "",
-                            gpaTrend: "",
-                            languageScores: "",
-                            academicSpecialFlags: [],
-                            academicSpecialNotes: "",
-                            majorPrimary: "",
-                            majorSecondary: "",
-                            schoolSize: "",
-                            campusCulturePref: "",
-                            geoPrefs: [],
-                            activities: "",
-                            structuredActivities: [],
-                            riskStyle: "",
-                            dealbreakers: "",
-                          }
-                        }
+                        form={studentForm ?? EMPTY_STUDENT_FORM}
                         userEmail={selected.studentEmail}
                         displayName={selected.studentName}
                         engagementId={selected.id}
