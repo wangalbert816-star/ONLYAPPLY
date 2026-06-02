@@ -8,7 +8,7 @@ import {
   prepareAdminLibraryUpload,
   type AdminLibraryItem,
 } from "../../lib/admin/crmAdminApi";
-import { validateGoogleSheetUrl } from "../../lib/crm/libraryLinks";
+import { validateGoogleDocsUrl } from "../../lib/crm/libraryLinks";
 
 const MAX_BYTES = 20 * 1024 * 1024;
 const CATEGORIES = ["template", "worksheet", "checklist", "reference", "general"] as const;
@@ -97,7 +97,7 @@ export function AdminLibraryPanel({ token, busy, onRun }: Props) {
     setUploading(true);
     try {
       if (addMode === "link") {
-        const validated = validateGoogleSheetUrl(sheetUrl);
+        const validated = validateGoogleDocsUrl(sheetUrl);
         if (!validated.ok) {
           setPanelError(libraryErrorMessage(validated.code, t));
           return;

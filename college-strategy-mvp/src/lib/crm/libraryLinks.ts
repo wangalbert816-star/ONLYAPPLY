@@ -10,7 +10,7 @@ const GOOGLE_DOC_PATHS = [
 export type GoogleDocsFileKind = (typeof GOOGLE_DOC_PATHS)[number]["kind"];
 
 export function parseGoogleDocsUrl(raw: string): { fileId: string; kind: GoogleDocsFileKind } | null {
-  const trimmed = raw.trim();
+  const trimmed = raw.trim().replace(/[\u200B-\u200D\uFEFF]/g, "");
   if (!trimmed) return null;
 
   let url: URL;

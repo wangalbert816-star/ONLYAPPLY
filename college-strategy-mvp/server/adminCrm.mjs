@@ -695,7 +695,7 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
     return (base || "file").slice(0, 180);
   }
 
-  function normalizeGoogleSheetUrl(raw) {
+  function normalizeGoogleDocsEditUrl(raw) {
     const trimmed = String(raw ?? "").trim();
     if (!trimmed) return null;
     let url;
@@ -707,9 +707,9 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
     if (url.protocol !== "https:") return null;
     const host = url.hostname.replace(/^www\./, "");
     if (host !== "docs.google.com") return null;
-    const match = url.pathname.match(/^\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-    if (!match?.[1]) return null;
-    return `https://docs.google.com/spreadsheets/d/${match[1]}/edit`;
+    const match = url.pathname.match(/^\/(spreadsheets|document|presentation|forms)\/d\/([a-zA-Z0-9-_]+)/);
+    if (!match?.[2]) return null;
+    return `https://docs.google.com/${match[1]}/d/${match[2]}/edit`;
   }
 
   function mapLibraryItem(row) {
@@ -834,7 +834,7 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
     const description = String(req.body?.description ?? "").trim() || null;
     const category = String(req.body?.category ?? "general").trim() || "general";
     const locale = String(req.body?.locale ?? "all").trim();
-    const externalUrl = normalizeGoogleSheetUrl(req.body?.externalUrl);
+    const externalUrl = normalizeGoogleDocsEditUrl(req.body?.externalUrl);
 
     if (!title) {
       res.status(400).json({ error: "library_title_required" });
@@ -845,7 +845,7 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
       return;
     }
     if (!externalUrl) {
-      res.status(400).json({ error: "library_sheet_url_invalid" });
+      res.status(400).json({ error: "google_doc_url_invalid" });
       return;
     }
 
