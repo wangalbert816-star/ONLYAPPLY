@@ -50,6 +50,22 @@ function engagementStatusLabel(status: string, t: (key: string) => string) {
   return label === key ? status : label;
 }
 
+type CounselorTeamEntry = { id: string; name: string; isPrimary: boolean };
+
+function counselorTeamEntries(row: AdminEngagement): CounselorTeamEntry[] {
+  const ids = row.counselorIds?.length ? row.counselorIds : [row.counselorId].filter(Boolean);
+  const names = row.counselorNames?.length
+    ? row.counselorNames
+    : row.counselorName
+      ? [row.counselorName]
+      : [];
+  return ids.map((id, idx) => ({
+    id,
+    name: names[idx] ?? row.counselorEmail ?? id.slice(0, 8),
+    isPrimary: id === row.counselorId,
+  }));
+}
+
 function AdminLangBar() {
   return (
     <div className="admin-portal__lang">
@@ -820,125 +836,150 @@ function AdminEngagementsPanel({
                       )}
                     </td>
                     <td>{formatWhen(row.updatedAt, locale)}</td>
-                    <td className="admin-portal__row-actions">
-                      {editId === row.id ? (
-                        <>
-                          <select
-                            ref={counselorSelectRef}
-                            value={editCounselorId}
-                            onChange={(e) => setEditCounselorId(e.target.value)}
-                          >
-                            {allCounselors.filter((c) => c.active || c.id === row.counselorId).map((c) => (
-                              <option key={c.id} value={c.id}>
-                                {localizeCrmText(c.name, locale, t)}
-                              </option>
-                            ))}
-                          </select>
-                          <select
-                            value={addCollaboratorIdByEngagement[row.id] ?? ""}
-                            onChange={(e) =>
-                              setAddCollaboratorIdByEngagement((prev) => ({ ...prev, [row.id]: e.target.value }))
-                            }
-                          >
-                            <option value="">{t("admin.engagements.addCollaborator")}</option>
-                            {allCounselors
-                              .filter((c) => c.active && !(row.counselorIds ?? []).includes(c.id))
-                              .map((c) => (
-                                <option key={c.id} value={c.id}>
-                                  {localizeCrmText(c.name, locale, t)}
-                                </option>
-                              ))}
-                          </select>
-                          <button
-                            type="button"
-                            className="btn btn-secondary"
-                            disabled={busy || !(addCollaboratorIdByEngagement[row.id] ?? "")}
-                            onClick={() =>
-                              void onRun(async () => {
-                                const nextId = addCollaboratorIdByEngagement[row.id] ?? "";
-                                if (!nextId) return;
-                                await patchAdminEngagement(token, row.id, { addCounselorId: nextId });
-                                setAddCollaboratorIdByEngagement((prev) => ({ ...prev, [row.id]: "" }));
-                              })
-                            }
-                          >
-                            {t("admin.engagements.add")}
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-primary"
-                            disabled={busy}
-                            onClick={() =>
-                              void onRun(async () => {
-                                await patchAdminEngagement(token, row.id, {
-                                  counselorId: editCounselorId,
-                                  status: editStatus,
-                                  phase: editPhase,
-                                });
-                                setEditId(null);
-                              })
-                            }
-                          >
-                            {t("admin.engagements.edit")}
-                          </button>
-                          <button type="button" className="btn btn-secondary" onClick={() => setEditId(null)}>
-                            {t("crm.console.cancel")}
-                          </button>
-                          {(row.counselorNames?.length ? row.counselorNames : [])
-                            .map((_, idx) => {
-                              const cid = row.counselorIds?.[idx];
-                              const label = row.counselorNames?.[idx] ?? "";
-                              if (!cid || cid === row.counselorId) return null;
-                              return (
+                    <td className="admin-portal__row-actions admin-portal__row-actions--engagements">
+                      <div className="admin-portal__counselor-team">
+                        <p className="admin-portal__counselor-team-title">{t("admin.engagements.teamTitle")}</p>
+                        <ul className="admin-portal__counselor-team-list">
+                          {counselorTeamEntries(row).map((entry) => (
+                            <li key={entry.id} className="admin-portal__counselor-team-item">
+                              <span className="admin-portal__counselor-team-name">
+                                {localizeCrmText(entry.name, locale, t)}
+                              </span>
+                              <span
+                                className={
+                                  entry.isPrimary
+                                    ? "admin-portal__counselor-team-role is-primary"
+                                    : "admin-portal__counselor-team-role"
+                                }
+                              >
+                                {entry.isPrimary
+                                  ? t("admin.engagements.rolePrimary")
+                                  : t("admin.engagements.roleCollaborator")}
+                              </span>
+                              {editId === row.id && !entry.isPrimary ? (
                                 <button
-                                  key={cid}
                                   type="button"
-                                  className="btn btn-secondary"
+                                  className="admin-portal__counselor-team-remove"
                                   disabled={busy}
                                   onClick={() =>
                                     void onRun(async () => {
-                                      await patchAdminEngagement(token, row.id, { removeCounselorId: cid });
+                                      await patchAdminEngagement(token, row.id, { removeCounselorId: entry.id });
                                     })
                                   }
                                 >
-                                  {t("admin.engagements.removeCollaborator", { name: label })}
+                                  {t("admin.engagements.removeCollaborator", { name: entry.name })}
                                 </button>
-                              );
-                            })
-                            .filter(Boolean)}
-                        </>
-                      ) : (
+                              ) : null}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      {editId === row.id ? (
                         <>
-                          <select
-                            value={addCollaboratorIdByEngagement[row.id] ?? ""}
-                            onChange={(e) =>
-                              setAddCollaboratorIdByEngagement((prev) => ({ ...prev, [row.id]: e.target.value }))
-                            }
-                          >
-                            <option value="">{t("admin.engagements.addCollaborator")}</option>
-                            {allCounselors
-                              .filter((c) => c.active && !(row.counselorIds ?? []).includes(c.id))
-                              .map((c) => (
+                          <label className="admin-portal__counselor-field">
+                            <span>{t("admin.engagements.changePrimary")}</span>
+                            <select
+                              ref={counselorSelectRef}
+                              value={editCounselorId}
+                              onChange={(e) => setEditCounselorId(e.target.value)}
+                            >
+                              {allCounselors.filter((c) => c.active || c.id === row.counselorId).map((c) => (
                                 <option key={c.id} value={c.id}>
                                   {localizeCrmText(c.name, locale, t)}
                                 </option>
                               ))}
-                          </select>
-                          <button
-                            type="button"
-                            className="btn btn-secondary"
-                            disabled={busy || !(addCollaboratorIdByEngagement[row.id] ?? "")}
-                            onClick={() =>
-                              void onRun(async () => {
-                                const nextId = addCollaboratorIdByEngagement[row.id] ?? "";
-                                if (!nextId) return;
-                                await patchAdminEngagement(token, row.id, { addCounselorId: nextId });
-                                setAddCollaboratorIdByEngagement((prev) => ({ ...prev, [row.id]: "" }));
-                              })
-                            }
-                          >
-                            {t("admin.engagements.add")}
-                          </button>
+                            </select>
+                          </label>
+                          <div className="admin-portal__counselor-add">
+                            <select
+                              value={addCollaboratorIdByEngagement[row.id] ?? ""}
+                              onChange={(e) =>
+                                setAddCollaboratorIdByEngagement((prev) => ({ ...prev, [row.id]: e.target.value }))
+                              }
+                            >
+                              <option value="">{t("admin.engagements.addCollaborator")}</option>
+                              {allCounselors
+                                .filter((c) => c.active && !(row.counselorIds ?? []).includes(c.id))
+                                .map((c) => (
+                                  <option key={c.id} value={c.id}>
+                                    {localizeCrmText(c.name, locale, t)}
+                                  </option>
+                                ))}
+                            </select>
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              disabled={busy || !(addCollaboratorIdByEngagement[row.id] ?? "")}
+                              onClick={() =>
+                                void onRun(async () => {
+                                  const nextId = addCollaboratorIdByEngagement[row.id] ?? "";
+                                  if (!nextId) return;
+                                  await patchAdminEngagement(token, row.id, { addCounselorId: nextId });
+                                  setAddCollaboratorIdByEngagement((prev) => ({ ...prev, [row.id]: "" }));
+                                })
+                              }
+                            >
+                              {t("admin.engagements.add")}
+                            </button>
+                          </div>
+                          <div className="admin-portal__row-actions-btns">
+                            <button
+                              type="button"
+                              className="btn btn-primary"
+                              disabled={busy}
+                              onClick={() =>
+                                void onRun(async () => {
+                                  await patchAdminEngagement(token, row.id, {
+                                    counselorId: editCounselorId,
+                                    status: editStatus,
+                                    phase: editPhase,
+                                  });
+                                  setEditId(null);
+                                })
+                              }
+                            >
+                              {t("admin.engagements.edit")}
+                            </button>
+                            <button type="button" className="btn btn-secondary" onClick={() => setEditId(null)}>
+                              {t("crm.console.cancel")}
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="admin-portal__counselor-add">
+                            <select
+                              value={addCollaboratorIdByEngagement[row.id] ?? ""}
+                              onChange={(e) =>
+                                setAddCollaboratorIdByEngagement((prev) => ({ ...prev, [row.id]: e.target.value }))
+                              }
+                            >
+                              <option value="">{t("admin.engagements.addCollaborator")}</option>
+                              {allCounselors
+                                .filter((c) => c.active && !(row.counselorIds ?? []).includes(c.id))
+                                .map((c) => (
+                                  <option key={c.id} value={c.id}>
+                                    {localizeCrmText(c.name, locale, t)}
+                                  </option>
+                                ))}
+                            </select>
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              disabled={busy || !(addCollaboratorIdByEngagement[row.id] ?? "")}
+                              onClick={() =>
+                                void onRun(async () => {
+                                  const nextId = addCollaboratorIdByEngagement[row.id] ?? "";
+                                  if (!nextId) return;
+                                  await patchAdminEngagement(token, row.id, { addCounselorId: nextId });
+                                  setAddCollaboratorIdByEngagement((prev) => ({ ...prev, [row.id]: "" }));
+                                })
+                              }
+                            >
+                              {t("admin.engagements.add")}
+                            </button>
+                          </div>
+                          <div className="admin-portal__row-actions-btns">
                           <button
                             type="button"
                             className={`btn btn-secondary${expandedGroupChatId === row.id ? " is-active" : ""}`}
@@ -989,6 +1030,7 @@ function AdminEngagementsPanel({
                           >
                             {t("admin.engagements.edit")}
                           </button>
+                          </div>
                         </>
                       )}
                     </td>

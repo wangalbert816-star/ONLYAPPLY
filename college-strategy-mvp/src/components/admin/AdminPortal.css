@@ -190,6 +190,112 @@
   gap: 0.35rem;
 }
 
+.admin-portal__row-actions--engagements {
+  flex-direction: column;
+  align-items: stretch;
+  min-width: min(100%, 220px);
+  max-width: 280px;
+}
+
+.admin-portal__counselor-team {
+  margin-bottom: 0.35rem;
+}
+
+.admin-portal__counselor-team-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-muted, #5c6670);
+}
+
+.admin-portal__counselor-team-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.admin-portal__counselor-team-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 0.5rem;
+  background: #f1f5f9;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.admin-portal__counselor-team-name {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: #0f172a;
+}
+
+.admin-portal__counselor-team-role {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.admin-portal__counselor-team-role.is-primary {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.admin-portal__counselor-team-remove {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: #b45309;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.1rem 0;
+  text-decoration: underline;
+}
+
+.admin-portal__counselor-team-remove:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-portal__counselor-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.82rem;
+}
+
+.admin-portal__counselor-field span {
+  color: var(--color-muted, #5c6670);
+}
+
+.admin-portal__counselor-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.admin-portal__counselor-add select {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+
+.admin-portal__row-actions-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
 .admin-portal__signin {
   width: min(420px, 100%);
   background: #fff;

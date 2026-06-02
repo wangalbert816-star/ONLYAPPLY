@@ -704,14 +704,31 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
         if (remErr) throw remErr;
       }
 
-      const { data: counselorRow } = await ctx.admin
-        .from("counselors")
-        .select("id, name, email")
-        .eq("id", data.counselor_id)
-        .maybeSingle();
-      const counselorsById = new Map(counselorRow ? [[counselorRow.id, counselorRow]] : []);
+      const { data: collabs, error: collabErr } = await ctx.admin
+        .from("engagement_counselors")
+        .select("engagement_id, counselor_id, active, role, counselors(id, name, email)")
+        .eq("engagement_id", id)
+        .eq("active", true);
+      if (collabErr) throw collabErr;
+      collabs.sort((a, b) => {
+        const ar = a.role === "primary" ? 0 : 1;
+        const br = b.role === "primary" ? 0 : 1;
+        if (ar !== br) return ar - br;
+        const an = a.counselors?.name ?? "";
+        const bn = b.counselors?.name ?? "";
+        return an.localeCompare(bn);
+      });
+      const enriched = {
+        ...data,
+        counselor_ids: collabs.map((c) => c.counselor_id),
+        counselor_names: collabs.map((c) => c.counselors?.name).filter(Boolean),
+        counselor_emails: collabs.map((c) => c.counselors?.email).filter(Boolean),
+      };
+      const counselorsById = new Map(
+        collabs.map((c) => c.counselors).filter(Boolean).map((c) => [c.id, c]),
+      );
 
-      res.json({ engagement: mapEngagement(data, counselorsById) });
+      res.json({ engagement: mapEngagement(enriched, counselorsById) });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       res.status(500).json({ error: msg });

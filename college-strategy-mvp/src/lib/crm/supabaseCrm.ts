@@ -1,3 +1,4 @@
+import { apiUrl } from "../apiBase";
 import { getSupabase, isSupabaseConfigured } from "../supabase/client";
 import type {
   CrmApplicationDocument,
@@ -110,8 +111,29 @@ export async function fetchCounselorByUserId(userId: string): Promise<CrmCounsel
     .eq("user_id", userId)
     .eq("active", true)
     .maybeSingle();
-  if (error || !data) return null;
-  return mapCounselor(data as CounselorRow);
+  if (error) {
+    console.error("[crm] fetchCounselorByUserId", error);
+    return null;
+  }
+  if (data) return mapCounselor(data as CounselorRow);
+
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  const email = user?.email?.trim().toLowerCase();
+  if (!email) return null;
+
+  const { data: byEmail, error: emailErr } = await sb
+    .from("counselors")
+    .select("id, user_id, name, title, bio, email, calendly_url")
+    .ilike("email", email)
+    .eq("active", true);
+  if (emailErr) {
+    console.error("[crm] fetchCounselorByEmail", emailErr);
+    return null;
+  }
+  const match = (byEmail ?? []).find((r) => String(r.email ?? "").trim().toLowerCase() === email);
+  return match ? mapCounselor(match as CounselorRow) : null;
 }
 
 export async function fetchCrmSnapshotForStudent(userId: string): Promise<CrmStoreSnapshot> {
@@ -132,8 +154,28 @@ export async function fetchCrmSnapshotForCounselor(userId: string): Promise<CrmS
   const sb = getSupabase();
   if (!sb) return emptySnapshot();
 
+  const { data: sessionData } = await sb.auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+  if (accessToken) {
+    try {
+      const res = await fetch(apiUrl("/api/counselor/crm/snapshot"), {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (res.ok) {
+        const body = (await res.json()) as { snapshot?: CrmStoreSnapshot };
+        if (body.snapshot) return body.snapshot;
+      } else {
+        console.warn("[crm] counselor snapshot api", res.status, await res.text().catch(() => ""));
+      }
+    } catch (err) {
+      console.warn("[crm] counselor snapshot api", err);
+    }
+  }
+
   const counselor = await fetchCounselorByUserId(userId);
   if (!counselor) return emptySnapshot();
+
+  const engagementIdSet = new Set<string>();
 
   const { data: collabs, error: collabErr } = await sb
     .from("engagement_counselors")
@@ -141,7 +183,21 @@ export async function fetchCrmSnapshotForCounselor(userId: string): Promise<CrmS
     .eq("counselor_id", counselor.id)
     .eq("active", true);
   if (collabErr) throw collabErr;
-  const engagementIds = (collabs ?? []).map((r) => r.engagement_id).filter(Boolean);
+  for (const row of collabs ?? []) {
+    if (row.engagement_id) engagementIdSet.add(String(row.engagement_id));
+  }
+
+  // Fallback when join row is missing but engagements.counselor_id still points here (legacy primary).
+  const { data: primaryRows, error: primaryErr } = await sb
+    .from("engagements")
+    .select("id")
+    .eq("counselor_id", counselor.id);
+  if (primaryErr) throw primaryErr;
+  for (const row of primaryRows ?? []) {
+    if (row.id) engagementIdSet.add(String(row.id));
+  }
+
+  const engagementIds = [...engagementIdSet];
   if (engagementIds.length === 0) {
     const snapshot = emptySnapshot();
     snapshot.counselors = [counselor];

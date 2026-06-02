@@ -29,13 +29,23 @@ stable
 security definer
 set search_path = public
 as $$
-  select exists (
-    select 1
-    from public.engagement_counselors ec
-    where ec.engagement_id = p_engagement_id
-      and ec.counselor_id = p_counselor_id
-      and ec.active = true
-  );
+  select
+    p_counselor_id is not null
+    and (
+      exists (
+        select 1
+        from public.engagement_counselors ec
+        where ec.engagement_id = p_engagement_id
+          and ec.counselor_id = p_counselor_id
+          and ec.active = true
+      )
+      or exists (
+        select 1
+        from public.engagements e
+        where e.id = p_engagement_id
+          and e.counselor_id = p_counselor_id
+      )
+    );
 $$;
 
 -- Update crm_can_access_engagement to use join table for counselors.
@@ -57,11 +67,13 @@ as $$
   );
 $$;
 
--- engagement_counselors: students can see (read-only), assigned counselors can see.
+-- engagement_counselors: students + any assigned counselor can read rows.
+-- Counselors must read their own assignment rows to discover engagements (bootstrap).
 drop policy if exists engagement_counselors_select on public.engagement_counselors;
 create policy engagement_counselors_select on public.engagement_counselors
 for select using (
-  public.crm_can_access_engagement(engagement_id)
+  counselor_id = public.crm_my_counselor_id()
+  or public.crm_can_access_engagement(engagement_id)
 );
 
 -- Admin (service role) manages join rows; counselors cannot modify assignment.
