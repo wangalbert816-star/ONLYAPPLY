@@ -38,6 +38,24 @@
   color: #64748b;
 }
 
+.resume-builder__sync {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.resume-builder__sync--saving {
+  color: #64748b;
+}
+
+.resume-builder__sync--saved {
+  color: #059669;
+}
+
+.resume-builder__sync--error {
+  color: #dc2626;
+}
+
 .resume-builder__head-actions {
   display: flex;
   flex-wrap: wrap;
@@ -89,6 +107,23 @@
 
 .resume-builder__field--full {
   grid-column: 1 / -1;
+}
+
+.resume-builder__field-label {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.resume-builder__field-label-title {
+  font-weight: 600;
+  color: #334155;
+}
+
+.resume-builder__field-label-hint {
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.35;
+  color: #64748b;
 }
 
 .resume-builder__field input,

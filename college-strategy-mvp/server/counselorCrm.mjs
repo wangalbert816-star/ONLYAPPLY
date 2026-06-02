@@ -259,4 +259,116 @@ export function registerCounselorCrmRoutes(app, { supabaseAdmin }) {
       res.status(500).json({ error: msg });
     }
   });
+
+  app.get("/api/counselor/crm/engagements/:id/resume", async (req, res) => {
+    const admin = supabaseAdmin();
+    if (!admin) {
+      return res.status(503).json({ error: "supabase_admin_missing" });
+    }
+
+    const token = bearerToken(req);
+    if (!token) {
+      return res.status(401).json({ error: "auth_required" });
+    }
+
+    const engagementId = String(req.params.id ?? "").trim();
+    if (!engagementId) {
+      return res.status(400).json({ error: "id_required" });
+    }
+
+    try {
+      const { data: userData, error: userErr } = await admin.auth.getUser(token);
+      if (userErr || !userData.user) {
+        return res.status(401).json({ error: "invalid_session" });
+      }
+
+      const resolved = await resolveCounselorForAuthUser(admin, userData.user);
+      if (!resolved) {
+        return res.status(403).json({ error: "counselor_not_found" });
+      }
+
+      const allowed = await counselorCanAccessEngagement(admin, resolved.counselor.id, engagementId);
+      if (!allowed) {
+        return res.status(403).json({ error: "engagement_access_denied" });
+      }
+
+      const { data, error } = await admin
+        .from("engagements")
+        .select("id, resume_draft, updated_at")
+        .eq("id", engagementId)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) {
+        return res.status(404).json({ error: "engagement_not_found" });
+      }
+
+      res.json({
+        engagementId: data.id,
+        resume: data.resume_draft ?? null,
+        updatedAt: data.updated_at ?? null,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      res.status(500).json({ error: msg });
+    }
+  });
+
+  app.put("/api/counselor/crm/engagements/:id/resume", async (req, res) => {
+    const admin = supabaseAdmin();
+    if (!admin) {
+      return res.status(503).json({ error: "supabase_admin_missing" });
+    }
+
+    const token = bearerToken(req);
+    if (!token) {
+      return res.status(401).json({ error: "auth_required" });
+    }
+
+    const engagementId = String(req.params.id ?? "").trim();
+    if (!engagementId) {
+      return res.status(400).json({ error: "id_required" });
+    }
+
+    const resume = req.body?.resume;
+    if (!resume || typeof resume !== "object") {
+      return res.status(400).json({ error: "resume_required" });
+    }
+
+    try {
+      const { data: userData, error: userErr } = await admin.auth.getUser(token);
+      if (userErr || !userData.user) {
+        return res.status(401).json({ error: "invalid_session" });
+      }
+
+      const resolved = await resolveCounselorForAuthUser(admin, userData.user);
+      if (!resolved) {
+        return res.status(403).json({ error: "counselor_not_found" });
+      }
+
+      const allowed = await counselorCanAccessEngagement(admin, resolved.counselor.id, engagementId);
+      if (!allowed) {
+        return res.status(403).json({ error: "engagement_access_denied" });
+      }
+
+      const { data, error } = await admin
+        .from("engagements")
+        .update({
+          resume_draft: resume,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", engagementId)
+        .select("id, resume_draft, updated_at")
+        .single();
+      if (error) throw error;
+
+      res.json({
+        engagementId: data.id,
+        resume: data.resume_draft ?? null,
+        updatedAt: data.updated_at ?? null,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      res.status(500).json({ error: msg });
+    }
+  });
 }

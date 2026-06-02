@@ -29,15 +29,60 @@ function paragraphPlainText(paraXml: string): string {
     .trim();
 }
 
+function rowPlainText(rowXml: string): string {
+  return [...rowXml.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g)]
+    .map((match) => match[1])
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function shouldDropRenderableText(text: string): boolean {
+  if (!text) return true;
+  if (/\bundefined\b/i.test(text)) return true;
+  if (/^▪\s*(AP Courses:|Relevant Coursework:)?\s*$/.test(text)) return true;
+  if (/^Expected Graduation:\s*$/i.test(text)) return true;
+  if (/^GPA:\s*\/\s*4\.0(?:\s*·\s*Rank:\s*\/\s*)?$/i.test(text)) return true;
+  if (/^GPA:\s*\/\s*4\.0\s*·\s*Rank:\s*\/\s*$/i.test(text)) return true;
+  if (/^▪\s*$/.test(text)) return true;
+  if (/^Technical Skills:\s*$/i.test(text)) return true;
+  if (/^Languages:\s*$/i.test(text)) return true;
+  if (/^Interests:\s*$/i.test(text)) return true;
+  return false;
+}
+
 /** Drop bullet / label-only paragraphs left empty after render. Keep HR / border paragraphs. */
 function stripEmptyParagraphs(xml: string): string {
   return xml.replace(/<w:p\b[\s\S]*?<\/w:p>/g, (para) => {
     if (/<w:pict|<w:pBdr|<w:drawing|<v:rect|<w:br\b/.test(para)) return para;
     const text = paragraphPlainText(para);
-    if (!text) return "";
-    if (/^▪\s*(AP Courses:|Relevant Coursework:)?\s*$/.test(text)) return "";
+    if (shouldDropRenderableText(text)) return "";
     return para;
   });
+}
+
+function stripEmptyTableRows(xml: string): string {
+  return xml.replace(/<w:tr\b[\s\S]*?<\/w:tr>/g, (row) => {
+    const text = rowPlainText(row);
+    if (shouldDropRenderableText(text)) return "";
+    return row;
+  });
+}
+
+function stripUndefinedTextNodes(xml: string): string {
+  return xml.replace(/<w:t([^>]*)>([^<]*)<\/w:t>/g, (full, attrs, text) => {
+    if (text === "undefined") return `<w:t${attrs}></w:t>`;
+    if (/\bundefined\b/.test(text)) {
+      const cleaned = text.replace(/\bundefined\b/g, "").replace(/\s+/g, " ").trim();
+      if (!cleaned) return `<w:t${attrs}></w:t>`;
+      return `<w:t${attrs}>${cleaned}</w:t>`;
+    }
+    return full;
+  });
+}
+
+function cleanRenderedDocumentXml(xml: string): string {
+  return stripEmptyTableRows(stripEmptyParagraphs(stripUndefinedTextNodes(xml)));
 }
 
 function prepareTemplateZip(zip: PizZip): PizZip {
@@ -67,6 +112,7 @@ export async function generateResumeDocx(form: ResumeFormData): Promise<Blob> {
     delimiters: { start: "[", end: "]" },
     paragraphLoop: true,
     linebreaks: true,
+    nullGetter: () => "",
   });
 
   doc.render(resumeFormToTemplateData(form));
@@ -74,7 +120,7 @@ export async function generateResumeDocx(form: ResumeFormData): Promise<Blob> {
   const outZip = doc.getZip();
   const documentXml = outZip.file("word/document.xml");
   if (documentXml) {
-    outZip.file("word/document.xml", stripEmptyParagraphs(documentXml.asText()));
+    outZip.file("word/document.xml", cleanRenderedDocumentXml(documentXml.asText()));
   }
 
   return outZip.generate({

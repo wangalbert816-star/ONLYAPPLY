@@ -18,6 +18,11 @@ import {
   saveResumeDraftToStorage,
 } from "../../lib/resume/resumeForm";
 import type { FormState } from "../../types";
+import {
+  isResumeServerSyncEnabled,
+  loadRemoteResumeDraft,
+  saveRemoteResumeDraft,
+} from "../../lib/resume/supabaseResume";
 import type { ResumeFormData } from "../../lib/resume/types";
 import "./ResumeBuilder.css";
 
@@ -25,6 +30,10 @@ type Props = {
   form: FormState;
   userEmail?: string | null;
   displayName?: string | null;
+  /** Engagement id — used for local cache key and server sync. */
+  engagementId: string;
+  editorRole?: "student" | "counselor";
+  /** @deprecated use engagementId */
   storageKey?: string;
 };
 
@@ -51,12 +60,14 @@ function Field({
 
 function TextArea({
   label,
+  labelHint,
   value,
   onChange,
   placeholder,
   rows = 3,
 }: {
   label: string;
+  labelHint?: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -64,7 +75,10 @@ function TextArea({
 }) {
   return (
     <label className="resume-builder__field resume-builder__field--full">
-      <span>{label}</span>
+      <span className="resume-builder__field-label">
+        <span className="resume-builder__field-label-title">{label}</span>
+        {labelHint ? <span className="resume-builder__field-label-hint">{labelHint}</span> : null}
+      </span>
       <textarea value={value} rows={rows} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
     </label>
   );
@@ -105,37 +119,98 @@ function EntryList<T>({
   );
 }
 
-export function ResumeBuilder({ form, userEmail, displayName, storageKey }: Props) {
+export function ResumeBuilder({
+  form,
+  userEmail,
+  displayName,
+  engagementId,
+  editorRole = "student",
+  storageKey,
+}: Props) {
   const { t } = useLanguage();
-  const [draft, setDraft] = useState<ResumeFormData>(() =>
-    storageKey ? loadResumeDraftFromStorage(storageKey) ?? createEmptyResumeForm() : createEmptyResumeForm(),
-  );
+  const persistKey = engagementId || storageKey || "";
+  const [draft, setDraft] = useState<ResumeFormData>(() => createEmptyResumeForm());
   const [readyToPersist, setReadyToPersist] = useState(false);
+  const [loading, setLoading] = useState(Boolean(persistKey));
+  const [syncState, setSyncState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!storageKey) {
+    if (!persistKey) {
+      setDraft(prefillResumeFromForm(form, { email: userEmail, displayName }));
       setReadyToPersist(true);
+      setLoading(false);
       return;
     }
 
-    const saved = loadResumeDraftFromStorage(storageKey);
-    if (saved && hasResumeDraftContent(saved)) {
-      setDraft(saved);
-      setReadyToPersist(true);
-      return;
-    }
+    let cancelled = false;
+    setLoading(true);
+    setReadyToPersist(false);
 
-    setDraft(prefillResumeFromForm(form, { email: userEmail, displayName }));
-    setReadyToPersist(true);
-  }, [storageKey, form, userEmail, displayName]);
+    void (async () => {
+      try {
+        const remote = isResumeServerSyncEnabled()
+          ? await loadRemoteResumeDraft(persistKey, editorRole)
+          : null;
+        if (cancelled) return;
+
+        if (remote && hasResumeDraftContent(remote)) {
+          setDraft(remote);
+          saveResumeDraftToStorage(persistKey, remote);
+          setReadyToPersist(true);
+          return;
+        }
+
+        const local = loadResumeDraftFromStorage(persistKey);
+        if (local && hasResumeDraftContent(local)) {
+          setDraft(local);
+          if (isResumeServerSyncEnabled()) {
+            void saveRemoteResumeDraft(persistKey, local, editorRole).catch(() => {
+              /* best-effort migrate local draft to server */
+            });
+          }
+          setReadyToPersist(true);
+          return;
+        }
+
+        setDraft(prefillResumeFromForm(form, { email: userEmail, displayName }));
+        setReadyToPersist(true);
+      } catch {
+        if (cancelled) return;
+        const local = loadResumeDraftFromStorage(persistKey);
+        setDraft(
+          local && hasResumeDraftContent(local)
+            ? local
+            : prefillResumeFromForm(form, { email: userEmail, displayName }),
+        );
+        setReadyToPersist(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [persistKey, editorRole, form, userEmail, displayName]);
 
   useEffect(() => {
-    if (!storageKey || !readyToPersist) return;
-    saveResumeDraftToStorage(storageKey, draft);
-  }, [draft, storageKey, readyToPersist]);
+    if (!persistKey || !readyToPersist) return;
+    saveResumeDraftToStorage(persistKey, draft);
+
+    if (!isResumeServerSyncEnabled()) return;
+
+    setSyncState("saving");
+    const timer = window.setTimeout(() => {
+      void saveRemoteResumeDraft(persistKey, draft, editorRole)
+        .then(() => setSyncState("saved"))
+        .catch(() => setSyncState("error"));
+    }, 700);
+
+    return () => window.clearTimeout(timer);
+  }, [draft, persistKey, readyToPersist, editorRole]);
 
   const patch = useCallback((updater: (prev: ResumeFormData) => ResumeFormData) => {
     setDraft((prev) => updater(prev));
@@ -176,18 +251,31 @@ export function ResumeBuilder({ form, userEmail, displayName, storageKey }: Prop
         <div>
           <p className="resume-builder__kicker">{t("resume.kicker")}</p>
           <h2 id="resume-builder-title">{t("resume.title")}</h2>
-          <p className="resume-builder__lead">{t("resume.lead")}</p>
+          <p className="resume-builder__lead">
+            {editorRole === "counselor" ? t("resume.counselorLead") : t("resume.lead")}
+          </p>
+          {loading ? <p className="resume-builder__sync resume-builder__sync--saving">{t("resume.loading")}</p> : null}
+          {!loading && syncState === "saving" ? (
+            <p className="resume-builder__sync resume-builder__sync--saving">{t("resume.saving")}</p>
+          ) : null}
+          {!loading && syncState === "saved" ? (
+            <p className="resume-builder__sync resume-builder__sync--saved">{t("resume.saved")}</p>
+          ) : null}
+          {!loading && syncState === "error" ? (
+            <p className="resume-builder__sync resume-builder__sync--error">{t("resume.saveFailed")}</p>
+          ) : null}
         </div>
         <div className="resume-builder__head-actions">
-          <button type="button" className="btn btn-secondary btn-sm" onClick={prefill} disabled={busy}>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={prefill} disabled={busy || loading}>
             {t("resume.prefill")}
           </button>
-          <button type="button" className="btn btn-primary btn-sm" onClick={() => void generate()} disabled={busy}>
+          <button type="button" className="btn btn-primary btn-sm" onClick={() => void generate()} disabled={busy || loading}>
             {busy ? t("resume.generating") : t("resume.generate")}
           </button>
         </div>
       </div>
 
+      {!loading ? (
       <div className="resume-builder__sections">
         <details className="resume-builder__section" open>
           <summary>{t("resume.sections.contact")}</summary>
@@ -279,8 +367,19 @@ export function ResumeBuilder({ form, userEmail, displayName, storageKey }: Prop
                 <Field label={t("resume.fields.role")} value={draft.activities[index].role} onChange={(v) => patch((d) => { const activities = [...d.activities]; activities[index] = { ...activities[index], role: v }; return { ...d, activities }; })} />
                 <Field label={t("resume.fields.hoursPerWeek")} value={draft.activities[index].hoursPerWeek} onChange={(v) => patch((d) => { const activities = [...d.activities]; activities[index] = { ...activities[index], hoursPerWeek: v }; return { ...d, activities }; })} />
                 <Field label={t("resume.fields.weeksPerYear")} value={draft.activities[index].weeksPerYear} onChange={(v) => patch((d) => { const activities = [...d.activities]; activities[index] = { ...activities[index], weeksPerYear: v }; return { ...d, activities }; })} />
-                <TextArea label={t("resume.fields.bullet1")} value={draft.activities[index].bullet1} onChange={(v) => patch((d) => { const activities = [...d.activities]; activities[index] = { ...activities[index], bullet1: v }; return { ...d, activities }; })} />
-                <TextArea label={t("resume.fields.bullet2")} value={draft.activities[index].bullet2} onChange={(v) => patch((d) => { const activities = [...d.activities]; activities[index] = { ...activities[index], bullet2: v }; return { ...d, activities }; })} />
+                <TextArea
+                  label={t("resume.fields.entryDescription")}
+                  labelHint={t("resume.fields.entryDescriptionHint")}
+                  value={draft.activities[index].description}
+                  onChange={(v) =>
+                    patch((d) => {
+                      const activities = [...d.activities];
+                      activities[index] = { ...activities[index], description: v };
+                      return { ...d, activities };
+                    })
+                  }
+                  rows={4}
+                />
               </div>
             </>
           )}
@@ -305,8 +404,19 @@ export function ResumeBuilder({ form, userEmail, displayName, storageKey }: Prop
                 <Field label={t("resume.fields.location")} value={draft.works[index].location} onChange={(v) => patch((d) => { const works = [...d.works]; works[index] = { ...works[index], location: v }; return { ...d, works }; })} />
                 <Field label={t("resume.fields.role")} value={draft.works[index].title} onChange={(v) => patch((d) => { const works = [...d.works]; works[index] = { ...works[index], title: v }; return { ...d, works }; })} />
                 <Field label={t("resume.fields.dates")} value={draft.works[index].dates} placeholder={t("resume.placeholders.workDates")} onChange={(v) => patch((d) => { const works = [...d.works]; works[index] = { ...works[index], dates: v }; return { ...d, works }; })} />
-                <TextArea label={t("resume.fields.bullet1")} value={draft.works[index].bullet1} onChange={(v) => patch((d) => { const works = [...d.works]; works[index] = { ...works[index], bullet1: v }; return { ...d, works }; })} />
-                <TextArea label={t("resume.fields.bullet2")} value={draft.works[index].bullet2} onChange={(v) => patch((d) => { const works = [...d.works]; works[index] = { ...works[index], bullet2: v }; return { ...d, works }; })} />
+                <TextArea
+                  label={t("resume.fields.entryDescription")}
+                  labelHint={t("resume.fields.entryDescriptionHint")}
+                  value={draft.works[index].description}
+                  onChange={(v) =>
+                    patch((d) => {
+                      const works = [...d.works];
+                      works[index] = { ...works[index], description: v };
+                      return { ...d, works };
+                    })
+                  }
+                  rows={4}
+                />
               </div>
             </>
           )}
@@ -330,8 +440,19 @@ export function ResumeBuilder({ form, userEmail, displayName, storageKey }: Prop
                 <Field label={t("resume.fields.projectTitle")} value={draft.projects[index].title} onChange={(v) => patch((d) => { const projects = [...d.projects]; projects[index] = { ...projects[index], title: v }; return { ...d, projects }; })} />
                 <Field label={t("resume.fields.year")} value={draft.projects[index].year} onChange={(v) => patch((d) => { const projects = [...d.projects]; projects[index] = { ...projects[index], year: v }; return { ...d, projects }; })} />
                 <Field label={t("resume.fields.supervisor")} value={draft.projects[index].supervisor} onChange={(v) => patch((d) => { const projects = [...d.projects]; projects[index] = { ...projects[index], supervisor: v }; return { ...d, projects }; })} />
-                <TextArea label={t("resume.fields.bullet1")} value={draft.projects[index].bullet1} onChange={(v) => patch((d) => { const projects = [...d.projects]; projects[index] = { ...projects[index], bullet1: v }; return { ...d, projects }; })} />
-                <TextArea label={t("resume.fields.bullet2")} value={draft.projects[index].bullet2} onChange={(v) => patch((d) => { const projects = [...d.projects]; projects[index] = { ...projects[index], bullet2: v }; return { ...d, projects }; })} />
+                <TextArea
+                  label={t("resume.fields.entryDescription")}
+                  labelHint={t("resume.fields.entryDescriptionHint")}
+                  value={draft.projects[index].description}
+                  onChange={(v) =>
+                    patch((d) => {
+                      const projects = [...d.projects];
+                      projects[index] = { ...projects[index], description: v };
+                      return { ...d, projects };
+                    })
+                  }
+                  rows={4}
+                />
               </div>
             </>
           )}
@@ -346,9 +467,10 @@ export function ResumeBuilder({ form, userEmail, displayName, storageKey }: Prop
           </div>
         </details>
       </div>
+      ) : null}
 
       <div className="resume-builder__footer">
-        <button type="button" className="btn btn-primary" onClick={() => void generate()} disabled={busy}>
+        <button type="button" className="btn btn-primary" onClick={() => void generate()} disabled={busy || loading}>
           {busy ? t("resume.generating") : t("resume.generateDocx")}
         </button>
         {notice ? <p className="resume-builder__notice">{notice}</p> : null}

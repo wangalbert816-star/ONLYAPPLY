@@ -37,8 +37,7 @@ export function emptyActivity(): ResumeActivity {
     role: "",
     hoursPerWeek: "",
     weeksPerYear: "",
-    bullet1: "",
-    bullet2: "",
+    description: "",
   };
 }
 
@@ -48,8 +47,7 @@ export function emptyWork(): ResumeWork {
     location: "",
     title: "",
     dates: "",
-    bullet1: "",
-    bullet2: "",
+    description: "",
   };
 }
 
@@ -58,8 +56,7 @@ export function emptyProject(): ResumeProject {
     title: "",
     year: "",
     supervisor: "",
-    bullet1: "",
-    bullet2: "",
+    description: "",
   };
 }
 
@@ -97,17 +94,14 @@ function activityDatesFromItem(item: ActivityItem): string {
 }
 
 function mapActivityItem(item: ActivityItem): ResumeActivity {
-  const bullets: string[] = [];
-  if (item.description.trim()) bullets.push(item.description.trim());
-  if (item.outcome.trim()) bullets.push(item.outcome.trim());
+  const lines = [item.description.trim(), item.outcome.trim()].filter(Boolean);
   return {
     organization: item.name.trim(),
     dates: activityDatesFromItem(item),
     role: item.role.trim(),
     hoursPerWeek: item.hours.trim(),
     weeksPerYear: "",
-    bullet1: bullets[0] ?? "",
-    bullet2: bullets[1] ?? "",
+    description: lines.join("\n"),
   };
 }
 
@@ -155,8 +149,7 @@ export function prefillResumeFromForm(
       company: item.name.trim(),
       title: item.role.trim(),
       dates: activityDatesFromItem(item),
-      bullet1: item.description.trim(),
-      bullet2: item.outcome.trim(),
+      description: [item.description.trim(), item.outcome.trim()].filter(Boolean).join("\n"),
     }))
     .filter((w) => w.company);
   base.projects = structured
@@ -165,8 +158,7 @@ export function prefillResumeFromForm(
       ...emptyProject(),
       title: item.name.trim(),
       supervisor: item.proof.trim(),
-      bullet1: item.description.trim(),
-      bullet2: item.outcome.trim(),
+      description: [item.description.trim(), item.outcome.trim()].filter(Boolean).join("\n"),
     }))
     .filter((p) => p.title);
 
@@ -186,8 +178,41 @@ export function formatActivityHours(activity: ResumeActivity): string {
 
 function bulletLine(text: string): string {
   const trimmed = text.trim();
-  if (!trimmed) return "";
+  if (!trimmed || trimmed === ".") return "";
   return trimmed.startsWith("▪") ? trimmed : `▪    ${trimmed}`;
+}
+
+function isMeaningfulText(text: string): boolean {
+  const trimmed = text.trim();
+  return trimmed.length > 0 && trimmed !== "." && trimmed.toLowerCase() !== "undefined";
+}
+
+function descriptionToBullets(text: string): { bullet1: string; bullet2: string } {
+  const lines = text
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(isMeaningfulText);
+  if (lines.length === 0) return { bullet1: "", bullet2: "" };
+  if (lines.length === 1) return { bullet1: bulletLine(lines[0]), bullet2: "" };
+  return {
+    bullet1: bulletLine(lines[0]),
+    bullet2: lines.slice(1).map(bulletLine).filter(Boolean).join("\n"),
+  };
+}
+
+function sanitizeTemplateString(value: unknown): string {
+  if (value == null) return "";
+  const text = String(value).trim();
+  if (!text || text === "undefined") return "";
+  return text;
+}
+
+function sanitizeTemplateRecord(record: Record<string, string>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(record)) {
+    out[key] = sanitizeTemplateString(value);
+  }
+  return out;
 }
 
 function hasAnyValue(values: string[]): boolean {
@@ -197,15 +222,17 @@ function hasAnyValue(values: string[]): boolean {
 function formatSatLine(edu: ResumeEducation): string {
   const total = edu.satTotal.trim();
   const math = edu.satMath.trim();
-  const ebrw = edu.satEbrw.trim();
+  const english = edu.satEbrw.trim();
   const act = edu.actScore.trim();
 
   let sat = "";
   if (total) {
     sat = `SAT: ${total}`;
-    if (math || ebrw) {
-      sat += ` (Math: ${math || "—"}, EBRW: ${ebrw || "—"})`;
+    if (math || english) {
+      sat += ` (Math: ${math || "—"}, English: ${english || "—"})`;
     }
+  } else if (math || english) {
+    sat = `SAT (Math: ${math || "—"}, English: ${english || "—"})`;
   }
   if (act) {
     return sat ? `${sat}  |  ACT: ${act}` : `ACT: ${act}`;
@@ -214,7 +241,7 @@ function formatSatLine(edu: ResumeEducation): string {
 }
 
 function mapEducation(edu: ResumeEducation) {
-  return {
+  return sanitizeTemplateRecord({
     HS_NAME: edu.highSchoolName.trim(),
     HS_CITY_STATE: edu.schoolCityState.trim(),
     GRAD_MONTH_YEAR: edu.graduationMonthYear.trim(),
@@ -224,7 +251,7 @@ function mapEducation(edu: ResumeEducation) {
     SAT_LINE: formatSatLine(edu),
     AP_COURSES_LINE: edu.apCoursesLine.trim(),
     COURSEWORK_LINE: edu.courseworkLine.trim(),
-  };
+  });
 }
 
 export function resumeFormToTemplateData(form: ResumeFormData): ResumeTemplateData {
@@ -245,7 +272,11 @@ export function resumeFormToTemplateData(form: ResumeFormData): ResumeTemplateDa
           edu.schoolCityState,
           edu.graduationMonthYear,
           edu.gpa,
+          edu.rankNumerator,
+          edu.rankDenominator,
           edu.satTotal,
+          edu.satMath,
+          edu.satEbrw,
           edu.actScore,
           edu.apCoursesLine,
           edu.courseworkLine,
@@ -254,44 +285,55 @@ export function resumeFormToTemplateData(form: ResumeFormData): ResumeTemplateDa
       .map(mapEducation),
     honors: form.honors
       .filter((h) => hasAnyValue([h.name, h.year, h.issuer, h.description]))
-      .map((h) => ({
-        AWARD_NAME: h.name.trim(),
-        AWARD_YEAR: h.year.trim(),
-        AWARD_ISSUER: h.issuer.trim(),
-        AWARD_DESC: bulletLine(h.description),
-      })),
+      .map((h) =>
+        sanitizeTemplateRecord({
+          AWARD_NAME: h.name.trim(),
+          AWARD_YEAR: h.year.trim(),
+          AWARD_ISSUER: h.issuer.trim(),
+          AWARD_DESC: bulletLine(h.description),
+        }),
+      ),
     activities: form.activities
-      .filter((a) => hasAnyValue([a.organization, a.dates, a.role, a.bullet1, a.bullet2]))
-      .map((a) => ({
-        ACTIVITY_ORG: a.organization.trim(),
-        ACTIVITY_DATES: a.dates.trim(),
-        ACTIVITY_ROLE: a.role.trim(),
-        ACTIVITY_HOURS: formatActivityHours(a),
-        ACTIVITY_BULLET_1: bulletLine(a.bullet1),
-        ACTIVITY_BULLET_2: bulletLine(a.bullet2),
-      })),
+      .filter((a) => hasAnyValue([a.organization, a.dates, a.role, a.description, a.hoursPerWeek, a.weeksPerYear]))
+      .map((a) => {
+        const bullets = descriptionToBullets(a.description);
+        return sanitizeTemplateRecord({
+          ACTIVITY_ORG: a.organization.trim(),
+          ACTIVITY_DATES: a.dates.trim(),
+          ACTIVITY_ROLE: a.role.trim(),
+          ACTIVITY_HOURS: formatActivityHours(a),
+          ACTIVITY_BULLET_1: bullets.bullet1,
+          ACTIVITY_BULLET_2: bullets.bullet2,
+        });
+      }),
     works: form.works
-      .filter((w) => hasAnyValue([w.company, w.title, w.dates, w.bullet1, w.bullet2]))
-      .map((w) => ({
-        WORK_COMPANY: w.company.trim(),
-        WORK_LOCATION: w.location.trim(),
-        WORK_TITLE: w.title.trim(),
-        WORK_DATES: w.dates.trim(),
-        WORK_BULLET_1: bulletLine(w.bullet1),
-        WORK_BULLET_2: bulletLine(w.bullet2),
-      })),
+      .filter((w) => hasAnyValue([w.company, w.title, w.dates, w.location, w.description]))
+      .map((w) => {
+        const bullets = descriptionToBullets(w.description);
+        return sanitizeTemplateRecord({
+          WORK_COMPANY: w.company.trim(),
+          WORK_LOCATION: w.location.trim(),
+          WORK_TITLE: w.title.trim(),
+          WORK_DATES: w.dates.trim(),
+          WORK_BULLET_1: bullets.bullet1,
+          WORK_BULLET_2: bullets.bullet2,
+        });
+      }),
     projects: form.projects
-      .filter((p) => hasAnyValue([p.title, p.year, p.supervisor, p.bullet1, p.bullet2]))
-      .map((p) => ({
-        PROJECT_TITLE: p.title.trim(),
-        PROJECT_YEAR: p.year.trim(),
-        PROJECT_SUPERVISOR: p.supervisor.trim(),
-        PROJECT_BULLET_1: bulletLine(p.bullet1),
-        PROJECT_BULLET_2: bulletLine(p.bullet2),
-      })),
-    SKILLS_TECHNICAL: form.skills.technical.trim(),
-    SKILLS_LANGUAGES: form.skills.languages.trim(),
-    SKILLS_INTERESTS: form.skills.interests.trim(),
+      .filter((p) => hasAnyValue([p.title, p.year, p.supervisor, p.description]))
+      .map((p) => {
+        const bullets = descriptionToBullets(p.description);
+        return sanitizeTemplateRecord({
+          PROJECT_TITLE: p.title.trim(),
+          PROJECT_YEAR: p.year.trim(),
+          PROJECT_SUPERVISOR: p.supervisor.trim(),
+          PROJECT_BULLET_1: bullets.bullet1,
+          PROJECT_BULLET_2: bullets.bullet2,
+        });
+      }),
+    SKILLS_TECHNICAL: sanitizeTemplateString(form.skills.technical),
+    SKILLS_LANGUAGES: sanitizeTemplateString(form.skills.languages),
+    SKILLS_INTERESTS: sanitizeTemplateString(form.skills.interests),
   };
 }
 
@@ -341,6 +383,25 @@ export function hasResumeDraftContent(draft: ResumeFormData): boolean {
 }
 
 /** Migrate v1 fixed-slot drafts saved before dynamic lists. */
+function mergeEntryDescription(row: Record<string, unknown>): string {
+  if (typeof row.description === "string") return row.description;
+  return [row.bullet1, row.bullet2]
+    .filter((v) => typeof v === "string" && v.trim())
+    .join("\n");
+}
+
+function migrateActivityRow(row: Record<string, unknown>): ResumeActivity {
+  return { ...emptyActivity(), ...row, description: mergeEntryDescription(row) } as ResumeActivity;
+}
+
+function migrateWorkRow(row: Record<string, unknown>): ResumeWork {
+  return { ...emptyWork(), ...row, description: mergeEntryDescription(row) } as ResumeWork;
+}
+
+function migrateProjectRow(row: Record<string, unknown>): ResumeProject {
+  return { ...emptyProject(), ...row, description: mergeEntryDescription(row) } as ResumeProject;
+}
+
 export function migrateResumeDraft(raw: unknown): ResumeFormData {
   if (!raw || typeof raw !== "object") return createEmptyResumeForm();
   const data = raw as Record<string, unknown>;
@@ -354,9 +415,15 @@ export function migrateResumeDraft(raw: unknown): ResumeFormData {
       },
       educations: data.educations.length > 0 ? (data.educations as ResumeEducation[]) : base.educations,
       honors: Array.isArray(data.honors) ? (data.honors as ResumeHonor[]) : [],
-      activities: Array.isArray(data.activities) ? (data.activities as ResumeActivity[]) : [],
-      works: Array.isArray(data.works) ? (data.works as ResumeWork[]) : [],
-      projects: Array.isArray(data.projects) ? (data.projects as ResumeProject[]) : [],
+      activities: Array.isArray(data.activities)
+        ? (data.activities as Array<Record<string, unknown>>).map(migrateActivityRow)
+        : [],
+      works: Array.isArray(data.works)
+        ? (data.works as Array<Record<string, unknown>>).map(migrateWorkRow)
+        : [],
+      projects: Array.isArray(data.projects)
+        ? (data.projects as Array<Record<string, unknown>>).map(migrateProjectRow)
+        : [],
       skills: {
         ...base.skills,
         ...(typeof data.skills === "object" && data.skills ? (data.skills as ResumeFormData["skills"]) : {}),
@@ -393,8 +460,18 @@ export function migrateResumeDraft(raw: unknown): ResumeFormData {
     ];
   }
   if (Array.isArray(data.honors)) base.honors = data.honors as ResumeHonor[];
-  if (Array.isArray(data.activities)) base.activities = data.activities as ResumeActivity[];
-  if (data.work && typeof data.work === "object") base.works = [data.work as ResumeWork];
-  if (data.project && typeof data.project === "object") base.projects = [data.project as ResumeProject];
+  if (Array.isArray(data.activities)) {
+    base.activities = (data.activities as Array<Record<string, unknown>>).map(migrateActivityRow);
+  }
+  if (Array.isArray(data.works)) {
+    base.works = (data.works as Array<Record<string, unknown>>).map(migrateWorkRow);
+  } else if (data.work && typeof data.work === "object") {
+    base.works = [migrateWorkRow(data.work as Record<string, unknown>)];
+  }
+  if (Array.isArray(data.projects)) {
+    base.projects = (data.projects as Array<Record<string, unknown>>).map(migrateProjectRow);
+  } else if (data.project && typeof data.project === "object") {
+    base.projects = [migrateProjectRow(data.project as Record<string, unknown>)];
+  }
   return base;
 }

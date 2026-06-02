@@ -34,8 +34,8 @@ export type ResumeActivity = {
   role: string;
   hoursPerWeek: string;
   weeksPerYear: string;
-  bullet1: string;
-  bullet2: string;
+  /** Multi-line bullets; exported to Word as ▪ lines. */
+  description: string;
 };
 
 export type ResumeWork = {
@@ -43,16 +43,14 @@ export type ResumeWork = {
   location: string;
   title: string;
   dates: string;
-  bullet1: string;
-  bullet2: string;
+  description: string;
 };
 
 export type ResumeProject = {
   title: string;
   year: string;
   supervisor: string;
-  bullet1: string;
-  bullet2: string;
+  description: string;
 };
 
 export type ResumeSkills = {

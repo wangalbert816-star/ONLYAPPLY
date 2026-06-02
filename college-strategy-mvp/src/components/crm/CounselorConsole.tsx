@@ -38,6 +38,7 @@ import type { CrmApplicationDocument, CrmEngagement, CrmMessageChannel, CrmTaskI
 import type { CrmMeetingRecapDraft } from "../../lib/crm/meetingRecapFormat";
 import type { FormState } from "../../types";
 import { BrandLogo } from "../BrandLogo";
+import { ResumeBuilder } from "../resume/ResumeBuilder";
 import { CaseFilesPanel } from "./CaseFilesPanel";
 import { CounselorDocumentLibrary } from "./CounselorDocumentLibrary";
 import { LibraryItemPicker } from "./LibraryItemPicker";
@@ -54,7 +55,7 @@ type Props = {
   onOpenStudentReport?: (engagement: CrmEngagement) => void;
 };
 
-type TabId = "home" | "todos" | "documents" | "chat" | "meetings" | "files" | "student";
+type TabId = "home" | "todos" | "documents" | "chat" | "meetings" | "files" | "resume" | "student";
 
 function formatWhen(iso: string, locale: string) {
   const d = new Date(iso);
@@ -187,6 +188,7 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
     { id: "chat", label: t("crm.signedService.tabs.chat") },
     { id: "meetings", label: t("crm.signedService.tabs.meetings") },
     { id: "files", label: t("crm.signedService.tabs.files") },
+    { id: "resume", label: t("crm.signedService.tabs.resume") },
     { id: "student", label: t("crm.signedService.tabs.student") },
   ];
 
@@ -903,6 +905,50 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                         refresh();
                       }}
                     />
+                  </section>
+                ) : null}
+
+                {tab === "resume" && selected ? (
+                  <section className="signed-service-hub__panel signed-service-hub__panel--resume">
+                    {studentFormLoading ? (
+                      <p className="signed-service-hub__muted">{t("crm.signedService.studentLoading")}</p>
+                    ) : (
+                      <ResumeBuilder
+                        form={
+                          studentForm ?? {
+                            intakeTerm: "",
+                            intakeOtherDetail: "",
+                            applicantIdentity: "",
+                            citizenship: "",
+                            residenceRegion: "",
+                            budget: "",
+                            testing: "",
+                            satScore: "",
+                            actScore: "",
+                            highSchoolSystem: "",
+                            currentHighSchool: "",
+                            gpa: "",
+                            gpaTrend: "",
+                            languageScores: "",
+                            academicSpecialFlags: [],
+                            academicSpecialNotes: "",
+                            majorPrimary: "",
+                            majorSecondary: "",
+                            schoolSize: "",
+                            campusCulturePref: "",
+                            geoPrefs: [],
+                            activities: "",
+                            structuredActivities: [],
+                            riskStyle: "",
+                            dealbreakers: "",
+                          }
+                        }
+                        userEmail={selected.studentEmail}
+                        displayName={selected.studentName}
+                        engagementId={selected.id}
+                        editorRole="counselor"
+                      />
+                    )}
                   </section>
                 ) : null}
 
