@@ -1,0 +1,49 @@
+.crm-unread-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.crm-unread-badge--dot {
+  min-width: 0.55rem;
+  width: 0.55rem;
+  height: 0.55rem;
+  padding: 0;
+  font-size: 0;
+  overflow: hidden;
+}
+
+.crm-unread-badge--nav-tab {
+  margin-left: 0.35rem;
+  vertical-align: middle;
+}
+
+.crm-unread-badge--menu {
+  margin-left: 0.4rem;
+}
+
+.auth-menu-button-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.auth-menu-button-wrap .crm-unread-badge--menu-corner {
+  position: absolute;
+  top: -0.2rem;
+  right: -0.15rem;
+  min-width: 0.55rem;
+  width: 0.55rem;
+  height: 0.55rem;
+  padding: 0;
+  font-size: 0;
+}

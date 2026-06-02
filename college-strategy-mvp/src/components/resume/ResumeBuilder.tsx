@@ -1,0 +1,359 @@
+import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useLanguage } from "../../i18n/LanguageContext";
+import {
+  downloadResumeBlob,
+  generateResumeDocx,
+  resumeDownloadFilename,
+} from "../../lib/resume/buildResumeDocx";
+import {
+  createEmptyResumeForm,
+  emptyActivity,
+  emptyEducation,
+  emptyHonor,
+  emptyProject,
+  emptyWork,
+  hasResumeDraftContent,
+  loadResumeDraftFromStorage,
+  prefillResumeFromForm,
+  saveResumeDraftToStorage,
+} from "../../lib/resume/resumeForm";
+import type { FormState } from "../../types";
+import type { ResumeFormData } from "../../lib/resume/types";
+import "./ResumeBuilder.css";
+
+type Props = {
+  form: FormState;
+  userEmail?: string | null;
+  displayName?: string | null;
+  storageKey?: string;
+};
+
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  type?: string;
+}) {
+  return (
+    <label className="resume-builder__field">
+      <span>{label}</span>
+      <input type={type} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+    </label>
+  );
+}
+
+function TextArea({
+  label,
+  value,
+  onChange,
+  placeholder,
+  rows = 3,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  rows?: number;
+}) {
+  return (
+    <label className="resume-builder__field resume-builder__field--full">
+      <span>{label}</span>
+      <textarea value={value} rows={rows} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+    </label>
+  );
+}
+
+function EntryList<T>({
+  title,
+  entries,
+  emptyLabel,
+  addLabel,
+  renderEntry,
+  onAdd,
+  defaultOpen = false,
+}: {
+  title: string;
+  entries: T[];
+  emptyLabel: string;
+  addLabel: string;
+  renderEntry: (entry: T, index: number) => ReactNode;
+  onAdd: () => void;
+  defaultOpen?: boolean;
+}) {
+  return (
+    <details className="resume-builder__section" open={defaultOpen}>
+      <summary>{title}</summary>
+      {entries.length === 0 ? <p className="resume-builder__empty">{emptyLabel}</p> : null}
+      <div className="resume-builder__entries">
+        {entries.map((entry, index) => (
+          <div key={index} className="resume-builder__entry">
+            {renderEntry(entry, index)}
+          </div>
+        ))}
+      </div>
+      <button type="button" className="btn btn-secondary btn-sm resume-builder__add" onClick={onAdd}>
+        {addLabel}
+      </button>
+    </details>
+  );
+}
+
+export function ResumeBuilder({ form, userEmail, displayName, storageKey }: Props) {
+  const { t } = useLanguage();
+  const [draft, setDraft] = useState<ResumeFormData>(() =>
+    storageKey ? loadResumeDraftFromStorage(storageKey) ?? createEmptyResumeForm() : createEmptyResumeForm(),
+  );
+  const [readyToPersist, setReadyToPersist] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!storageKey) {
+      setReadyToPersist(true);
+      return;
+    }
+
+    const saved = loadResumeDraftFromStorage(storageKey);
+    if (saved && hasResumeDraftContent(saved)) {
+      setDraft(saved);
+      setReadyToPersist(true);
+      return;
+    }
+
+    setDraft(prefillResumeFromForm(form, { email: userEmail, displayName }));
+    setReadyToPersist(true);
+  }, [storageKey, form, userEmail, displayName]);
+
+  useEffect(() => {
+    if (!storageKey || !readyToPersist) return;
+    saveResumeDraftToStorage(storageKey, draft);
+  }, [draft, storageKey, readyToPersist]);
+
+  const patch = useCallback((updater: (prev: ResumeFormData) => ResumeFormData) => {
+    setDraft((prev) => updater(prev));
+    setError(null);
+    setNotice(null);
+  }, []);
+
+  const prefill = () => {
+    setDraft(prefillResumeFromForm(form, { email: userEmail, displayName }));
+    setNotice(t("resume.prefilled"));
+  };
+
+  const generate = async () => {
+    if (!draft.contact.fullName.trim()) {
+      setError(t("resume.errors.nameRequired"));
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const blob = await generateResumeDocx(draft);
+      downloadResumeBlob(blob, resumeDownloadFilename(draft.contact.fullName));
+      setNotice(t("resume.generated"));
+    } catch (e) {
+      const raw = e instanceof Error ? e.message : String(e);
+      setError(raw === "resume_template_missing" ? t("resume.errors.templateMissing") : t("resume.errors.generateFailed"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const removeAt = <T,>(items: T[], index: number): T[] => items.filter((_, i) => i !== index);
+
+  return (
+    <section className="resume-builder" aria-labelledby="resume-builder-title">
+      <div className="resume-builder__head">
+        <div>
+          <p className="resume-builder__kicker">{t("resume.kicker")}</p>
+          <h2 id="resume-builder-title">{t("resume.title")}</h2>
+          <p className="resume-builder__lead">{t("resume.lead")}</p>
+        </div>
+        <div className="resume-builder__head-actions">
+          <button type="button" className="btn btn-secondary btn-sm" onClick={prefill} disabled={busy}>
+            {t("resume.prefill")}
+          </button>
+          <button type="button" className="btn btn-primary btn-sm" onClick={() => void generate()} disabled={busy}>
+            {busy ? t("resume.generating") : t("resume.generate")}
+          </button>
+        </div>
+      </div>
+
+      <div className="resume-builder__sections">
+        <details className="resume-builder__section" open>
+          <summary>{t("resume.sections.contact")}</summary>
+          <div className="resume-builder__grid">
+            <Field label={t("resume.fields.fullName")} value={draft.contact.fullName} onChange={(v) => patch((d) => ({ ...d, contact: { ...d.contact, fullName: v } }))} />
+            <Field label={t("resume.fields.cityState")} value={draft.contact.cityState} onChange={(v) => patch((d) => ({ ...d, contact: { ...d.contact, cityState: v } }))} />
+            <Field label={t("resume.fields.phone")} value={draft.contact.phone} onChange={(v) => patch((d) => ({ ...d, contact: { ...d.contact, phone: v } }))} />
+            <Field label={t("resume.fields.email")} value={draft.contact.email} onChange={(v) => patch((d) => ({ ...d, contact: { ...d.contact, email: v } }))} />
+            <Field label={t("resume.fields.linkedIn")} value={draft.contact.linkedIn} onChange={(v) => patch((d) => ({ ...d, contact: { ...d.contact, linkedIn: v } }))} />
+          </div>
+        </details>
+
+        <EntryList
+          title={t("resume.sections.education")}
+          entries={draft.educations}
+          emptyLabel={t("resume.listEmpty")}
+          addLabel={t("resume.addEducation")}
+          defaultOpen
+          onAdd={() => patch((d) => ({ ...d, educations: [...d.educations, emptyEducation()] }))}
+          renderEntry={(_, index) => (
+            <>
+              <div className="resume-builder__entry-head">
+                <strong>{t("resume.entryLabel", { n: index + 1 })}</strong>
+                {draft.educations.length > 1 ? (
+                  <button type="button" className="resume-builder__remove" onClick={() => patch((d) => ({ ...d, educations: removeAt(d.educations, index) }))}>
+                    {t("resume.removeEntry")}
+                  </button>
+                ) : null}
+              </div>
+              <div className="resume-builder__grid">
+                <Field label={t("resume.fields.highSchool")} value={draft.educations[index].highSchoolName} onChange={(v) => patch((d) => { const educations = [...d.educations]; educations[index] = { ...educations[index], highSchoolName: v }; return { ...d, educations }; })} />
+                <Field label={t("resume.fields.schoolCityState")} value={draft.educations[index].schoolCityState} onChange={(v) => patch((d) => { const educations = [...d.educations]; educations[index] = { ...educations[index], schoolCityState: v }; return { ...d, educations }; })} />
+                <Field label={t("resume.fields.graduation")} value={draft.educations[index].graduationMonthYear} placeholder={t("resume.placeholders.graduation")} onChange={(v) => patch((d) => { const educations = [...d.educations]; educations[index] = { ...educations[index], graduationMonthYear: v }; return { ...d, educations }; })} />
+                <Field label={t("resume.fields.gpa")} value={draft.educations[index].gpa} onChange={(v) => patch((d) => { const educations = [...d.educations]; educations[index] = { ...educations[index], gpa: v }; return { ...d, educations }; })} />
+                <Field label={t("resume.fields.rankNum")} value={draft.educations[index].rankNumerator} onChange={(v) => patch((d) => { const educations = [...d.educations]; educations[index] = { ...educations[index], rankNumerator: v }; return { ...d, educations }; })} />
+                <Field label={t("resume.fields.rankDen")} value={draft.educations[index].rankDenominator} onChange={(v) => patch((d) => { const educations = [...d.educations]; educations[index] = { ...educations[index], rankDenominator: v }; return { ...d, educations }; })} />
+                <Field label={t("resume.fields.satTotal")} value={draft.educations[index].satTotal} onChange={(v) => patch((d) => { const educations = [...d.educations]; educations[index] = { ...educations[index], satTotal: v }; return { ...d, educations }; })} />
+                <Field label={t("resume.fields.satMath")} value={draft.educations[index].satMath} onChange={(v) => patch((d) => { const educations = [...d.educations]; educations[index] = { ...educations[index], satMath: v }; return { ...d, educations }; })} />
+                <Field label={t("resume.fields.satEbrw")} value={draft.educations[index].satEbrw} onChange={(v) => patch((d) => { const educations = [...d.educations]; educations[index] = { ...educations[index], satEbrw: v }; return { ...d, educations }; })} />
+                <Field label={t("resume.fields.act")} value={draft.educations[index].actScore} onChange={(v) => patch((d) => { const educations = [...d.educations]; educations[index] = { ...educations[index], actScore: v }; return { ...d, educations }; })} />
+                <TextArea label={t("resume.fields.apCoursesLine")} value={draft.educations[index].apCoursesLine} placeholder={t("resume.placeholders.apCourses")} onChange={(v) => patch((d) => { const educations = [...d.educations]; educations[index] = { ...educations[index], apCoursesLine: v }; return { ...d, educations }; })} />
+                <TextArea label={t("resume.fields.courseworkLine")} value={draft.educations[index].courseworkLine} placeholder={t("resume.placeholders.coursework")} onChange={(v) => patch((d) => { const educations = [...d.educations]; educations[index] = { ...educations[index], courseworkLine: v }; return { ...d, educations }; })} />
+              </div>
+            </>
+          )}
+        />
+
+        <EntryList
+          title={t("resume.sections.honors")}
+          entries={draft.honors}
+          emptyLabel={t("resume.listEmpty")}
+          addLabel={t("resume.addHonor")}
+          onAdd={() => patch((d) => ({ ...d, honors: [...d.honors, emptyHonor()] }))}
+          renderEntry={(_, index) => (
+            <>
+              <div className="resume-builder__entry-head">
+                <strong>{t("resume.entryLabel", { n: index + 1 })}</strong>
+                <button type="button" className="resume-builder__remove" onClick={() => patch((d) => ({ ...d, honors: removeAt(d.honors, index) }))}>
+                  {t("resume.removeEntry")}
+                </button>
+              </div>
+              <div className="resume-builder__grid">
+                <Field label={t("resume.fields.awardName")} value={draft.honors[index].name} onChange={(v) => patch((d) => { const honors = [...d.honors]; honors[index] = { ...honors[index], name: v }; return { ...d, honors }; })} />
+                <Field label={t("resume.fields.year")} value={draft.honors[index].year} onChange={(v) => patch((d) => { const honors = [...d.honors]; honors[index] = { ...honors[index], year: v }; return { ...d, honors }; })} />
+                <Field label={t("resume.fields.issuer")} value={draft.honors[index].issuer} onChange={(v) => patch((d) => { const honors = [...d.honors]; honors[index] = { ...honors[index], issuer: v }; return { ...d, honors }; })} />
+                <TextArea label={t("resume.fields.description")} value={draft.honors[index].description} onChange={(v) => patch((d) => { const honors = [...d.honors]; honors[index] = { ...honors[index], description: v }; return { ...d, honors }; })} />
+              </div>
+            </>
+          )}
+        />
+
+        <EntryList
+          title={t("resume.sections.activities")}
+          entries={draft.activities}
+          emptyLabel={t("resume.listEmpty")}
+          addLabel={t("resume.addActivity")}
+          onAdd={() => patch((d) => ({ ...d, activities: [...d.activities, emptyActivity()] }))}
+          renderEntry={(_, index) => (
+            <>
+              <div className="resume-builder__entry-head">
+                <strong>{t("resume.entryLabel", { n: index + 1 })}</strong>
+                <button type="button" className="resume-builder__remove" onClick={() => patch((d) => ({ ...d, activities: removeAt(d.activities, index) }))}>
+                  {t("resume.removeEntry")}
+                </button>
+              </div>
+              <div className="resume-builder__grid">
+                <Field label={t("resume.fields.organization")} value={draft.activities[index].organization} onChange={(v) => patch((d) => { const activities = [...d.activities]; activities[index] = { ...activities[index], organization: v }; return { ...d, activities }; })} />
+                <Field label={t("resume.fields.dates")} value={draft.activities[index].dates} placeholder={t("resume.placeholders.activityDates")} onChange={(v) => patch((d) => { const activities = [...d.activities]; activities[index] = { ...activities[index], dates: v }; return { ...d, activities }; })} />
+                <Field label={t("resume.fields.role")} value={draft.activities[index].role} onChange={(v) => patch((d) => { const activities = [...d.activities]; activities[index] = { ...activities[index], role: v }; return { ...d, activities }; })} />
+                <Field label={t("resume.fields.hoursPerWeek")} value={draft.activities[index].hoursPerWeek} onChange={(v) => patch((d) => { const activities = [...d.activities]; activities[index] = { ...activities[index], hoursPerWeek: v }; return { ...d, activities }; })} />
+                <Field label={t("resume.fields.weeksPerYear")} value={draft.activities[index].weeksPerYear} onChange={(v) => patch((d) => { const activities = [...d.activities]; activities[index] = { ...activities[index], weeksPerYear: v }; return { ...d, activities }; })} />
+                <TextArea label={t("resume.fields.bullet1")} value={draft.activities[index].bullet1} onChange={(v) => patch((d) => { const activities = [...d.activities]; activities[index] = { ...activities[index], bullet1: v }; return { ...d, activities }; })} />
+                <TextArea label={t("resume.fields.bullet2")} value={draft.activities[index].bullet2} onChange={(v) => patch((d) => { const activities = [...d.activities]; activities[index] = { ...activities[index], bullet2: v }; return { ...d, activities }; })} />
+              </div>
+            </>
+          )}
+        />
+
+        <EntryList
+          title={t("resume.sections.work")}
+          entries={draft.works}
+          emptyLabel={t("resume.listEmpty")}
+          addLabel={t("resume.addWork")}
+          onAdd={() => patch((d) => ({ ...d, works: [...d.works, emptyWork()] }))}
+          renderEntry={(_, index) => (
+            <>
+              <div className="resume-builder__entry-head">
+                <strong>{t("resume.entryLabel", { n: index + 1 })}</strong>
+                <button type="button" className="resume-builder__remove" onClick={() => patch((d) => ({ ...d, works: removeAt(d.works, index) }))}>
+                  {t("resume.removeEntry")}
+                </button>
+              </div>
+              <div className="resume-builder__grid">
+                <Field label={t("resume.fields.company")} value={draft.works[index].company} onChange={(v) => patch((d) => { const works = [...d.works]; works[index] = { ...works[index], company: v }; return { ...d, works }; })} />
+                <Field label={t("resume.fields.location")} value={draft.works[index].location} onChange={(v) => patch((d) => { const works = [...d.works]; works[index] = { ...works[index], location: v }; return { ...d, works }; })} />
+                <Field label={t("resume.fields.role")} value={draft.works[index].title} onChange={(v) => patch((d) => { const works = [...d.works]; works[index] = { ...works[index], title: v }; return { ...d, works }; })} />
+                <Field label={t("resume.fields.dates")} value={draft.works[index].dates} placeholder={t("resume.placeholders.workDates")} onChange={(v) => patch((d) => { const works = [...d.works]; works[index] = { ...works[index], dates: v }; return { ...d, works }; })} />
+                <TextArea label={t("resume.fields.bullet1")} value={draft.works[index].bullet1} onChange={(v) => patch((d) => { const works = [...d.works]; works[index] = { ...works[index], bullet1: v }; return { ...d, works }; })} />
+                <TextArea label={t("resume.fields.bullet2")} value={draft.works[index].bullet2} onChange={(v) => patch((d) => { const works = [...d.works]; works[index] = { ...works[index], bullet2: v }; return { ...d, works }; })} />
+              </div>
+            </>
+          )}
+        />
+
+        <EntryList
+          title={t("resume.sections.project")}
+          entries={draft.projects}
+          emptyLabel={t("resume.listEmpty")}
+          addLabel={t("resume.addProject")}
+          onAdd={() => patch((d) => ({ ...d, projects: [...d.projects, emptyProject()] }))}
+          renderEntry={(_, index) => (
+            <>
+              <div className="resume-builder__entry-head">
+                <strong>{t("resume.entryLabel", { n: index + 1 })}</strong>
+                <button type="button" className="resume-builder__remove" onClick={() => patch((d) => ({ ...d, projects: removeAt(d.projects, index) }))}>
+                  {t("resume.removeEntry")}
+                </button>
+              </div>
+              <div className="resume-builder__grid">
+                <Field label={t("resume.fields.projectTitle")} value={draft.projects[index].title} onChange={(v) => patch((d) => { const projects = [...d.projects]; projects[index] = { ...projects[index], title: v }; return { ...d, projects }; })} />
+                <Field label={t("resume.fields.year")} value={draft.projects[index].year} onChange={(v) => patch((d) => { const projects = [...d.projects]; projects[index] = { ...projects[index], year: v }; return { ...d, projects }; })} />
+                <Field label={t("resume.fields.supervisor")} value={draft.projects[index].supervisor} onChange={(v) => patch((d) => { const projects = [...d.projects]; projects[index] = { ...projects[index], supervisor: v }; return { ...d, projects }; })} />
+                <TextArea label={t("resume.fields.bullet1")} value={draft.projects[index].bullet1} onChange={(v) => patch((d) => { const projects = [...d.projects]; projects[index] = { ...projects[index], bullet1: v }; return { ...d, projects }; })} />
+                <TextArea label={t("resume.fields.bullet2")} value={draft.projects[index].bullet2} onChange={(v) => patch((d) => { const projects = [...d.projects]; projects[index] = { ...projects[index], bullet2: v }; return { ...d, projects }; })} />
+              </div>
+            </>
+          )}
+        />
+
+        <details className="resume-builder__section">
+          <summary>{t("resume.sections.skills")}</summary>
+          <div className="resume-builder__grid">
+            <TextArea label={t("resume.fields.technicalSkills")} value={draft.skills.technical} onChange={(v) => patch((d) => ({ ...d, skills: { ...d.skills, technical: v } }))} />
+            <TextArea label={t("resume.fields.languages")} value={draft.skills.languages} onChange={(v) => patch((d) => ({ ...d, skills: { ...d.skills, languages: v } }))} />
+            <TextArea label={t("resume.fields.interests")} value={draft.skills.interests} onChange={(v) => patch((d) => ({ ...d, skills: { ...d.skills, interests: v } }))} />
+          </div>
+        </details>
+      </div>
+
+      <div className="resume-builder__footer">
+        <button type="button" className="btn btn-primary" onClick={() => void generate()} disabled={busy}>
+          {busy ? t("resume.generating") : t("resume.generateDocx")}
+        </button>
+        {notice ? <p className="resume-builder__notice">{notice}</p> : null}
+        {error ? <p className="resume-builder__error">{error}</p> : null}
+      </div>
+    </section>
+  );
+}

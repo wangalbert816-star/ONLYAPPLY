@@ -205,12 +205,6 @@ export function AccountHome({
     void initCrmForUser(user.id, "student").then(() => setCrmTick((n) => n + 1));
   }, [user?.id, signedServiceEnabled]);
 
-  useEffect(() => {
-    if (!engagement) return;
-    markMessagesReadByStudent(engagement.id);
-    setCrmTick((n) => n + 1);
-  }, [engagement?.id]);
-
   function enableCrmDemo() {
     if (!user || !currentApp) return;
     void (async () => {
@@ -279,6 +273,11 @@ export function AccountHome({
   }
 
   function focusCrmMessages() {
+    if (engagement) {
+      markMessagesReadByStudent(engagement.id);
+      notifyCrmStoreChange();
+      setCrmTick((n) => n + 1);
+    }
     document.getElementById("account-service-updates")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 

@@ -1,0 +1,66 @@
+.meeting-recap-view {
+  display: grid;
+  gap: 1rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #334155;
+}
+
+.meeting-recap-view__intro {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.meeting-recap-view__section {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.meeting-recap-view__section-title {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #0f172a;
+}
+
+.meeting-recap-view__paragraph {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.meeting-recap-view__list {
+  margin: 0;
+  padding-left: 1.15rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.meeting-recap-view__action-link {
+  justify-self: start;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 650;
+  color: #2563eb;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.meeting-recap-view__recording-link {
+  color: #2563eb;
+  word-break: break-all;
+}
+
+.meeting-recap-view__muted {
+  color: #94a3b8;
+}
+
+.meeting-recap-view__legacy {
+  margin: 0;
+  white-space: pre-wrap;
+}

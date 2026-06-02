@@ -3,6 +3,9 @@ import { useLanguage } from "../../i18n/LanguageContext";
 import { isCalendlyBookingEnabled, requestExpertConsult } from "../../lib/expertConsultBooking";
 import type { CrmCounselor, CrmEngagement, CrmMessage, CrmTask, CrmTaskLinkType } from "../../lib/crm/types";
 import { localizeCrmText } from "../../lib/crm/localizeCrmContent";
+import { isTaskAction, isTaskResource } from "../../lib/crm/taskItemKind";
+import { CrmUnreadBadge } from "../../lib/crm/CrmUnreadBadge";
+import "../../lib/crm/crmUnreadBadge.css";
 import { TaskTypeBadge, taskItemClass } from "./TaskTypeBadge";
 import "./AccountServicePanel.css";
 import "./crmTaskTypes.css";
@@ -52,7 +55,7 @@ export function AccountServicePanel({
   const [showAllTasks, setShowAllTasks] = useState(false);
   const [showAllUpdates, setShowAllUpdates] = useState(false);
 
-  const openTasks = tasks.filter((task) => task.status === "open");
+  const openTasks = tasks.filter((task) => task.status === "open" && isTaskAction(task));
   const visibleTasks = showAllTasks ? tasks : tasks.slice(0, 3);
   const visibleMessages = showAllUpdates ? messages : messages.slice(0, 3);
   const unread = messages.filter((m) => m.authorRole === "counselor" && !m.readByStudent).length;
@@ -97,6 +100,9 @@ export function AccountServicePanel({
           {onOpenSignedServiceHub ? (
             <button type="button" className="btn btn-primary account-service__hub-btn" onClick={onOpenSignedServiceHub}>
               {t("crm.signedService.openHub")}
+              {unread > 0 ? (
+                <CrmUnreadBadge count={unread} className="crm-unread-badge--menu" label={t("crm.notifications.unreadMessages", { n: unread })} />
+              ) : null}
             </button>
           ) : null}
           <span className="account-service__phase">{phaseLabel(engagement.phase, t)}</span>
@@ -139,8 +145,13 @@ export function AccountServicePanel({
             <p className="account-service__empty">{t("crm.noTasks")}</p>
           ) : (
             <ul className="account-service__task-list">
-              {visibleTasks.map((task) => (
-                <li key={task.id} className={taskItemClass(task.linkType, task.status === "done")}>
+              {visibleTasks.map((task) => {
+                const isResource = isTaskResource(task);
+                return (
+                <li key={task.id} className={taskItemClass(task)}>
+                  {isResource ? (
+                    <div className="account-service__task-title">{localizeCrmText(task.title, locale, t)}</div>
+                  ) : (
                   <label className="account-service__task-check">
                     <input
                       type="checkbox"
@@ -149,18 +160,24 @@ export function AccountServicePanel({
                     />
                     <span>{localizeCrmText(task.title, locale, t)}</span>
                   </label>
+                  )}
                   <div className="account-service__task-meta">
-                    <TaskTypeBadge linkType={task.linkType} label={taskLinkLabel[task.linkType]} />
-                    {task.dueAt ? <span>{t("crm.due", { date: task.dueAt })}</span> : null}
-                    {task.status === "done" ? <span>{t("crm.taskDone")}</span> : null}
-                    {task.linkType !== "none" && task.status === "open" ? (
+                    <TaskTypeBadge
+                      linkType={task.linkType}
+                      itemKind={task.itemKind}
+                      label={taskLinkLabel[task.linkType]}
+                      resourceLabel={t("crm.taskItemKind.resource")}
+                    />
+                    {!isResource && task.dueAt ? <span>{t("crm.due", { date: task.dueAt })}</span> : null}
+                    {!isResource && task.status === "done" ? <span>{t("crm.taskDone")}</span> : null}
+                    {!isResource && task.linkType !== "none" && task.status === "open" ? (
                       <button type="button" className="account-service__task-link" onClick={() => onTaskNavigate(task.linkType)}>
                         {taskLinkLabel[task.linkType]}
                       </button>
                     ) : null}
                   </div>
                 </li>
-              ))}
+              );})}
             </ul>
           )}
           {tasks.length > 3 ? (

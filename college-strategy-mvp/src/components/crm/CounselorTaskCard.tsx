@@ -1,5 +1,6 @@
 import { useLanguage } from "../../i18n/LanguageContext";
 import { localizeCrmText } from "../../lib/crm/localizeCrmContent";
+import { isTaskResource } from "../../lib/crm/taskItemKind";
 import { isTaskSubmissionReturned, resolveTaskSubmissions } from "../../lib/crm/taskSubmissions";
 import type { CrmStoredFile, CrmTask } from "../../lib/crm/types";
 import { TaskAttachmentLinks } from "./TaskAttachmentLinks";
@@ -29,37 +30,52 @@ export function CounselorTaskCard({
   onReturn,
 }: Props) {
   const { t, locale } = useLanguage();
+  const isResource = isTaskResource(task);
   const submissions = resolveTaskSubmissions(task, files);
   const returned = isTaskSubmissionReturned(task);
   const hasMaterials = Boolean(task.attachedFileIds?.length);
   const statusLabel = task.status === "done" ? t("crm.taskDone") : t("crm.console.taskOpen");
+  const resourceLabel = t("crm.taskItemKind.resource");
 
   return (
     <article
-      className={`counselor-task-card ${taskItemClass(task.linkType, task.status === "done")}${compact ? " counselor-task-card--compact" : ""}`}
+      className={`counselor-task-card ${taskItemClass(task)}${compact ? " counselor-task-card--compact" : ""}${isResource ? " counselor-task-card--resource" : ""}`}
     >
       <header className="counselor-task-card__header">
-        <label className="counselor-task-card__check">
-          <input
-            type="checkbox"
-            checked={task.status === "done"}
-            disabled={busy}
-            onChange={(e) => onToggleDone(e.target.checked)}
-          />
-          <span className="visually-hidden">{task.title}</span>
-        </label>
+        {!isResource ? (
+          <label className="counselor-task-card__check">
+            <input
+              type="checkbox"
+              checked={task.status === "done"}
+              disabled={busy}
+              onChange={(e) => onToggleDone(e.target.checked)}
+            />
+            <span className="visually-hidden">{task.title}</span>
+          </label>
+        ) : (
+          <div className="counselor-task-card__resource-mark" aria-hidden />
+        )}
 
         <div className="counselor-task-card__head-main">
           <h4 className="counselor-task-card__title">{localizeCrmText(task.title, locale, t)}</h4>
           <div className="counselor-task-card__meta">
-            <TaskTypeBadge linkType={task.linkType} label={t(`crm.taskLink.${task.linkType}`)} />
-            <span className={`counselor-task-card__status counselor-task-card__status--${task.status}`}>
-              {statusLabel}
-            </span>
-            {task.dueAt ? <span className="counselor-task-card__due">{t("crm.due", { date: task.dueAt })}</span> : null}
-            {returned ? (
+            <TaskTypeBadge
+              linkType={task.linkType}
+              itemKind={task.itemKind}
+              label={t(`crm.taskLink.${task.linkType}`)}
+              resourceLabel={resourceLabel}
+            />
+            {!isResource ? (
+              <span className={`counselor-task-card__status counselor-task-card__status--${task.status}`}>
+                {statusLabel}
+              </span>
+            ) : null}
+            {!isResource && task.dueAt ? (
+              <span className="counselor-task-card__due">{t("crm.due", { date: task.dueAt })}</span>
+            ) : null}
+            {!isResource && returned ? (
               <span className="counselor-task-card__returned-pill">{t("crm.taskSubmit.returned")}</span>
-            ) : submissions.length > 0 ? (
+            ) : !isResource && submissions.length > 0 ? (
               <span className="counselor-task-card__turned-in-pill">{t("crm.taskSubmit.turnedIn")}</span>
             ) : null}
           </div>
@@ -81,10 +97,16 @@ export function CounselorTaskCard({
         <p className="counselor-task-card__detail">{localizeCrmText(task.description, locale, t)}</p>
       ) : null}
 
-      <div className={`counselor-task-card__grid${hasMaterials ? "" : " counselor-task-card__grid--single"}`}>
+      <div
+        className={`counselor-task-card__grid${
+          !isResource && hasMaterials ? "" : " counselor-task-card__grid--single"
+        }`}
+      >
         {hasMaterials ? (
           <section className="counselor-task-card__section">
-            <h5 className="counselor-task-card__section-title">{t("crm.taskSubmit.counselorMaterials")}</h5>
+            <h5 className="counselor-task-card__section-title">
+              {isResource ? t("crm.taskItemKind.resourceFiles") : t("crm.taskSubmit.counselorMaterials")}
+            </h5>
             <TaskAttachmentLinks
               fileIds={task.attachedFileIds}
               files={files}
@@ -94,6 +116,7 @@ export function CounselorTaskCard({
           </section>
         ) : null}
 
+        {!isResource ? (
         <section className="counselor-task-card__section counselor-task-card__section--submission">
           <h5 className="counselor-task-card__section-title">{t("crm.taskSubmit.counselorStudentWork")}</h5>
           {submissions.length > 0 ? (
@@ -115,6 +138,7 @@ export function CounselorTaskCard({
             />
           ) : null}
         </section>
+        ) : null}
       </div>
     </article>
   );

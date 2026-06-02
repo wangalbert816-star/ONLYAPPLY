@@ -139,6 +139,13 @@
   color: #64748b;
 }
 
+.counselor-console__field-hint {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
 .counselor-console__inline-form input,
 .counselor-console__inline-form select,
 .counselor-console__inline-form textarea,

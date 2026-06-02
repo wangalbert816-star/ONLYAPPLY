@@ -5,8 +5,10 @@ import { buildApplicationInfoRows } from "../../lib/applicationInfoRows";
 import { fetchApplicationFormById } from "../../lib/supabase/accounts";
 import {
   addDocument,
+  addMeetingRecap,
   addMessage,
   assignTask,
+  deleteMeetingRecap,
   deleteTask,
   getCounselor,
   getEngagementById,
@@ -14,6 +16,7 @@ import {
   listEngagements,
   listFiles,
   listLibraryItems,
+  listMeetingRecaps,
   listMessages,
   listPinnedMessages,
   listTasks,
@@ -29,7 +32,8 @@ import {
   updateNextMeetingLabel,
   updateTask,
 } from "../../lib/crm/store";
-import type { CrmApplicationDocument, CrmEngagement, CrmMessageChannel, CrmTaskLinkType } from "../../lib/crm/types";
+import type { CrmApplicationDocument, CrmEngagement, CrmMessageChannel, CrmTaskItemKind, CrmTaskLinkType } from "../../lib/crm/types";
+import type { CrmMeetingRecapDraft } from "../../lib/crm/meetingRecapFormat";
 import type { FormState } from "../../types";
 import { BrandLogo } from "../BrandLogo";
 import { CaseFilesPanel } from "./CaseFilesPanel";
@@ -37,6 +41,7 @@ import { CounselorDocumentLibrary } from "./CounselorDocumentLibrary";
 import { LibraryItemPicker } from "./LibraryItemPicker";
 import { CounselorTaskSubmissionsOverview } from "./CounselorTaskSubmissionsOverview";
 import { CounselorTaskCard } from "./CounselorTaskCard";
+import { MeetingsTabPanel } from "./MeetingsTabPanel";
 import "./CaseFilesPanel.css";
 import "./crmTaskTypes.css";
 import "./CounselorConsole.css";
@@ -72,6 +77,7 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
   const [taskDetail, setTaskDetail] = useState("");
   const [taskDue, setTaskDue] = useState("");
   const [taskLink, setTaskLink] = useState<CrmTaskLinkType>("none");
+  const [taskItemKind, setTaskItemKind] = useState<CrmTaskItemKind>("action");
   const [taskLibraryIds, setTaskLibraryIds] = useState<string[]>([]);
   const [taskSubmitting, setTaskSubmitting] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -79,11 +85,13 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
   const [editTaskDetail, setEditTaskDetail] = useState("");
   const [editTaskDue, setEditTaskDue] = useState("");
   const [editTaskLink, setEditTaskLink] = useState<CrmTaskLinkType>("none");
+  const [editTaskItemKind, setEditTaskItemKind] = useState<CrmTaskItemKind>("action");
   const [taskActionBusy, setTaskActionBusy] = useState(false);
   const [docNameDraft, setDocNameDraft] = useState("");
   const [docTypeDraft, setDocTypeDraft] = useState("essay");
   const [docDueDraft, setDocDueDraft] = useState("");
   const [meetingLabelDraft, setMeetingLabelDraft] = useState("");
+  const [recapBusy, setRecapBusy] = useState(false);
   const [notesDraft, setNotesDraft] = useState("");
   const [studentForm, setStudentForm] = useState<FormState | null>(null);
   const [studentFormLoading, setStudentFormLoading] = useState(false);
@@ -117,6 +125,10 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
   const documents = useMemo(() => (selected ? listDocuments(selected.id) : []), [selected?.id, tick]);
   const files = useMemo(() => (selected ? listFiles(selected.id) : []), [selected?.id, tick]);
   const pins = useMemo(() => (selected ? listPinnedMessages(selected.id) : []), [selected?.id, tick]);
+  const meetingRecaps = useMemo(
+    () => (selected ? listMeetingRecaps(selected.id) : []),
+    [selected?.id, tick],
+  );
   const chatMessages = useMemo(
     () => (selected ? listMessages(selected.id, chatChannel) : []),
     [selected?.id, chatChannel, tick],
@@ -230,8 +242,9 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
         engagementId: selected.id,
         title,
         description: detail || undefined,
-        dueAt: taskDue || undefined,
+        dueAt: taskItemKind === "resource" ? undefined : taskDue || undefined,
         linkType: taskLink,
+        itemKind: taskItemKind,
         libraryItemIds: taskLibraryIds.length ? taskLibraryIds : undefined,
         message: {
           authorLabel: counselor.name,
@@ -242,6 +255,7 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
       setTaskDetail("");
       setTaskDue("");
       setTaskLink("none");
+      setTaskItemKind("action");
       setTaskLibraryIds([]);
       notifyCrmStoreChange();
       refresh();
@@ -256,6 +270,7 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
     setEditTaskDetail(task.description ?? "");
     setEditTaskDue(task.dueAt ?? "");
     setEditTaskLink(task.linkType);
+    setEditTaskItemKind(task.itemKind === "resource" ? "resource" : "action");
   };
 
   const cancelEditTask = () => {
@@ -264,6 +279,7 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
     setEditTaskDetail("");
     setEditTaskDue("");
     setEditTaskLink("none");
+    setEditTaskItemKind("action");
   };
 
   const saveEditTask = async () => {
@@ -275,8 +291,9 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
       await updateTask(editingTaskId, {
         title,
         description: editTaskDetail.trim(),
-        dueAt: editTaskDue || null,
+        dueAt: editTaskItemKind === "resource" ? null : editTaskDue || null,
         linkType: editTaskLink,
+        itemKind: editTaskItemKind,
       });
       cancelEditTask();
       notifyCrmStoreChange();
@@ -352,6 +369,29 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
     updateNextMeetingLabel(selected.id, meetingLabelDraft);
     notifyCrmStoreChange();
     refresh();
+  };
+
+  const addRecap = async (input: CrmMeetingRecapDraft) => {
+    if (!selected) return;
+    setRecapBusy(true);
+    try {
+      await addMeetingRecap({ engagementId: selected.id, ...input });
+      notifyCrmStoreChange();
+      refresh();
+    } finally {
+      setRecapBusy(false);
+    }
+  };
+
+  const removeRecap = async (recapId: string) => {
+    setRecapBusy(true);
+    try {
+      await deleteMeetingRecap(recapId);
+      notifyCrmStoreChange();
+      refresh();
+    } finally {
+      setRecapBusy(false);
+    }
   };
 
   const saveNotes = () => {
@@ -532,6 +572,19 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                                 />
                               </label>
                               <label>
+                                <span>{t("crm.taskItemKind.label")}</span>
+                                <select
+                                  value={editTaskItemKind}
+                                  onChange={(e) => setEditTaskItemKind(e.target.value as CrmTaskItemKind)}
+                                  disabled={taskActionBusy}
+                                >
+                                  <option value="action">{t("crm.taskItemKind.action")}</option>
+                                  <option value="resource">{t("crm.taskItemKind.resource")}</option>
+                                </select>
+                              </label>
+                              {editTaskItemKind === "action" ? (
+                              <>
+                              <label>
                                 <span>{t("crm.dueLabel")}</span>
                                 <input
                                   type="date"
@@ -554,6 +607,10 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                                   <option value="report">{t("crm.taskLink.report")}</option>
                                 </select>
                               </label>
+                              </>
+                              ) : (
+                                <p className="counselor-console__field-hint">{t("crm.taskItemKind.resourceHint")}</p>
+                              )}
                               <div className="counselor-console__task-actions">
                                 <button
                                   type="button"
@@ -607,6 +664,19 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                         />
                       </label>
                       <label>
+                        <span>{t("crm.taskItemKind.label")}</span>
+                        <select
+                          value={taskItemKind}
+                          onChange={(e) => setTaskItemKind(e.target.value as CrmTaskItemKind)}
+                          disabled={taskSubmitting}
+                        >
+                          <option value="action">{t("crm.taskItemKind.action")}</option>
+                          <option value="resource">{t("crm.taskItemKind.resource")}</option>
+                        </select>
+                      </label>
+                      {taskItemKind === "action" ? (
+                      <>
+                      <label>
                         <span>{t("crm.dueLabel")}</span>
                         <input type="date" value={taskDue} onChange={(e) => setTaskDue(e.target.value)} />
                       </label>
@@ -620,6 +690,10 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                           <option value="report">{t("crm.taskLink.report")}</option>
                         </select>
                       </label>
+                      </>
+                      ) : (
+                        <p className="counselor-console__field-hint">{t("crm.taskItemKind.resourceHint")}</p>
+                      )}
                       <LibraryItemPicker
                         mode="select"
                         showHeading
@@ -757,38 +831,33 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                   </section>
                 )}
 
-                {tab === "meetings" && (
+                {tab === "meetings" && selected && counselor ? (
                   <section className="signed-service-hub__panel">
                     <h2>{t("crm.signedService.meetingsTitle")}</h2>
                     <p className="signed-service-hub__muted">{t("crm.signedService.meetingsLead")}</p>
-                    <div className="signed-service-hub__meeting-card">
-                      <p>
-                        <strong>{counselor.name}</strong> · {counselor.title}
-                      </p>
-                      {selected.nextMeetingLabel ? (
-                        <p>{t("crm.nextMeeting", { when: selected.nextMeetingLabel })}</p>
-                      ) : null}
-                      <button type="button" className="btn btn-primary" onClick={openMeeting}>
-                        {isCalendlyBookingEnabled(counselor.calendlyUrl)
+                    <MeetingsTabPanel
+                      engagement={selected}
+                      counselor={counselor}
+                      recaps={meetingRecaps}
+                      studentDisplayName={selected.studentName || selected.studentEmail.split("@")[0]}
+                      canEditRecaps
+                      recapBusy={recapBusy}
+                      onBookMeeting={openMeeting}
+                      onOpenActionItems={() => setTab("todos")}
+                      onAddRecap={addRecap}
+                      onDeleteRecap={removeRecap}
+                      meetingLabelDraft={meetingLabelDraft}
+                      onMeetingLabelDraftChange={setMeetingLabelDraft}
+                      onSaveMeetingLabel={saveMeetingLabel}
+                      showMeetingLabelEditor
+                      bookButtonLabel={
+                        isCalendlyBookingEnabled(counselor.calendlyUrl)
                           ? t("crm.console.sendCalendly")
-                          : t("crm.console.noCalendly")}
-                      </button>
-                    </div>
-                    <div className="counselor-console__inline-form">
-                      <label>
-                        <span>{t("crm.console.meetingLabel")}</span>
-                        <input
-                          value={meetingLabelDraft}
-                          onChange={(e) => setMeetingLabelDraft(e.target.value)}
-                          placeholder={t("crm.console.meetingLabelPlaceholder")}
-                        />
-                      </label>
-                      <button type="button" className="btn btn-secondary" onClick={saveMeetingLabel}>
-                        {t("crm.console.saveMeeting")}
-                      </button>
-                    </div>
+                          : t("crm.console.noCalendly")
+                      }
+                    />
                   </section>
-                )}
+                ) : null}
 
                 {tab === "files" && selected ? (
                   <section className="signed-service-hub__panel">

@@ -161,6 +161,17 @@
   color: #0f172a;
 }
 
+.account-service__task-title {
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #0f172a;
+}
+
+.account-service__task-list li.crm-task--resource .account-service__task-meta {
+  padding-left: 0;
+  margin-top: 0.35rem;
+}
+
 .account-service__task-list li.is-done .account-service__task-check span {
   color: #64748b;
   text-decoration: line-through;

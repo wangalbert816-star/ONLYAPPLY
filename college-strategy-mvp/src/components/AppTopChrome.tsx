@@ -2,6 +2,8 @@ import { AuthMenuButton } from "./auth/AuthMenuButton";
 import { BrandLogo } from "./BrandLogo";
 import { LanguageToggle } from "../i18n/LanguageToggle";
 import { useAuth } from "../auth/AuthContext";
+import { useCrmStudentUnread } from "../lib/crm/useCrmStudentUnread";
+import "../lib/crm/crmUnreadBadge.css";
 import { useAuthChrome } from "../auth/AuthChromeContext";
 
 type Props = {
@@ -10,8 +12,9 @@ type Props = {
 };
 
 export function AppTopChrome({ expertConsultLabel, onExpertConsult }: Props) {
-  const { configured, loading } = useAuth();
+  const { configured, loading, user } = useAuth();
   const { onSignIn, onOpenAccount } = useAuthChrome();
+  const unreadMessages = useCrmStudentUnread(user?.id);
   const showAuth = configured && !loading;
   const showConsult = Boolean(expertConsultLabel && onExpertConsult);
 
@@ -21,7 +24,15 @@ export function AppTopChrome({ expertConsultLabel, onExpertConsult }: Props) {
       role="navigation"
       aria-label="Site"
     >
-      <div className="app-top-chrome__start">{showAuth && <AuthMenuButton onSignIn={onSignIn} onOpenAccount={onOpenAccount} />}</div>
+      <div className="app-top-chrome__start">
+        {showAuth && (
+          <AuthMenuButton
+            onSignIn={onSignIn}
+            onOpenAccount={onOpenAccount}
+            unreadCount={unreadMessages}
+          />
+        )}
+      </div>
       {showConsult && (
         <div className="app-top-chrome__center">
           <button type="button" className="app-top-chrome__consult btn btn-primary btn-cta-landing" onClick={onExpertConsult}>

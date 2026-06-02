@@ -1,3 +1,16 @@
+.crm-task--resource {
+  --crm-task-accent: #0891b2;
+  --crm-task-bg: rgba(8, 145, 178, 0.1);
+  border-left: 3px solid var(--crm-task-accent);
+  background: var(--crm-task-bg);
+  border-radius: 0 10px 10px 0;
+}
+
+.crm-task-type-badge--resource {
+  --crm-task-accent: #0e7490;
+  --crm-task-bg: rgba(8, 145, 178, 0.14);
+}
+
 .crm-task--none,
 .crm-task--profile,
 .crm-task--activities,

@@ -1,5 +1,6 @@
 import { useLanguage } from "../../i18n/LanguageContext";
 import { localizeCrmText } from "../../lib/crm/localizeCrmContent";
+import { isTaskResource } from "../../lib/crm/taskItemKind";
 import { isTaskSubmissionReturned, resolveTaskSubmissions } from "../../lib/crm/taskSubmissions";
 import type { CrmStoredFile, CrmTask, CrmTaskLinkType } from "../../lib/crm/types";
 import { TaskAttachmentLinks } from "./TaskAttachmentLinks";
@@ -29,36 +30,52 @@ export function StudentTaskCard({
   onSubmitted,
 }: Props) {
   const { t, locale } = useLanguage();
+  const isResource = isTaskResource(task);
   const submissions = resolveTaskSubmissions(task, files);
   const returned = isTaskSubmissionReturned(task);
   const hasMaterials = Boolean(task.attachedFileIds?.length);
-  const showSubmissionSection = Boolean((allowSubmit && engagementId) || submissions.length > 0);
+  const showSubmissionSection =
+    !isResource && Boolean((allowSubmit && engagementId) || submissions.length > 0);
   const statusLabel = task.status === "done" ? t("crm.taskDone") : t("crm.console.taskOpen");
-  const showNav = task.linkType !== "none" && task.status === "open";
+  const showNav = !isResource && task.linkType !== "none" && task.status === "open";
+  const resourceLabel = t("crm.taskItemKind.resource");
 
   return (
-    <article className={`student-task-card ${taskItemClass(task.linkType, task.status === "done")}`}>
+    <article className={`student-task-card ${taskItemClass(task)}${isResource ? " student-task-card--resource" : ""}`}>
       <header className="student-task-card__header">
-        <label className="student-task-card__check">
-          <input
-            type="checkbox"
-            checked={task.status === "done"}
-            onChange={(e) => onToggleDone(e.target.checked)}
-          />
-          <span className="visually-hidden">{localizeCrmText(task.title, locale, t)}</span>
-        </label>
+        {!isResource ? (
+          <label className="student-task-card__check">
+            <input
+              type="checkbox"
+              checked={task.status === "done"}
+              onChange={(e) => onToggleDone(e.target.checked)}
+            />
+            <span className="visually-hidden">{localizeCrmText(task.title, locale, t)}</span>
+          </label>
+        ) : (
+          <div className="student-task-card__resource-mark" aria-hidden />
+        )}
 
         <div className="student-task-card__head-main">
           <h4 className="student-task-card__title">{localizeCrmText(task.title, locale, t)}</h4>
           <div className="student-task-card__meta">
-            <TaskTypeBadge linkType={task.linkType} label={linkLabel} />
-            <span className={`student-task-card__status student-task-card__status--${task.status}`}>
-              {statusLabel}
-            </span>
-            {task.dueAt ? <span className="student-task-card__due">{t("crm.due", { date: task.dueAt })}</span> : null}
-            {returned ? (
+            <TaskTypeBadge
+              linkType={task.linkType}
+              itemKind={task.itemKind}
+              label={linkLabel}
+              resourceLabel={resourceLabel}
+            />
+            {!isResource ? (
+              <span className={`student-task-card__status student-task-card__status--${task.status}`}>
+                {statusLabel}
+              </span>
+            ) : null}
+            {!isResource && task.dueAt ? (
+              <span className="student-task-card__due">{t("crm.due", { date: task.dueAt })}</span>
+            ) : null}
+            {!isResource && returned ? (
               <span className="student-task-card__returned-pill">{t("crm.taskSubmit.returned")}</span>
-            ) : submissions.length > 0 ? (
+            ) : !isResource && submissions.length > 0 ? (
               <span className="student-task-card__turned-in-pill">{t("crm.taskSubmit.turnedIn")}</span>
             ) : null}
           </div>
@@ -79,7 +96,7 @@ export function StudentTaskCard({
         <p className="student-task-card__detail">{localizeCrmText(task.description, locale, t)}</p>
       ) : null}
 
-      {returned ? (
+      {returned && !isResource ? (
         <div className="student-task-card__return-banner" role="alert">
           <p className="student-task-card__return-banner-title">{t("crm.taskSubmit.returnedBanner")}</p>
           {task.returnNote ? (
@@ -96,7 +113,9 @@ export function StudentTaskCard({
       >
         {hasMaterials ? (
           <section className="student-task-card__section">
-            <h5 className="student-task-card__section-title">{t("crm.taskSubmit.studentMaterials")}</h5>
+            <h5 className="student-task-card__section-title">
+              {isResource ? t("crm.taskItemKind.resourceFiles") : t("crm.taskSubmit.studentMaterials")}
+            </h5>
             <TaskAttachmentLinks
               fileIds={task.attachedFileIds}
               files={files}

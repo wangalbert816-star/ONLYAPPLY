@@ -1,6 +1,7 @@
 export type CrmPhase = "onboarding" | "planning" | "essays" | "applications" | "done";
 export type CrmEngagementStatus = "active" | "paused" | "completed";
 export type CrmTaskLinkType = "profile" | "activities" | "essay" | "report" | "none";
+export type CrmTaskItemKind = "action" | "resource";
 export type CrmMessageRole = "student" | "counselor" | "system" | "admin";
 export type CrmMessageChannel = "direct" | "group";
 
@@ -100,12 +101,23 @@ export type CrmTask = {
   dueAt?: string;
   status: "open" | "done";
   linkType: CrmTaskLinkType;
+  itemKind?: CrmTaskItemKind;
   attachedFileIds?: string[];
   submittedFileIds?: string[];
   returnedAt?: string;
   returnNote?: string;
   createdAt: string;
   completedAt?: string;
+};
+
+export type CrmMeetingRecap = {
+  id: string;
+  engagementId: string;
+  title: string;
+  heldAt?: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type CrmStoreSnapshot = {
@@ -115,4 +127,5 @@ export type CrmStoreSnapshot = {
   tasks: CrmTask[];
   documents: CrmApplicationDocument[];
   files: CrmStoredFile[];
+  meetingRecaps: CrmMeetingRecap[];
 };

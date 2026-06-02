@@ -1172,6 +1172,7 @@ export default function App() {
           engagement={engagement}
           counselor={counselor}
           form={signedServiceContext.form}
+          studentUserId={user.id}
           userEmail={user.email ?? null}
           onBack={() => setView("account")}
         />

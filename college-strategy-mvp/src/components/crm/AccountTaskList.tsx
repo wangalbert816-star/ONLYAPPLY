@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useLanguage } from "../../i18n/LanguageContext";
 import type { CrmStoredFile, CrmTask, CrmTaskLinkType } from "../../lib/crm/types";
+import { isTaskAction } from "../../lib/crm/taskItemKind";
 import { StudentTaskCard } from "./StudentTaskCard";
 import "./AccountTaskList.css";
 import "./crmTaskTypes.css";
@@ -31,7 +32,7 @@ export function AccountTaskList({
   const { t } = useLanguage();
   const [showAll, setShowAll] = useState(false);
 
-  const openTasks = tasks.filter((task) => task.status === "open");
+  const openTasks = tasks.filter((task) => task.status === "open" && isTaskAction(task));
   const visibleTasks = showAll ? tasks : tasks.slice(0, maxCollapsed);
 
   const taskLinkLabel = useMemo(
@@ -62,7 +63,9 @@ export function AccountTaskList({
                 files={files}
                 engagementId={engagementId}
                 allowSubmit={allowSubmit}
-                linkLabel={taskLinkLabel[task.linkType]}
+                linkLabel={
+                  task.itemKind === "resource" ? t("crm.taskItemKind.resource") : taskLinkLabel[task.linkType]
+                }
                 onToggleDone={(done) => onToggleTask(task.id, done)}
                 onTaskNavigate={onTaskNavigate}
                 onSubmitted={onSubmitted}

@@ -2,14 +2,18 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../../i18n/LanguageContext";
 import { buildApplicationInfoRows } from "../../lib/applicationInfoRows";
 import { localizeCrmText } from "../../lib/crm/localizeCrmContent";
-import { isCalendlyBookingEnabled, requestExpertConsult } from "../../lib/expertConsultBooking";
+import { requestExpertConsult } from "../../lib/expertConsultBooking";
 import {
   addMessage,
+  countUnreadCounselorMessages,
+  initCrmForUser,
   listDocuments,
   listFiles,
+  listMeetingRecaps,
   listMessages,
   listPinnedMessages,
   listTasks,
+  markMessagesReadByStudent,
   notifyCrmStoreChange,
   setTaskDone,
   subscribeCrmStore,
@@ -18,17 +22,23 @@ import {
 import type { CrmCounselor, CrmEngagement, CrmMessageChannel, CrmTaskLinkType } from "../../lib/crm/types";
 import type { FormState } from "../../types";
 import { BrandLogo } from "../BrandLogo";
+import { CrmUnreadBadge } from "../../lib/crm/CrmUnreadBadge";
+import "../../lib/crm/crmUnreadBadge.css";
 import { AccountTaskList } from "./AccountTaskList";
 import { CaseFilesPanel } from "./CaseFilesPanel";
+import { MeetingsTabPanel } from "./MeetingsTabPanel";
+import { SignedServiceOverview } from "./SignedServiceOverview";
+import { ResumeBuilder } from "../resume/ResumeBuilder";
 import "./CaseFilesPanel.css";
 import "./SignedServiceHub.css";
 
-type TabId = "home" | "todos" | "documents" | "chat" | "meetings" | "files" | "student";
+type TabId = "home" | "todos" | "documents" | "chat" | "meetings" | "files" | "resume" | "student";
 
 type Props = {
   engagement: CrmEngagement;
   counselor: CrmCounselor;
   form: FormState;
+  studentUserId: string;
   userEmail?: string | null;
   onBack: () => void;
 };
@@ -44,7 +54,7 @@ function formatWhen(iso: string, locale: string) {
   });
 }
 
-export function SignedServiceHub({ engagement, counselor, form, userEmail, onBack }: Props) {
+export function SignedServiceHub({ engagement, counselor, form, studentUserId, userEmail, onBack }: Props) {
   const { t, locale } = useLanguage();
   const [tab, setTab] = useState<TabId>("home");
   const [chatChannel, setChatChannel] = useState<CrmMessageChannel>("direct");
@@ -55,14 +65,34 @@ export function SignedServiceHub({ engagement, counselor, form, userEmail, onBac
 
   useEffect(() => subscribeCrmStore(refresh), [refresh]);
 
+  useEffect(() => {
+    void initCrmForUser(studentUserId, "student").then(() => refresh());
+  }, [studentUserId, refresh]);
+
+  useEffect(() => {
+    if (tab !== "chat") return;
+    markMessagesReadByStudent(engagement.id);
+    notifyCrmStoreChange();
+    refresh();
+  }, [tab, engagement.id, refresh]);
+
+  const unreadMessages = useMemo(
+    () => countUnreadCounselorMessages(engagement.id),
+    [engagement.id, tick],
+  );
+
   const tasks = useMemo(() => listTasks(engagement.id), [engagement.id, tick]);
   const documents = useMemo(() => listDocuments(engagement.id), [engagement.id, tick]);
   const files = useMemo(() => listFiles(engagement.id), [engagement.id, tick]);
   const pins = useMemo(() => listPinnedMessages(engagement.id), [engagement.id, tick]);
+  const meetingRecaps = useMemo(() => listMeetingRecaps(engagement.id), [engagement.id, tick]);
   const chatMessages = useMemo(
     () => listMessages(engagement.id, chatChannel),
     [engagement.id, chatChannel, tick],
   );
+
+  const studentDisplayName =
+    engagement.studentName?.trim() || userEmail?.split("@")[0] || undefined;
 
   const tabs: { id: TabId; label: string }[] = [
     { id: "home", label: t("crm.signedService.tabs.home") },
@@ -71,6 +101,7 @@ export function SignedServiceHub({ engagement, counselor, form, userEmail, onBac
     { id: "chat", label: t("crm.signedService.tabs.chat") },
     { id: "meetings", label: t("crm.signedService.tabs.meetings") },
     { id: "files", label: t("crm.signedService.tabs.files") },
+    { id: "resume", label: t("crm.signedService.tabs.resume") },
     { id: "student", label: t("crm.signedService.tabs.student") },
   ];
 
@@ -109,15 +140,20 @@ export function SignedServiceHub({ engagement, counselor, form, userEmail, onBac
   return (
     <div className="signed-service-hub">
       <header className="signed-service-hub__head">
-        <BrandLogo />
+        <div className="signed-service-hub__brand">
+          <BrandLogo />
+        </div>
         <div className="signed-service-hub__head-copy">
           <p className="signed-service-hub__kicker">{t("crm.serviceKicker")}</p>
-          <h1>{localizeCrmText(engagement.applicationTitle, locale, t)}</h1>
-          <p>
-            {localizeCrmText(counselor.name, locale, t)} · {t(`crm.phase.${engagement.phase}`)}
+          <div className="signed-service-hub__title-row">
+            <h1>{localizeCrmText(engagement.applicationTitle, locale, t)}</h1>
+            <span className="signed-service-hub__phase">{t(`crm.phase.${engagement.phase}`)}</span>
+          </div>
+          <p className="signed-service-hub__subtitle">
+            {localizeCrmText(counselor.name, locale, t)} · {localizeCrmText(counselor.title, locale, t)}
           </p>
         </div>
-        <button type="button" className="btn btn-secondary" onClick={onBack}>
+        <button type="button" className="btn btn-secondary signed-service-hub__back" onClick={onBack}>
           {t("crm.signedService.backToAccount")}
         </button>
       </header>
@@ -131,70 +167,42 @@ export function SignedServiceHub({ engagement, counselor, form, userEmail, onBac
             onClick={() => setTab(item.id)}
           >
             {item.label}
+            {item.id === "chat" && unreadMessages > 0 && tab !== "chat" ? (
+              <CrmUnreadBadge
+                count={unreadMessages}
+                className="crm-unread-badge--nav-tab"
+                label={t("crm.notifications.unreadMessages", { n: unreadMessages })}
+              />
+            ) : null}
           </button>
         ))}
       </nav>
 
       <main className="signed-service-hub__main">
         {tab === "home" && (
-          <div className="signed-service-hub__stack">
-            <section className="signed-service-hub__panel">
-              <h2>{t("crm.signedService.pinsTitle")}</h2>
-              {pins.length === 0 ? (
-                <p className="signed-service-hub__muted">{t("crm.signedService.pinsEmpty")}</p>
-              ) : (
-                <ul className="signed-service-hub__pins">
-                  {pins.map((pin) => (
-                    <li key={pin.id}>
-                      <span className="signed-service-hub__pin-badge">{t("crm.signedService.pin")}</span>
-                      <p>{localizeCrmText(pin.body, locale, t)}</p>
-                      <span className="signed-service-hub__muted">
-                        {formatWhen(pin.createdAt, locale)} · {localizeCrmText(pin.authorLabel, locale, t)}
-                        {pin.channel === "group" ? ` · ${t("crm.signedService.groupChat")}` : ""}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-            <section className="signed-service-hub__panel signed-service-hub__panel--split">
-              <div>
-                <h2>{t("crm.myTasks")}</h2>
-                <AccountTaskList
-                  tasks={tasks.slice(0, 3)}
-                  files={files}
-                  engagementId={engagement.id}
-                  allowSubmit
-                  onSubmitted={() => {
-                    notifyCrmStoreChange();
-                    refresh();
-                  }}
-                  onToggleTask={(taskId, done) => {
-                    setTaskDone(taskId, done);
-                    notifyCrmStoreChange();
-                    refresh();
-                  }}
-                  onTaskNavigate={() => setTab("todos")}
-                  variant="card"
-                  maxCollapsed={3}
-                />
-                <button type="button" className="signed-service-hub__link" onClick={() => setTab("todos")}>
-                  {t("crm.signedService.viewAllTodos")}
-                </button>
-              </div>
-              <div>
-                <h2>{t("crm.signedService.nextMeeting")}</h2>
-                <p>
-                  {engagement.nextMeetingLabel
-                    ? localizeCrmText(engagement.nextMeetingLabel, locale, t)
-                    : t("crm.signedService.noMeetingScheduled")}
-                </p>
-                <button type="button" className="btn btn-primary" onClick={bookMeeting}>
-                  {isCalendlyBookingEnabled(counselor.calendlyUrl) ? t("crm.bookMeeting") : t("crm.bookMeetingFallback")}
-                </button>
-              </div>
-            </section>
-          </div>
+          <SignedServiceOverview
+            engagement={engagement}
+            counselor={counselor}
+            tasks={tasks}
+            files={files}
+            pins={pins}
+            meetingRecaps={meetingRecaps}
+            studentDisplayName={studentDisplayName}
+            unreadMessages={unreadMessages}
+            onTabChange={setTab}
+            onToggleTask={(taskId, done) => {
+              setTaskDone(taskId, done);
+              notifyCrmStoreChange();
+              refresh();
+            }}
+            onSubmitted={() => {
+              notifyCrmStoreChange();
+              refresh();
+            }}
+            onBookMeeting={bookMeeting}
+            onOpenActionItems={() => setTab("todos")}
+            formatWhen={(iso) => formatWhen(iso, locale)}
+          />
         )}
 
         {tab === "todos" && (
@@ -315,22 +323,14 @@ export function SignedServiceHub({ engagement, counselor, form, userEmail, onBac
           <section className="signed-service-hub__panel">
             <h2>{t("crm.signedService.meetingsTitle")}</h2>
             <p className="signed-service-hub__muted">{t("crm.signedService.meetingsLead")}</p>
-            <div className="signed-service-hub__meeting-card">
-              <p>
-                <strong>{localizeCrmText(counselor.name, locale, t)}</strong> ·{" "}
-                {localizeCrmText(counselor.title, locale, t)}
-              </p>
-              {engagement.nextMeetingLabel ? (
-                <p>
-                  {t("crm.nextMeeting", {
-                    when: localizeCrmText(engagement.nextMeetingLabel, locale, t),
-                  })}
-                </p>
-              ) : null}
-              <button type="button" className="btn btn-primary" onClick={bookMeeting}>
-                {isCalendlyBookingEnabled(counselor.calendlyUrl) ? t("crm.bookMeeting") : t("crm.bookMeetingFallback")}
-              </button>
-            </div>
+            <MeetingsTabPanel
+              engagement={engagement}
+              counselor={counselor}
+              recaps={meetingRecaps}
+              studentDisplayName={studentDisplayName}
+              onBookMeeting={bookMeeting}
+              onOpenActionItems={() => setTab("todos")}
+            />
           </section>
         )}
 
@@ -346,6 +346,17 @@ export function SignedServiceHub({ engagement, counselor, form, userEmail, onBac
                 notifyCrmStoreChange();
                 refresh();
               }}
+            />
+          </section>
+        )}
+
+        {tab === "resume" && (
+          <section className="signed-service-hub__panel signed-service-hub__panel--resume">
+            <ResumeBuilder
+              form={form}
+              userEmail={userEmail}
+              displayName={studentDisplayName}
+              storageKey={engagement.id}
             />
           </section>
         )}

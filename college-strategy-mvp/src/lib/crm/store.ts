@@ -13,6 +13,8 @@ import {
   supabaseCreateDemoEngagement,
   supabaseGetCaseFileDownloadUrl,
   supabaseListLibraryItems,
+  supabaseDeleteMeetingRecap,
+  supabaseAddMeetingRecap,
   supabaseMarkMessagesReadByStudent,
   supabaseSetTaskDone,
   supabaseDeleteCaseFile,
@@ -38,10 +40,15 @@ import type {
   CrmMessageRole,
   CrmPhase,
   CrmStoredFile,
+  CrmMeetingRecap,
   CrmStoreSnapshot,
   CrmTask,
+  CrmTaskItemKind,
   CrmTaskLinkType,
 } from "./types";
+import { isTaskAction } from "./taskItemKind";
+import type { CrmMeetingRecapDraft } from "./meetingRecapFormat";
+import { serializeMeetingRecapBody } from "./meetingRecapFormat";
 
 const STORAGE_KEY = "onlyapply_crm_v1";
 
@@ -193,6 +200,7 @@ function readStore(): CrmStoreSnapshot {
       tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
       documents: Array.isArray(parsed.documents) ? parsed.documents : [],
       files: Array.isArray(parsed.files) ? parsed.files : [],
+      meetingRecaps: Array.isArray(parsed.meetingRecaps) ? parsed.meetingRecaps : [],
     };
   } catch {
     return emptyStore();
@@ -204,7 +212,15 @@ function writeStore(snapshot: CrmStoreSnapshot) {
 }
 
 function emptyStore(): CrmStoreSnapshot {
-  return { counselors: [], engagements: [], messages: [], tasks: [], documents: [], files: [] };
+  return {
+    counselors: [],
+    engagements: [],
+    messages: [],
+    tasks: [],
+    documents: [],
+    files: [],
+    meetingRecaps: [],
+  };
 }
 
 function defaultCounselor(): CrmCounselor {
@@ -305,7 +321,7 @@ function seedEngagementExtras(store: CrmStoreSnapshot, engagementId: string, cou
       engagementId,
       authorRole: "counselor",
       authorLabel: counselorName,
-      body: "欢迎加入 OnlyApply Premium 服务。本周我们先定 ED 校方向，并在待办里完成 #1。",
+      body: "欢迎加入 OnlyApply Premium 服务。本周我们先定 ED 校方向，并在行动项里完成 #1。",
       channel: "direct",
       pinned: false,
       createdAt,
@@ -756,18 +772,21 @@ export function addTask(input: {
   description?: string;
   dueAt?: string;
   linkType: CrmTaskLinkType;
+  itemKind?: CrmTaskItemKind;
   attachedFileIds?: string[];
 }): CrmTask {
   const createdAt = nowIso();
   const description = input.description?.trim() || undefined;
+  const itemKind = input.itemKind === "resource" ? "resource" : "action";
   const task: CrmTask = {
     id: id(),
     engagementId: input.engagementId,
     title: input.title.trim(),
     description,
-    dueAt: input.dueAt,
+    dueAt: itemKind === "resource" ? undefined : input.dueAt,
     status: "open",
     linkType: input.linkType,
+    itemKind,
     attachedFileIds: input.attachedFileIds?.length ? input.attachedFileIds : undefined,
     createdAt,
   };
@@ -791,6 +810,7 @@ export async function assignTask(input: {
   description?: string;
   dueAt?: string;
   linkType: CrmTaskLinkType;
+  itemKind?: CrmTaskItemKind;
   libraryItemIds?: string[];
   message: {
     authorLabel: string;
@@ -815,14 +835,16 @@ export async function assignTask(input: {
     }
   }
 
+  const itemKind = input.itemKind === "resource" ? "resource" : "action";
   const task: CrmTask = {
     id: id(),
     engagementId: input.engagementId,
     title: input.title.trim(),
     description,
-    dueAt: input.dueAt,
+    dueAt: itemKind === "resource" ? undefined : input.dueAt,
     status: "open",
     linkType: input.linkType,
+    itemKind,
     attachedFileIds: attachedFileIds.length ? attachedFileIds : undefined,
     createdAt,
   };
@@ -840,8 +862,9 @@ export async function assignTask(input: {
       engagementId: input.engagementId,
       title: input.title,
       description: input.description,
-      dueAt: input.dueAt,
+      dueAt: itemKind === "resource" ? undefined : input.dueAt,
       linkType: input.linkType,
+      itemKind,
       attachedFileIds,
     });
     await supabaseAddMessage(messageInput);
@@ -914,6 +937,7 @@ export async function updateTask(
     description?: string;
     dueAt?: string | null;
     linkType?: CrmTaskLinkType;
+    itemKind?: CrmTaskItemKind;
   },
 ): Promise<void> {
   if (crmBackend === "supabase") {
@@ -929,6 +953,12 @@ export async function updateTask(
   if (patch.description != null) task.description = patch.description.trim() || undefined;
   if (patch.dueAt !== undefined) task.dueAt = patch.dueAt || undefined;
   if (patch.linkType != null) task.linkType = patch.linkType;
+  if (patch.itemKind != null) {
+    task.itemKind = patch.itemKind === "resource" ? "resource" : "action";
+    if (task.itemKind === "resource") {
+      task.dueAt = undefined;
+    }
+  }
   const engagement = store.engagements.find((e) => e.id === task.engagementId);
   if (engagement) engagement.updatedAt = nowIso();
   writeStore(store);
@@ -998,6 +1028,66 @@ export function setEngagementPhase(engagementId: string, phase: CrmPhase): void 
   notifyCrmStoreChange();
 }
 
+export function listMeetingRecaps(engagementId: string): CrmMeetingRecap[] {
+  return getSnapshot()
+    .meetingRecaps.filter((r) => r.engagementId === engagementId)
+    .sort((a, b) => {
+      const dateA = a.heldAt ?? a.createdAt.slice(0, 10);
+      const dateB = b.heldAt ?? b.createdAt.slice(0, 10);
+      if (dateA !== dateB) return dateB.localeCompare(dateA);
+      return b.createdAt.localeCompare(a.createdAt);
+    });
+}
+
+export async function addMeetingRecap(input: CrmMeetingRecapDraft & { engagementId: string }): Promise<CrmMeetingRecap> {
+  const body = serializeMeetingRecapBody({
+    actionItems: input.actionItems,
+    resources: input.resources,
+    summary: input.summary,
+    recordingUrl: input.recordingUrl,
+  });
+  if (crmBackend === "supabase") {
+    const recap = await supabaseAddMeetingRecap({
+      engagementId: input.engagementId,
+      title: input.title,
+      heldAt: input.heldAt,
+      body,
+    });
+    await persistRefresh();
+    notifyCrmStoreChange();
+    return recap;
+  }
+  const recap: CrmMeetingRecap = {
+    id: id(),
+    engagementId: input.engagementId,
+    title: input.title.trim(),
+    heldAt: input.heldAt?.trim() || undefined,
+    body,
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
+  };
+  const store = readStore();
+  store.meetingRecaps.push(recap);
+  const engagement = store.engagements.find((e) => e.id === input.engagementId);
+  if (engagement) engagement.updatedAt = recap.createdAt;
+  writeStore(store);
+  notifyCrmStoreChange();
+  return recap;
+}
+
+export async function deleteMeetingRecap(recapId: string): Promise<void> {
+  if (crmBackend === "supabase") {
+    await supabaseDeleteMeetingRecap(recapId);
+    await persistRefresh();
+    notifyCrmStoreChange();
+    return;
+  }
+  const store = readStore();
+  store.meetingRecaps = store.meetingRecaps.filter((r) => r.id !== recapId);
+  writeStore(store);
+  notifyCrmStoreChange();
+}
+
 export function markMessagesReadByStudent(engagementId: string): void {
   if (crmBackend === "supabase") {
     afterMutation(() => supabaseMarkMessagesReadByStudent(engagementId));
@@ -1023,8 +1113,22 @@ export function countUnreadCounselorMessages(engagementId: string): number {
   ).length;
 }
 
+export function countUnreadCounselorMessagesForStudent(studentUserId: string): number {
+  const engagementIds = new Set(
+    getSnapshot()
+      .engagements.filter((e) => e.studentUserId === studentUserId && e.status === "active")
+      .map((e) => e.id),
+  );
+  if (engagementIds.size === 0) return 0;
+  return getSnapshot().messages.filter(
+    (m) => engagementIds.has(m.engagementId) && m.authorRole === "counselor" && !m.readByStudent,
+  ).length;
+}
+
 export function countOpenTasks(engagementId: string): number {
-  return getSnapshot().tasks.filter((t) => t.engagementId === engagementId && t.status === "open").length;
+  return getSnapshot().tasks.filter(
+    (t) => t.engagementId === engagementId && t.status === "open" && isTaskAction(t),
+  ).length;
 }
 
 export function subscribeCrmStore(listener: () => void): () => void {

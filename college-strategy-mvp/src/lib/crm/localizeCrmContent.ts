@@ -18,7 +18,11 @@ const CRM_TEXT_KEYS: Record<string, string> = {
     "crm.seed.pinnedEd",
   "欢迎加入 OnlyApply Premium 服务。本周我们先定 ED 校方向，并在待办里完成 #1。":
     "crm.seed.welcome",
+  "欢迎加入 OnlyApply Premium 服务。本周我们先定 ED 校方向，并在行动项里完成 #1。":
+    "crm.seed.welcome",
   "欢迎加入 OnlyApply 签约服务。本周我们先定 ED 校方向，并在待办里完成 #1。":
+    "crm.seed.welcome",
+  "欢迎加入 OnlyApply 签约服务。本周我们先定 ED 校方向，并在行动项里完成 #1。":
     "crm.seed.welcome",
   "Premium 群公告：文书阶段每周三晚 8 点 sync，有冲突请提前在群里说。":
     "crm.seed.groupNotice",

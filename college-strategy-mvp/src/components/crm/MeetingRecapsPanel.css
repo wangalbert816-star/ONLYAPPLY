@@ -1,0 +1,222 @@
+.meeting-recaps {
+  margin-top: 1.25rem;
+  padding-top: 1.15rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.meeting-recaps--compact {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.meeting-recaps__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.meeting-recaps__title {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.meeting-recaps__lead {
+  margin: 0.25rem 0 0;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.meeting-recaps__add-toggle.btn-sm {
+  padding: 0.28rem 0.55rem;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.meeting-recaps__form {
+  display: grid;
+  gap: 0.85rem;
+  margin-bottom: 0.85rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: 14px;
+  background: rgba(37, 99, 235, 0.04);
+}
+
+.meeting-recaps__form-intro {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: #475569;
+  white-space: pre-wrap;
+}
+
+.meeting-recaps__form-meta {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .meeting-recaps__form-meta {
+    grid-template-columns: 1.4fr 1fr;
+  }
+}
+
+.meeting-recaps__section-field {
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.meeting-recaps__section-field legend {
+  padding: 0 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #0f172a;
+}
+
+.meeting-recaps__section-hint {
+  margin: 0 0 0.45rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.meeting-recaps__section-field textarea {
+  width: 100%;
+  padding: 0.48rem 0.55rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.86rem;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.meeting-recaps__form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.meeting-recaps__field {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: #475569;
+}
+
+.meeting-recaps__field input,
+.meeting-recaps__field textarea {
+  width: 100%;
+  padding: 0.48rem 0.55rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.86rem;
+  box-sizing: border-box;
+}
+
+.meeting-recaps__field textarea {
+  resize: vertical;
+  min-height: 6.5rem;
+}
+
+.meeting-recaps__empty {
+  margin: 0;
+  padding: 0.85rem 0.95rem;
+  border: 1px dashed rgba(148, 163, 184, 0.35);
+  border-radius: 14px;
+  font-size: 0.84rem;
+  color: #94a3b8;
+  background: #f8fafc;
+}
+
+.meeting-recaps__error {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #b91c1c;
+}
+
+.meeting-recaps__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.meeting-recap-card {
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.06), transparent 18rem),
+    #fff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.meeting-recap-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.55rem;
+}
+
+.meeting-recap-card__title {
+  margin: 0;
+  font-size: 0.96rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.meeting-recap-card__date {
+  margin: 0.2rem 0 0;
+  font-size: 0.76rem;
+  font-weight: 650;
+  color: #64748b;
+}
+
+.meeting-recap-card__body {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: #334155;
+  white-space: pre-wrap;
+}
+
+.meeting-recap-card .meeting-recap-view {
+  margin-top: 0.15rem;
+}
+
+.meeting-recap-card__delete {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: #b91c1c;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.meeting-recap-card__delete:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.meeting-recap-card__delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

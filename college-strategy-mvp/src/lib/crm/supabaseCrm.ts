@@ -9,9 +9,11 @@ import type {
   CrmPhase,
   CrmFileUploaderRole,
   CrmLibraryItem,
+  CrmMeetingRecap,
   CrmStoredFile,
   CrmStoreSnapshot,
   CrmTask,
+  CrmTaskItemKind,
   CrmTaskLinkType,
 } from "./types";
 import { parseGoogleDocsUrl, toGoogleCopyUrl, validateGoogleDocsUrl } from "./libraryLinks";
@@ -141,7 +143,15 @@ export async function fetchCrmSnapshotForCounselor(userId: string): Promise<CrmS
 }
 
 function emptySnapshot(): CrmStoreSnapshot {
-  return { counselors: [], engagements: [], messages: [], tasks: [], documents: [], files: [] };
+  return {
+    counselors: [],
+    engagements: [],
+    messages: [],
+    tasks: [],
+    documents: [],
+    files: [],
+    meetingRecaps: [],
+  };
 }
 
 async function loadSnapshotForEngagements(
@@ -153,12 +163,13 @@ async function loadSnapshotForEngagements(
   const engagementIds = engagementRows.map((e) => e.id);
   const counselorIds = [...new Set(engagementRows.map((e) => e.counselor_id))];
 
-  const [counselorRes, messagesRes, tasksRes, documentsRes, filesRes] = await Promise.all([
+  const [counselorRes, messagesRes, tasksRes, documentsRes, filesRes, recapsRes] = await Promise.all([
     sb.from("counselors").select("id, user_id, name, title, bio, email, calendly_url").in("id", counselorIds),
     sb.from("case_messages").select("*").in("engagement_id", engagementIds),
     sb.from("case_tasks").select("*").in("engagement_id", engagementIds),
     sb.from("case_documents").select("*").in("engagement_id", engagementIds),
     sb.from("case_files").select("*").in("engagement_id", engagementIds),
+    sb.from("case_meeting_recaps").select("*").in("engagement_id", engagementIds),
   ]);
 
   if (counselorRes.error) throw counselorRes.error;
@@ -166,6 +177,16 @@ async function loadSnapshotForEngagements(
   if (tasksRes.error) throw tasksRes.error;
   if (documentsRes.error) throw documentsRes.error;
   if (filesRes.error) throw filesRes.error;
+  if (recapsRes.error) {
+    const msg = (recapsRes.error.message ?? "").toLowerCase();
+    if (!msg.includes("case_meeting_recaps") || !msg.includes("does not exist")) {
+      throw recapsRes.error;
+    }
+  }
+
+  const meetingRecaps = recapsRes.error
+    ? []
+    : ((recapsRes.data ?? []) as Record<string, unknown>[]).map(mapMeetingRecap);
 
   return {
     counselors: ((counselorRes.data ?? []) as CounselorRow[]).map(mapCounselor),
@@ -174,6 +195,7 @@ async function loadSnapshotForEngagements(
     tasks: ((tasksRes.data ?? []) as Record<string, unknown>[]).map(mapTask),
     documents: ((documentsRes.data ?? []) as Record<string, unknown>[]).map(mapDocument),
     files: ((filesRes.data ?? []) as Record<string, unknown>[]).map(mapFile),
+    meetingRecaps,
   };
 }
 
@@ -208,6 +230,7 @@ function mapTask(row: Record<string, unknown>): CrmTask {
     dueAt: row.due_at ? String(row.due_at) : undefined,
     status: row.status as CrmTask["status"],
     linkType: row.link_type as CrmTaskLinkType,
+    itemKind: row.item_kind === "resource" ? "resource" : "action",
     attachedFileIds: attachedFileIds?.length ? attachedFileIds : undefined,
     submittedFileIds: submittedFileIds?.length ? submittedFileIds : undefined,
     returnedAt: row.returned_at ? String(row.returned_at) : undefined,
@@ -290,6 +313,18 @@ function mapDocument(row: Record<string, unknown>): CrmApplicationDocument {
     status: row.status as CrmApplicationDocument["status"],
     dueAt: row.due_at ? String(row.due_at) : undefined,
     note: row.note ? String(row.note) : undefined,
+  };
+}
+
+function mapMeetingRecap(row: Record<string, unknown>): CrmMeetingRecap {
+  return {
+    id: String(row.id),
+    engagementId: String(row.engagement_id),
+    title: String(row.title),
+    heldAt: row.held_at ? String(row.held_at) : undefined,
+    body: String(row.body),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
   };
 }
 
@@ -457,7 +492,7 @@ async function seedSupabaseEngagementExtras(
       engagement_id: engagementId,
       author_role: "counselor",
       author_label: counselorName,
-      body: "欢迎加入 OnlyApply Premium 服务。本周我们先定 ED 校方向，并在待办里完成 #1。",
+      body: "欢迎加入 OnlyApply Premium 服务。本周我们先定 ED 校方向，并在行动项里完成 #1。",
       channel: "direct",
       pinned: false,
       read_by_student: false,
@@ -550,6 +585,7 @@ export async function supabaseAddTask(input: {
   description?: string;
   dueAt?: string;
   linkType: CrmTaskLinkType;
+  itemKind?: CrmTaskItemKind;
   attachedFileIds?: string[];
 }): Promise<void> {
   const sb = getSupabase();
@@ -563,6 +599,7 @@ export async function supabaseAddTask(input: {
     due_at: input.dueAt ?? null,
     status: "open",
     link_type: input.linkType,
+    item_kind: input.itemKind === "resource" ? "resource" : "action",
     attached_file_ids: input.attachedFileIds?.length ? input.attachedFileIds : [],
     created_at: now,
   });
@@ -589,6 +626,7 @@ export async function supabaseUpdateTask(
     description?: string;
     dueAt?: string | null;
     linkType?: CrmTaskLinkType;
+    itemKind?: CrmTaskItemKind;
   },
 ): Promise<void> {
   const sb = getSupabase();
@@ -607,6 +645,7 @@ export async function supabaseUpdateTask(
   if (patch.description != null) update.description = patch.description.trim() || null;
   if (patch.dueAt !== undefined) update.due_at = patch.dueAt || null;
   if (patch.linkType != null) update.link_type = patch.linkType;
+  if (patch.itemKind != null) update.item_kind = patch.itemKind === "resource" ? "resource" : "action";
 
   const { error } = await sb.from("case_tasks").update(update).eq("id", taskId);
   if (error) throw error;
@@ -995,6 +1034,61 @@ export async function supabaseUpdateInternalNotes(engagementId: string, notes: s
     .eq("id", engagementId);
 }
 
+export async function supabaseAddMeetingRecap(input: {
+  engagementId: string;
+  title: string;
+  heldAt?: string | null;
+  body: string;
+}): Promise<CrmMeetingRecap> {
+  const sb = getSupabase();
+  if (!sb) throw new Error("supabase_not_configured");
+
+  const now = new Date().toISOString();
+  const { data, error } = await sb
+    .from("case_meeting_recaps")
+    .insert({
+      engagement_id: input.engagementId,
+      title: input.title.trim(),
+      held_at: input.heldAt?.trim() || null,
+      body: input.body.trim(),
+      created_at: now,
+      updated_at: now,
+    })
+    .select("*")
+    .single();
+  if (error) {
+    const msg = (error.message ?? "").toLowerCase();
+    if (msg.includes("case_meeting_recaps")) {
+      throw new Error("meeting_recaps_schema_missing");
+    }
+    throw error;
+  }
+
+  await sb.from("engagements").update({ updated_at: now }).eq("id", input.engagementId);
+  return mapMeetingRecap(data as Record<string, unknown>);
+}
+
+export async function supabaseDeleteMeetingRecap(recapId: string): Promise<void> {
+  const sb = getSupabase();
+  if (!sb) throw new Error("supabase_not_configured");
+
+  const { data: recap, error: fetchErr } = await sb
+    .from("case_meeting_recaps")
+    .select("engagement_id")
+    .eq("id", recapId)
+    .maybeSingle();
+  if (fetchErr) throw fetchErr;
+  if (!recap) throw new Error("meeting_recap_not_found");
+
+  const { error } = await sb.from("case_meeting_recaps").delete().eq("id", recapId);
+  if (error) throw error;
+
+  await sb
+    .from("engagements")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", recap.engagement_id);
+}
+
 export async function supabaseMarkMessagesReadByStudent(engagementId: string): Promise<void> {
   const sb = getSupabase();
   if (!sb) return;
@@ -1010,7 +1104,7 @@ export function subscribeCrmRealtime(onEvent: () => void): () => void {
   const sb = getSupabase();
   if (!sb) return () => {};
 
-  const tables = ["case_messages", "case_files", "case_tasks"] as const;
+  const tables = ["case_messages", "case_files", "case_tasks", "case_meeting_recaps"] as const;
   let channel = sb.channel(`crm-live-${crypto.randomUUID()}`);
   for (const table of tables) {
     channel = channel

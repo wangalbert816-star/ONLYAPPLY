@@ -1,0 +1,34 @@
+.meetings-tab__schedule {
+  margin-top: 0.75rem;
+}
+
+.meetings-tab__counselor {
+  margin: 0 0 0.65rem;
+  font-size: 0.9rem;
+}
+
+.meetings-tab__next {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0 0 0.85rem;
+}
+
+.meetings-tab__next-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.meetings-tab__next-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.meetings-tab__label-form {
+  margin-top: 1rem;
+}
