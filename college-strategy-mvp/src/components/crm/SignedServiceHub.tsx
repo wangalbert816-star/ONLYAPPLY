@@ -16,7 +16,6 @@ import {
   notifyCrmStoreChange,
   setTaskDone,
   subscribeCrmStore,
-  toggleMessagePin,
 } from "../../lib/crm/store";
 import type { CrmCounselor, CrmEngagement, CrmMessageChannel, CrmTaskLinkType } from "../../lib/crm/types";
 import type { FormState } from "../../types";
@@ -25,6 +24,8 @@ import { CrmUnreadBadge } from "../../lib/crm/CrmUnreadBadge";
 import "../../lib/crm/crmUnreadBadge.css";
 import { AccountTaskList } from "./AccountTaskList";
 import { CaseFilesPanel } from "./CaseFilesPanel";
+import { DocumentsSheetPanel } from "./DocumentsSheetPanel";
+import { MessagesChatPanel } from "./MessagesChatPanel";
 import { MeetingsTabPanel } from "./MeetingsTabPanel";
 import { SignedServiceOverview } from "./SignedServiceOverview";
 import { ResumeBuilder } from "../resume/ResumeBuilder";
@@ -127,14 +128,8 @@ export function SignedServiceHub({ engagement, counselor, form, studentUserId, u
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  const docStatusLabel = (status: string) => {
-    const key = `crm.signedService.docStatus.${status}`;
-    const label = t(key);
-    return label === key ? status : label;
-  };
-
   return (
-    <div className="signed-service-hub">
+    <div className={`signed-service-hub${tab === "chat" ? " signed-service-hub--chat" : ""}`}>
       <header className="signed-service-hub__head">
         <div className="signed-service-hub__brand">
           <BrandLogo />
@@ -174,7 +169,7 @@ export function SignedServiceHub({ engagement, counselor, form, studentUserId, u
         ))}
       </nav>
 
-      <main className="signed-service-hub__main">
+      <main className={`signed-service-hub__main${tab === "chat" ? " signed-service-hub__main--chat" : ""}`}>
         {tab === "home" && (
           <SignedServiceOverview
             engagement={engagement}
@@ -227,92 +222,19 @@ export function SignedServiceHub({ engagement, counselor, form, studentUserId, u
           </section>
         )}
 
-        {tab === "documents" && (
-          <section className="signed-service-hub__panel">
-            <h2>{t("crm.signedService.documentsTitle")}</h2>
-            <p className="signed-service-hub__muted">{t("crm.signedService.documentsLead")}</p>
-            <div className="signed-service-hub__table-wrap">
-              <table className="signed-service-hub__table">
-                <thead>
-                  <tr>
-                    <th>{t("crm.signedService.colName")}</th>
-                    <th>{t("crm.signedService.colType")}</th>
-                    <th>{t("crm.signedService.colStatus")}</th>
-                    <th>{t("crm.signedService.colDue")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {documents.map((doc) => (
-                    <tr key={doc.id}>
-                      <td>{localizeCrmText(doc.name, locale, t)}</td>
-                      <td>{doc.docType}</td>
-                      <td>
-                        <span className={`signed-service-hub__status signed-service-hub__status--${doc.status}`}>
-                          {docStatusLabel(doc.status)}
-                        </span>
-                      </td>
-                      <td>{doc.dueAt || "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
+        {tab === "documents" && <DocumentsSheetPanel documents={documents} />}
 
         {tab === "chat" && (
-          <section className="signed-service-hub__panel">
-            <div className="signed-service-hub__chat-tabs">
-              <button
-                type="button"
-                className={chatChannel === "direct" ? "is-active" : undefined}
-                onClick={() => setChatChannel("direct")}
-              >
-                {t("crm.signedService.directChat")}
-              </button>
-              <button
-                type="button"
-                className={chatChannel === "group" ? "is-active" : undefined}
-                onClick={() => setChatChannel("group")}
-              >
-                {t("crm.signedService.groupChat")}
-              </button>
-            </div>
-            <ul className="signed-service-hub__timeline">
-              {[...chatMessages].reverse().map((message) => (
-                <li key={message.id} className={`is-${message.authorRole}`}>
-                  <div className="signed-service-hub__message-head">
-                    <span>
-                      {formatWhen(message.createdAt, locale)} · {localizeCrmText(message.authorLabel, locale, t)}
-                    </span>
-                    <button
-                      type="button"
-                      className="signed-service-hub__link"
-                      onClick={() => {
-                        toggleMessagePin(message.id);
-                        notifyCrmStoreChange();
-                        refresh();
-                      }}
-                    >
-                      {message.pinned ? t("crm.signedService.unpin") : t("crm.signedService.pin")}
-                    </button>
-                  </div>
-                  <p>{localizeCrmText(message.body, locale, t)}</p>
-                </li>
-              ))}
-            </ul>
-            <div className="signed-service-hub__compose">
-              <textarea
-                value={messageDraft}
-                onChange={(e) => setMessageDraft(e.target.value)}
-                placeholder={t("crm.messagePlaceholder")}
-                rows={3}
-              />
-              <button type="button" className="btn btn-primary" onClick={sendChat} disabled={!messageDraft.trim()}>
-                {t("crm.send")}
-              </button>
-            </div>
-          </section>
+          <MessagesChatPanel
+            messages={chatMessages}
+            pinnedMessages={pins}
+            channel={chatChannel}
+            onChannelChange={setChatChannel}
+            messageDraft={messageDraft}
+            onMessageDraftChange={setMessageDraft}
+            onSend={sendChat}
+            studentDisplayName={studentDisplayName}
+          />
         )}
 
         {tab === "meetings" && (

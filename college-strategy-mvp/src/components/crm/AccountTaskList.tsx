@@ -176,22 +176,23 @@ export function AccountTaskList({
 
   return (
     <div className="account-task-list">
-      <div className="account-task-list__stats-bar" aria-label={t("crm.taskBoard.statsAria")}>
-        <div className="account-task-list__stat">
-          <span className="account-task-list__stat-label">{t("crm.taskBoard.total")}</span>
-          <span className="account-task-list__stat-value">{stats.total}</span>
+      <div className="account-task-list__shell">
+        <div className="account-task-list__stats-bar" aria-label={t("crm.taskBoard.statsAria")}>
+          <div className="account-task-list__stat">
+            <span className="account-task-list__stat-label">{t("crm.taskBoard.total")}</span>
+            <span className="account-task-list__stat-value">{stats.total}</span>
+          </div>
+          <div className="account-task-list__stat account-task-list__stat--completed">
+            <span className="account-task-list__stat-label">{t("crm.taskBoard.completed")}</span>
+            <span className="account-task-list__stat-value">{stats.completed}</span>
+          </div>
+          <div className="account-task-list__stat account-task-list__stat--open">
+            <span className="account-task-list__stat-label">{t("crm.taskBoard.open")}</span>
+            <span className="account-task-list__stat-value">{stats.open}</span>
+          </div>
         </div>
-        <div className="account-task-list__stat account-task-list__stat--completed">
-          <span className="account-task-list__stat-label">{t("crm.taskBoard.completed")}</span>
-          <span className="account-task-list__stat-value">{stats.completed}</span>
-        </div>
-        <div className="account-task-list__stat account-task-list__stat--open">
-          <span className="account-task-list__stat-label">{t("crm.taskBoard.open")}</span>
-          <span className="account-task-list__stat-value">{stats.open}</span>
-        </div>
-      </div>
 
-      <section className="account-task-list__block">
+        <section className="account-task-list__block">
         <button
           type="button"
           className="account-task-list__block-toggle"
@@ -294,6 +295,7 @@ export function AccountTaskList({
           )
         ) : null}
       </section>
+      </div>
 
       {hasHiddenTasks ? (
         <button type="button" className="account-task-list__more" onClick={() => setShowAll((v) => !v)}>

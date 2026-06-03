@@ -5,7 +5,10 @@
   --color-line-subtle: #f5f5f5;
   --color-fg: #0f172a;
   --color-muted: #64748b;
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--color-bg);
   color: var(--color-fg);
   font-family: var(--font-ui, ui-sans-serif, system-ui, sans-serif);
@@ -22,6 +25,7 @@
     radial-gradient(circle at top right, rgba(37, 99, 235, 0.1), transparent 28rem),
     linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  flex-shrink: 0;
 }
 
 .signed-service-hub__brand {
@@ -90,6 +94,7 @@
   top: 0;
   z-index: 5;
   backdrop-filter: blur(12px);
+  flex-shrink: 0;
 }
 
 .signed-service-hub__nav button {
@@ -118,10 +123,36 @@
   color: #1d4ed8;
 }
 
+.signed-service-hub--chat {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
 .signed-service-hub__main {
   max-width: 1080px;
+  width: 100%;
   margin: 0 auto;
   padding: 1.15rem clamp(1rem, 3vw, 1.5rem) 2.75rem;
+}
+
+.signed-service-hub__main--chat {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding-top: 0.85rem;
+  padding-bottom: 0;
+}
+
+.signed-service-hub__main--chat .msg-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 /* —— Overview —— */
