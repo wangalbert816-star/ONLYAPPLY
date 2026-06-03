@@ -62,6 +62,17 @@
   gap: 0.5rem;
 }
 
+.resume-builder__clear {
+  color: #b91c1c;
+  border-color: rgba(185, 28, 28, 0.35);
+}
+
+.resume-builder__clear:hover:not(:disabled) {
+  color: #991b1b;
+  border-color: rgba(185, 28, 28, 0.55);
+  background: rgba(254, 226, 226, 0.55);
+}
+
 .resume-builder__sections {
   display: grid;
   gap: 0.65rem;

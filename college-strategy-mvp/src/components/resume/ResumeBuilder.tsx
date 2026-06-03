@@ -272,6 +272,13 @@ export function ResumeBuilder({
     setNotice(t("resume.prefilled"));
   };
 
+  const clearAll = () => {
+    if (!window.confirm(t("resume.clearConfirm"))) return;
+    setDraft(createEmptyResumeForm());
+    setError(null);
+    setNotice(t("resume.cleared"));
+  };
+
   const generate = async () => {
     if (!draft.contact.fullName.trim()) {
       setError(t("resume.errors.nameRequired"));
@@ -317,6 +324,14 @@ export function ResumeBuilder({
         <div className="resume-builder__head-actions">
           <button type="button" className="btn btn-secondary btn-sm" onClick={prefill} disabled={busy || loading}>
             {t("resume.prefill")}
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm resume-builder__clear"
+            onClick={clearAll}
+            disabled={busy || loading}
+          >
+            {t("resume.clear")}
           </button>
           <button type="button" className="btn btn-primary btn-sm" onClick={() => void generate()} disabled={busy || loading}>
             {busy ? t("resume.generating") : t("resume.generate")}
