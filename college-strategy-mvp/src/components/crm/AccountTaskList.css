@@ -1,40 +1,51 @@
 .account-task-list {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 0.85rem;
   color: #1c1917;
+  padding-bottom: 1.25rem;
 }
 
 .account-task-list__stats-bar {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0;
-  padding: 1rem 1.1rem;
-  background: #f5f2ed;
-  border-bottom: 1px solid #ebe8e3;
+  padding: 1.15rem 1.25rem;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e5e5;
 }
 
 .account-task-list__stat {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.2rem;
+  padding: 0 1rem;
+}
+
+.account-task-list__stat:not(:first-child) {
+  border-left: 1px solid #e5e5e5;
+}
+
+.account-task-list__stat:first-child {
+  padding-left: 0;
 }
 
 .account-task-list__stat-label {
-  font-size: 0.82rem;
-  color: #78716c;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #64748b;
 }
 
 .account-task-list__stat-value {
-  font-size: 1.65rem;
-  font-weight: 600;
+  font-size: 1.75rem;
+  font-weight: 650;
   line-height: 1;
   letter-spacing: -0.03em;
-  color: #1c1917;
+  color: #0f172a;
 }
 
 .account-task-list__stat--completed .account-task-list__stat-value {
-  color: #2d6a4f;
+  color: #15803d;
 }
 
 .account-task-list__stat--open .account-task-list__stat-value {
@@ -42,8 +53,19 @@
 }
 
 .account-task-list__block {
-  background: #fff;
-  border-bottom: 8px solid #f5f2ed;
+  margin: 0 1rem;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.account-task-list__stats-bar + .account-task-list__block {
+  margin-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-top: 0;
 }
 
 .account-task-list__block-toggle {
@@ -51,13 +73,18 @@
   align-items: center;
   gap: 0.55rem;
   width: 100%;
-  padding: 0.85rem 1.1rem;
+  padding: 0.9rem 1rem;
   border: 0;
-  border-bottom: 1px solid #ebe8e3;
-  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  background: #ffffff;
   font: inherit;
   text-align: left;
   cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.account-task-list__block-toggle:hover {
+  background: #f9fafb;
 }
 
 .account-task-list__block-toggle--plain {
@@ -65,83 +92,109 @@
   flex: 1;
   min-width: 0;
   border-bottom: 0;
-  padding-right: 0.5rem;
 }
 
 .account-task-list__block-icon {
   width: 1rem;
   height: 1rem;
+  box-sizing: border-box;
   border-radius: 999px;
-  border: 1.5px solid #d6d3d1;
-  flex-shrink: 0;
+  border: 1.5px solid #cbd5e1;
+  flex: 0 0 1rem;
+}
+
+.account-task-list__block-icon--open {
+  border-style: dashed;
 }
 
 .account-task-list__block-icon--done {
-  border-color: #2d6a4f;
-  background: #2d6a4f;
+  border-color: #15803d;
+  background: #15803d;
   position: relative;
+  border-style: solid;
 }
 
 .account-task-list__block-icon--done::after {
   content: "";
   position: absolute;
-  left: 0.28rem;
-  top: 0.14rem;
+  left: 50%;
+  top: 50%;
   width: 0.28rem;
   height: 0.52rem;
+  margin-left: -0.18rem;
+  margin-top: -0.34rem;
   border: solid #fff;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
 
 .account-task-list__block-title {
-  font-size: 0.92rem;
-  font-weight: 600;
-  color: #1c1917;
+  font-size: 0.94rem;
+  font-weight: 650;
+  color: #0f172a;
 }
 
 .account-task-list__count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.35rem;
-  height: 1.35rem;
-  padding: 0 0.35rem;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.38rem;
   border-radius: 999px;
-  background: #f5f5f4;
+  background: #f1f5f9;
   font-size: 0.72rem;
   font-weight: 700;
-  color: #57534e;
+  color: #475569;
 }
 
 .account-task-list__chevron {
   margin-left: auto;
   width: 0.45rem;
   height: 0.45rem;
-  border-right: 1.5px solid #a8a29e;
-  border-bottom: 1.5px solid #a8a29e;
+  border-right: 1.5px solid #94a3b8;
+  border-bottom: 1.5px solid #94a3b8;
   transform: rotate(225deg);
-  transition: transform 0.15s ease;
+  transition: transform 0.18s ease;
+  flex-shrink: 0;
 }
 
 .account-task-list__chevron--collapsed {
   transform: rotate(45deg);
 }
 
+.account-task-list__chevron--month {
+  margin-left: 0;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-color: #64748b;
+}
+
+.account-task-list__chevron--month.account-task-list__chevron--collapsed {
+  transform: rotate(-45deg);
+}
+
 .account-task-list__completed-head {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  display: flex;
   align-items: center;
   gap: 0.65rem;
-  padding: 0.55rem 1.1rem;
-  border-bottom: 1px solid #ebe8e3;
+  padding: 0;
+  padding-right: 0.35rem;
+  border-bottom: 1px solid #f0f0f0;
+  background: #ffffff;
 }
 
 .account-task-list__chevron-btn {
   border: 0;
   background: none;
-  padding: 0.25rem;
+  padding: 0.35rem;
   cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.account-task-list__chevron-btn:hover {
+  background: #f1f5f9;
 }
 
 .account-task-list__chevron-btn .account-task-list__chevron {
@@ -153,72 +206,123 @@
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 0.35rem;
+  margin-left: auto;
+  padding: 0.35rem 0;
 }
 
 .account-task-list__filters button {
-  border: 1px solid #e7e5e4;
+  border: 1px solid #e2e8f0;
   border-radius: 999px;
-  background: #fff;
-  padding: 0.28rem 0.62rem;
+  background: #ffffff;
+  padding: 0.32rem 0.68rem;
   font: inherit;
   font-size: 0.74rem;
   font-weight: 600;
-  color: #78716c;
+  color: #64748b;
   cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.account-task-list__filters button:hover {
+  border-color: #cbd5e1;
+  color: #334155;
 }
 
 .account-task-list__filters button.is-active {
-  border-color: #44403c;
-  color: #1c1917;
+  border-color: #334155;
+  background: #f8fafc;
+  color: #0f172a;
 }
 
 .task-list {
   list-style: none;
   margin: 0;
-  padding: 0 1.1rem;
+  padding: 0 1rem;
+}
+
+.task-list--nested {
+  padding-top: 0.15rem;
+  padding-bottom: 0.35rem;
 }
 
 .account-task-list__timeline {
   display: flex;
   flex-direction: column;
+  gap: 0;
 }
 
-.account-task-list__month-head {
+.account-task-list__month {
+  border-top: 1px solid #f0f0f0;
+}
+
+.account-task-list__month:first-child {
+  border-top: 0;
+}
+
+.account-task-list__month-toggle {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.55rem 1.1rem;
-  background: #f5f2ed;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  color: #78716c;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.72rem 1rem;
+  border: 0;
+  background: #f8fafc;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
+  transition: background 0.15s ease;
 }
 
-.account-task-list__month .task-list {
-  padding-top: 0;
-  padding-bottom: 0;
+.account-task-list__month-toggle:hover {
+  background: #f1f5f9;
+}
+
+.account-task-list__month-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #475569;
+}
+
+.account-task-list__month-count {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.account-task-list__month--collapsed .account-task-list__month-toggle {
+  background: #ffffff;
 }
 
 .account-task-list__empty {
   margin: 0;
-  padding: 0.85rem 1.1rem 1rem;
+  padding: 1.1rem 1rem 1.25rem;
   font-size: 0.84rem;
-  color: #a8a29e;
+  line-height: 1.5;
+  color: #94a3b8;
+  text-align: center;
 }
 
 .account-task-list__more {
-  align-self: flex-start;
-  margin: 0.75rem 1.1rem 1rem;
+  align-self: center;
+  margin: 0.25rem 1rem 0;
   border: 0;
   background: none;
-  padding: 0;
+  padding: 0.35rem 0.5rem;
   font: inherit;
   font-size: 0.84rem;
   font-weight: 600;
-  color: #2d6a4f;
+  color: #2563eb;
   cursor: pointer;
+}
+
+.account-task-list__more:hover {
+  text-decoration: underline;
 }
 
 .account-task-list--compact .account-task-list__compact-label {
@@ -227,24 +331,47 @@
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #a8a29e;
+  color: #94a3b8;
 }
 
 @media (max-width: 760px) {
   .account-task-list__stats-bar {
     grid-template-columns: 1fr;
-    gap: 0.75rem;
+    gap: 0.85rem;
+    padding: 1rem;
+  }
+
+  .account-task-list__stat {
+    padding: 0;
+    border-left: 0 !important;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .account-task-list__stat-value {
+    font-size: 1.35rem;
+  }
+
+  .account-task-list__block {
+    margin: 0 0.65rem;
+    border-radius: 12px;
   }
 
   .account-task-list__completed-head {
-    grid-template-columns: 1fr;
+    flex-wrap: wrap;
+    padding-right: 0;
   }
 
   .account-task-list__filters {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
     justify-content: flex-start;
+    padding: 0 1rem 0.65rem;
   }
 
   .account-task-list__chevron-btn {
-    justify-self: end;
+    margin-left: auto;
   }
 }

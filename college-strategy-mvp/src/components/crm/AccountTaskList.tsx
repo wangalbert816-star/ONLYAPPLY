@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../../i18n/LanguageContext";
 import type { CrmStoredFile, CrmTask, CrmTaskLinkType } from "../../lib/crm/types";
 import { isTaskAction, isTaskResource } from "../../lib/crm/taskItemKind";
@@ -66,6 +66,7 @@ export function AccountTaskList({
   const [openCollapsed, setOpenCollapsed] = useState(false);
   const [completedCollapsed, setCompletedCollapsed] = useState(false);
   const [completedFilter, setCompletedFilter] = useState<CompletedFilter>("all");
+  const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(() => new Set());
 
   const taskCategoryLabel = useMemo(
     () =>
@@ -84,7 +85,10 @@ export function AccountTaskList({
 
   const actionTasks = tasks.filter(isTaskAction);
   const openVisible = visibleTasks.filter((task) => task.status === "open" || isTaskResource(task));
-  const completedVisible = visibleTasks.filter((task) => task.status === "done" && isTaskAction(task));
+  const completedVisible = useMemo(
+    () => visibleTasks.filter((task) => task.status === "done" && isTaskAction(task)),
+    [visibleTasks],
+  );
 
   const stats = useMemo(
     () => ({
@@ -105,6 +109,26 @@ export function AccountTaskList({
       groupTasksByMonth(filteredCompleted, locale, (task) => task.completedAt || task.createdAt),
     [filteredCompleted, locale],
   );
+
+  const completedGroupKey = completedGroups.map((group) => group.label).join("|");
+
+  useEffect(() => {
+    const labels = completedGroupKey ? completedGroupKey.split("|") : [];
+    if (labels.length <= 1) {
+      setCollapsedMonths(new Set());
+      return;
+    }
+    setCollapsedMonths(new Set(labels.slice(1)));
+  }, [completedFilter, completedGroupKey]);
+
+  const toggleMonth = (label: string) => {
+    setCollapsedMonths((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
+  };
 
   const completedFilters: { id: CompletedFilter; label: string }[] = [
     { id: "all", label: t("crm.taskBoard.filterAll") },
@@ -238,15 +262,34 @@ export function AccountTaskList({
             <p className="account-task-list__empty">{t("crm.taskBoard.noCompleted")}</p>
           ) : (
             <div className="account-task-list__timeline">
-              {completedGroups.map((group) => (
-                <div key={group.label} className="account-task-list__month">
-                  <div className="account-task-list__month-head">
-                    <span>{group.label.toUpperCase()}</span>
-                    <span>{t("crm.taskBoard.taskCount", { n: group.tasks.length })}</span>
+              {completedGroups.map((group) => {
+                const monthCollapsed = collapsedMonths.has(group.label);
+                return (
+                  <div
+                    key={group.label}
+                    className={`account-task-list__month${monthCollapsed ? " account-task-list__month--collapsed" : ""}`}
+                  >
+                    <button
+                      type="button"
+                      className="account-task-list__month-toggle"
+                      aria-expanded={!monthCollapsed}
+                      onClick={() => toggleMonth(group.label)}
+                    >
+                      <span
+                        className={`account-task-list__chevron account-task-list__chevron--month${monthCollapsed ? " account-task-list__chevron--collapsed" : ""}`}
+                        aria-hidden
+                      />
+                      <span className="account-task-list__month-label">{group.label.toUpperCase()}</span>
+                      <span className="account-task-list__month-count">
+                        {t("crm.taskBoard.taskCount", { n: group.tasks.length })}
+                      </span>
+                    </button>
+                    {!monthCollapsed ? (
+                      <ul className="task-list task-list--nested">{group.tasks.map(renderTask)}</ul>
+                    ) : null}
                   </div>
-                  <ul className="task-list">{group.tasks.map(renderTask)}</ul>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )
         ) : null}
