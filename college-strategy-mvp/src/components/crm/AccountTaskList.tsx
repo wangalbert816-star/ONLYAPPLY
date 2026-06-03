@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useLanguage } from "../../i18n/LanguageContext";
 import type { CrmStoredFile, CrmTask, CrmTaskLinkType } from "../../lib/crm/types";
 import { isTaskAction, isTaskResource } from "../../lib/crm/taskItemKind";
@@ -16,6 +16,7 @@ type Props = {
   onTaskNavigate: (linkType: CrmTaskLinkType) => void;
   layout?: "board" | "compact";
   maxCollapsed?: number;
+  renderTask?: (task: CrmTask, ctx: { categoryLabel: string }) => ReactNode;
 };
 
 type CompletedFilter = "all" | CrmTaskLinkType;
@@ -60,6 +61,7 @@ export function AccountTaskList({
   onTaskNavigate,
   layout = "board",
   maxCollapsed = 3,
+  renderTask: renderTaskOverride,
 }: Props) {
   const { t, locale } = useLanguage();
   const [showAll, setShowAll] = useState(layout === "board");
@@ -140,19 +142,25 @@ export function AccountTaskList({
   const categoryFor = (task: CrmTask) =>
     isTaskResource(task) ? t("crm.taskItemKind.resource") : taskCategoryLabel[task.linkType];
 
-  const renderTask = (task: CrmTask) => (
-    <StudentTaskRow
-      key={task.id}
-      task={task}
-      files={files}
-      engagementId={engagementId}
-      allowSubmit={allowSubmit}
-      categoryLabel={categoryFor(task)}
-      onToggleDone={(done) => onToggleTask(task.id, done)}
-      onTaskNavigate={onTaskNavigate}
-      onSubmitted={onSubmitted}
-    />
-  );
+  const renderTask = (task: CrmTask) => {
+    const categoryLabel = categoryFor(task);
+    if (renderTaskOverride) {
+      return renderTaskOverride(task, { categoryLabel });
+    }
+    return (
+      <StudentTaskRow
+        key={task.id}
+        task={task}
+        files={files}
+        engagementId={engagementId}
+        allowSubmit={allowSubmit}
+        categoryLabel={categoryLabel}
+        onToggleDone={(done) => onToggleTask(task.id, done)}
+        onTaskNavigate={onTaskNavigate}
+        onSubmitted={onSubmitted}
+      />
+    );
+  };
 
   const hasHiddenTasks = tasks.length > maxCollapsed && tasks.some((task) => !visibleIds.has(task.id));
 

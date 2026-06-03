@@ -1,5 +1,9 @@
 .counselor-console {
-  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
   background: #f8fafc;
   color: #0f172a;
 }
@@ -12,6 +16,7 @@
   padding: 1rem 1.25rem;
   border-bottom: 1px solid rgba(148, 163, 184, 0.25);
   background: #fff;
+  flex-shrink: 0;
 }
 
 .counselor-console__head-actions {
@@ -32,13 +37,16 @@
 .counselor-console__layout {
   display: grid;
   grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
-  min-height: calc(100vh - 73px);
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .counselor-console__list {
   border-right: 1px solid rgba(148, 163, 184, 0.25);
   background: #fff;
   padding: 1rem;
+  overflow: auto;
+  min-height: 0;
 }
 
 .counselor-console__list-head h1 {
@@ -107,6 +115,19 @@
 .counselor-console__case {
   padding: 1rem 1.25rem 2rem;
   overflow: auto;
+  min-height: 0;
+}
+
+.counselor-console__case--chat {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: 0;
+}
+
+.counselor-console__case--chat .counselor-console__case-head,
+.counselor-console__case--chat .counselor-console__tabs {
+  flex-shrink: 0;
 }
 
 .counselor-console__tabs {
@@ -115,6 +136,33 @@
 
 .counselor-console__tab-main {
   max-width: 980px;
+}
+
+.counselor-console__tab-main--chat {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-width: none;
+  overflow: hidden;
+}
+
+.counselor-console__tab-main--chat .msg-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.counselor-console__tab-main .signed-service-hub__panel--todos {
+  margin: 0;
+}
+
+.counselor-console__tab-main .counselor-console__inline-form {
+  margin-left: 1rem;
+  margin-right: 1rem;
 }
 
 .counselor-console__inline-form {

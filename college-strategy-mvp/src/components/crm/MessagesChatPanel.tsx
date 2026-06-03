@@ -13,7 +13,16 @@ type Props = {
   onMessageDraftChange: (value: string) => void;
   onSend: () => void;
   studentDisplayName?: string;
+  counselorDisplayName?: string;
+  viewerRole?: "student" | "counselor";
+  messagePlaceholder?: string;
+  onTogglePin?: (messageId: string) => void;
 };
+
+function isOutgoingMessage(role: CrmMessage["authorRole"], viewerRole: "student" | "counselor"): boolean {
+  if (viewerRole === "student") return role === "student";
+  return role === "counselor" || role === "admin";
+}
 
 type TimelineItem =
   | { kind: "date"; key: string; label: string }
@@ -120,6 +129,10 @@ export function MessagesChatPanel({
   onMessageDraftChange,
   onSend,
   studentDisplayName,
+  counselorDisplayName,
+  viewerRole = "student",
+  messagePlaceholder,
+  onTogglePin,
 }: Props) {
   const { t, locale } = useLanguage();
   const feedRef = useRef<HTMLDivElement>(null);
@@ -141,11 +154,29 @@ export function MessagesChatPanel({
   const studentInitials = initials(studentName);
 
   const displayAuthor = (message: CrmMessage) => {
-    if (message.authorRole === "student") {
+    if (message.authorRole === "system") return t("crm.signedService.chatPanel.system");
+    if (viewerRole === "student" && message.authorRole === "student") {
       return `${studentName} (${t("crm.signedService.you")})`;
     }
-    if (message.authorRole === "system") return t("crm.signedService.chatPanel.system");
+    if (viewerRole === "counselor" && (message.authorRole === "counselor" || message.authorRole === "admin")) {
+      return `${localizeCrmText(message.authorLabel, locale, t)} (${t("crm.signedService.you")})`;
+    }
+    if (message.authorRole === "student") return studentName;
     return localizeCrmText(message.authorLabel, locale, t);
+  };
+
+  const avatarForThread = (role: CrmMessage["authorRole"], authorLabel: string, outgoing: boolean) => {
+    if (outgoing) {
+      return viewerRole === "student"
+        ? { className: "msg-panel__avatar--student", label: studentInitials }
+        : {
+            className: "msg-panel__avatar--counselor",
+            label: initials(counselorDisplayName || localizeCrmText(authorLabel, locale, t)),
+          };
+    }
+    return role === "student"
+      ? { className: "msg-panel__avatar--student", label: studentInitials }
+      : { className: "msg-panel__avatar--counselor", label: initials(localizeCrmText(authorLabel, locale, t)) };
   };
 
   return (
@@ -214,10 +245,10 @@ export function MessagesChatPanel({
               );
             }
 
-            const isOutgoing = item.role === "student";
+            const isOutgoing = isOutgoingMessage(item.role, viewerRole);
             const headName = displayAuthor(item.messages[0]!);
             const headTime = formatMessageTime(item.messages[0]!.createdAt, locale);
-            const incomingInitials = initials(headName);
+            const avatar = avatarForThread(item.role, item.authorLabel, isOutgoing);
 
             return (
               <article
@@ -225,7 +256,7 @@ export function MessagesChatPanel({
                 className={`msg-panel__thread${isOutgoing ? " msg-panel__thread--outgoing" : " msg-panel__thread--incoming"}`}
               >
                 {!isOutgoing ? (
-                  <span className="msg-panel__avatar msg-panel__avatar--counselor">{incomingInitials}</span>
+                  <span className={`msg-panel__avatar ${avatar.className}`}>{avatar.label}</span>
                 ) : null}
                 <div className="msg-panel__thread-body">
                   <p className="msg-panel__thread-head">
@@ -243,14 +274,25 @@ export function MessagesChatPanel({
                   </p>
                   <div className="msg-panel__bubbles">
                     {item.messages.map((message) => (
-                      <div key={message.id} className="msg-panel__bubble">
-                        {localizeCrmText(message.body, locale, t)}
+                      <div key={message.id} className="msg-panel__bubble-row">
+                        <div className="msg-panel__bubble">
+                          {localizeCrmText(message.body, locale, t)}
+                        </div>
+                        {onTogglePin ? (
+                          <button
+                            type="button"
+                            className="msg-panel__pin"
+                            onClick={() => onTogglePin(message.id)}
+                          >
+                            {message.pinned ? t("crm.signedService.unpin") : t("crm.signedService.pin")}
+                          </button>
+                        ) : null}
                       </div>
                     ))}
                   </div>
                 </div>
                 {isOutgoing ? (
-                  <span className="msg-panel__avatar msg-panel__avatar--student">{studentInitials}</span>
+                  <span className={`msg-panel__avatar ${avatar.className}`}>{avatar.label}</span>
                 ) : null}
               </article>
             );
@@ -263,7 +305,7 @@ export function MessagesChatPanel({
         <textarea
           value={messageDraft}
           onChange={(e) => onMessageDraftChange(e.target.value)}
-          placeholder={t("crm.messagePlaceholder")}
+          placeholder={messagePlaceholder ?? t("crm.messagePlaceholder")}
           rows={1}
         />
         <button type="button" className="btn btn-primary" onClick={onSend} disabled={!messageDraft.trim()}>

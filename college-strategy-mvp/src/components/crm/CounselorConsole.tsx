@@ -34,18 +34,23 @@ import {
   updateNextMeetingLabel,
   updateTask,
 } from "../../lib/crm/store";
-import type { CrmApplicationDocument, CrmEngagement, CrmMessageChannel, CrmTaskItemKind, CrmTaskLinkType } from "../../lib/crm/types";
+import type { CrmEngagement, CrmMessageChannel, CrmTaskItemKind, CrmTaskLinkType } from "../../lib/crm/types";
 import type { CrmMeetingRecapDraft } from "../../lib/crm/meetingRecapFormat";
 import type { FormState } from "../../types";
 import { BrandLogo } from "../BrandLogo";
 import { ResumeBuilder } from "../resume/ResumeBuilder";
+import { AccountTaskList } from "./AccountTaskList";
 import { CaseFilesPanel } from "./CaseFilesPanel";
 import { CounselorDocumentLibrary } from "./CounselorDocumentLibrary";
+import { CounselorTaskRow } from "./CounselorTaskRow";
+import { DocumentsSheetPanel } from "./DocumentsSheetPanel";
 import { LibraryItemPicker } from "./LibraryItemPicker";
+import { MessagesChatPanel } from "./MessagesChatPanel";
 import { CounselorTaskSubmissionsOverview } from "./CounselorTaskSubmissionsOverview";
 import { CounselorTaskCard } from "./CounselorTaskCard";
 import { MeetingsTabPanel } from "./MeetingsTabPanel";
 import "./CaseFilesPanel.css";
+import "./AccountTaskList.css";
 import "./crmTaskTypes.css";
 import "./CounselorConsole.css";
 import "./SignedServiceHub.css";
@@ -241,12 +246,6 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
     if (!studentForm) return [];
     return buildApplicationInfoRows(studentForm, locale, t);
   }, [studentForm, locale, t]);
-
-  const docStatusLabel = (status: string) => {
-    const key = `crm.signedService.docStatus.${status}`;
-    const label = t(key);
-    return label === key ? status : label;
-  };
 
   const sendChat = () => {
     if (!selected || !counselor) return;
@@ -521,7 +520,7 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
           )}
         </aside>
 
-        <main className="counselor-console__case">
+        <main className={`counselor-console__case${tab === "chat" ? " counselor-console__case--chat" : ""}`}>
           {!selected || !counselor ? (
             <div className="counselor-console__empty-case">{t("crm.console.pickStudent")}</div>
           ) : (
@@ -553,7 +552,7 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                 ))}
               </nav>
 
-              <div className="counselor-console__tab-main">
+              <div className={`counselor-console__tab-main${tab === "chat" ? " counselor-console__tab-main--chat" : ""}`}>
                 {tab === "home" && (
                   <div className="signed-service-hub__stack">
                     <section className="signed-service-hub__panel">
@@ -616,107 +615,121 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                 )}
 
                 {tab === "todos" && (
-                  <section className="signed-service-hub__panel">
-                    <h2>{t("crm.console.studentTasks")}</h2>
-                    <ul className="counselor-console__task-list">
-                      {tasks.map((task) => (
-                        <li key={task.id} className="counselor-console__task-list-item">
-                          {editingTaskId === task.id ? (
-                            <div className="counselor-console__task-edit">
-                              <label>
-                                <span>{t("crm.console.taskTitle")}</span>
-                                <input
-                                  value={editTaskTitle}
-                                  onChange={(e) => setEditTaskTitle(e.target.value)}
-                                  disabled={taskActionBusy}
-                                />
-                              </label>
-                              <label>
-                                <span>{t("crm.console.taskDetail")}</span>
-                                <textarea
-                                  value={editTaskDetail}
-                                  onChange={(e) => setEditTaskDetail(e.target.value)}
-                                  rows={3}
-                                  disabled={taskActionBusy}
-                                />
-                              </label>
-                              <label>
-                                <span>{t("crm.taskItemKind.label")}</span>
-                                <select
-                                  value={editTaskItemKind}
-                                  onChange={(e) => setEditTaskItemKind(e.target.value as CrmTaskItemKind)}
-                                  disabled={taskActionBusy}
-                                >
-                                  <option value="action">{t("crm.taskItemKind.action")}</option>
-                                  <option value="resource">{t("crm.taskItemKind.resource")}</option>
-                                </select>
-                              </label>
-                              {editTaskItemKind === "action" ? (
-                              <>
-                              <label>
-                                <span>{t("crm.dueLabel")}</span>
-                                <input
-                                  type="date"
-                                  value={editTaskDue}
-                                  onChange={(e) => setEditTaskDue(e.target.value)}
-                                  disabled={taskActionBusy}
-                                />
-                              </label>
-                              <label>
-                                <span>{t("crm.console.taskLink")}</span>
-                                <select
-                                  value={editTaskLink}
-                                  onChange={(e) => setEditTaskLink(e.target.value as CrmTaskLinkType)}
-                                  disabled={taskActionBusy}
-                                >
-                                  <option value="none">{t("crm.taskLink.none")}</option>
-                                  <option value="profile">{t("crm.taskLink.profile")}</option>
-                                  <option value="activities">{t("crm.taskLink.activities")}</option>
-                                  <option value="essay">{t("crm.taskLink.essay")}</option>
-                                  <option value="report">{t("crm.taskLink.report")}</option>
-                                </select>
-                              </label>
-                              </>
-                              ) : (
-                                <p className="counselor-console__field-hint">{t("crm.taskItemKind.resourceHint")}</p>
-                              )}
-                              <div className="counselor-console__task-actions">
-                                <button
-                                  type="button"
-                                  className="btn btn-primary"
-                                  disabled={taskActionBusy || !editTaskTitle.trim()}
-                                  onClick={() => void saveEditTask()}
-                                >
-                                  {taskActionBusy ? t("crm.console.savingTask") : t("crm.console.saveTask")}
-                                </button>
-                                <button
-                                  type="button"
-                                  className="btn btn-secondary"
-                                  disabled={taskActionBusy}
-                                  onClick={cancelEditTask}
-                                >
-                                  {t("crm.console.cancel")}
-                                </button>
+                  <section className="signed-service-hub__panel signed-service-hub__panel--todos">
+                    <AccountTaskList
+                      layout="board"
+                      tasks={tasks}
+                      files={files}
+                      onToggleTask={(taskId, done) => {
+                        setTaskDone(taskId, done);
+                        notifyCrmStoreChange();
+                        refresh();
+                      }}
+                      onTaskNavigate={() => {}}
+                      renderTask={(task, { categoryLabel }) => {
+                        if (editingTaskId === task.id) {
+                          return (
+                            <li key={task.id} className="task-row task-row--edit">
+                              <div className="counselor-console__task-edit">
+                                <label>
+                                  <span>{t("crm.console.taskTitle")}</span>
+                                  <input
+                                    value={editTaskTitle}
+                                    onChange={(e) => setEditTaskTitle(e.target.value)}
+                                    disabled={taskActionBusy}
+                                  />
+                                </label>
+                                <label>
+                                  <span>{t("crm.console.taskDetail")}</span>
+                                  <textarea
+                                    value={editTaskDetail}
+                                    onChange={(e) => setEditTaskDetail(e.target.value)}
+                                    rows={3}
+                                    disabled={taskActionBusy}
+                                  />
+                                </label>
+                                <label>
+                                  <span>{t("crm.taskItemKind.label")}</span>
+                                  <select
+                                    value={editTaskItemKind}
+                                    onChange={(e) => setEditTaskItemKind(e.target.value as CrmTaskItemKind)}
+                                    disabled={taskActionBusy}
+                                  >
+                                    <option value="action">{t("crm.taskItemKind.action")}</option>
+                                    <option value="resource">{t("crm.taskItemKind.resource")}</option>
+                                  </select>
+                                </label>
+                                {editTaskItemKind === "action" ? (
+                                  <>
+                                    <label>
+                                      <span>{t("crm.dueLabel")}</span>
+                                      <input
+                                        type="date"
+                                        value={editTaskDue}
+                                        onChange={(e) => setEditTaskDue(e.target.value)}
+                                        disabled={taskActionBusy}
+                                      />
+                                    </label>
+                                    <label>
+                                      <span>{t("crm.console.taskLink")}</span>
+                                      <select
+                                        value={editTaskLink}
+                                        onChange={(e) => setEditTaskLink(e.target.value as CrmTaskLinkType)}
+                                        disabled={taskActionBusy}
+                                      >
+                                        <option value="none">{t("crm.taskLink.none")}</option>
+                                        <option value="profile">{t("crm.taskLink.profile")}</option>
+                                        <option value="activities">{t("crm.taskLink.activities")}</option>
+                                        <option value="essay">{t("crm.taskLink.essay")}</option>
+                                        <option value="report">{t("crm.taskLink.report")}</option>
+                                      </select>
+                                    </label>
+                                  </>
+                                ) : (
+                                  <p className="counselor-console__field-hint">{t("crm.taskItemKind.resourceHint")}</p>
+                                )}
+                                <div className="counselor-console__task-actions">
+                                  <button
+                                    type="button"
+                                    className="btn btn-primary"
+                                    disabled={taskActionBusy || !editTaskTitle.trim()}
+                                    onClick={() => void saveEditTask()}
+                                  >
+                                    {taskActionBusy ? t("crm.console.savingTask") : t("crm.console.saveTask")}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn btn-secondary"
+                                    disabled={taskActionBusy}
+                                    onClick={cancelEditTask}
+                                  >
+                                    {t("crm.console.cancel")}
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                          ) : (
-                            <CounselorTaskCard
-                              task={task}
-                              files={files}
-                              busy={taskActionBusy}
-                              onToggleDone={(done) => {
-                                setTaskDone(task.id, done);
-                                notifyCrmStoreChange();
-                                refresh();
-                              }}
-                              onEdit={() => startEditTask(task)}
-                              onDelete={() => void removeTask(task.id)}
-                              onReturn={(note) => handleReturnTask(task.id, note)}
-                            />
-                          )}
-                        </li>
-                      ))}
-                    </ul>
+                            </li>
+                          );
+                        }
+
+                        return (
+                          <CounselorTaskRow
+                            key={task.id}
+                            task={task}
+                            files={files}
+                            categoryLabel={categoryLabel}
+                            busy={taskActionBusy}
+                            onToggleDone={(done) => {
+                              setTaskDone(task.id, done);
+                              notifyCrmStoreChange();
+                              refresh();
+                            }}
+                            onEdit={() => startEditTask(task)}
+                            onDelete={() => void removeTask(task.id)}
+                            onReturn={(note) => handleReturnTask(task.id, note)}
+                          />
+                        );
+                      }}
+                    />
                     <div className="counselor-console__inline-form">
                       <h3>{t("crm.console.btnTask")}</h3>
                       <label>
@@ -783,121 +796,45 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                 )}
 
                 {tab === "documents" && (
-                  <section className="signed-service-hub__panel">
-                    <h2>{t("crm.signedService.documentsTitle")}</h2>
-                    <p className="signed-service-hub__muted">{t("crm.signedService.documentsLead")}</p>
-                    <div className="signed-service-hub__table-wrap">
-                      <table className="signed-service-hub__table">
-                        <thead>
-                          <tr>
-                            <th>{t("crm.signedService.colName")}</th>
-                            <th>{t("crm.signedService.colType")}</th>
-                            <th>{t("crm.signedService.colStatus")}</th>
-                            <th>{t("crm.signedService.colDue")}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {documents.map((doc) => (
-                            <tr key={doc.id}>
-                              <td>{doc.name}</td>
-                              <td>{doc.docType}</td>
-                              <td>
-                                <select
-                                  className={`counselor-console__status-select counselor-console__status-select--${doc.status}`}
-                                  value={doc.status}
-                                  onChange={(e) => {
-                                    updateDocumentStatus(doc.id, e.target.value as CrmApplicationDocument["status"]);
-                                    notifyCrmStoreChange();
-                                    refresh();
-                                  }}
-                                >
-                                  {(["needed", "draft", "submitted", "done"] as const).map((status) => (
-                                    <option key={status} value={status}>
-                                      {docStatusLabel(status)}
-                                    </option>
-                                  ))}
-                                </select>
-                              </td>
-                              <td>{doc.dueAt || "—"}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <div className="counselor-console__inline-form">
-                      <h3>{t("crm.console.addDocument")}</h3>
-                      <label>
-                        <span>{t("crm.signedService.colName")}</span>
-                        <input value={docNameDraft} onChange={(e) => setDocNameDraft(e.target.value)} />
-                      </label>
-                      <label>
-                        <span>{t("crm.signedService.colType")}</span>
-                        <input value={docTypeDraft} onChange={(e) => setDocTypeDraft(e.target.value)} />
-                      </label>
-                      <label>
-                        <span>{t("crm.signedService.colDue")}</span>
-                        <input type="date" value={docDueDraft} onChange={(e) => setDocDueDraft(e.target.value)} />
-                      </label>
-                      <button type="button" className="btn btn-primary" onClick={submitDocument} disabled={!docNameDraft.trim()}>
-                        {t("crm.console.addDocument")}
-                      </button>
-                    </div>
-                  </section>
+                  <DocumentsSheetPanel
+                    documents={documents}
+                    onStatusChange={(docId, status) => {
+                      updateDocumentStatus(docId, status);
+                      notifyCrmStoreChange();
+                      refresh();
+                    }}
+                    addDraft={{
+                      name: docNameDraft,
+                      docType: docTypeDraft,
+                      dueAt: docDueDraft,
+                      onNameChange: setDocNameDraft,
+                      onDocTypeChange: setDocTypeDraft,
+                      onDueChange: setDocDueDraft,
+                      onSubmit: submitDocument,
+                      submitDisabled: !docNameDraft.trim(),
+                    }}
+                  />
                 )}
 
                 {tab === "chat" && (
-                  <section className="signed-service-hub__panel">
-                    <div className="signed-service-hub__chat-tabs">
-                      <button
-                        type="button"
-                        className={chatChannel === "direct" ? "is-active" : undefined}
-                        onClick={() => setChatChannel("direct")}
-                      >
-                        {t("crm.signedService.directChat")}
-                      </button>
-                      <button
-                        type="button"
-                        className={chatChannel === "group" ? "is-active" : undefined}
-                        onClick={() => setChatChannel("group")}
-                      >
-                        {t("crm.signedService.groupChat")}
-                      </button>
-                    </div>
-                    <ul className="signed-service-hub__timeline">
-                      {[...chatMessages].reverse().map((message) => (
-                        <li key={message.id} className={`is-${message.authorRole}`}>
-                          <div className="signed-service-hub__message-head">
-                            <span>
-                              {formatWhen(message.createdAt, locale)} · {message.authorLabel}
-                            </span>
-                            <button
-                              type="button"
-                              className="signed-service-hub__link"
-                              onClick={() => {
-                                toggleMessagePin(message.id);
-                                notifyCrmStoreChange();
-                                refresh();
-                              }}
-                            >
-                              {message.pinned ? t("crm.signedService.unpin") : t("crm.signedService.pin")}
-                            </button>
-                          </div>
-                          <p>{message.body}</p>
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="signed-service-hub__compose">
-                      <textarea
-                        value={messageDraft}
-                        onChange={(e) => setMessageDraft(e.target.value)}
-                        placeholder={t("crm.console.messagePlaceholder")}
-                        rows={3}
-                      />
-                      <button type="button" className="btn btn-primary" onClick={sendChat} disabled={!messageDraft.trim()}>
-                        {t("crm.send")}
-                      </button>
-                    </div>
-                  </section>
+                  <MessagesChatPanel
+                    messages={chatMessages}
+                    pinnedMessages={pins}
+                    channel={chatChannel}
+                    onChannelChange={setChatChannel}
+                    messageDraft={messageDraft}
+                    onMessageDraftChange={setMessageDraft}
+                    onSend={sendChat}
+                    viewerRole="counselor"
+                    counselorDisplayName={counselor.name}
+                    studentDisplayName={selected.studentName || selected.studentEmail.split("@")[0]}
+                    messagePlaceholder={t("crm.console.messagePlaceholder")}
+                    onTogglePin={(messageId) => {
+                      toggleMessagePin(messageId);
+                      notifyCrmStoreChange();
+                      refresh();
+                    }}
+                  />
                 )}
 
                 {tab === "meetings" && selected && counselor ? (

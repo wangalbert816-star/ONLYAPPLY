@@ -6,6 +6,17 @@ import "./DocumentsSheetPanel.css";
 
 type DocTypeKey = "recommendation" | "transcript" | "essay" | "general";
 
+export type DocumentAddDraft = {
+  name: string;
+  docType: string;
+  dueAt: string;
+  onNameChange: (value: string) => void;
+  onDocTypeChange: (value: string) => void;
+  onDueChange: (value: string) => void;
+  onSubmit: () => void;
+  submitDisabled?: boolean;
+};
+
 function resolveDocType(docType: string): DocTypeKey {
   const value = docType.trim().toLowerCase();
   if (value.includes("rec")) return "recommendation";
@@ -40,9 +51,11 @@ function dueVariant(dueAt?: string): "none" | "plain" | "soon" | "urgent" {
 
 type Props = {
   documents: CrmApplicationDocument[];
+  onStatusChange?: (docId: string, status: CrmApplicationDocument["status"]) => void;
+  addDraft?: DocumentAddDraft;
 };
 
-export function DocumentsSheetPanel({ documents }: Props) {
+export function DocumentsSheetPanel({ documents, onStatusChange, addDraft }: Props) {
   const { t, locale } = useLanguage();
 
   const stats = useMemo(
@@ -122,10 +135,27 @@ export function DocumentsSheetPanel({ documents }: Props) {
                       <span className={`doc-sheet__type doc-sheet__type--${typeKey}`}>{docTypeLabel(doc.docType)}</span>
                     </td>
                     <td>
-                      <span className={`doc-sheet__status doc-sheet__status--${statusKey}`}>
-                        <span className={`doc-sheet__status-icon doc-sheet__status-icon--${statusKey}`} aria-hidden />
-                        {statusLabel(doc.status)}
-                      </span>
+                      {onStatusChange ? (
+                        <select
+                          className={`doc-sheet__status-select doc-sheet__status-select--${statusKey}`}
+                          value={doc.status}
+                          onChange={(e) =>
+                            onStatusChange(doc.id, e.target.value as CrmApplicationDocument["status"])
+                          }
+                          aria-label={`${localizeCrmText(doc.name, locale, t)} — ${t("crm.signedService.colStatus")}`}
+                        >
+                          {(["needed", "draft", "submitted", "done"] as const).map((status) => (
+                            <option key={status} value={status}>
+                              {statusLabel(status)}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className={`doc-sheet__status doc-sheet__status--${statusKey}`}>
+                          <span className={`doc-sheet__status-icon doc-sheet__status-icon--${statusKey}`} aria-hidden />
+                          {statusLabel(doc.status)}
+                        </span>
+                      )}
                     </td>
                     <td>
                       {due === "none" ? (
@@ -146,6 +176,34 @@ export function DocumentsSheetPanel({ documents }: Props) {
           </tbody>
         </table>
       </div>
+
+      {addDraft ? (
+        <footer className="doc-sheet__footer">
+          <h3>{t("crm.console.addDocument")}</h3>
+          <div className="doc-sheet__footer-grid">
+            <label>
+              <span>{t("crm.signedService.colName")}</span>
+              <input value={addDraft.name} onChange={(e) => addDraft.onNameChange(e.target.value)} />
+            </label>
+            <label>
+              <span>{t("crm.signedService.colType")}</span>
+              <input value={addDraft.docType} onChange={(e) => addDraft.onDocTypeChange(e.target.value)} />
+            </label>
+            <label>
+              <span>{t("crm.signedService.colDue")}</span>
+              <input type="date" value={addDraft.dueAt} onChange={(e) => addDraft.onDueChange(e.target.value)} />
+            </label>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={addDraft.onSubmit}
+              disabled={addDraft.submitDisabled ?? !addDraft.name.trim()}
+            >
+              {t("crm.console.addDocument")}
+            </button>
+          </div>
+        </footer>
+      ) : null}
     </section>
   );
 }

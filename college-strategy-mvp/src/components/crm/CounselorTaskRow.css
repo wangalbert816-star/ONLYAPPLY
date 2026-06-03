@@ -1,0 +1,57 @@
+.counselor-task-row__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-shrink: 0;
+}
+
+.counselor-task-row__action {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 650;
+  color: #57534e;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.counselor-task-row__action:hover:not(:disabled) {
+  color: #1c1917;
+  text-decoration: underline;
+}
+
+.counselor-task-row__action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.counselor-task-row__action--danger:hover:not(:disabled) {
+  color: #b91c1c;
+}
+
+.counselor-task-row__meta-label {
+  margin: 0 0 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #a8a29e;
+}
+
+.task-row--edit .counselor-console__task-edit {
+  padding: 0.85rem 1rem 1rem;
+}
+
+@media (max-width: 760px) {
+  .task-row__title-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .counselor-task-row__actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
