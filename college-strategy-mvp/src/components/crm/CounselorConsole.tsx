@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useLanguage } from "../../i18n/LanguageContext";
 import { normalizeMeetingUrl } from "../../lib/crm/meetingBooking";
 import { buildApplicationInfoRows } from "../../lib/applicationInfoRows";
@@ -128,6 +128,7 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
   const [notesDraft, setNotesDraft] = useState("");
   const [studentForm, setStudentForm] = useState<FormState | null>(null);
   const [studentFormLoading, setStudentFormLoading] = useState(false);
+  const [formApplicationId, setFormApplicationId] = useState<string | null>(null);
 
   const refreshEngagements = useCallback(() => {
     const next = listEngagements();
@@ -174,9 +175,21 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
     setMeetingLabelDraft(selected?.nextMeetingLabel ?? "");
   }, [selected?.id, selected?.internalNotes, selected?.nextMeetingLabel]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setTab("home");
   }, [selectedId]);
+
+  useLayoutEffect(() => {
+    if (!selected) {
+      setStudentForm(null);
+      setFormApplicationId(null);
+      setStudentFormLoading(false);
+      return;
+    }
+    setStudentForm(null);
+    setFormApplicationId(null);
+    setStudentFormLoading(true);
+  }, [selected?.applicationId, selected?.id]);
 
   useEffect(() => {
     if (!counselor) return;
@@ -184,20 +197,20 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
   }, [counselor?.id, counselor?.meetingUrl]);
 
   useEffect(() => {
-    if (!selected) {
-      setStudentForm(null);
-      setStudentFormLoading(false);
-      return;
-    }
+    if (!selected) return;
     let cancelled = false;
-    setStudentFormLoading(true);
-    void fetchApplicationFormById(selected.applicationId)
+    const applicationId = selected.applicationId;
+    void fetchApplicationFormById(applicationId)
       .then((form) => {
         if (cancelled) return;
         setStudentForm(form);
+        setFormApplicationId(applicationId);
       })
       .catch(() => {
-        if (!cancelled) setStudentForm(null);
+        if (!cancelled) {
+          setStudentForm(null);
+          setFormApplicationId(applicationId);
+        }
       })
       .finally(() => {
         if (!cancelled) setStudentFormLoading(false);
@@ -206,6 +219,10 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
       cancelled = true;
     };
   }, [selected?.applicationId]);
+
+  const resumeFormReady = Boolean(
+    selected && !studentFormLoading && formApplicationId === selected.applicationId,
+  );
 
   const followUpCount = useMemo(() => engagements.filter((e) => e.needsFollowUp).length, [engagements]);
 
@@ -938,7 +955,7 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
 
                 {tab === "resume" && selected ? (
                   <section className="signed-service-hub__panel signed-service-hub__panel--resume">
-                    {studentFormLoading ? (
+                    {!resumeFormReady ? (
                       <p className="signed-service-hub__muted">{t("crm.signedService.studentLoading")}</p>
                     ) : (
                       <ResumeBuilder

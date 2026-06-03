@@ -130,6 +130,8 @@ export function ResumeBuilder({
   const { t } = useLanguage();
   const persistKey = engagementId || storageKey || "";
   const loadKey = persistKey ? `${persistKey}:${editorRole}` : "";
+  const persistKeyRef = useRef(persistKey);
+  persistKeyRef.current = persistKey;
   const formRef = useRef(form);
   formRef.current = form;
   const userEmailRef = useRef(userEmail);
@@ -166,11 +168,13 @@ export function ResumeBuilder({
 
     let cancelled = false;
     const fetchingFor = loadKey;
+    const activePersistKey = persistKey;
     loadedKeyRef.current = null;
     lastSavedRef.current = "";
     setReadyToPersist(false);
     setLoading(true);
     setSyncState("idle");
+    setDraft(createEmptyResumeForm());
 
     void (async () => {
       const prefillFromProfile = () =>
@@ -179,22 +183,25 @@ export function ResumeBuilder({
           displayName: displayNameRef.current,
         });
 
+      const initialDraftForEngagement = (): ResumeFormData =>
+        editorRole === "counselor" ? createEmptyResumeForm() : prefillFromProfile();
+
       const commitDraft = (next: ResumeFormData) => {
-        if (cancelled || fetchingFor !== loadKey) return;
+        if (cancelled || activePersistKey !== persistKeyRef.current || fetchingFor !== loadKey) return;
         setDraft(next);
         lastSavedRef.current = JSON.stringify(next);
         loadedKeyRef.current = fetchingFor;
         if (editorRole === "student") {
-          saveResumeDraftToStorage(persistKey, next);
+          saveResumeDraftToStorage(activePersistKey, next);
         }
         setReadyToPersist(true);
       };
 
       try {
         const remote = isResumeServerSyncEnabled()
-          ? await loadRemoteResumeDraft(persistKey, editorRole)
+          ? await loadRemoteResumeDraft(activePersistKey, editorRole)
           : null;
-        if (cancelled || fetchingFor !== loadKey) return;
+        if (cancelled || activePersistKey !== persistKeyRef.current || fetchingFor !== loadKey) return;
 
         if (remote && hasResumeDraftContent(remote)) {
           commitDraft(remote);
@@ -202,11 +209,11 @@ export function ResumeBuilder({
         }
 
         if (editorRole === "student") {
-          const local = loadResumeDraftFromStorage(persistKey);
+          const local = loadResumeDraftFromStorage(activePersistKey);
           if (local && hasResumeDraftContent(local)) {
             commitDraft(local);
             if (isResumeServerSyncEnabled()) {
-              void saveRemoteResumeDraft(persistKey, local, editorRole).catch(() => {
+              void saveRemoteResumeDraft(activePersistKey, local, editorRole).catch(() => {
                 /* best-effort migrate local draft to server */
               });
             }
@@ -214,19 +221,21 @@ export function ResumeBuilder({
           }
         }
 
-        commitDraft(prefillFromProfile());
+        commitDraft(initialDraftForEngagement());
       } catch {
-        if (cancelled || fetchingFor !== loadKey) return;
+        if (cancelled || activePersistKey !== persistKeyRef.current || fetchingFor !== loadKey) return;
         if (editorRole === "student") {
-          const local = loadResumeDraftFromStorage(persistKey);
+          const local = loadResumeDraftFromStorage(activePersistKey);
           if (local && hasResumeDraftContent(local)) {
             commitDraft(local);
             return;
           }
         }
-        commitDraft(prefillFromProfile());
+        commitDraft(initialDraftForEngagement());
       } finally {
-        if (!cancelled && fetchingFor === loadKey) setLoading(false);
+        if (!cancelled && activePersistKey === persistKeyRef.current && fetchingFor === loadKey) {
+          setLoading(false);
+        }
       }
     })();
 
@@ -248,10 +257,15 @@ export function ResumeBuilder({
     const serialized = JSON.stringify(draft);
     if (serialized === lastSavedRef.current) return;
 
+    const saveEngagementId = persistKey;
+    const saveLoadKey = loadKey;
+
     setSyncState("saving");
     const timer = window.setTimeout(() => {
-      void saveRemoteResumeDraft(persistKey, draft, editorRole)
+      if (persistKeyRef.current !== saveEngagementId || loadedKeyRef.current !== saveLoadKey) return;
+      void saveRemoteResumeDraft(saveEngagementId, draft, editorRole)
         .then(() => {
+          if (persistKeyRef.current !== saveEngagementId || loadedKeyRef.current !== saveLoadKey) return;
           lastSavedRef.current = serialized;
           setSyncState("saved");
         })
@@ -259,7 +273,7 @@ export function ResumeBuilder({
     }, 700);
 
     return () => window.clearTimeout(timer);
-  }, [draft, persistKey, readyToPersist, editorRole]);
+  }, [draft, persistKey, readyToPersist, editorRole, loadKey]);
 
   const patch = useCallback((updater: (prev: ResumeFormData) => ResumeFormData) => {
     setDraft((prev) => updater(prev));
