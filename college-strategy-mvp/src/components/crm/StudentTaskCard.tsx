@@ -9,6 +9,20 @@ import { TaskTypeBadge, taskItemClass } from "./TaskTypeBadge";
 import "./crmTaskTypes.css";
 import "./StudentTaskCard.css";
 
+function dueTone(dueAt?: string): "overdue" | "upcoming" | "neutral" {
+  if (!dueAt) return "neutral";
+  const due = new Date(dueAt);
+  if (Number.isNaN(due.getTime())) return "neutral";
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  due.setHours(0, 0, 0, 0);
+  if (due < today) return "overdue";
+  const weekOut = new Date(today);
+  weekOut.setDate(weekOut.getDate() + 14);
+  if (due <= weekOut) return "upcoming";
+  return "neutral";
+}
+
 type Props = {
   task: CrmTask;
   files: CrmStoredFile[];
@@ -37,9 +51,9 @@ export function StudentTaskCard({
   const hasMaterials = Boolean(task.attachedFileIds?.length);
   const showSubmissionSection =
     !isResource && Boolean((allowSubmit && engagementId) || submissions.length > 0);
-  const statusLabel = task.status === "done" ? t("crm.taskDone") : t("crm.console.taskOpen");
   const showNav = !isResource && task.linkType !== "none" && task.status === "open";
   const resourceLabel = t("crm.taskItemKind.resource");
+  const dueVariant = dueTone(task.dueAt);
 
   return (
     <article className={`student-task-card ${taskItemClass(task)}${isResource ? " student-task-card--resource" : ""}`}>
@@ -66,18 +80,20 @@ export function StudentTaskCard({
               label={linkLabel}
               resourceLabel={resourceLabel}
             />
-            {!isResource ? (
-              <span className={`student-task-card__status student-task-card__status--${task.status}`}>
-                {statusLabel}
+            {!isResource && task.status === "done" && task.completedAt ? (
+              <span className="student-task-card__pill student-task-card__pill--submitted">
+                {t("crm.taskBoard.submittedOn", { date: task.completedAt.slice(0, 10) })}
               </span>
             ) : null}
-            {!isResource && task.dueAt ? (
-              <span className="student-task-card__due">{t("crm.due", { date: task.dueAt })}</span>
+            {!isResource && task.dueAt && task.status === "open" ? (
+              <span className={`student-task-card__pill student-task-card__pill--due-${dueVariant}`}>
+                {t("crm.due", { date: task.dueAt })}
+              </span>
             ) : null}
             {!isResource && returned ? (
-              <span className="student-task-card__returned-pill">{t("crm.taskSubmit.returned")}</span>
-            ) : !isResource && submissions.length > 0 ? (
-              <span className="student-task-card__turned-in-pill">{t("crm.taskSubmit.turnedIn")}</span>
+              <span className="student-task-card__pill student-task-card__pill--returned">{t("crm.taskSubmit.returned")}</span>
+            ) : !isResource && submissions.length > 0 && task.status === "open" ? (
+              <span className="student-task-card__pill student-task-card__pill--submitted">{t("crm.taskSubmit.turnedIn")}</span>
             ) : null}
           </div>
         </div>
@@ -85,7 +101,7 @@ export function StudentTaskCard({
         {showNav ? (
           <button
             type="button"
-            className="btn btn-secondary btn-sm student-task-card__nav"
+            className="student-task-card__nav"
             onClick={() => onTaskNavigate(task.linkType)}
           >
             {linkLabel}

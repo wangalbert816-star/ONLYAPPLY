@@ -112,6 +112,7 @@ export function SignedServiceOverview({
               </button>
             </div>
             <AccountTaskList
+              layout="compact"
               tasks={tasks}
               files={files}
               engagementId={engagement.id}
@@ -119,7 +120,6 @@ export function SignedServiceOverview({
               onSubmitted={onSubmitted}
               onToggleTask={onToggleTask}
               onTaskNavigate={() => onTabChange("todos")}
-              variant="plain"
               maxCollapsed={2}
             />
           </section>

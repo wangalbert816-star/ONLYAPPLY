@@ -60,6 +60,26 @@
   padding: 0.4rem 0.85rem;
 }
 
+.task-submission--list-inline .task-submission__card {
+  margin-top: 0;
+  padding: 0.5rem 0 0;
+  border: 0;
+  border-top: 1px solid #f0ece6;
+  border-radius: 0;
+  background: transparent;
+  gap: 0.45rem;
+}
+
+.task-submission--list-inline .task-submission__card-head strong {
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.task-submission--list-inline .btn {
+  font-size: 0.78rem;
+  padding: 0.35rem 0.65rem;
+}
+
 .task-submission__card {
   display: grid;
   gap: 0.55rem;

@@ -135,22 +135,19 @@ export function SignedServiceHub({ engagement, counselor, form, studentUserId, u
 
   return (
     <div className="signed-service-hub">
-      <header className="signed-service-hub__head">
-        <div className="signed-service-hub__brand">
-          <BrandLogo />
-        </div>
-        <div className="signed-service-hub__head-copy">
-          <p className="signed-service-hub__kicker">{t("crm.serviceKicker")}</p>
-          <div className="signed-service-hub__title-row">
-            <h1>{localizeCrmText(engagement.applicationTitle, locale, t)}</h1>
-            <span className="signed-service-hub__phase">{t(`crm.phase.${engagement.phase}`)}</span>
-          </div>
-          <p className="signed-service-hub__subtitle">
-            {localizeCrmText(counselor.name, locale, t)} · {localizeCrmText(counselor.title, locale, t)}
-          </p>
-        </div>
-        <button type="button" className="btn btn-secondary signed-service-hub__back" onClick={onBack}>
-          {t("crm.signedService.backToAccount")}
+      <header className="signed-service-hub__topbar">
+        <BrandLogo />
+        <p className="signed-service-hub__crumb">
+          {t("crm.serviceKicker")} · {studentDisplayName || t("crm.signedService.you")} ·{" "}
+          {t(`crm.phase.${engagement.phase}`)}
+        </p>
+        <button
+          type="button"
+          className="signed-service-hub__menu"
+          onClick={onBack}
+          aria-label={t("crm.signedService.backToAccount")}
+        >
+          ···
         </button>
       </header>
 
@@ -202,9 +199,9 @@ export function SignedServiceHub({ engagement, counselor, form, studentUserId, u
         )}
 
         {tab === "todos" && (
-          <section className="signed-service-hub__panel">
-            <h2>{t("crm.myTasks")}</h2>
+          <section className="signed-service-hub__panel signed-service-hub__panel--todos">
             <AccountTaskList
+              layout="board"
               tasks={tasks}
               files={files}
               engagementId={engagement.id}
@@ -220,9 +217,9 @@ export function SignedServiceHub({ engagement, counselor, form, studentUserId, u
               }}
               onTaskNavigate={(link: CrmTaskLinkType) => {
                 if (link === "profile" || link === "activities") setTab("student");
+                if (link === "essay") setTab("documents");
+                if (link === "report") setTab("home");
               }}
-              variant="card"
-              maxCollapsed={20}
             />
           </section>
         )}

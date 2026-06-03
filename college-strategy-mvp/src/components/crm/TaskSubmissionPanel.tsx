@@ -17,6 +17,9 @@ type Props = {
   /** Fits inside StudentTaskCard section (no duplicate turned-in list). */
   embedded?: boolean;
   returned?: boolean;
+  defaultOpen?: boolean;
+  listInline?: boolean;
+  onDismiss?: () => void;
 };
 
 export function TaskSubmissionPanel({
@@ -27,10 +30,13 @@ export function TaskSubmissionPanel({
   onSubmitted,
   embedded = false,
   returned = false,
+  defaultOpen = false,
+  listInline = false,
+  onDismiss,
 }: Props) {
   const { t } = useLanguage();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [googleUrl, setGoogleUrl] = useState("");
@@ -108,7 +114,11 @@ export function TaskSubmissionPanel({
   }
 
   return (
-    <div className={`task-submission${embedded ? " task-submission--embedded" : ""}`}>
+    <div
+      className={`task-submission${embedded ? " task-submission--embedded" : ""}${
+        listInline ? " task-submission--list-inline" : ""
+      }`}
+    >
       {!embedded && submissions.length > 0 ? (
         <div className="task-submission__turned-in">
           <span className="task-submission__badge">{t("crm.taskSubmit.turnedIn")}</span>
@@ -125,7 +135,7 @@ export function TaskSubmissionPanel({
         <p className="task-submission__resubmit-lead">{t("crm.taskSubmit.resubmitLead")}</p>
       ) : null}
 
-      {!open ? (
+      {!open && !defaultOpen ? (
         <button
           type="button"
           className={`btn task-submission__open${embedded ? " btn-secondary btn-sm" : " btn-primary"}`}
@@ -145,6 +155,7 @@ export function TaskSubmissionPanel({
               onClick={() => {
                 resetForm();
                 setOpen(false);
+                onDismiss?.();
               }}
             >
               {t("crm.taskSubmit.cancel")}
