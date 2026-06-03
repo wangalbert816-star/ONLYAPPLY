@@ -50,6 +50,10 @@
   cursor: pointer;
 }
 
+.counselor-task-card__header > .crm-task-resource-mark {
+  margin-top: 0.2rem;
+}
+
 .counselor-task-card__head-main {
   min-width: 0;
 }

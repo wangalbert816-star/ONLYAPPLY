@@ -15,6 +15,7 @@ import { buildApplicationInfoRows } from "../../lib/applicationInfoRows";
 import { buildFiveDimensionProfile, type ProfileDimensionKey } from "../../lib/fiveDimensionProfile";
 import type { ActivityItem, FormState, GeoPref, ReportPayload, SupplementaryNote } from "../../types";
 import { BrandLogo } from "../BrandLogo";
+import { ActivityCard } from "../ActivityCard";
 import { ExportActivitiesCsvButton } from "../ExportActivitiesCsvButton";
 import { AccountReportSnapshot } from "./AccountReportSnapshot";
 import { AccountReportBrief } from "./AccountReportBrief";
@@ -930,8 +931,11 @@ export function AccountHome({
 
             {!activityEditorOpen && activityDraft.length > 0 && (
               <div className="account-activity-preview">
-                {activityDraft.slice(0, 3).map((item) => (
-                  <div key={item.id}>
+                {activityDraft.slice(0, 3).map((item, index) => (
+                  <div
+                    key={item.id}
+                    className={`account-activity-preview__item activity-card--${(index + 1) % 2 === 1 ? "odd" : "even"}`}
+                  >
                     <strong>{item.name || t("auth.accountActivityUntitled")}</strong>
                     <span>
                       {[activityKindLabel(item.kind, locale), item.role, item.award || item.outcome].filter(Boolean).join(" · ")}
@@ -947,124 +951,15 @@ export function AccountHome({
                   <p className="account-home__muted">{t("auth.accountActivityEmpty")}</p>
                 ) : (
                   activityDraft.map((item, index) => (
-                    <article className="account-activity-item" key={item.id}>
-                      <div className="account-activity-item__head">
-                        <strong>{t("wizard.s3.activities.cardTitle", { n: index + 1 })}</strong>
-                        <button type="button" onClick={() => removeActivityDraft(item.id)}>
-                          {t("wizard.s3.activities.remove")}
-                        </button>
-                      </div>
-                      <div className="account-activity-item__grid">
-                        <label>
-                          <span>{t("wizard.s3.activities.name")}</span>
-                          <input
-                            value={item.name}
-                            onChange={(e) => updateActivityDraft(item.id, { name: e.target.value })}
-                            placeholder={t("wizard.s3.activities.namePh")}
-                          />
-                        </label>
-                        <label>
-                          <span>{t("wizard.s3.activities.kind")}</span>
-                          <select
-                            value={item.kind}
-                            onChange={(e) => updateActivityDraft(item.id, { kind: e.target.value as ActivityItem["kind"] })}
-                          >
-                            <option value="">{t("form.opt.choose")}</option>
-                            {(["activity", "competition", "research", "internship", "club", "service", "arts", "sports", "other"] as const).map(
-                              (kind) => (
-                                <option key={kind} value={kind}>
-                                  {t(`wizard.s3.activities.kindOpt.${kind}`)}
-                                </option>
-                              ),
-                            )}
-                          </select>
-                        </label>
-                        <label>
-                          <span>{t("wizard.s3.activities.grades")}</span>
-                          <input
-                            value={item.grades}
-                            onChange={(e) => updateActivityDraft(item.id, { grades: e.target.value })}
-                            placeholder={t("wizard.s3.activities.gradesPh")}
-                          />
-                        </label>
-                        <label>
-                          <span>{t("wizard.s3.activities.hours")}</span>
-                          <input
-                            value={item.hours}
-                            onChange={(e) => updateActivityDraft(item.id, { hours: e.target.value })}
-                            placeholder={t("wizard.s3.activities.hoursPh")}
-                          />
-                        </label>
-                        <label>
-                          <span>{t("wizard.s3.activities.role")}</span>
-                          <input
-                            value={item.role}
-                            onChange={(e) => updateActivityDraft(item.id, { role: e.target.value })}
-                            placeholder={t("wizard.s3.activities.rolePh")}
-                          />
-                        </label>
-                        <label>
-                          <span>{t("wizard.s3.activities.scope")}</span>
-                          <select
-                            value={item.scope}
-                            onChange={(e) => updateActivityDraft(item.id, { scope: e.target.value as ActivityItem["scope"] })}
-                          >
-                            <option value="">{t("form.opt.choose")}</option>
-                            {(["school", "local", "regional", "state", "national", "international"] as const).map((scope) => (
-                              <option key={scope} value={scope}>
-                                {t(`wizard.s3.activities.scopeOpt.${scope}`)}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                      </div>
-                      <label className="account-activity-item__full">
-                        <span>{t("wizard.s3.activities.description")}</span>
-                        <textarea
-                          value={item.description}
-                          onChange={(e) => updateActivityDraft(item.id, { description: e.target.value })}
-                          placeholder={t("wizard.s3.activities.descriptionPh")}
-                        />
-                      </label>
-                      <div className="account-activity-item__grid">
-                        <label>
-                          <span>{t("wizard.s3.activities.outcome")}</span>
-                          <input
-                            value={item.outcome}
-                            onChange={(e) => updateActivityDraft(item.id, { outcome: e.target.value })}
-                            placeholder={t("wizard.s3.activities.outcomePh")}
-                          />
-                        </label>
-                        <label>
-                          <span>{t("wizard.s3.activities.award")}</span>
-                          <input
-                            value={item.award}
-                            onChange={(e) => updateActivityDraft(item.id, { award: e.target.value })}
-                            placeholder={t("wizard.s3.activities.awardPh")}
-                          />
-                        </label>
-                        <label>
-                          <span>{t("wizard.s3.activities.majorRelated")}</span>
-                          <select
-                            value={item.majorRelated}
-                            onChange={(e) => updateActivityDraft(item.id, { majorRelated: e.target.value as ActivityItem["majorRelated"] })}
-                          >
-                            <option value="">{t("form.opt.choose")}</option>
-                            <option value="yes">{t("wizard.s3.activities.majorYes")}</option>
-                            <option value="no">{t("wizard.s3.activities.majorNo")}</option>
-                            <option value="unsure">{t("wizard.s3.activities.majorUnsure")}</option>
-                          </select>
-                        </label>
-                        <label>
-                          <span>{t("wizard.s3.activities.proof")}</span>
-                          <input
-                            value={item.proof}
-                            onChange={(e) => updateActivityDraft(item.id, { proof: e.target.value })}
-                            placeholder={t("wizard.s3.activities.proofPh")}
-                          />
-                        </label>
-                      </div>
-                    </article>
+                    <ActivityCard
+                      key={item.id}
+                      item={item}
+                      index={index}
+                      showRemove
+                      onChange={(patch) => updateActivityDraft(item.id, patch)}
+                      onRemove={() => removeActivityDraft(item.id)}
+                      t={t}
+                    />
                   ))
                 )}
               </div>

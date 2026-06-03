@@ -96,7 +96,8 @@
 .account-service__task-list li.crm-task--profile,
 .account-service__task-list li.crm-task--activities,
 .account-service__task-list li.crm-task--essay,
-.account-service__task-list li.crm-task--report {
+.account-service__task-list li.crm-task--report,
+.account-service__task-list li.crm-task--resource {
   border-left: 3px solid var(--crm-task-accent);
   background: var(--crm-task-bg);
   border-top: 0;
@@ -187,8 +188,7 @@
   width: 0.32rem;
 }
 
-.account-service__task-resource {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.55rem;
+.student-task-card__header > .crm-task-resource-mark,
+.counselor-task-card__header > .crm-task-resource-mark {
+  margin-top: 0.15rem;
 }

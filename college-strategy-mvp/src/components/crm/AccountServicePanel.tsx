@@ -150,35 +150,39 @@ export function AccountServicePanel({
                 const isResource = isTaskResource(task);
                 return (
                 <li key={task.id} className={taskItemClass(task)}>
-                  {isResource ? (
-                    <div className="account-service__task-resource">
-                      <span className="crm-task-resource-mark" aria-hidden />
-                      <div className="account-service__task-title">{localizeCrmText(task.title, locale, t)}</div>
+                  <div className="account-service__task-line">
+                    {isResource ? (
+                      <span className="crm-task-resource-mark account-service__task-leading" aria-hidden />
+                    ) : (
+                      <label className="account-service__task-check account-service__task-leading">
+                        <input
+                          type="checkbox"
+                          checked={task.status === "done"}
+                          onChange={(e) => onToggleTask(task.id, e.target.checked)}
+                        />
+                        <span className="visually-hidden">{localizeCrmText(task.title, locale, t)}</span>
+                      </label>
+                    )}
+                    <div className="account-service__task-body">
+                      <p className={`account-service__task-title${!isResource && task.status === "done" ? " is-done" : ""}`}>
+                        {localizeCrmText(task.title, locale, t)}
+                      </p>
+                      <div className="account-service__task-meta">
+                        <TaskTypeBadge
+                          linkType={task.linkType}
+                          itemKind={task.itemKind}
+                          label={taskLinkLabel[task.linkType]}
+                          resourceLabel={t("crm.taskItemKind.resource")}
+                        />
+                        {!isResource && task.dueAt ? <span>{t("crm.due", { date: task.dueAt })}</span> : null}
+                        {!isResource && task.status === "done" ? <span>{t("crm.taskDone")}</span> : null}
+                        {!isResource && task.linkType !== "none" && task.status === "open" ? (
+                          <button type="button" className="account-service__task-link" onClick={() => onTaskNavigate(task.linkType)}>
+                            {taskLinkLabel[task.linkType]}
+                          </button>
+                        ) : null}
+                      </div>
                     </div>
-                  ) : (
-                  <label className="account-service__task-check">
-                    <input
-                      type="checkbox"
-                      checked={task.status === "done"}
-                      onChange={(e) => onToggleTask(task.id, e.target.checked)}
-                    />
-                    <span>{localizeCrmText(task.title, locale, t)}</span>
-                  </label>
-                  )}
-                  <div className="account-service__task-meta">
-                    <TaskTypeBadge
-                      linkType={task.linkType}
-                      itemKind={task.itemKind}
-                      label={taskLinkLabel[task.linkType]}
-                      resourceLabel={t("crm.taskItemKind.resource")}
-                    />
-                    {!isResource && task.dueAt ? <span>{t("crm.due", { date: task.dueAt })}</span> : null}
-                    {!isResource && task.status === "done" ? <span>{t("crm.taskDone")}</span> : null}
-                    {!isResource && task.linkType !== "none" && task.status === "open" ? (
-                      <button type="button" className="account-service__task-link" onClick={() => onTaskNavigate(task.linkType)}>
-                        {taskLinkLabel[task.linkType]}
-                      </button>
-                    ) : null}
                   </div>
                 </li>
               );})}
