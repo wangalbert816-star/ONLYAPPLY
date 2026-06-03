@@ -6,6 +6,7 @@ import type { CrmStoredFile, CrmTask } from "../../lib/crm/types";
 import { TaskAttachmentLinks } from "./TaskAttachmentLinks";
 import { TaskReturnControls } from "./TaskReturnControls";
 import { TaskTypeBadge, taskItemClass } from "./TaskTypeBadge";
+import "./crmTaskTypes.css";
 import "./CounselorTaskCard.css";
 
 type Props = {
@@ -53,7 +54,7 @@ export function CounselorTaskCard({
             <span className="visually-hidden">{task.title}</span>
           </label>
         ) : (
-          <div className="counselor-task-card__resource-mark" aria-hidden />
+          <span className="crm-task-resource-mark" aria-hidden />
         )}
 
         <div className="counselor-task-card__head-main">

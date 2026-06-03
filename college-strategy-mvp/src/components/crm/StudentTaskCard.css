@@ -50,23 +50,6 @@
   cursor: pointer;
 }
 
-.student-task-card__check input {
-  width: 1rem;
-  height: 1rem;
-  margin: 0;
-  accent-color: var(--task-accent, #006644);
-}
-
-.student-task-card__resource-mark {
-  width: 1rem;
-  height: 1rem;
-  margin-top: 0.2rem;
-  border-radius: 3px;
-  background: rgba(8, 145, 178, 0.18);
-  border: 2px solid #0891b2;
-  flex-shrink: 0;
-}
-
 .student-task-card__head-main {
   min-width: 0;
 }

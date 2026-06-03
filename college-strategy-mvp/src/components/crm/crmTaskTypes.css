@@ -103,3 +103,93 @@
   padding: 0.55rem 0.75rem 0.55rem 0.85rem;
   border-radius: 0 10px 10px 0;
 }
+
+/* Task check-off: open box + checkmark instead of solid fill */
+.counselor-task-card__check input[type="checkbox"],
+.student-task-card__check input[type="checkbox"],
+.account-service__task-check input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-grid;
+  place-content: center;
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  flex-shrink: 0;
+  border: 2px solid var(--task-accent, var(--crm-task-accent, #64748b));
+  border-radius: 3px;
+  background: #fff;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.counselor-task-card__check input[type="checkbox"]:checked,
+.student-task-card__check input[type="checkbox"]:checked,
+.account-service__task-check input[type="checkbox"]:checked {
+  background: #fff;
+  border-color: var(--task-accent, var(--crm-task-accent, #047857));
+}
+
+.counselor-task-card__check input[type="checkbox"]:checked::before,
+.student-task-card__check input[type="checkbox"]:checked::before,
+.account-service__task-check input[type="checkbox"]:checked::before {
+  content: "";
+  width: 0.28rem;
+  height: 0.52rem;
+  border: solid var(--task-accent, var(--crm-task-accent, #047857));
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+
+.counselor-task-card__check input[type="checkbox"]:focus-visible,
+.student-task-card__check input[type="checkbox"]:focus-visible,
+.account-service__task-check input[type="checkbox"]:focus-visible {
+  outline: 2px solid rgba(37, 99, 235, 0.45);
+  outline-offset: 2px;
+}
+
+.counselor-task-card__check input[type="checkbox"]:disabled,
+.student-task-card__check input[type="checkbox"]:disabled,
+.account-service__task-check input[type="checkbox"]:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Resource marker: outline box + doc lines (not check-off, not solid fill) */
+.crm-task-resource-mark {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+  border: 2px solid var(--crm-task-accent, #0891b2);
+  border-radius: 3px;
+  background: #fff;
+}
+
+.crm-task-resource-mark::before,
+.crm-task-resource-mark::after {
+  content: "";
+  display: block;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--crm-task-accent, #0891b2);
+}
+
+.crm-task-resource-mark::before {
+  width: 0.46rem;
+}
+
+.crm-task-resource-mark::after {
+  width: 0.32rem;
+}
+
+.account-service__task-resource {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+}

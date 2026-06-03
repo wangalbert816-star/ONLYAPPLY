@@ -151,7 +151,10 @@ export function AccountServicePanel({
                 return (
                 <li key={task.id} className={taskItemClass(task)}>
                   {isResource ? (
-                    <div className="account-service__task-title">{localizeCrmText(task.title, locale, t)}</div>
+                    <div className="account-service__task-resource">
+                      <span className="crm-task-resource-mark" aria-hidden />
+                      <div className="account-service__task-title">{localizeCrmText(task.title, locale, t)}</div>
+                    </div>
                   ) : (
                   <label className="account-service__task-check">
                     <input

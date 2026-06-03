@@ -6,6 +6,7 @@ import type { CrmStoredFile, CrmTask, CrmTaskLinkType } from "../../lib/crm/type
 import { TaskAttachmentLinks } from "./TaskAttachmentLinks";
 import { TaskSubmissionPanel } from "./TaskSubmissionPanel";
 import { TaskTypeBadge, taskItemClass } from "./TaskTypeBadge";
+import "./crmTaskTypes.css";
 import "./StudentTaskCard.css";
 
 type Props = {
@@ -53,7 +54,7 @@ export function StudentTaskCard({
             <span className="visually-hidden">{localizeCrmText(task.title, locale, t)}</span>
           </label>
         ) : (
-          <div className="student-task-card__resource-mark" aria-hidden />
+          <span className="crm-task-resource-mark" aria-hidden />
         )}
 
         <div className="student-task-card__head-main">
