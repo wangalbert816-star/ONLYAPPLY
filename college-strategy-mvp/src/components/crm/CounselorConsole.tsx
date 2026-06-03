@@ -942,6 +942,7 @@ export function CounselorConsole({ onBack, onOpenStudentReport }: Props) {
                       <p className="signed-service-hub__muted">{t("crm.signedService.studentLoading")}</p>
                     ) : (
                       <ResumeBuilder
+                        key={selected.id}
                         form={studentForm ?? EMPTY_STUDENT_FORM}
                         userEmail={selected.studentEmail}
                         displayName={selected.studentName}

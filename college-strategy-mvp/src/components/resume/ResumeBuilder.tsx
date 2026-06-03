@@ -153,6 +153,8 @@ export function ResumeBuilder({
         displayName: displayNameRef.current,
       });
       setDraft(prefilled);
+      loadedKeyRef.current = loadKey || null;
+      lastSavedRef.current = JSON.stringify(prefilled);
       setReadyToPersist(true);
       setLoading(false);
       return;
@@ -163,8 +165,12 @@ export function ResumeBuilder({
     }
 
     let cancelled = false;
-    setLoading(true);
+    const fetchingFor = loadKey;
+    loadedKeyRef.current = null;
+    lastSavedRef.current = "";
     setReadyToPersist(false);
+    setLoading(true);
+    setSyncState("idle");
 
     void (async () => {
       const prefillFromProfile = () =>
@@ -173,51 +179,54 @@ export function ResumeBuilder({
           displayName: displayNameRef.current,
         });
 
+      const commitDraft = (next: ResumeFormData) => {
+        if (cancelled || fetchingFor !== loadKey) return;
+        setDraft(next);
+        lastSavedRef.current = JSON.stringify(next);
+        loadedKeyRef.current = fetchingFor;
+        if (editorRole === "student") {
+          saveResumeDraftToStorage(persistKey, next);
+        }
+        setReadyToPersist(true);
+      };
+
       try {
         const remote = isResumeServerSyncEnabled()
           ? await loadRemoteResumeDraft(persistKey, editorRole)
           : null;
-        if (cancelled) return;
+        if (cancelled || fetchingFor !== loadKey) return;
 
         if (remote && hasResumeDraftContent(remote)) {
-          setDraft(remote);
-          saveResumeDraftToStorage(persistKey, remote);
-          lastSavedRef.current = JSON.stringify(remote);
-          loadedKeyRef.current = loadKey;
-          setReadyToPersist(true);
+          commitDraft(remote);
           return;
         }
 
-        const local = loadResumeDraftFromStorage(persistKey);
-        if (local && hasResumeDraftContent(local)) {
-          setDraft(local);
-          lastSavedRef.current = JSON.stringify(local);
-          loadedKeyRef.current = loadKey;
-          if (isResumeServerSyncEnabled()) {
-            void saveRemoteResumeDraft(persistKey, local, editorRole).catch(() => {
-              /* best-effort migrate local draft to server */
-            });
+        if (editorRole === "student") {
+          const local = loadResumeDraftFromStorage(persistKey);
+          if (local && hasResumeDraftContent(local)) {
+            commitDraft(local);
+            if (isResumeServerSyncEnabled()) {
+              void saveRemoteResumeDraft(persistKey, local, editorRole).catch(() => {
+                /* best-effort migrate local draft to server */
+              });
+            }
+            return;
           }
-          setReadyToPersist(true);
-          return;
         }
 
-        const prefilled = prefillFromProfile();
-        setDraft(prefilled);
-        lastSavedRef.current = JSON.stringify(prefilled);
-        loadedKeyRef.current = loadKey;
-        setReadyToPersist(true);
+        commitDraft(prefillFromProfile());
       } catch {
-        if (cancelled) return;
-        const local = loadResumeDraftFromStorage(persistKey);
-        const next =
-          local && hasResumeDraftContent(local) ? local : prefillFromProfile();
-        setDraft(next);
-        lastSavedRef.current = JSON.stringify(next);
-        loadedKeyRef.current = loadKey;
-        setReadyToPersist(true);
+        if (cancelled || fetchingFor !== loadKey) return;
+        if (editorRole === "student") {
+          const local = loadResumeDraftFromStorage(persistKey);
+          if (local && hasResumeDraftContent(local)) {
+            commitDraft(local);
+            return;
+          }
+        }
+        commitDraft(prefillFromProfile());
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && fetchingFor === loadKey) setLoading(false);
       }
     })();
 
@@ -228,7 +237,11 @@ export function ResumeBuilder({
 
   useEffect(() => {
     if (!persistKey || !readyToPersist) return;
-    saveResumeDraftToStorage(persistKey, draft);
+    if (loadedKeyRef.current !== loadKey) return;
+
+    if (editorRole === "student") {
+      saveResumeDraftToStorage(persistKey, draft);
+    }
 
     if (!isResumeServerSyncEnabled()) return;
 

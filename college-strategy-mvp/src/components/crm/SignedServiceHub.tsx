@@ -349,6 +349,7 @@ export function SignedServiceHub({ engagement, counselor, form, studentUserId, u
         {tab === "resume" && (
           <section className="signed-service-hub__panel signed-service-hub__panel--resume">
             <ResumeBuilder
+              key={engagement.id}
               form={form}
               userEmail={userEmail}
               displayName={studentDisplayName}
