@@ -59,27 +59,3 @@
     width: 100%;
   }
 }
-
-@media (prefers-color-scheme: dark) {
-  .save-report-banner {
-    border-color: rgba(96, 165, 250, 0.34);
-    background: linear-gradient(180deg, rgba(37, 99, 235, 0.16) 0%, rgba(17, 24, 39, 0.95) 100%);
-  }
-
-  .save-report-banner--saved {
-    border-color: rgba(110, 231, 183, 0.34);
-    background: rgba(16, 185, 129, 0.12);
-  }
-
-  .save-report-banner--saved p {
-    color: #86efac;
-  }
-
-  .save-report-banner__copy h3 {
-    color: var(--color-fg, #e5e7eb);
-  }
-
-  .save-report-banner__copy p {
-    color: var(--color-muted, #9ca3af);
-  }
-}

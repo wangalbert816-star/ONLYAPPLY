@@ -52,16 +52,3 @@
   font-size: 0.82rem;
   color: #64748b;
 }
-
-@media (prefers-color-scheme: dark) {
-  .report-improve-priority {
-    background: rgba(59, 130, 246, 0.12);
-    border-color: rgba(96, 165, 250, 0.35);
-    color: #bfdbfe;
-  }
-
-  .report-improve-activity-list,
-  .report-improve-activity-list li {
-    color: #cbd5e1;
-  }
-}

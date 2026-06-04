@@ -53,35 +53,3 @@
   fill: #f59e0b;
   stroke: #fffbeb;
 }
-
-@media (prefers-color-scheme: dark) {
-  .account-snapshot-radar__grid {
-    stroke: rgba(148, 163, 184, 0.22);
-  }
-
-  .account-snapshot-radar__axis {
-    stroke: rgba(148, 163, 184, 0.18);
-  }
-
-  .account-snapshot-radar__area {
-    fill: rgba(59, 130, 246, 0.2);
-  }
-
-  .account-snapshot-radar__stroke {
-    stroke: #60a5fa;
-  }
-
-  .account-snapshot-radar__label {
-    fill: #94a3b8;
-  }
-
-  .account-snapshot-radar__node {
-    fill: #60a5fa;
-    stroke: rgba(15, 23, 42, 0.9);
-  }
-
-  .account-snapshot-radar__node--weak {
-    fill: #fbbf24;
-    stroke: rgba(15, 23, 42, 0.9);
-  }
-}

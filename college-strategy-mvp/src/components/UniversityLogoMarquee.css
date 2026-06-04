@@ -198,17 +198,6 @@
   opacity: 0.7;
   color: var(--color-primary, #2563eb);
 }
-
-@media (prefers-color-scheme: dark) {
-  .university-logo-marquee--colored .marquee-fade--left {
-    background: linear-gradient(90deg, var(--color-bg, #0b0f17) 0%, transparent 100%);
-  }
-
-  .university-logo-marquee--colored .marquee-fade--right {
-    background: linear-gradient(270deg, var(--color-bg, #0b0f17) 0%, transparent 100%);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .marquee-group {
     animation: none;

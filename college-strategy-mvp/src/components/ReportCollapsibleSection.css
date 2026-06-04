@@ -52,38 +52,3 @@
 .report-collapse__body[hidden] {
   display: none;
 }
-
-@media (prefers-color-scheme: dark) {
-  .report-collapse {
-    background: #151e2f;
-    color: #cbd5e1;
-    border-color: #334155;
-    box-shadow: none;
-  }
-
-  .report-collapse__trigger {
-    color: #f1f5f9;
-  }
-
-  .report-collapse__trigger:hover {
-    background: rgba(255, 255, 255, 0.04);
-  }
-
-  .report-collapse__title {
-    color: #f1f5f9;
-  }
-
-  .report-collapse__chevron,
-  .report-collapse__lead {
-    color: #94a3b8;
-  }
-
-  .report-collapse__body {
-    color: #cbd5e1;
-  }
-
-  .report-collapse .report-collapse {
-    background: #1b2740;
-    border-color: #3b4a63;
-  }
-}

@@ -198,31 +198,3 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-
-@media (prefers-color-scheme: dark) {
-  .account-snapshot {
-    background:
-      radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 22rem),
-      linear-gradient(180deg, rgba(15, 23, 42, 0.92) 0%, rgba(15, 23, 42, 0.78) 100%);
-    border-color: rgba(148, 163, 184, 0.14);
-  }
-
-  .account-snapshot__tier,
-  .account-snapshot__dim {
-    background: rgba(15, 23, 42, 0.55);
-    border-color: rgba(148, 163, 184, 0.12);
-  }
-
-  .account-snapshot__tier-school,
-  .account-snapshot__dim-label {
-    color: #e2e8f0;
-  }
-
-  .account-snapshot__profile-spot {
-    color: #cbd5e1;
-  }
-
-  .account-snapshot__dim-score {
-    color: #93c5fd;
-  }
-}
