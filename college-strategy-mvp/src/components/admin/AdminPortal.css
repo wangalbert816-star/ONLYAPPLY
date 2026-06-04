@@ -525,6 +525,51 @@
   gap: 0.5rem;
 }
 
+.admin-roadmap-cover {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.admin-roadmap-cover__preview {
+  max-width: 320px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.admin-roadmap-cover__preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 180px;
+  object-fit: cover;
+}
+
+.admin-roadmap-cover__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-roadmap-cover__file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.admin-roadmap-cover__actions label.is-disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
 @media (max-width: 700px) {
   .admin-portal__form-grid {
     grid-template-columns: 1fr;

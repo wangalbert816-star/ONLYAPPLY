@@ -181,11 +181,124 @@ function mapEngagement(row, counselorsById) {
   };
 }
 
+const ROADMAP_CATEGORY_IDS = new Set([
+  "submission",
+  "testing",
+  "essays",
+  "financial",
+  "majors",
+  "research",
+  "summer",
+  "scholarships",
+  "researchPrograms",
+  "official",
+]);
+
+function normalizeHttpUrl(href) {
+  const raw = String(href ?? "").trim();
+  if (!raw) return null;
+  try {
+    const u = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+    if (!["http:", "https:"].includes(u.protocol)) return null;
+    return u.toString();
+  } catch {
+    return null;
+  }
+}
+
+/** Empty → null (text-only post). Non-empty must be a valid http(s) URL. */
+function resolveRoadmapHref(href) {
+  const raw = String(href ?? "").trim();
+  if (!raw) return null;
+  return normalizeHttpUrl(raw);
+}
+
+const ROADMAP_COVERS_BUCKET = "application-roadmap-covers";
+const MAX_ROADMAP_COVER_BYTES = 3 * 1024 * 1024;
+const ROADMAP_COVER_MIME = /^image\/(jpeg|jpg|png|webp|gif)$/i;
+
+function supabaseProjectUrl() {
+  return ((process.env.SUPABASE_URL || "").trim() || (process.env.VITE_SUPABASE_URL || "").trim()).replace(
+    /\/$/,
+    "",
+  );
+}
+
+function sanitizeCoverFileName(name) {
+  const trimmed = String(name).trim();
+  const base = trimmed.replace(/[/\\]+/g, "_").replace(/[^a-zA-Z0-9._-]+/g, "_");
+  return (base || "cover").slice(0, 180);
+}
+
+function roadmapCoverPublicUrl(storagePath) {
+  const base = supabaseProjectUrl();
+  if (!base || !storagePath) return null;
+  return `${base}/storage/v1/object/public/${ROADMAP_COVERS_BUCKET}/${storagePath}`;
+}
+
+function roadmapCoverPathFromPublicUrl(url) {
+  const raw = String(url ?? "").trim();
+  if (!raw) return null;
+  const base = supabaseProjectUrl();
+  if (!base) return null;
+  const prefix = `${base}/storage/v1/object/public/${ROADMAP_COVERS_BUCKET}/`;
+  if (!raw.startsWith(prefix)) return null;
+  return raw.slice(prefix.length);
+}
+
+/** Only URLs from our public roadmap-covers bucket (set after admin upload). */
+function resolveCoverImageUrl(url) {
+  const raw = String(url ?? "").trim();
+  if (!raw) return null;
+  if (!roadmapCoverPathFromPublicUrl(raw)) return null;
+  return raw;
+}
+
+function mapRoadmapPost(row) {
+  return {
+    id: row.id,
+    categoryId: row.category_id,
+    href: row.href ?? null,
+    coverImageUrl: row.cover_image_url ?? null,
+    titleZh: row.title_zh,
+    titleEn: row.title_en,
+    descriptionZh: row.description_zh ?? "",
+    descriptionEn: row.description_en ?? "",
+    badge: row.badge ?? undefined,
+    published: Boolean(row.published),
+    sortOrder: Number(row.sort_order) || 0,
+    createdBy: row.created_by ?? null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
 /**
  * @param {import("express").Express} app
  * @param {{ supabaseAdmin: () => import("@supabase/supabase-js").SupabaseClient | null }} deps
  */
 export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
+  app.get("/api/application-roadmap/posts", async (_req, res) => {
+    const admin = supabaseAdmin();
+    if (!admin) {
+      return res.status(503).json({ error: "supabase_admin_missing" });
+    }
+    try {
+      const { data, error } = await admin
+        .from("application_roadmap_posts")
+        .select(
+          "id, category_id, href, cover_image_url, title_zh, title_en, description_zh, description_en, badge, sort_order, created_at",
+        )
+        .eq("published", true)
+        .order("sort_order", { ascending: false })
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      res.json({ posts: data ?? [] });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      res.status(500).json({ error: msg });
+    }
+  });
   app.get("/api/admin/crm/session", async (req, res) => {
     const ctx = await requireAdmin(req, res, supabaseAdmin);
     if (!ctx) return;
@@ -1095,6 +1208,255 @@ export function registerAdminCrmRoutes(app, { supabaseAdmin }) {
 
       const { error } = await ctx.admin.from("crm_library_items").delete().eq("id", id);
       if (error) throw error;
+
+      res.json({ ok: true });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      res.status(500).json({ error: msg });
+    }
+  });
+
+  app.get("/api/admin/crm/roadmap/posts", async (req, res) => {
+    const ctx = await requireAdmin(req, res, supabaseAdmin);
+    if (!ctx) return;
+    try {
+      const { data, error } = await ctx.admin
+        .from("application_roadmap_posts")
+        .select("*")
+        .order("sort_order", { ascending: false })
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      res.json({ posts: (data ?? []).map(mapRoadmapPost) });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      res.status(500).json({ error: msg });
+    }
+  });
+
+  app.post("/api/admin/crm/roadmap/cover/prepare-upload", async (req, res) => {
+    const ctx = await requireAdmin(req, res, supabaseAdmin);
+    if (!ctx) return;
+
+    const fileName = String(req.body?.fileName ?? "").trim();
+    const contentType = String(req.body?.contentType ?? "").trim() || null;
+    const sizeBytes = Number(req.body?.sizeBytes ?? 0);
+
+    if (!fileName) {
+      return res.status(400).json({ error: "roadmap_cover_file_required" });
+    }
+    if (!Number.isFinite(sizeBytes) || sizeBytes <= 0) {
+      return res.status(400).json({ error: "roadmap_cover_size_required" });
+    }
+    if (sizeBytes > MAX_ROADMAP_COVER_BYTES) {
+      return res.status(400).json({ error: "roadmap_cover_too_large" });
+    }
+    if (contentType && !ROADMAP_COVER_MIME.test(contentType)) {
+      return res.status(400).json({ error: "roadmap_cover_type_invalid" });
+    }
+
+    try {
+      const storagePath = `covers/${crypto.randomUUID()}/${sanitizeCoverFileName(fileName)}`;
+      const { data: upload, error: uploadErr } = await ctx.admin.storage
+        .from(ROADMAP_COVERS_BUCKET)
+        .createSignedUploadUrl(storagePath, { upsert: false });
+      if (uploadErr) throw uploadErr;
+
+      const publicUrl = roadmapCoverPublicUrl(storagePath);
+      if (!publicUrl) {
+        return res.status(503).json({ error: "supabase_admin_missing" });
+      }
+
+      res.json({
+        uploadUrl: upload.signedUrl,
+        uploadToken: upload.token,
+        storagePath,
+        publicUrl,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      res.status(500).json({ error: msg });
+    }
+  });
+
+  app.post("/api/admin/crm/roadmap/posts", async (req, res) => {
+    const ctx = await requireAdmin(req, res, supabaseAdmin);
+    if (!ctx) return;
+
+    const categoryId = String(req.body?.categoryId ?? "").trim();
+    const href = resolveRoadmapHref(req.body?.href);
+    const titleZh = String(req.body?.titleZh ?? "").trim();
+    const titleEn = String(req.body?.titleEn ?? "").trim();
+    const descriptionZh = String(req.body?.descriptionZh ?? "").trim();
+    const descriptionEn = String(req.body?.descriptionEn ?? "").trim();
+    const badgeRaw = req.body?.badge == null || req.body?.badge === "" ? null : String(req.body.badge).trim();
+    const published = req.body?.published !== false;
+    const sortOrder = Number(req.body?.sortOrder) || 0;
+
+    if (!ROADMAP_CATEGORY_IDS.has(categoryId)) {
+      return res.status(400).json({ error: "roadmap_category_invalid" });
+    }
+    if (String(req.body?.href ?? "").trim() && !href) {
+      return res.status(400).json({ error: "roadmap_href_invalid" });
+    }
+    if (!titleZh || !titleEn) {
+      return res.status(400).json({ error: "roadmap_title_required" });
+    }
+    if (badgeRaw && !["first", "recommended"].includes(badgeRaw)) {
+      return res.status(400).json({ error: "roadmap_badge_invalid" });
+    }
+    const coverImageUrl = resolveCoverImageUrl(req.body?.coverImageUrl);
+    if (String(req.body?.coverImageUrl ?? "").trim() && !coverImageUrl) {
+      return res.status(400).json({ error: "roadmap_cover_invalid" });
+    }
+
+    try {
+      const now = new Date().toISOString();
+      const { data, error } = await ctx.admin
+        .from("application_roadmap_posts")
+        .insert({
+          category_id: categoryId,
+          href,
+          cover_image_url: coverImageUrl,
+          title_zh: titleZh,
+          title_en: titleEn,
+          description_zh: descriptionZh,
+          description_en: descriptionEn,
+          badge: badgeRaw,
+          published,
+          sort_order: sortOrder,
+          created_by: ctx.user.email ?? null,
+          created_at: now,
+          updated_at: now,
+        })
+        .select("*")
+        .single();
+      if (error) throw error;
+      res.json({ post: mapRoadmapPost(data) });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      res.status(500).json({ error: msg });
+    }
+  });
+
+  app.patch("/api/admin/crm/roadmap/posts/:id", async (req, res) => {
+    const ctx = await requireAdmin(req, res, supabaseAdmin);
+    if (!ctx) return;
+    const id = String(req.params.id ?? "").trim();
+    if (!id) {
+      return res.status(400).json({ error: "roadmap_id_required" });
+    }
+
+    const patch = {};
+    if (req.body?.categoryId != null) {
+      const categoryId = String(req.body.categoryId).trim();
+      if (!ROADMAP_CATEGORY_IDS.has(categoryId)) {
+        return res.status(400).json({ error: "roadmap_category_invalid" });
+      }
+      patch.category_id = categoryId;
+    }
+    if (req.body?.href !== undefined) {
+      const href = resolveRoadmapHref(req.body.href);
+      if (String(req.body.href ?? "").trim() && !href) {
+        return res.status(400).json({ error: "roadmap_href_invalid" });
+      }
+      patch.href = href;
+    }
+    if (req.body?.titleZh != null) {
+      const titleZh = String(req.body.titleZh).trim();
+      if (!titleZh) {
+        return res.status(400).json({ error: "roadmap_title_required" });
+      }
+      patch.title_zh = titleZh;
+    }
+    if (req.body?.titleEn != null) {
+      const titleEn = String(req.body.titleEn).trim();
+      if (!titleEn) {
+        return res.status(400).json({ error: "roadmap_title_required" });
+      }
+      patch.title_en = titleEn;
+    }
+    if (req.body?.descriptionZh != null) patch.description_zh = String(req.body.descriptionZh).trim();
+    if (req.body?.descriptionEn != null) patch.description_en = String(req.body.descriptionEn).trim();
+    if (req.body?.badge !== undefined) {
+      const badgeRaw = req.body.badge == null || req.body.badge === "" ? null : String(req.body.badge).trim();
+      if (badgeRaw && !["first", "recommended"].includes(badgeRaw)) {
+        return res.status(400).json({ error: "roadmap_badge_invalid" });
+      }
+      patch.badge = badgeRaw;
+    }
+    if (req.body?.published != null) patch.published = Boolean(req.body.published);
+    if (req.body?.sortOrder != null) patch.sort_order = Number(req.body.sortOrder) || 0;
+    if (req.body?.coverImageUrl !== undefined) {
+      const coverImageUrl = resolveCoverImageUrl(req.body.coverImageUrl);
+      if (String(req.body.coverImageUrl ?? "").trim() && !coverImageUrl) {
+        return res.status(400).json({ error: "roadmap_cover_invalid" });
+      }
+      patch.cover_image_url = coverImageUrl;
+    }
+    patch.updated_at = new Date().toISOString();
+
+    try {
+      let previousCoverUrl = null;
+      if (req.body?.coverImageUrl !== undefined) {
+        const { data: existing, error: existingErr } = await ctx.admin
+          .from("application_roadmap_posts")
+          .select("cover_image_url")
+          .eq("id", id)
+          .maybeSingle();
+        if (existingErr) throw existingErr;
+        if (!existing) {
+          return res.status(404).json({ error: "roadmap_post_not_found" });
+        }
+        previousCoverUrl = existing.cover_image_url ?? null;
+      }
+
+      const { data, error } = await ctx.admin
+        .from("application_roadmap_posts")
+        .update(patch)
+        .eq("id", id)
+        .select("*")
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) {
+        return res.status(404).json({ error: "roadmap_post_not_found" });
+      }
+
+      if (req.body?.coverImageUrl !== undefined && previousCoverUrl && previousCoverUrl !== data.cover_image_url) {
+        const oldPath = roadmapCoverPathFromPublicUrl(previousCoverUrl);
+        if (oldPath) {
+          await ctx.admin.storage.from(ROADMAP_COVERS_BUCKET).remove([oldPath]);
+        }
+      }
+
+      res.json({ post: mapRoadmapPost(data) });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      res.status(500).json({ error: msg });
+    }
+  });
+
+  app.delete("/api/admin/crm/roadmap/posts/:id", async (req, res) => {
+    const ctx = await requireAdmin(req, res, supabaseAdmin);
+    if (!ctx) return;
+    const id = String(req.params.id ?? "").trim();
+    if (!id) {
+      return res.status(400).json({ error: "roadmap_id_required" });
+    }
+    try {
+      const { data: row, error: fetchErr } = await ctx.admin
+        .from("application_roadmap_posts")
+        .select("cover_image_url")
+        .eq("id", id)
+        .maybeSingle();
+      if (fetchErr) throw fetchErr;
+
+      const { error } = await ctx.admin.from("application_roadmap_posts").delete().eq("id", id);
+      if (error) throw error;
+
+      const coverPath = roadmapCoverPathFromPublicUrl(row?.cover_image_url);
+      if (coverPath) {
+        await ctx.admin.storage.from(ROADMAP_COVERS_BUCKET).remove([coverPath]);
+      }
 
       res.json({ ok: true });
     } catch (e) {

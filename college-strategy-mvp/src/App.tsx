@@ -29,6 +29,7 @@ import { GuidedFormProgress, validateStructuredActivities } from "./components/g
 import "./components/GuidedQuestionnaire.css";
 import "./components/QuestionnaireTheme.css";
 import { FullscreenLogoMarquee } from "./components/FullscreenLogoMarquee";
+import { FullscreenResourcesHub } from "./components/FullscreenResourcesHub";
 import { BrandStoryOverlay } from "./components/BrandStoryOverlay";
 import { AboutUsOverlay } from "./components/AboutUsOverlay";
 import { ProductIntroPage } from "./components/ProductIntroPage";
@@ -262,7 +263,9 @@ export default function App() {
   const submitLockRef = useRef(false);
   const authReturnRef = useRef(isAuthReturnUrl());
   const applicationHubTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const resourcesHubTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [applicationHubOpen, setApplicationHubOpen] = useState(false);
+  const [resourcesHubOpen, setResourcesHubOpen] = useState(false);
   const [brandStoryOpen, setBrandStoryOpen] = useState(false);
   const [aboutUsOpen, setAboutUsOpen] = useState(false);
   const [expertConsultModalOpen, setExpertConsultModalOpen] = useState(false);
@@ -270,7 +273,14 @@ export default function App() {
 
   const openApplicationHub = useCallback((e: MouseEvent<HTMLElement>) => {
     applicationHubTriggerRef.current = e.currentTarget as HTMLButtonElement;
+    setResourcesHubOpen(false);
     setApplicationHubOpen(true);
+  }, []);
+
+  const openResourcesHub = useCallback((e: MouseEvent<HTMLElement>) => {
+    resourcesHubTriggerRef.current = e.currentTarget as HTMLButtonElement;
+    setApplicationHubOpen(false);
+    setResourcesHubOpen(true);
   }, []);
   const [reportRefreshing, setReportRefreshing] = useState(false);
   const [reportDiff, setReportDiff] = useState<ReportDiff | null>(null);
@@ -331,6 +341,7 @@ export default function App() {
             setBrandStoryOpen(false);
             setAboutUsOpen(false);
             setApplicationHubOpen(false);
+            setResourcesHubOpen(false);
             setFlowStarted(true);
             setView("form");
             queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
@@ -1384,6 +1395,7 @@ export default function App() {
           landingMarqueeVisible={landingMarqueeVisible}
           onStart={() => {
             setApplicationHubOpen(false);
+            setResourcesHubOpen(false);
             setFlowStarted(true);
             queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
           }}
@@ -1397,12 +1409,20 @@ export default function App() {
             })
           }
           onOpenApplicationRoadmap={openApplicationHub}
+          onOpenResources={openResourcesHub}
         />
         <FullscreenLogoMarquee
           open={applicationHubOpen}
           onClose={() => {
             setApplicationHubOpen(false);
             queueMicrotask(() => applicationHubTriggerRef.current?.focus());
+          }}
+        />
+        <FullscreenResourcesHub
+          open={resourcesHubOpen}
+          onClose={() => {
+            setResourcesHubOpen(false);
+            queueMicrotask(() => resourcesHubTriggerRef.current?.focus());
           }}
         />
         <ExpertConsultContactModal open={expertConsultModalOpen} onClose={() => setExpertConsultModalOpen(false)} />

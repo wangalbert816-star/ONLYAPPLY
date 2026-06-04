@@ -1,4 +1,5 @@
 import { apiUrl } from "../apiBase";
+import type { ApplicationLinkCategoryId, ApplicationLinkBadge } from "../../components/applicationLinks";
 
 export type AdminCounselor = {
   id: string;
@@ -283,6 +284,112 @@ export async function patchAdminLibraryItem(
 
 export async function deleteAdminLibraryItem(accessToken: string, id: string): Promise<{ ok: true }> {
   return adminFetch(`/api/admin/crm/library/${id}`, accessToken, { method: "DELETE" });
+}
+
+export type AdminRoadmapPost = {
+  id: string;
+  categoryId: ApplicationLinkCategoryId;
+  href: string | null;
+  coverImageUrl: string | null;
+  titleZh: string;
+  titleEn: string;
+  descriptionZh: string;
+  descriptionEn: string;
+  badge?: ApplicationLinkBadge;
+  published: boolean;
+  sortOrder: number;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export async function listAdminRoadmapPosts(accessToken: string): Promise<{ posts: AdminRoadmapPost[] }> {
+  return adminFetch("/api/admin/crm/roadmap/posts", accessToken);
+}
+
+export async function createAdminRoadmapPost(
+  accessToken: string,
+  input: {
+    categoryId: ApplicationLinkCategoryId;
+    href?: string | null;
+    coverImageUrl?: string | null;
+    titleZh: string;
+    titleEn: string;
+    descriptionZh?: string;
+    descriptionEn?: string;
+    badge?: ApplicationLinkBadge | null;
+    published?: boolean;
+    sortOrder?: number;
+  },
+): Promise<{ post: AdminRoadmapPost }> {
+  return adminFetch("/api/admin/crm/roadmap/posts", accessToken, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function patchAdminRoadmapPost(
+  accessToken: string,
+  id: string,
+  patch: Partial<{
+    categoryId: ApplicationLinkCategoryId;
+    href: string | null;
+    coverImageUrl: string | null;
+    titleZh: string;
+    titleEn: string;
+    descriptionZh: string;
+    descriptionEn: string;
+    badge: ApplicationLinkBadge | null;
+    published: boolean;
+    sortOrder: number;
+  }>,
+): Promise<{ post: AdminRoadmapPost }> {
+  return adminFetch(`/api/admin/crm/roadmap/posts/${id}`, accessToken, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+}
+
+export async function deleteAdminRoadmapPost(accessToken: string, id: string): Promise<{ ok: true }> {
+  return adminFetch(`/api/admin/crm/roadmap/posts/${id}`, accessToken, { method: "DELETE" });
+}
+
+const ROADMAP_COVER_MAX_BYTES = 3 * 1024 * 1024;
+
+export async function prepareAdminRoadmapCoverUpload(
+  accessToken: string,
+  input: { fileName: string; contentType?: string; sizeBytes: number },
+): Promise<{ uploadUrl: string; uploadToken: string; storagePath: string; publicUrl: string }> {
+  return adminFetch("/api/admin/crm/roadmap/cover/prepare-upload", accessToken, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function uploadAdminRoadmapCover(accessToken: string, file: File): Promise<string> {
+  if (!/^image\/(jpeg|jpg|png|webp|gif)$/i.test(file.type || "")) {
+    const err = new Error("roadmap_cover_type_invalid");
+    throw err;
+  }
+  if (file.size > ROADMAP_COVER_MAX_BYTES) {
+    const err = new Error("roadmap_cover_too_large");
+    throw err;
+  }
+  const { uploadUrl, publicUrl } = await prepareAdminRoadmapCoverUpload(accessToken, {
+    fileName: file.name,
+    contentType: file.type || undefined,
+    sizeBytes: file.size,
+  });
+  const putRes = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: { "Content-Type": file.type || "application/octet-stream" },
+    body: file,
+  });
+  if (!putRes.ok) {
+    const err = new Error("roadmap_cover_upload_failed");
+    throw err;
+  }
+  return publicUrl;
 }
 
 export function adminErrorMessage(code: string | undefined, t: (key: string) => string): string {

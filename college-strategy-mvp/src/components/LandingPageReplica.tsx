@@ -19,6 +19,7 @@ type Props = {
   onOpenAboutUs: () => void;
   onBookExpertConsult: () => void;
   onOpenApplicationRoadmap: (e: MouseEvent<HTMLButtonElement>) => void;
+  onOpenResources: (e: MouseEvent<HTMLButtonElement>) => void;
 };
 
 function scrollToId(id: string) {
@@ -201,6 +202,7 @@ export function LandingPageReplica({
   onOpenAboutUs,
   onBookExpertConsult,
   onOpenApplicationRoadmap,
+  onOpenResources,
 }: Props) {
   const { t, locale } = useLanguage();
   const { onOpenAccount } = useAuthChrome();
@@ -282,6 +284,9 @@ export function LandingPageReplica({
             <button type="button" className="whitespace-nowrap transition hover:text-neutral-950" onClick={onOpenApplicationRoadmap}>
               {tf("landingReplica.navSampleReport")}
             </button>
+            <button type="button" className="whitespace-nowrap transition hover:text-neutral-950" onClick={onOpenResources}>
+              {tf("landingReplica.navResources")}
+            </button>
             <button type="button" className="whitespace-nowrap transition hover:text-neutral-950" onClick={() => scrollToId("landing-faq")}>
               {tf("landingReplica.navFaq")}
             </button>
@@ -327,6 +332,9 @@ export function LandingPageReplica({
             </button>
             <button type="button" onClick={onOpenApplicationRoadmap}>
               {tf("landingReplica.navSampleReport")}
+            </button>
+            <button type="button" onClick={onOpenResources}>
+              {tf("landingReplica.navResources")}
             </button>
             <button type="button" onClick={() => scrollToId("landing-faq")}>
               {tf("landingReplica.navFaq")}
