@@ -4,6 +4,7 @@ import { UniversityLogoMarquee } from "./UniversityLogoMarquee";
 import { SampleReportShowcase } from "./SampleReportShowcase";
 import { SampleReportAutoScroll } from "./SampleReportAutoScroll";
 import { LandingCalendlyEmbed } from "./LandingCalendlyEmbed";
+import { LandingStudentResults } from "./LandingStudentResults";
 import { LandingSiteFooter } from "./LandingSiteFooter";
 import "./LandingSampleReportPeek.css";
 import "./LandingPageReplica.css";
@@ -435,6 +436,8 @@ export function LandingPageReplica({
             </div>
           </div>
         </section>
+
+        <LandingStudentResults />
 
         {/* —— How it works —— */}
         <section id="landing-how-it-works" className="scroll-mt-20 bg-[var(--landing-page-bg,#ecf3ea)] py-14 lg:py-20">

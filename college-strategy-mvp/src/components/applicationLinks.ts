@@ -4,7 +4,7 @@
  * - `posts`: team-published items (empty now; later from API / admin publish).
  */
 
-export type ApplicationLinkBadge = "first" | "recommended";
+export type ApplicationLinkBadge = "first" | "recommended" | "international";
 
 /** Curated external link — copy lives in i18n (`appLinks.{id}` / `appLinks.desc{id}) */
 export type ApplicationLinkItem = {
@@ -74,7 +74,7 @@ export const APPLICATION_LINK_CATEGORIES: readonly ApplicationLinkCategory[] = [
     categoryId: "testing",
     links: [
       { id: "collegeBoard", href: "https://www.collegeboard.org/" },
-      { id: "toefl", href: "https://www.ets.org/toefl" },
+      { id: "toefl", href: "https://www.ets.org/toefl", badge: "international" },
     ],
   },
   {

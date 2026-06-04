@@ -282,6 +282,14 @@ export default function App() {
     setApplicationHubOpen(false);
     setResourcesHubOpen(true);
   }, []);
+
+  const openRoadmapConsult = useCallback(() => {
+    requestExpertConsult({
+      email: user?.email ?? undefined,
+      source: "roadmap",
+      onFallback: () => setExpertConsultModalOpen(true),
+    });
+  }, [user?.email]);
   const [reportRefreshing, setReportRefreshing] = useState(false);
   const [reportDiff, setReportDiff] = useState<ReportDiff | null>(null);
   const [highlightSchoolKeys, setHighlightSchoolKeys] = useState<Set<string>>(new Set());
@@ -1296,6 +1304,7 @@ export default function App() {
             setApplicationHubOpen(false);
             queueMicrotask(() => applicationHubTriggerRef.current?.focus());
           }}
+          onBookStrategyCall={openRoadmapConsult}
         />
         <AuthModal
           open={authModalOpen}
@@ -1377,6 +1386,7 @@ export default function App() {
           setApplicationHubOpen(false);
           queueMicrotask(() => applicationHubTriggerRef.current?.focus());
         }}
+        onBookStrategyCall={openRoadmapConsult}
       />
       <AuthModal
         open={authModalOpen}
@@ -1417,6 +1427,7 @@ export default function App() {
             setApplicationHubOpen(false);
             queueMicrotask(() => applicationHubTriggerRef.current?.focus());
           }}
+          onBookStrategyCall={openRoadmapConsult}
         />
         <FullscreenResourcesHub
           open={resourcesHubOpen}
@@ -1610,6 +1621,7 @@ export default function App() {
           setApplicationHubOpen(false);
           queueMicrotask(() => applicationHubTriggerRef.current?.focus());
         }}
+        onBookStrategyCall={openRoadmapConsult}
       />
       <AuthModal
         open={authModalOpen}
