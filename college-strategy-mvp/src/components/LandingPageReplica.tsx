@@ -4,6 +4,7 @@ import { UniversityLogoMarquee } from "./UniversityLogoMarquee";
 import { SampleReportShowcase } from "./SampleReportShowcase";
 import { SampleReportAutoScroll } from "./SampleReportAutoScroll";
 import { LandingCalendlyEmbed } from "./LandingCalendlyEmbed";
+import { LandingSiteFooter } from "./LandingSiteFooter";
 import "./LandingSampleReportPeek.css";
 import "./LandingPageReplica.css";
 import { LanguageToggle } from "../i18n/LanguageToggle";
@@ -584,6 +585,13 @@ export function LandingPageReplica({
             </button>
           </div>
         </section>
+
+        <LandingSiteFooter
+          onStart={onStart}
+          onOpenApplicationRoadmap={onOpenApplicationRoadmap}
+          onOpenResources={onOpenResources}
+          onBookExpertConsult={onBookExpertConsult}
+        />
       </main>
     </div>
   );

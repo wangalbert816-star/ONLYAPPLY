@@ -1426,9 +1426,6 @@ export default function App() {
           }}
         />
         <ExpertConsultContactModal open={expertConsultModalOpen} onClose={() => setExpertConsultModalOpen(false)} />
-        <footer className="app-disclaimer-fixed" role="contentinfo">
-          <LegalLinks className="app-disclaimer-fixed__legal" />
-        </footer>
         <AuthModal
           open={authModalOpen}
           onClose={() => setAuthModalOpen(false)}

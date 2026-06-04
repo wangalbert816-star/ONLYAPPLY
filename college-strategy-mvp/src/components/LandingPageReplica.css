@@ -22,7 +22,7 @@
 
 @media (max-width: 767px) {
   html[data-landing] .landing-page-replica {
-    padding-bottom: 5.5rem;
+    padding-bottom: 0;
     max-width: 100%;
     overflow-x: clip;
   }
