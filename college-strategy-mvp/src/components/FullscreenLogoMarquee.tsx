@@ -243,7 +243,6 @@ export function FullscreenLogoMarquee({ open, onClose, onBookStrategyCall }: Ful
         <aside className="fs-roadmap-sidebar" aria-label={t("appLinks.navAria")}>
           <div className="fs-roadmap-sidebar__brand">
             <BrandLogo />
-            <span className="fs-roadmap-sidebar__premium">{t("appLinks.sidebarPremium")}</span>
           </div>
           <p className="fs-roadmap-sidebar__label">{t("appLinks.sidebarRoadmapLabel")}</p>
           <ul className="fs-roadmap-sidebar__nav">
@@ -340,11 +339,10 @@ export function FullscreenLogoMarquee({ open, onClose, onBookStrategyCall }: Ful
                       ) : (
                         linksToShow.map((item, index) => {
                           const linkId = item.id as CuratedApplicationLinkId;
-                          const featured = item.badge === "first";
                           return (
                             <li key={item.id}>
                               <a
-                                className={`fs-roadmap-card${featured ? " fs-roadmap-card--featured" : ""}`}
+                                className="fs-roadmap-card"
                                 style={{ ["--card-delay" as string]: `${index * 70}ms` }}
                                 href={item.href}
                                 target="_blank"

@@ -52,13 +52,6 @@
   max-width: 9.5rem;
 }
 
-.fs-roadmap-sidebar__premium {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: #64748b;
-}
-
 .fs-roadmap-sidebar__label {
   margin: 0 0 0.45rem;
   padding: 0 0.4rem;
@@ -444,10 +437,6 @@
 .fs-roadmap-section.is-visible .fs-roadmap-card {
   opacity: 1;
   transform: translateY(0);
-}
-
-.fs-roadmap-card--featured {
-  border: 2px solid #006644;
 }
 
 .fs-roadmap-card:hover {

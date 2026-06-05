@@ -312,7 +312,7 @@ merge(zhFlat, {
     hint: "链接会在新标签页打开；政策、截止日与费用一律以各校官网为准。",
     flowNote: "建议先完成问卷，再按需打开下方官网核对。团队精选内容请见顶栏 Resources。",
     roadmapTitle: "Application roadmap",
-    roadmapSub: "按申请阶段整理的官方站点——截止日、政策与费用请以各校官网为准。",
+    roadmapSub: "按申请阶段整理的官方站点，截止日、政策与费用请以各校官网为准。",
     searchPlaceholder: "搜索资源…",
     searchEmpty: "没有匹配的资源。",
     bookStrategyCall: "预约策略咨询",
@@ -2100,7 +2100,7 @@ merge(enFlat, {
     flowNote:
       "Finish the questionnaire first, then open these as you verify details. Team guides and templates live under Resources in the top nav.",
     roadmapTitle: "Application roadmap",
-    roadmapSub: "Official sites organized by stage — confirm all deadlines and policies directly on each school's site.",
+    roadmapSub: "Official sites organized by stage. Confirm all deadlines and policies directly on each school's site.",
     searchPlaceholder: "Search resources…",
     searchEmpty: "No resources match your search.",
     bookStrategyCall: "Book strategy call",
