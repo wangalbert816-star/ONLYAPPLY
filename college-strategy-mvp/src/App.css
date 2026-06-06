@@ -1369,6 +1369,27 @@ th {
   min-width: 0;
 }
 
+.app-top-chrome__home {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0.25rem 0.35rem;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.app-top-chrome__home:hover {
+  background: rgba(0, 102, 68, 0.08);
+}
+
+.app-top-chrome__home:active {
+  background: rgba(0, 102, 68, 0.12);
+}
+
 .app-top-chrome__logo.onlyapply-logo {
   max-height: 2.1rem;
   max-width: min(12rem, 46vw);

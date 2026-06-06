@@ -1,6 +1,7 @@
 import { AuthMenuButton } from "./auth/AuthMenuButton";
 import { BrandLogo } from "./BrandLogo";
 import { LanguageToggle } from "../i18n/LanguageToggle";
+import { useLanguage } from "../i18n/LanguageContext";
 import { useAuth } from "../auth/AuthContext";
 import { useCrmStudentUnread } from "../lib/crm/useCrmStudentUnread";
 import "../lib/crm/crmUnreadBadge.css";
@@ -9,9 +10,11 @@ import { useAuthChrome } from "../auth/AuthChromeContext";
 type Props = {
   expertConsultLabel?: string;
   onExpertConsult?: () => void;
+  onHome?: () => void;
 };
 
-export function AppTopChrome({ expertConsultLabel, onExpertConsult }: Props) {
+export function AppTopChrome({ expertConsultLabel, onExpertConsult, onHome }: Props) {
+  const { t } = useLanguage();
   const { configured, loading, user } = useAuth();
   const { onSignIn, onOpenAccount } = useAuthChrome();
   const unreadMessages = useCrmStudentUnread(user?.id);
@@ -42,7 +45,13 @@ export function AppTopChrome({ expertConsultLabel, onExpertConsult }: Props) {
       )}
       {!showConsult && (
         <div className="app-top-chrome__center" aria-label="OnlyApply">
-          <BrandLogo className="app-top-chrome__logo" />
+          {onHome ? (
+            <button type="button" className="app-top-chrome__home" onClick={onHome} aria-label={t("app.back")}>
+              <BrandLogo className="app-top-chrome__logo" />
+            </button>
+          ) : (
+            <BrandLogo className="app-top-chrome__logo" />
+          )}
         </div>
       )}
       <div className="app-top-chrome__end">

@@ -293,11 +293,24 @@ export default function App() {
     setBrandStoryOpen(true);
   }, []);
 
+  const goHome = useCallback(() => {
+    setApplicationHubOpen(false);
+    setResourcesHubOpen(false);
+    setBrandStoryOpen(false);
+    setAboutUsOpen(false);
+    setExpertConsultModalOpen(false);
+    setFlowStarted(false);
+    setView("form");
+    setErr(null);
+    queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+  }, []);
+
   const withChrome = useCallback(
     (content: ReactNode, options?: { showExpertConsult?: boolean; hideChrome?: boolean }) => (
       <AuthChromeProvider value={authChromeHandlers}>
         {!options?.hideChrome && (
           <AppTopChrome
+            onHome={goHome}
             expertConsultLabel={options?.showExpertConsult ? t("app.expertConsult.cta") : undefined}
             onExpertConsult={
               options?.showExpertConsult
@@ -332,7 +345,7 @@ export default function App() {
         />
       </AuthChromeProvider>
     ),
-    [aboutUsOpen, authChromeHandlers, brandStoryOpen, openFoundersLetter, t, user?.email],
+    [aboutUsOpen, authChromeHandlers, brandStoryOpen, goHome, openFoundersLetter, t, user?.email],
   );
 
   const refreshEntitlements = useCallback(async (): Promise<string[]> => {
