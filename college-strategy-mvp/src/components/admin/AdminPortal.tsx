@@ -23,13 +23,14 @@ import { LanguageToggle } from "../../i18n/LanguageToggle";
 import { BrandLogo } from "../BrandLogo";
 import { AdminLibraryPanel } from "./AdminLibraryPanel";
 import { AdminRoadmapPanel } from "./AdminRoadmapPanel";
+import { AdminEvalPanel } from "./AdminEvalPanel";
 import "./AdminPortal.css";
 
 type Props = {
   onBack: () => void;
 };
 
-type TabId = "counselors" | "engagements" | "groupChat" | "library" | "roadmap";
+type TabId = "counselors" | "engagements" | "groupChat" | "library" | "roadmap" | "eval";
 
 const PHASES = ["onboarding", "planning", "essays", "applications", "done"] as const;
 const STATUSES = ["active", "paused", "completed"] as const;
@@ -239,6 +240,9 @@ export function AdminPortal({ onBack }: Props) {
         <button type="button" className={tab === "roadmap" ? "is-active" : undefined} onClick={() => setTab("roadmap")}>
           {t("admin.tabs.roadmap")}
         </button>
+        <button type="button" className={tab === "eval" ? "is-active" : undefined} onClick={() => setTab("eval")}>
+          {t("admin.tabs.eval")}
+        </button>
       </nav>
 
       {tab === "engagements" ? (
@@ -268,6 +272,8 @@ export function AdminPortal({ onBack }: Props) {
         <AdminLibraryPanel token={token} busy={busy} onRun={runAction} />
       ) : tab === "roadmap" ? (
         <AdminRoadmapPanel token={token} busy={busy} onRun={runAction} />
+      ) : tab === "eval" ? (
+        <AdminEvalPanel token={token} busy={busy} onRun={runAction} />
       ) : (
         <AdminCounselorsPanel t={t} locale={locale} busy={busy} counselors={counselors} token={token} onRun={runAction} />
       )}

@@ -52,38 +52,13 @@ import type { CrmEngagement } from "./lib/crm/types";
 import { getSupabase } from "./lib/supabase/client";
 import { formatSupabaseError } from "./lib/supabase/errors";
 import { clearFormDraft, readFormDraft, writeFormDraft } from "./lib/formDraft";
+import { emptyFormState } from "./lib/formDefaults";
 import { clearPendingSave, readPendingSave, writePendingSave } from "./lib/pendingSave";
 import { isStripeCheckoutEnabled } from "./lib/stripeCheckout";
 import { isInviteCodesEnabled } from "./lib/inviteCodes";
 import "./App.css";
 
-const initialForm: FormState = {
-  intakeTerm: "",
-  intakeOtherDetail: "",
-  applicantIdentity: "",
-  citizenship: "",
-  residenceRegion: "",
-  budget: "",
-  testing: "",
-  satScore: "",
-  actScore: "",
-  highSchoolSystem: "",
-  currentHighSchool: "",
-  gpa: "",
-  gpaTrend: "",
-  languageScores: "",
-  academicSpecialFlags: [],
-  academicSpecialNotes: "",
-  majorPrimary: "",
-  majorSecondary: "",
-  schoolSize: "",
-  campusCulturePref: "",
-  geoPrefs: [],
-  activities: "",
-  structuredActivities: [],
-  riskStyle: "",
-  dealbreakers: "",
-};
+const initialForm: FormState = emptyFormState();
 
 const LOADING_TIP_KEYS = ["app.loading.tip0", "app.loading.tip1", "app.loading.tip2", "app.loading.tip3"] as const;
 

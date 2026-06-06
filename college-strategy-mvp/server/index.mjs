@@ -33,6 +33,7 @@ import {
 import { CURATED_OFFICIAL_LINK_SCHOOL_COUNT, formatMajorGuideForPrompt } from "./knowledge/majorActivitySnippets.mjs";
 import { structuredActivityBlob } from "./activityEvidence.mjs";
 import { registerAdminCrmRoutes, crmAdminConfigured } from "./adminCrm.mjs";
+import { registerAdminEvalRoutes } from "./adminEval.mjs";
 import { registerCounselorCrmRoutes } from "./counselorCrm.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -1723,6 +1724,31 @@ app.post("/api/report", async (req, res) => {
   return res.status(502).json({ error: IS_PROD ? "report_generation_failed" : msg });
 });
 
+async function generateReportForAdmin(body) {
+  const configs = llmConfigsToTry();
+  if ("error" in configs) {
+    throw new Error(configs.error);
+  }
+  let lastErr = null;
+  for (let i = 0; i < configs.length; i++) {
+    const cfg = configs[i];
+    try {
+      const { parsed, llmMs } = await generateReportWithConfig(cfg, body);
+      return {
+        report: finalizeReportPayload(parsed, body),
+        llmMs,
+        provider: cfg.provider,
+        model: cfg.model,
+      };
+    } catch (e) {
+      lastErr = e;
+      if (canFallbackToNextLlm(e, i, configs)) continue;
+      throw e;
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr || "report_generation_failed"));
+}
+
 function normalizeEssayAnalysis(raw, locale) {
   const fallback = locale === "en" ? "This paragraph has a useful starting point, but it needs to become more specific." : "你现在这段的问题很典型：有一个可以写的方向，但还没有写到真正具体的地方。";
   const obj = raw && typeof raw === "object" ? raw : {};
@@ -2108,6 +2134,42 @@ app.post("/api/consult-lead", (req, res) => {
 
 /** Local dev: create counselor Auth user + counselors row (needs SUPABASE_SERVICE_ROLE_KEY in .env). */
 registerAdminCrmRoutes(app, { supabaseAdmin });
+registerAdminEvalRoutes(app, {
+  requireAdmin: async (req, res) => {
+    const admin = supabaseAdmin();
+    if (!admin) {
+      res.status(503).json({ error: "supabase_admin_missing" });
+      return null;
+    }
+    const emails = (process.env.CRM_ADMIN_EMAILS || "")
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
+    if (!emails.length) {
+      res.status(503).json({ error: "crm_admin_not_configured" });
+      return null;
+    }
+    const token = (req.headers.authorization || "").startsWith("Bearer ")
+      ? req.headers.authorization.slice(7).trim()
+      : "";
+    if (!token) {
+      res.status(401).json({ error: "auth_required" });
+      return null;
+    }
+    const { data, error } = await admin.auth.getUser(token);
+    if (error || !data.user?.email) {
+      res.status(401).json({ error: "invalid_session" });
+      return null;
+    }
+    const email = data.user.email.toLowerCase();
+    if (!emails.includes(email)) {
+      res.status(403).json({ error: "admin_forbidden" });
+      return null;
+    }
+    return { admin, user: data.user };
+  },
+  generateReportForAdmin,
+});
 registerCounselorCrmRoutes(app, { supabaseAdmin });
 
 app.post("/api/dev/seed-counselor", (req, res) => {
