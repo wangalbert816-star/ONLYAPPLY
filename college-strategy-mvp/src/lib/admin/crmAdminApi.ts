@@ -398,14 +398,17 @@ export type AdminEvalCase = {
   id: string;
   caseKey: string;
   title: string;
+  titleEn?: string | null;
   tags: string[];
   locale: "zh" | "en";
   reportBody: Record<string, unknown>;
+  reportBodyEn?: Record<string, unknown> | null;
   expectedReach: EvalExpectedSchool[];
   expectedMatch: EvalExpectedSchool[];
   expectedSafety: EvalExpectedSchool[];
   forbiddenSchools: string[];
   notes: string | null;
+  notesEn?: string | null;
   active: boolean;
   createdBy: string | null;
   createdAt: string;

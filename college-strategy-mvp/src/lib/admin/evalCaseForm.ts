@@ -244,14 +244,16 @@ export function evalCaseToExpectedDraft(caseRow: {
   };
 }
 
-export function buildEvalCaseExpectedPatch(draft: EvalCaseExpectedDraft) {
-  return {
+export function buildEvalCaseExpectedPatch(draft: EvalCaseExpectedDraft, uiLocale: Locale = "zh") {
+  const base = {
     expectedReach: toExpectedSchools(draft.reachSchools),
     expectedMatch: toExpectedSchools(draft.matchSchools),
     expectedSafety: toExpectedSchools(draft.safetySchools),
     forbiddenSchools: splitSchoolLines(draft.forbiddenSchools),
-    notes: draft.notes.trim() || null,
   };
+  const notesValue = draft.notes.trim() || null;
+  if (uiLocale === "en") return { ...base, notesEn: notesValue };
+  return { ...base, notes: notesValue };
 }
 
 export function buildEvalCasePayload(draft: EvalCaseDraft, existingCaseKeys: string[] = []) {

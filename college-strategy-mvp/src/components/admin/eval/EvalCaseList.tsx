@@ -1,5 +1,6 @@
 import type { AdminEvalCase, AdminEvalRunResult } from "../../../lib/admin/crmAdminApi";
-import type { Translate } from "../../../i18n/LanguageContext";
+import { useLanguage, type Translate } from "../../../i18n/LanguageContext";
+import { getEvalCaseTitle } from "../../../lib/admin/evalCaseDisplay";
 
 export type CaseListStatus = "none" | "generated" | "draft" | "submitted" | "approved" | "error";
 
@@ -41,6 +42,7 @@ function schoolSummary(c: AdminEvalCase) {
 }
 
 export function EvalCaseList({ cases, selectedId, results, onSelect, t, compact }: Props) {
+  const { locale } = useLanguage();
   if (!cases.length) return null;
 
   return (
@@ -57,7 +59,7 @@ export function EvalCaseList({ cases, selectedId, results, onSelect, t, compact 
               onClick={() => onSelect(c.id)}
             >
               <div className="admin-eval-case-list__head">
-                <strong>{c.title}</strong>
+                <strong>{getEvalCaseTitle(c, locale)}</strong>
                 <span className={`admin-eval-case-list__status admin-eval-case-list__status--${status}`}>
                   {statusLabel(status, t)}
                 </span>

@@ -6,6 +6,7 @@ import {
   type EvalCaseExpectedDraft,
 } from "../../../lib/admin/evalCaseForm";
 import type { AdminEvalCase } from "../../../lib/admin/crmAdminApi";
+import { getEvalCaseNotes } from "../../../lib/admin/evalCaseDisplay";
 
 type Props = {
   evalCase: AdminEvalCase;
@@ -14,16 +15,22 @@ type Props = {
 };
 
 export function EvalCaseExpectedEditor({ evalCase, saving, onSave }: Props) {
-  const { t } = useLanguage();
-  const [draft, setDraft] = useState<EvalCaseExpectedDraft>(() => evalCaseToExpectedDraft(evalCase));
+  const { t, locale } = useLanguage();
+  const [draft, setDraft] = useState<EvalCaseExpectedDraft>(() => ({
+    ...evalCaseToExpectedDraft(evalCase),
+    notes: getEvalCaseNotes(evalCase, locale) ?? "",
+  }));
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setDraft(evalCaseToExpectedDraft(evalCase));
+    setDraft({
+      ...evalCaseToExpectedDraft(evalCase),
+      notes: getEvalCaseNotes(evalCase, locale) ?? "",
+    });
     setDirty(false);
     setError(null);
-  }, [evalCase]);
+  }, [evalCase, locale]);
 
   function update<K extends keyof EvalCaseExpectedDraft>(key: K, value: EvalCaseExpectedDraft[K]) {
     setDraft((prev) => ({ ...prev, [key]: value }));
@@ -34,7 +41,7 @@ export function EvalCaseExpectedEditor({ evalCase, saving, onSave }: Props) {
   async function handleSave() {
     setError(null);
     try {
-      await onSave(buildEvalCaseExpectedPatch(draft));
+      await onSave(buildEvalCaseExpectedPatch(draft, locale));
       setDirty(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));

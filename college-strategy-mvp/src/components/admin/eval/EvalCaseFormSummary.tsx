@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useLanguage } from "../../../i18n/LanguageContext";
 import { reportBodyToFormState, buildAdminEvalFormRows } from "../../../lib/admin/evalCaseForm";
 import type { AdminEvalCase } from "../../../lib/admin/crmAdminApi";
+import { getEvalCaseReportBody, joinList } from "../../../lib/admin/evalCaseDisplay";
 import type { ActivityItem } from "../../../types";
 import { activityItemMeetsWizardRequirement } from "../../guidedStepShared";
 
@@ -42,8 +43,8 @@ function activityLines(item: ActivityItem): string[] {
 export function EvalCaseFormSummary({ evalCase }: Props) {
   const { t, locale } = useLanguage();
   const form = useMemo(
-    () => reportBodyToFormState((evalCase.reportBody ?? {}) as Record<string, unknown>),
-    [evalCase.reportBody],
+    () => reportBodyToFormState(getEvalCaseReportBody(evalCase, locale)),
+    [evalCase, locale],
   );
   const rows = useMemo(() => buildAdminEvalFormRows(form, t), [form, t]);
   const activities = (form.structuredActivities ?? []).filter(
@@ -66,7 +67,7 @@ export function EvalCaseFormSummary({ evalCase }: Props) {
       ) : null}
       {evalCase.forbiddenSchools.length > 0 ? (
         <p className="admin-eval-case-form__forbidden">
-          <strong>{t("admin.eval.forbiddenLabel")}</strong> {evalCase.forbiddenSchools.join("、")}
+          <strong>{t("admin.eval.forbiddenLabel")}</strong> {joinList(evalCase.forbiddenSchools, locale)}
         </p>
       ) : null}
       <div className="admin-eval-case-form__table-wrap">

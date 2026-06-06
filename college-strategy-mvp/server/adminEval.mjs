@@ -19,14 +19,17 @@ function mapEvalCase(row) {
     id: row.id,
     caseKey: row.case_key,
     title: row.title,
+    titleEn: row.title_en ?? null,
     tags: row.tags ?? [],
     locale: row.locale,
     reportBody: row.report_body,
+    reportBodyEn: row.report_body_en ?? null,
     expectedReach: row.expected_reach ?? [],
     expectedMatch: row.expected_match ?? [],
     expectedSafety: row.expected_safety ?? [],
     forbiddenSchools: row.forbidden_schools ?? [],
     notes: row.notes,
+    notesEn: row.notes_en ?? null,
     active: row.active,
     createdBy: row.created_by,
     createdAt: row.created_at,
@@ -128,13 +131,23 @@ function normalizeCaseInput(raw, createdBy) {
     ? raw.tags.map((t) => String(t).trim()).filter(Boolean).slice(0, 12)
     : [];
 
+  const titleEn = String(raw.titleEn ?? raw.title_en ?? "").trim() || null;
+  const notesEn = String(raw.notesEn ?? raw.notes_en ?? "").trim() || null;
+  const reportBodyEn = raw.reportBodyEn ?? raw.report_body_en ?? null;
+  if (reportBodyEn != null) {
+    const enErr = validateReportBody(reportBodyEn);
+    if (enErr) return { error: enErr };
+  }
+
   return {
     payload: {
       case_key: caseKey,
       title,
+      title_en: titleEn,
       tags,
       locale,
       report_body: reportBody,
+      report_body_en: reportBodyEn,
       expected_reach: normalizeExpectedSchools(raw.expectedReach ?? raw.expected_reach),
       expected_match: normalizeExpectedSchools(raw.expectedMatch ?? raw.expected_match),
       expected_safety: normalizeExpectedSchools(raw.expectedSafety ?? raw.expected_safety),
@@ -142,6 +155,7 @@ function normalizeCaseInput(raw, createdBy) {
         ? (raw.forbiddenSchools ?? raw.forbidden_schools).map((s) => String(s).trim()).filter(Boolean).slice(0, 20)
         : [],
       notes: String(raw.notes ?? "").trim() || null,
+      notes_en: notesEn,
       active: raw.active !== false,
       created_by: createdBy,
       updated_at: new Date().toISOString(),
@@ -277,6 +291,17 @@ export function registerAdminEvalRoutes(app, { requireAdmin, generateReportForAd
         : [];
     }
     if (req.body?.notes !== undefined) patch.notes = String(req.body.notes).trim() || null;
+    if (req.body?.notesEn !== undefined) patch.notes_en = String(req.body.notesEn).trim() || null;
+    if (req.body?.titleEn !== undefined) patch.title_en = String(req.body.titleEn).trim() || null;
+    if (req.body?.reportBodyEn !== undefined) {
+      if (req.body.reportBodyEn === null) {
+        patch.report_body_en = null;
+      } else {
+        const enErr = validateReportBody(req.body.reportBodyEn);
+        if (enErr) return res.status(400).json({ error: enErr });
+        patch.report_body_en = req.body.reportBodyEn;
+      }
+    }
     if (req.body?.active !== undefined) patch.active = Boolean(req.body.active);
 
     try {

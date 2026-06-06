@@ -1,6 +1,8 @@
 import type { AdminEvalCase, AdminEvalRunResult } from "../../../lib/admin/crmAdminApi";
 import type { buildEvalCaseExpectedPatch } from "../../../lib/admin/evalCaseForm";
 import type { Translate } from "../../../i18n/LanguageContext";
+import { useLanguage } from "../../../i18n/LanguageContext";
+import { getEvalCaseTitle } from "../../../lib/admin/evalCaseDisplay";
 import { EvalCaseExpectedEditor } from "./EvalCaseExpectedEditor";
 import { EvalCaseFormSummary } from "./EvalCaseFormSummary";
 import { resultStatusForCase, type CaseListStatus } from "./EvalCaseList";
@@ -39,6 +41,7 @@ export function EvalCaseDetail({
   savingExpected,
   deleting,
 }: Props) {
+  const { locale } = useLanguage();
   const status = resultStatusForCase(evalCase.id, results);
   const canReview = status === "generated" || status === "draft" || status === "submitted" || status === "approved";
 
@@ -48,7 +51,7 @@ export function EvalCaseDetail({
         {t("admin.evalHarness.backToList")}
       </button>
       <div className="admin-eval-case-detail__head">
-        <h4>{evalCase.title}</h4>
+        <h4>{getEvalCaseTitle(evalCase, locale)}</h4>
         <span className={`admin-eval-case-list__status admin-eval-case-list__status--${status}`}>
           {statusLabel(status, t)}
         </span>

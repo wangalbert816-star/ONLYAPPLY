@@ -7,6 +7,7 @@ import {
   emptyEvalCaseDraft,
   type buildEvalCaseExpectedPatch,
 } from "../../../lib/admin/evalCaseForm";
+import { getEvalCaseTitle } from "../../../lib/admin/evalCaseDisplay";
 import {
   CORRECTION_REASON_CATEGORIES,
   REPORT_PROMPT_VERSION,
@@ -399,7 +400,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
 
       {selectedCase && step !== "library" ? (
         <div className="admin-eval-harness__context">
-          <span>{t("admin.evalHarness.currentCase", { name: selectedCase.title })}</span>
+          <span>{t("admin.evalHarness.currentCase", { name: getEvalCaseTitle(selectedCase, locale) })}</span>
           {runDetail?.run && step !== "history" ? (
             <span className="admin-eval-harness__context-run">
               {t("admin.evalHarness.activeRun", {
@@ -483,7 +484,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
                   savingExpected={savingExpected}
                 />
                 <div className="admin-eval-harness__generate-card">
-                  <p className="admin-eval__sub">{t("admin.eval.testLeadOne", { name: selectedCase.title })}</p>
+                  <p className="admin-eval__sub">{t("admin.eval.testLeadOne", { name: getEvalCaseTitle(selectedCase, locale) })}</p>
                   <p className="admin-eval-harness__versions">
                     {t("admin.evalHarness.versionLine", {
                       prompt: REPORT_PROMPT_VERSION,
