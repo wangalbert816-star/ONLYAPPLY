@@ -29,6 +29,18 @@ function scrollToId(id: string) {
 }
 
 function HeroTitleLine1({ text, locale }: { text: string; locale: Locale }) {
+  if (locale === "zh") {
+    const commaIdx = text.indexOf("，");
+    if (commaIdx !== -1 && commaIdx < text.length - 1) {
+      return (
+        <>
+          {text.slice(0, commaIdx + 1)}
+          <br />
+          {text.slice(commaIdx + 1)}
+        </>
+      );
+    }
+  }
   if (locale === "en") {
     const lower = text.toLowerCase();
     const idx = lower.indexOf("before");
@@ -357,9 +369,11 @@ export function LandingPageReplica({
                 <span className="block">
                   <HeroTitleLine1 text={tf("app.hero.titleLine1")} locale={locale} />
                 </span>
-                <span className="landing-hero-title__sub mt-1 block text-[clamp(1.15rem,2.8vw,1.5rem)] font-medium leading-snug tracking-[-0.02em] text-neutral-600 lg:text-[clamp(1.2rem,2.5vw,1.45rem)]">
-                  {tf("app.hero.titleLine2")}
-                </span>
+                {tf("app.hero.titleLine2") ? (
+                  <span className="landing-hero-title__sub mt-1 block text-[clamp(1.15rem,2.8vw,1.5rem)] font-medium leading-snug tracking-[-0.02em] text-neutral-600 lg:text-[clamp(1.2rem,2.5vw,1.45rem)]">
+                    {tf("app.hero.titleLine2")}
+                  </span>
+                ) : null}
               </h1>
               <p className="landing-hero-lead mb-6 max-w-[32rem] text-[15px] leading-[1.55] text-neutral-600 lg:text-[16px]">{tf("app.hero.lead")}</p>
               <div className="landing-hero-ctas flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
@@ -577,7 +591,7 @@ export function LandingPageReplica({
         {/* —— Final CTA —— */}
         <section className="bg-[var(--landing-page-bg,#ecf3ea)] py-20 lg:py-28">
           <div className="mx-auto max-w-[640px] px-6 text-center lg:px-10">
-            <h2 className="mb-3 text-[clamp(1.75rem,4vw,2.5rem)] font-bold tracking-[-0.03em] text-neutral-950">{tf("landingReplica.finalTitle")}</h2>
+            <h2 className="mb-3 whitespace-pre-line text-[clamp(1.75rem,4vw,2.5rem)] font-bold leading-[1.15] tracking-[-0.03em] text-neutral-950">{tf("landingReplica.finalTitle")}</h2>
             <p className="mb-8 text-[16px] text-neutral-600">{tf("landingReplica.finalSub")}</p>
             <button
               type="button"
