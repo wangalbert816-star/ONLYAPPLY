@@ -26,6 +26,7 @@ import { AdminEvalQuestionnaireForm } from "../AdminEvalQuestionnaireForm";
 import { AdminEvalReviewForm } from "./AdminEvalReviewForm";
 import { EvalCaseDetail } from "./EvalCaseDetail";
 import { EvalCaseList } from "./EvalCaseList";
+import { EvalRunHistory } from "./EvalRunHistory";
 import {
   createAdminEvalCase,
   createAdminEvalRun,
@@ -38,6 +39,7 @@ import {
   listAdminEvalRuns,
   saveAdminEvalReview,
   type AdminEvalDashboard,
+  type AdminEvalRun,
   type AdminEvalRunResult,
 } from "../../../lib/admin/crmAdminApi";
 import type { EvalReviewDraft } from "../../../lib/admin/evalRubric";
@@ -48,9 +50,9 @@ type Props = {
   onRun: (fn: () => Promise<void>) => Promise<void>;
 };
 
-type EvalStep = "library" | "generate" | "review" | "summary" | "dashboard" | "export";
+type EvalStep = "library" | "generate" | "review" | "history" | "summary" | "dashboard" | "export";
 
-const STEPS: EvalStep[] = ["library", "generate", "review", "summary", "dashboard", "export"];
+const STEPS: EvalStep[] = ["library", "generate", "review", "history", "summary", "dashboard", "export"];
 
 function evalErrorMessage(code: string | undefined, t: (key: string) => string) {
   if (!code) return t("admin.errors.generic");
@@ -89,6 +91,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
   const [savingCase, setSavingCase] = useState(false);
 
   const [selectedRunId, setSelectedRunId] = useState("");
+  const [runs, setRuns] = useState<AdminEvalRun[]>([]);
   const [runDetail, setRunDetail] = useState<Awaited<ReturnType<typeof fetchAdminEvalRun>> | null>(null);
   const [testing, setTesting] = useState(false);
   const [reviewCaseId, setReviewCaseId] = useState("");
@@ -137,9 +140,13 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
     setPanelError(null);
     try {
       await refreshCases();
-      const { runs } = await listAdminEvalRuns(token);
-      const runId = selectedRunIdRef.current || runs[0]?.id || "";
-      if (runId && runId !== selectedRunIdRef.current) setSelectedRunId(runId);
+      const { runs: nextRuns } = await listAdminEvalRuns(token);
+      setRuns(nextRuns);
+      const runId =
+        selectedRunIdRef.current && nextRuns.some((r) => r.id === selectedRunIdRef.current)
+          ? selectedRunIdRef.current
+          : nextRuns[0]?.id || "";
+      if (runId !== selectedRunIdRef.current) setSelectedRunId(runId);
       if (runId) await loadRunDetail(runId);
       await refreshDashboard();
     } catch (e) {
@@ -256,6 +263,19 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
     }
   };
 
+  const handleSelectRun = useCallback(
+    async (runId: string) => {
+      setSelectedRunId(runId);
+      setPanelError(null);
+      try {
+        await loadRunDetail(runId);
+      } catch (e) {
+        setPanelError(evalErrorMessage((e as Error & { code?: string }).code, t));
+      }
+    },
+    [loadRunDetail, t],
+  );
+
   const handleGenerate = async () => {
     if (testing || busy || !selectedCaseId) return;
     setTesting(true);
@@ -269,6 +289,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
         reportTemplateVersion: REPORT_TEMPLATE_VERSION,
       });
       setSelectedRunId(run.id);
+      setRuns((prev) => [run, ...prev.filter((r) => r.id !== run.id)]);
       await generateAdminEvalRunCase(token, run.id, selectedCaseId);
       await loadRunDetail(run.id);
       setReviewCaseId(selectedCaseId);
@@ -337,6 +358,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
             (s === "library" && cases.length > 0) ||
             (s === "generate" && reviewableResults.length > 0) ||
             (s === "review" && (selectedReviewRow?.review?.status === "submitted" || selectedReviewRow?.review?.status === "approved")) ||
+            (s === "history" && runs.length > 1) ||
             (s === "summary" && (runDetail?.results.some((r) => r.review?.status === "submitted" || r.review?.status === "approved") ?? false)) ||
             (s === "dashboard" && (dashboard?.reviewedCount ?? 0) > 0) ||
             (s === "export" && (dashboard?.reviewedCount ?? 0) > 0);
@@ -357,6 +379,17 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
       {selectedCase && step !== "library" ? (
         <div className="admin-eval-harness__context">
           <span>{t("admin.evalHarness.currentCase", { name: selectedCase.title })}</span>
+          {runDetail?.run && step !== "history" ? (
+            <span className="admin-eval-harness__context-run">
+              {t("admin.evalHarness.activeRun", {
+                label: runDetail.run.label,
+                prompt: runDetail.run.promptVersion ?? "—",
+              })}
+              <button type="button" className="admin-eval-harness__context-link" onClick={() => setStep("history")}>
+                {t("admin.evalHarness.openRunHistory")}
+              </button>
+            </span>
+          ) : null}
         </div>
       ) : null}
 
@@ -479,6 +512,27 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
                 />
               </>
             ) : null}
+          </section>
+        ) : null}
+
+        {step === "history" ? (
+          <section className="admin-eval__section admin-eval__section--flush">
+            <EvalRunHistory
+              token={token}
+              locale={locale}
+              runs={runs}
+              cases={cases}
+              selectedRunId={selectedRunId}
+              selectedCaseId={selectedCaseId}
+              onSelectRun={(runId) => void handleSelectRun(runId)}
+              onSelectCase={setSelectedCaseId}
+              onOpenReview={() => {
+                if (selectedCaseId) setReviewCaseId(selectedCaseId);
+                setReviewPanel("detail");
+                setStep("review");
+              }}
+              t={t}
+            />
           </section>
         ) : null}
 
