@@ -39,6 +39,18 @@ export const MAJOR_ACTIVITY_GUIDES = [
     avoidEn: "Avoid vague startup ideas—each item needs verifiable numbers or third-party proof.",
   },
   {
+    id: "entrepreneurship",
+    majors: [/entrepreneur|创业|startup|founder/i],
+    labelZh: "创业 / Entrepreneurship",
+    labelEn: "Entrepreneurship",
+    competitionsZh: ["Rotary / 商业 pitch 赛 / 校内创业赛（强调可展示成果）", "DECA / FBLA entrepreneurship 相关项目"],
+    competitionsEn: ["Pitch competitions with demonstrable outcomes", "DECA / FBLA entrepreneurship-aligned projects"],
+    projectsZh: ["可验证的 micro-startup 或 incubator 项目（用户数/营收/里程碑）", "将竞赛 pitch deck 整理为 portfolio"],
+    projectsEn: ["Verifiable micro-startup or incubator project with metrics", "Portfolio of pitch decks from competitions"],
+    avoidZh: "9 校勿全选综合名气私校；至少 1 所须因创业/商科项目资源入选（如 Babson 等创业导向校）。",
+    avoidEn: "Do not fill all 9 slots with generic prestige schools; include at least one entrepreneurship-program fit (e.g. Babson).",
+  },
+  {
     id: "humanities",
     majors: [/history|english|literature|philosophy|politic|law|journal|历史|英语|文学|哲学|政治|法律|新闻/i],
     labelZh: "人文 / 社科",

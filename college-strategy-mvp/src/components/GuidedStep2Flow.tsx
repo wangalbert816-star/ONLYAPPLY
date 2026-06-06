@@ -1,8 +1,9 @@
-import type { AcademicSpecialFlag, CampusCulturePref, FormState } from "../types";
+import type { AcademicSpecialFlag, FormState } from "../types";
 import type { Translate } from "../i18n/LanguageContext";
 import type { GuideTouch } from "./GuidedQuestionnaire";
 import {
   GuidedContextLine,
+  GuidedFieldPicker,
   GuidedScreenShell,
   MAJOR_PRESET_KEYS,
   cultureFeedback,
@@ -95,6 +96,7 @@ export function GuidedStep2Flow({
   guideTouch,
   markTouch,
   onSkipAdvance,
+  useButtonPickers = false,
 }: {
   screen: Step2ScreenId;
   form: FormState;
@@ -103,7 +105,9 @@ export function GuidedStep2Flow({
   guideTouch: GuideTouch;
   markTouch: (k: keyof GuideTouch) => void;
   onSkipAdvance: () => void;
+  useButtonPickers?: boolean;
 }) {
+  const choose = t("form.opt.choose");
   const gpaOk = Boolean(guideTouch.s2_gpa && form.gpa.trim());
   const majorOk = Boolean(guideTouch.s2_major && form.majorPrimary.trim());
   const major2Ok = Boolean(guideTouch.s2_major2);
@@ -136,19 +140,20 @@ export function GuidedStep2Flow({
             {t("wizard.s2.gpaTrend.q")}
           </h2>
           <GuidedContextLine step={2} screenId="gpaTrend" t={t} />
-          <select
-            className="select-modern select-modern--action"
-            aria-labelledby="gq-s2-gpa-trend"
+          <GuidedFieldPicker
+            labelledBy="gq-s2-gpa-trend"
             value={form.gpaTrend}
-            onChange={(e) => update("gpaTrend", e.target.value as FormState["gpaTrend"])}
-          >
-            <option value="">{t("form.opt.choose")}</option>
-            <option value="upward">{t("form.opt.gpaTrendUpward")}</option>
-            <option value="stable">{t("form.opt.gpaTrendStable")}</option>
-            <option value="downward">{t("form.opt.gpaTrendDownward")}</option>
-            <option value="mixed">{t("form.opt.gpaTrendMixed")}</option>
-            <option value="unsure">{t("form.opt.gpaTrendUnsure")}</option>
-          </select>
+            placeholder={choose}
+            useButtonPickers={useButtonPickers}
+            options={[
+              { value: "upward", label: t("form.opt.gpaTrendUpward") },
+              { value: "stable", label: t("form.opt.gpaTrendStable") },
+              { value: "downward", label: t("form.opt.gpaTrendDownward") },
+              { value: "mixed", label: t("form.opt.gpaTrendMixed") },
+              { value: "unsure", label: t("form.opt.gpaTrendUnsure") },
+            ]}
+            onChange={(v) => update("gpaTrend", v)}
+          />
           {(() => {
             const fb = gpaTrendFeedback(form, t);
             return fb ? <p className="field-feedback">{fb}</p> : null;
@@ -163,16 +168,17 @@ export function GuidedStep2Flow({
             {t("wizard.s2.testing.q")}
           </h2>
           <GuidedContextLine step={2} screenId="testing" t={t} />
-          <select
-            className="select-modern select-modern--action"
-            aria-labelledby="gq-s2-test"
+          <GuidedFieldPicker
+            labelledBy="gq-s2-test"
             value={form.testing}
-            onChange={(e) => update("testing", e.target.value as FormState["testing"])}
-          >
-            <option value="">{t("form.opt.choose")}</option>
-            <option value="test_optional">{t("form.opt.testOpt")}</option>
-            <option value="will_submit">{t("form.opt.testSubmit")}</option>
-          </select>
+            placeholder={choose}
+            useButtonPickers={useButtonPickers}
+            options={[
+              { value: "test_optional", label: t("form.opt.testOpt") },
+              { value: "will_submit", label: t("form.opt.testSubmit") },
+            ]}
+            onChange={(v) => update("testing", v)}
+          />
           {form.testing === "test_optional" && <p className="field-feedback">{t("wizard.s2.testing.fbOpt")}</p>}
           {form.testing === "will_submit" && <p className="field-feedback">{t("wizard.s2.testing.fbSubmit")}</p>}
         </GuidedScreenShell>
@@ -303,20 +309,21 @@ export function GuidedStep2Flow({
             {t("wizard.s2.hs.q")}
           </h2>
           <GuidedContextLine step={2} screenId="hs" t={t} />
-          <select
-            className="select-modern select-modern--action"
-            aria-labelledby="gq-s2-hs"
+          <GuidedFieldPicker
+            labelledBy="gq-s2-hs"
             value={form.highSchoolSystem}
-            onChange={(e) => update("highSchoolSystem", e.target.value)}
-          >
-            <option value="">{t("form.opt.choose")}</option>
-            <option value="国内普高">{t("form.opt.hsCn")}</option>
-            <option value="美高">{t("form.opt.hsUs")}</option>
-            <option value="IB">{t("form.opt.hsIb")}</option>
-            <option value="A-Level">{t("form.opt.hsAl")}</option>
-            <option value="AP体系">{t("form.opt.hsAp")}</option>
-            <option value="其他">{t("form.opt.hsOther")}</option>
-          </select>
+            placeholder={choose}
+            useButtonPickers={useButtonPickers}
+            options={[
+              { value: "国内普高", label: t("form.opt.hsCn") },
+              { value: "美高", label: t("form.opt.hsUs") },
+              { value: "IB", label: t("form.opt.hsIb") },
+              { value: "A-Level", label: t("form.opt.hsAl") },
+              { value: "AP体系", label: t("form.opt.hsAp") },
+              { value: "其他", label: t("form.opt.hsOther") },
+            ]}
+            onChange={(v) => update("highSchoolSystem", v)}
+          />
           {(() => {
             const fb = hsFeedback(form, t);
             return fb ? <p className="field-feedback">{fb}</p> : null;
@@ -432,18 +439,19 @@ export function GuidedStep2Flow({
             {t("wizard.s2.size.q")}
           </h2>
           <GuidedContextLine step={2} screenId="size" t={t} />
-          <select
-            className="select-modern select-modern--action"
-            aria-labelledby="gq-s2-size"
+          <GuidedFieldPicker
+            labelledBy="gq-s2-size"
             value={form.schoolSize}
-            onChange={(e) => update("schoolSize", e.target.value as FormState["schoolSize"])}
-          >
-            <option value="">{t("form.opt.choose")}</option>
-            <option value="small">{t("form.opt.sizeS")}</option>
-            <option value="medium">{t("form.opt.sizeM")}</option>
-            <option value="large">{t("form.opt.sizeL")}</option>
-            <option value="any">{t("form.opt.sizeAny")}</option>
-          </select>
+            placeholder={choose}
+            useButtonPickers={useButtonPickers}
+            options={[
+              { value: "small", label: t("form.opt.sizeS") },
+              { value: "medium", label: t("form.opt.sizeM") },
+              { value: "large", label: t("form.opt.sizeL") },
+              { value: "any", label: t("form.opt.sizeAny") },
+            ]}
+            onChange={(v) => update("schoolSize", v)}
+          />
           {(() => {
             const fb = sizeFeedback(form, t);
             return fb ? <p className="field-feedback">{fb}</p> : null;
@@ -458,18 +466,19 @@ export function GuidedStep2Flow({
             {t("wizard.s2.culture.q")}
           </h2>
           <GuidedContextLine step={2} screenId="culture" t={t} />
-          <select
-            className="select-modern select-modern--action"
-            aria-labelledby="gq-s2-culture"
+          <GuidedFieldPicker
+            labelledBy="gq-s2-culture"
             value={form.campusCulturePref}
-            onChange={(e) => update("campusCulturePref", e.target.value as CampusCulturePref)}
-          >
-            <option value="">{t("form.opt.choose")}</option>
-            <option value="academic">{t("form.opt.campusAcademic")}</option>
-            <option value="balanced">{t("form.opt.campusBalanced")}</option>
-            <option value="social">{t("form.opt.campusSocial")}</option>
-            <option value="any">{t("form.opt.campusAny")}</option>
-          </select>
+            placeholder={choose}
+            useButtonPickers={useButtonPickers}
+            options={[
+              { value: "academic", label: t("form.opt.campusAcademic") },
+              { value: "balanced", label: t("form.opt.campusBalanced") },
+              { value: "social", label: t("form.opt.campusSocial") },
+              { value: "any", label: t("form.opt.campusAny") },
+            ]}
+            onChange={(v) => update("campusCulturePref", v)}
+          />
           {(() => {
             const fb = cultureFeedback(form, t);
             return fb ? <p className="field-feedback">{fb}</p> : null;

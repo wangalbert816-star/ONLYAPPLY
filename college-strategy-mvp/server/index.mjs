@@ -591,6 +591,22 @@ const SYSTEM_PROMPT_ZH = `你是一位资深美国本科升学顾问（10年+经
 - 稳：主战场，总体匹配仍有方差。
 - 保：底线逻辑，解释如何降低全拒风险（非随便一所）。
 
+【档位校准 · 竞争密度】
+- 竞争密度为「高」时：对国际生/集中申请群体，档位应略保守；SAT/ACT 明显低于该校常见中位、或 GPA 未达典型区间时，不得标为 Match 或 Safety。
+- UC 校区（Berkeley/UCLA/UCSD/UCI/UCSB 等）若出现在主名单 9 校中：对竞争密度高的背景，上述高选择性 UC 默认应为 Reach，不得标 Match/Safety（UC 本科 test-blind，勿把 SAT 当作 UC 录取杠杆）。
+- 同理适用于对国际生竞争激烈的高选择性公立 flagship（如 UW Seattle、UMich、UVA、UNC、Georgia Tech 等）：标 Match 须有可引用的统计与活动证据；边界模糊时上调一档（Match→Reach，Safety→Match）。
+
+【专业/项目匹配 — 优先于综合名气】
+- 主申为 Entrepreneurship、商科细分、工程、CS 等时，9 校中至少 1–2 所须因「专业/项目/资源匹配」入选，而非仅因综合排名（例：Entrepreneurship 可含 Babson 等创业导向校；Business 可含专精商学院本科路径的校）。
+- 禁止 9 校全是「综合名气型」私校/旗舰；须体现策略多样性（专精项目校 + 公立 flagship + 合理保底）。
+
+【禁校名单】
+- 若用户消息含【禁止出现的学校】：这些校不得出现在 reach/match/safety/top_reference_schools/uc_analysis 任一区块；亦不得在 strategy_notes 中暗示仍应申请。
+
+【保底校逻辑】
+- Safety 须是「对该生统计 realistic 的录取底线 + 专业仍可就读」，非随机低排名凑数；优先与学生地理/预算/专业仍匹配的 strong public 或 regional flagship。
+- 若某公立 flagship 的商学院/热门专业对该生仍偏难（如 test-optional 国际生 + GPA 3.7 申请 Fisher/Ross 路径），应标 Match 而非 Safety。
+
 【顶级彩票校 · top_reference_schools】
 - MIT、Stanford、Harvard、Princeton、Yale、Caltech、Columbia、UPenn、Duke、Brown、Dartmouth、Cornell、UChicago 等极高选择性学校，不得出现在 reach/match/safety 主名单 9 校中。
 - 若用户背景有明确且罕见的全国/国际级证据，可在根级可选字段 top_reference_schools 填 0–2 所（不占 9 校名额）；背景偏弱（GPA/活动明显短板）时必须留空 []，仅在 strategy_notes 中说明顶校仅为理论参考。
@@ -634,7 +650,8 @@ reach 每元素字段名必须为：school, why_reach_for_you, campus_vibe, diff
 - context_note：1–2 句语境化参考（地区/feeder/身份/预算对核对的影响）；禁止编造具体录取率或「你校去年进了几人」；无可靠数据时写「请到官网 CDS 核对」。
 - key_fit_signals、key_risks、verification_focus：各 2–4 条独立要点（短句），禁止与别校逐字重复。
 - 每校至少 1 条该校独有信息（资源/文化/地理实习/专业结构等）；禁止 9 校共用同一段模板。
-- verification_focus 写「去官网查什么」（录取、专业、奖助、课程），勿编造 URL；禁止写「核实 Anderson/Wharton/Sloan/Booth/Haas/Kellogg」等研究生商学院名称——本科请写 undergraduate admissions / 本科招生与专业目录。
+- verification_focus 写「去官网查什么」（录取、专业、奖助、课程），勿编造 URL；禁止写「核实 Anderson/Wharton/Sloan/Booth/Haas/Kellogg/Simon/Fisher/Kelley」等研究生商学院或本科极难商学院名称——本科请写 undergraduate admissions / 本科招生与专业目录。
+- 文案须简洁自然：同一长句/括号说明不要在单条字段内重复粘贴；研究生院系名最多改写一次，其余用「本科招生页」等短表述。
 
 【improvement_plan · 活动建设】
 - activity_build：2–5 条可验证的活动/竞赛/项目/实习方向（含类型+如何验证成果）；若活动偏弱必须写「先补 1 条可验证主线」。
@@ -674,6 +691,22 @@ const SYSTEM_PROMPT_EN = `You are a senior U.S. undergraduate admissions counsel
 - Reach: realistic stretch only. It may be uncertain, but there must still be a defensible admissions case; do not put nearly-impossible lottery schools into the regular Reach tier.
 - Match: main battlefield; fit is generally reasonable but variance remains.
 - Safety: true floor logic—explain how it reduces all-reject risk (not a random filler).
+
+【Tier calibration · competition density】
+- When competition density is high: tier conservatively for international or concentrated applicant pools. If SAT/ACT is clearly below a school's typical middle range, or GPA is below its usual band, do NOT label it Match or Safety.
+- If UC campuses (Berkeley/UCLA/UCSD/UCI/UCSB, etc.) appear in the main 9-school list: for high-competition profiles, treat selective UCs as Reach by default—not Match/Safety (UC undergrad is test-blind; do not use SAT as a UC admit lever).
+- Apply the same rule to highly selective public flagships for international applicants (e.g. UW Seattle, UMich, UVA, UNC, Georgia Tech): Match requires citeable stats/activity evidence; when ambiguous, tier up (Match→Reach, Safety→Match).
+
+【Major/program fit — over generic prestige】
+- When the primary major is Entrepreneurship, a specialized business track, engineering, CS, etc., at least 1–2 of the 9 schools should be chosen for program/resource fit—not ranking alone (e.g. Entrepreneurship may include Babson; business may include schools with strong dedicated undergrad business paths).
+- Do not fill all 9 slots with generic prestige privates/flagships; show list diversity (specialized program fit + public flagship + realistic floor).
+
+【Forbidden schools】
+- If the user message includes [Schools that must NOT appear]: those schools must not appear in reach/match/safety/top_reference_schools/uc_analysis—or be implied as "still apply" in strategy_notes.
+
+【Safety tier logic】
+- Safety must be a realistic admit floor for this student's stats plus a viable major path—not a random low-ranked filler. Prefer strong public or regional flagships that still fit geography/budget/major.
+- If a public flagship business path is still tough for this profile (e.g. test-optional international with ~3.7 GPA targeting Fisher/Ross-tier paths), tier it Match—not Safety.
 
 【Ultra-selective schools · top_reference_schools】
 - MIT, Stanford, Harvard, Princeton, Yale, Caltech, Columbia, UPenn, Duke, Brown, Dartmouth, Cornell, UChicago, and similarly ultra-selective schools must NOT appear in reach/match/safety.
@@ -718,7 +751,8 @@ Field names for reach rows must be: school, why_reach_for_you, campus_vibe, diff
 - context_note: region/feeder/identity/budget verification; NEVER invent admit rates; if no data, say confirm on official CDS.
 - key_fit_signals, key_risks, verification_focus: 2–4 distinct short bullets each; never copy-paste the same text across schools.
 - Each school needs at least one campus-specific point (resources, culture, internships/location, major structure); no shared template across all 9.
-- verification_focus: state what to verify on the official site (admission, major, aid, curriculum); do not invent URLs. Never say "verify Anderson/Wharton/Sloan/Booth/Haas/Kellogg" or treat grad business schools as default undergrad paths—use undergraduate admissions pages.
+- verification_focus: state what to verify on the official site (admission, major, aid, curriculum); do not invent URLs. Never say "verify Anderson/Wharton/Sloan/Booth/Haas/Kellogg/Simon/Fisher/Kelley" or treat grad business schools as default undergrad paths—use undergraduate admissions pages.
+- Keep prose concise: do not repeat the same long parenthetical phrase within one field; name a grad school at most once per field—otherwise say "undergraduate admissions page."
 
 【improvement_plan · activity build】
 - activity_build: 2–5 verifiable activity/competition/project/internship directions; if activities are thin, lead with one verifiable thread.
@@ -1227,6 +1261,21 @@ function formatAcademicSpecialLine(body) {
   return parts.join("; ");
 }
 
+function forbiddenSchoolsFromBody(body) {
+  const raw = body?.forbiddenSchools ?? body?.forbidden_schools;
+  if (!Array.isArray(raw)) return [];
+  return raw.map((s) => String(s).trim()).filter(Boolean).slice(0, 20);
+}
+
+function formatForbiddenSchoolsLine(body, locale) {
+  const list = forbiddenSchoolsFromBody(body);
+  if (list.length === 0) return "";
+  if (locale === "en") {
+    return `\n[Schools that must NOT appear anywhere in the report] ${list.join(", ")}`;
+  }
+  return `\n【禁止出现的学校 — 全报告任何区块均不得出现】${list.join("、")}`;
+}
+
 function buildUserPayload(body, includeUc = false) {
   const locale = resolveReportLocale(body);
   const isEn = locale === "en";
@@ -1275,6 +1324,7 @@ function buildUserPayload(body, includeUc = false) {
   const budgetLine = budgetPostureLabel(budget, locale);
   const cultureLine = campusCultureAnalysisHint(campusCulturePref, locale);
   const rigorLine = academicRigorAnalysisHint(body, locale);
+  const forbiddenLine = formatForbiddenSchoolsLine(body, locale);
   let extra = "";
   if (supplementary.length > 0) {
     if (isEn) {
@@ -1320,7 +1370,7 @@ ${planHorizonLine}
 
 [Structured activities / competition details] ${structuredActivityText || na}
 [List risk posture] ${riskStyle || na}
-[Hard dealbreakers] ${dealbreakers || none}${
+[Hard dealbreakers] ${dealbreakers || none}${forbiddenLine}${
       includeUc
         ? "\n\n[UC intent] User shows interest in the University of California system. Output uc_analysis per system instructions; keep the main 9-school list mostly non-UC."
         : ""
@@ -1355,7 +1405,7 @@ ${planHorizonLine}
 
 【结构化活动 / 竞赛细节】${structuredActivityText || "未提供"}
 【选校风格】${riskStyle || "未填"}
-【绝对不能接受】${dealbreakers || "无"}${
+【绝对不能接受】${dealbreakers || "无"}${forbiddenLine}${
     includeUc
       ? "\n\n【UC 意向】用户表现出加州大学（UC）申请意向。请按 system 说明输出 uc_analysis；主名单 9 校尽量为非 UC 美国本科院校。"
       : ""

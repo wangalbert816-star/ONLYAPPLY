@@ -43,6 +43,38 @@ function normalizeSchoolName(name) {
     .trim();
 }
 
+export function forbiddenSchoolsFromBody(body) {
+  const raw = body?.forbiddenSchools ?? body?.forbidden_schools;
+  if (!Array.isArray(raw)) return [];
+  return raw.map((s) => String(s).trim()).filter(Boolean).slice(0, 20);
+}
+
+export function schoolMatchesForbidden(name, forbiddenList) {
+  const normalized = normalizeSchoolName(name);
+  if (!normalized || !Array.isArray(forbiddenList) || forbiddenList.length === 0) return false;
+  return forbiddenList.some((entry) => {
+    const needle = normalizeSchoolName(entry);
+    if (!needle) return false;
+    if (normalized === needle) return true;
+    if (needle.length >= 4 && normalized.includes(needle)) return true;
+    if (normalized.length >= 4 && needle.includes(normalized)) return true;
+    return false;
+  });
+}
+
+function findForbiddenInMainTiers(o, forbiddenList) {
+  const hits = [];
+  for (const tier of ["reach", "match", "safety"]) {
+    const rows = o[tier];
+    if (!Array.isArray(rows)) continue;
+    for (const row of rows) {
+      const name = String(row?.school || "").trim();
+      if (name && schoolMatchesForbidden(name, forbiddenList)) hits.push(name);
+    }
+  }
+  return [...new Set(hits)];
+}
+
 function escapeRegExp(text) {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -242,6 +274,10 @@ export function autoRepairTopReferenceSchools(parsed, body, locale = "zh") {
       removed.push("(empty school)");
       continue;
     }
+    if (schoolMatchesForbidden(name, forbiddenSchoolsFromBody(body))) {
+      removed.push(name);
+      continue;
+    }
     const key = name.toLowerCase();
     if (seen.has(key)) {
       removed.push(name);
@@ -303,6 +339,19 @@ export function validateMainSchoolReport(parsed, body) {
   const topRef = validateTopReferenceBlock(o, body);
   if (!topRef.ok) return topRef;
 
+  const forbidden = forbiddenSchoolsFromBody(body);
+  const forbiddenInMain = findForbiddenInMainTiers(o, forbidden);
+  if (forbiddenInMain.length > 0) {
+    const isEn = body?.locale === "en";
+    return {
+      ok: false,
+      repairable: true,
+      reason: isEn
+        ? `Main list must not include forbidden schools: ${forbiddenInMain.join(", ")}. Replace each with a different U.S. bachelor's institution not on the forbidden list.`
+        : `主名单不得含用户禁止的学校：${forbiddenInMain.join("、")}。请各替换为一所不在禁校名单内的美国本科院校。`,
+    };
+  }
+
   return { ok: true };
 }
 
@@ -314,6 +363,7 @@ Return ONLY one corrected JSON object. Rules:
 - reach, match, safety: exactly 3 distinct U.S. bachelor's schools each (9 total).
 - MIT/Stanford/Harvard/Princeton/Yale/Caltech/Columbia/UPenn/Duke/Brown/Dartmouth/Cornell/UChicago must NOT appear in reach/match/safety.
 - Put those ultra-selective schools in top_reference_schools (0–2 items) only when the profile supports it; never duplicate a main-list school.
+- If validation mentions forbidden schools, remove them everywhere and replace with different institutions not on the forbidden list.
 - Each top_reference_schools row uses why_reference_for_you (not why_reach_for_you).`;
   }
   return `【校验未通过】${reason}
@@ -322,6 +372,7 @@ Return ONLY one corrected JSON object. Rules:
 - reach、match、safety 各恰好 3 所、9 校互不重复；
 - MIT/Stanford/Harvard/Princeton/Yale/Caltech/Columbia/UPenn/Duke/Brown/Dartmouth/Cornell/UChicago 不得出现在主名单三档；
 - 上述顶校如需提及，仅可放入 top_reference_schools（0–2 所），且不得与主名单重复；
+- 若校验提示禁校名单，须从全报告移除并在主名单替换为禁校名单外的其它美国本科院校；
 - top_reference_schools 每行使用 why_reference_for_you 字段。`;
 }
 

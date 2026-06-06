@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { useLanguage } from "../../i18n/LanguageContext";
 import type { Locale } from "../../i18n/strings";
 import type { FormState } from "../../types";
@@ -23,18 +23,19 @@ import {
 } from "../GuidedStep3Flow";
 import { FormLiveSummary, type GuideTouch } from "../GuidedQuestionnaire";
 import { GuidedFormProgress } from "../guidedStepShared";
+import "../../App.css";
 import "../GuidedQuestionnaire.css";
 import "../FormLiveSummary.css";
+import "../QuestionnaireTheme.css";
 
 type Props = {
   draft: EvalCaseDraft;
-  onChange: (draft: EvalCaseDraft) => void;
+  onChange: Dispatch<SetStateAction<EvalCaseDraft>>;
   onSave: () => void;
   saving: boolean;
-  disabled?: boolean;
 };
 
-export function AdminEvalQuestionnaireForm({ draft, onChange, onSave, saving, disabled }: Props) {
+export function AdminEvalQuestionnaireForm({ draft, onChange, onSave, saving }: Props) {
   const { t } = useLanguage();
   const [step, setStep] = useState(1);
   const [step1Screen, setStep1Screen] = useState(0);
@@ -43,7 +44,15 @@ export function AdminEvalQuestionnaireForm({ draft, onChange, onSave, saving, di
   const [err, setErr] = useState<string | null>(null);
   const [guideTouch, setGuideTouch] = useState<GuideTouch>({});
 
+  useEffect(() => {
+    document.documentElement.setAttribute("data-questionnaire", "");
+    return () => {
+      document.documentElement.removeAttribute("data-questionnaire");
+    };
+  }, []);
+
   const form = draft.form;
+  const inputsLocked = saving;
   const step1Screens = useMemo(() => getStep1Screens(form), [form]);
   const step2Screens = useMemo(() => getStep2Screens(form), [form]);
   const step3Screens = useMemo(() => getStep3Screens(), []);
@@ -60,13 +69,26 @@ export function AdminEvalQuestionnaireForm({ draft, onChange, onSave, saving, di
   const step3ScreenId = step3Screens[step3ScreenSafe] ?? "activities";
   const step3IsLastScreen = step === 3 && step3ScreenSafe >= step3Screens.length - 1;
 
-  const updateMeta = <K extends keyof Omit<EvalCaseDraft, "form">>(key: K, value: EvalCaseDraft[K]) => {
-    onChange({ ...draft, [key]: value });
-  };
+  const updateMeta = useCallback(
+    <K extends keyof Omit<EvalCaseDraft, "form">>(key: K, value: EvalCaseDraft[K]) => {
+      onChange((prev) => ({ ...prev, [key]: value }));
+    },
+    [onChange],
+  );
 
-  const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
-    onChange({ ...draft, form: { ...draft.form, [key]: value } });
-  };
+  const update = useCallback(
+    <K extends keyof FormState>(key: K, value: FormState[K]) => {
+      onChange((prev) => ({ ...prev, form: { ...prev.form, [key]: value } }));
+    },
+    [onChange],
+  );
+
+  const patchForm = useCallback(
+    (patch: Partial<FormState>) => {
+      onChange((prev) => ({ ...prev, form: { ...prev.form, ...patch } }));
+    },
+    [onChange],
+  );
 
   const markGuideTouch = (key: keyof GuideTouch) => {
     setGuideTouch((prev) => ({ ...prev, [key]: true }));
@@ -169,7 +191,7 @@ export function AdminEvalQuestionnaireForm({ draft, onChange, onSave, saving, di
             value={draft.title}
             onChange={(e) => updateMeta("title", e.target.value)}
             placeholder={t("admin.eval.caseNamePlaceholder")}
-            disabled={disabled || saving}
+            disabled={inputsLocked}
           />
         </label>
         <label>
@@ -177,7 +199,7 @@ export function AdminEvalQuestionnaireForm({ draft, onChange, onSave, saving, di
           <select
             value={draft.locale}
             onChange={(e) => updateMeta("locale", e.target.value as Locale)}
-            disabled={disabled || saving}
+            disabled={inputsLocked}
           >
             <option value="zh">{t("admin.eval.langZh")}</option>
             <option value="en">{t("admin.eval.langEn")}</option>
@@ -210,16 +232,16 @@ export function AdminEvalQuestionnaireForm({ draft, onChange, onSave, saving, di
             step3ScreenSafe={step3ScreenSafe}
             t={t}
           />
-          <GuidedStep1Flow screen={step1ScreenId} form={form} update={update} t={t} />
+          <GuidedStep1Flow screen={step1ScreenId} form={form} update={update} patchForm={patchForm} t={t} />
           <div className="flow-step-foot">
             {err ? <div className="error">{err}</div> : null}
             <div className="actions actions--guided actions--above-snapshot">
               {step1ScreenSafe > 0 ? (
-                <button type="button" className="btn btn-secondary" onClick={prev} disabled={saving || disabled}>
+                <button type="button" className="btn btn-secondary" onClick={prev} disabled={inputsLocked}>
                   {t("app.actions.prev")}
                 </button>
               ) : null}
-              <button type="button" className="btn btn-primary btn-primary--guided" onClick={next} disabled={saving || disabled}>
+              <button type="button" className="btn btn-primary btn-primary--guided" onClick={next} disabled={inputsLocked}>
                 {step1IsLastScreen ? t("app.actions.step1Finish") : t("app.actions.step1Next")}
               </button>
             </div>
@@ -255,10 +277,10 @@ export function AdminEvalQuestionnaireForm({ draft, onChange, onSave, saving, di
           <div className="flow-step-foot">
             {err ? <div className="error">{err}</div> : null}
             <div className="actions actions--guided actions--above-snapshot">
-              <button type="button" className="btn btn-secondary" onClick={prev} disabled={saving || disabled}>
+              <button type="button" className="btn btn-secondary" onClick={prev} disabled={inputsLocked}>
                 {t("app.actions.prev")}
               </button>
-              <button type="button" className="btn btn-primary btn-primary--guided" onClick={next} disabled={saving || disabled}>
+              <button type="button" className="btn btn-primary btn-primary--guided" onClick={next} disabled={inputsLocked}>
                 {step2IsLastScreen ? t("app.actions.step2Finish") : t("app.actions.step2Next")}
               </button>
             </div>
@@ -294,10 +316,10 @@ export function AdminEvalQuestionnaireForm({ draft, onChange, onSave, saving, di
           <div className="flow-step-foot">
             {err ? <div className="error">{err}</div> : null}
             <div className="actions actions--guided actions--above-snapshot">
-              <button type="button" className="btn btn-secondary" onClick={prev} disabled={saving || disabled}>
+              <button type="button" className="btn btn-secondary" onClick={prev} disabled={inputsLocked}>
                 {t("app.actions.prev")}
               </button>
-              <button type="button" className="btn btn-primary btn-primary--guided" onClick={next} disabled={saving || disabled}>
+              <button type="button" className="btn btn-primary btn-primary--guided" onClick={next} disabled={inputsLocked}>
                 {step3IsLastScreen ? t("admin.eval.expectedStepNext") : t("app.actions.step3Next")}
               </button>
             </div>
@@ -318,7 +340,7 @@ export function AdminEvalQuestionnaireForm({ draft, onChange, onSave, saving, di
                 value={draft.reachSchools}
                 onChange={(e) => updateMeta("reachSchools", e.target.value)}
                 placeholder={t("admin.eval.schoolsPlaceholder")}
-                disabled={disabled || saving}
+                disabled={inputsLocked}
               />
             </label>
             <label className="admin-eval__span2">
@@ -328,7 +350,7 @@ export function AdminEvalQuestionnaireForm({ draft, onChange, onSave, saving, di
                 value={draft.matchSchools}
                 onChange={(e) => updateMeta("matchSchools", e.target.value)}
                 placeholder={t("admin.eval.schoolsPlaceholder")}
-                disabled={disabled || saving}
+                disabled={inputsLocked}
               />
             </label>
             <label className="admin-eval__span2">
@@ -338,7 +360,7 @@ export function AdminEvalQuestionnaireForm({ draft, onChange, onSave, saving, di
                 value={draft.safetySchools}
                 onChange={(e) => updateMeta("safetySchools", e.target.value)}
                 placeholder={t("admin.eval.schoolsPlaceholder")}
-                disabled={disabled || saving}
+                disabled={inputsLocked}
               />
             </label>
             <label className="admin-eval__span2">
@@ -347,7 +369,7 @@ export function AdminEvalQuestionnaireForm({ draft, onChange, onSave, saving, di
                 value={draft.forbiddenSchools}
                 onChange={(e) => updateMeta("forbiddenSchools", e.target.value)}
                 placeholder={t("admin.eval.forbiddenPlaceholder")}
-                disabled={disabled || saving}
+                disabled={inputsLocked}
               />
             </label>
             <label className="admin-eval__span2">
@@ -356,19 +378,19 @@ export function AdminEvalQuestionnaireForm({ draft, onChange, onSave, saving, di
                 rows={2}
                 value={draft.notes}
                 onChange={(e) => updateMeta("notes", e.target.value)}
-                disabled={disabled || saving}
+                disabled={inputsLocked}
               />
             </label>
           </div>
           {err ? <div className="error">{err}</div> : null}
           <div className="actions actions--guided">
-            <button type="button" className="btn btn-secondary" onClick={prev} disabled={saving || disabled}>
+            <button type="button" className="btn btn-secondary" onClick={prev} disabled={inputsLocked}>
               {t("app.actions.prev")}
             </button>
             <button
               type="button"
               className="admin-portal__btn admin-portal__btn--primary"
-              disabled={saving || disabled}
+              disabled={inputsLocked}
               onClick={() => {
                 if (!draft.title.trim()) {
                   setErr(t("admin.errors.eval_title_required"));

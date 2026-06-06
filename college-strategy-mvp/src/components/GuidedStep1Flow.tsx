@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { FormState } from "../types";
 import type { Translate } from "../i18n/LanguageContext";
 import { getEffectiveIntake, INTAKE_OTHER_VALUE, INTAKE_PRESETS } from "../lib/intakeTerm";
+import { GuidedFieldPicker } from "./guidedStepShared";
 
 export type Step1ScreenId = "intake" | "identity" | "environment" | "budget";
 
@@ -54,13 +55,38 @@ export function GuidedStep1Flow({
   screen,
   form,
   update,
+  patchForm,
   t,
+  useButtonPickers = false,
 }: {
   screen: Step1ScreenId;
   form: FormState;
   update: Updater;
+  patchForm?: (patch: Partial<FormState>) => void;
   t: Translate;
+  useButtonPickers?: boolean;
 }) {
+  const choose = t("form.opt.choose");
+  const intakeValue = (INTAKE_PRESETS as readonly string[]).includes(form.intakeTerm)
+    ? form.intakeTerm
+    : form.intakeTerm === INTAKE_OTHER_VALUE
+      ? INTAKE_OTHER_VALUE
+      : "";
+
+  function setIntakeTerm(v: string) {
+    if (patchForm) {
+      if (v === INTAKE_OTHER_VALUE) patchForm({ intakeTerm: INTAKE_OTHER_VALUE });
+      else patchForm({ intakeTerm: v, intakeOtherDetail: "" });
+      return;
+    }
+    if (v === INTAKE_OTHER_VALUE) {
+      update("intakeTerm", INTAKE_OTHER_VALUE);
+    } else {
+      update("intakeTerm", v);
+      update("intakeOtherDetail", "");
+    }
+  }
+
   switch (screen) {
     case "intake":
       return (
@@ -69,35 +95,18 @@ export function GuidedStep1Flow({
             {t("wizard.s1.intake.q")}
           </h2>
           <ContextLine screenId="intake" t={t} />
-          <select
-            className="select-modern select-modern--action"
+          <GuidedFieldPicker
             id="intakeTerm"
-            aria-labelledby="gq-s1-intake"
-            value={
-              (INTAKE_PRESETS as readonly string[]).includes(form.intakeTerm)
-                ? form.intakeTerm
-                : form.intakeTerm === INTAKE_OTHER_VALUE
-                  ? INTAKE_OTHER_VALUE
-                  : ""
-            }
-            onChange={(e) => {
-              const v = e.target.value;
-              if (v === INTAKE_OTHER_VALUE) {
-                update("intakeTerm", INTAKE_OTHER_VALUE);
-              } else {
-                update("intakeTerm", v);
-                update("intakeOtherDetail", "");
-              }
-            }}
-          >
-            <option value="">{t("form.opt.choose")}</option>
-            {INTAKE_PRESETS.map((term) => (
-              <option key={term} value={term}>
-                {term}
-              </option>
-            ))}
-            <option value={INTAKE_OTHER_VALUE}>{t("form.opt.intakeOther")}</option>
-          </select>
+            labelledBy="gq-s1-intake"
+            value={intakeValue}
+            placeholder={choose}
+            useButtonPickers={useButtonPickers}
+            options={[
+              ...INTAKE_PRESETS.map((term) => ({ value: term, label: term })),
+              { value: INTAKE_OTHER_VALUE, label: t("form.opt.intakeOther") },
+            ]}
+            onChange={setIntakeTerm}
+          />
           {form.intakeTerm === INTAKE_OTHER_VALUE && (
             <div className="guided-screen__followup">
               <label className="field-sub-label" htmlFor="intakeOtherDetail">
@@ -124,17 +133,18 @@ export function GuidedStep1Flow({
             {t("wizard.s1.identity.q")}
           </h2>
           <ContextLine screenId="identity" t={t} />
-          <select
-            className="select-modern select-modern--action"
-            aria-labelledby="gq-s1-id"
+          <GuidedFieldPicker
+            labelledBy="gq-s1-id"
             value={form.applicantIdentity}
-            onChange={(e) => update("applicantIdentity", e.target.value as FormState["applicantIdentity"])}
-          >
-            <option value="">{t("form.opt.choose")}</option>
-            <option value="intl">{t("form.opt.idIntl")}</option>
-            <option value="us_citizen">{t("form.opt.idUs")}</option>
-            <option value="other">{t("form.opt.idOther")}</option>
-          </select>
+            placeholder={choose}
+            useButtonPickers={useButtonPickers}
+            options={[
+              { value: "intl", label: t("form.opt.idIntl") },
+              { value: "us_citizen", label: t("form.opt.idUs") },
+              { value: "other", label: t("form.opt.idOther") },
+            ]}
+            onChange={(v) => update("applicantIdentity", v)}
+          />
         </ScreenShell>
       );
 
@@ -185,19 +195,20 @@ export function GuidedStep1Flow({
             {t("wizard.s1.budget.q")}
           </h2>
           <ContextLine screenId="budget" t={t} />
-          <select
-            className="select-modern select-modern--action"
-            aria-labelledby="gq-s1-budget"
+          <GuidedFieldPicker
+            labelledBy="gq-s1-budget"
             value={form.budget}
-            onChange={(e) => update("budget", e.target.value as FormState["budget"])}
-          >
-            <option value="">{t("form.opt.choose")}</option>
-            <option value="full_pay">{t("form.opt.budgetFull")}</option>
-            <option value="high_budget">{t("form.opt.budgetHigh")}</option>
-            <option value="budget_cap">{t("form.opt.budgetCap")}</option>
-            <option value="need_aid">{t("form.opt.budgetAid")}</option>
-            <option value="unsure">{t("form.opt.budgetUnsure")}</option>
-          </select>
+            placeholder={choose}
+            useButtonPickers={useButtonPickers}
+            options={[
+              { value: "full_pay", label: t("form.opt.budgetFull") },
+              { value: "high_budget", label: t("form.opt.budgetHigh") },
+              { value: "budget_cap", label: t("form.opt.budgetCap") },
+              { value: "need_aid", label: t("form.opt.budgetAid") },
+              { value: "unsure", label: t("form.opt.budgetUnsure") },
+            ]}
+            onChange={(v) => update("budget", v)}
+          />
         </ScreenShell>
       );
 

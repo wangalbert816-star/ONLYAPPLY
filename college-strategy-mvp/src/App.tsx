@@ -831,10 +831,12 @@ export default function App() {
     const root = document.documentElement;
     if (view === "form" && flowStarted) {
       root.setAttribute("data-questionnaire", "");
-    } else {
+    } else if (view !== "admin") {
       root.removeAttribute("data-questionnaire");
     }
-    return () => root.removeAttribute("data-questionnaire");
+    return () => {
+      if (view !== "admin") root.removeAttribute("data-questionnaire");
+    };
   }, [flowStarted, view]);
 
   useEffect(() => {

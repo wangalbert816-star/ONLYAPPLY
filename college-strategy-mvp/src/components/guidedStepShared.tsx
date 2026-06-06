@@ -224,3 +224,61 @@ export function riskFeedback(form: FormState, t: Translate): string | null {
   if (form.riskStyle === "balanced") return t("wizard.s3.risk.fbBal");
   return t("wizard.s3.risk.fbAgg");
 }
+
+type PickerOption<T extends string> = { value: T; label: string };
+
+export function GuidedFieldPicker<T extends string>({
+  id,
+  labelledBy,
+  value,
+  options,
+  placeholder,
+  onChange,
+  useButtonPickers = false,
+}: {
+  id?: string;
+  labelledBy?: string;
+  value: T | "";
+  options: readonly PickerOption<T>[];
+  placeholder: string;
+  onChange: (value: T) => void;
+  useButtonPickers?: boolean;
+}) {
+  if (useButtonPickers) {
+    return (
+      <div className="major-preset-group guided-field-picker" role="listbox" aria-labelledby={labelledBy}>
+        <div className="major-preset-group__options">
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              role="option"
+              aria-selected={value === opt.value}
+              className={`major-preset${value === opt.value ? " major-preset--selected" : ""}`}
+              onClick={() => onChange(opt.value)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <select
+      className="select-modern select-modern--action"
+      id={id}
+      aria-labelledby={labelledBy}
+      value={value}
+      onChange={(e) => onChange(e.target.value as T)}
+    >
+      <option value="">{placeholder}</option>
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+  );
+}

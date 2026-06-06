@@ -21,7 +21,12 @@ function normalizeSchoolNameInput(name) {
     .trim();
 }
 
-function pick(rule, locale) {
+function pick(rule, locale, short = false) {
+  if (short) {
+    const shortKey = locale === "en" ? "shortEn" : "shortZh";
+    if (rule[shortKey]) return rule[shortKey];
+    return locale === "en" ? "undergraduate offerings" : "本科项目";
+  }
   return locale === "en" ? rule.en : rule.zh;
 }
 
@@ -29,8 +34,12 @@ function applyRules(text, rules, locale) {
   let s = text;
   for (const rule of rules) {
     const rep = pick(rule, locale);
-    if (rep && s.includes(rep)) continue;
-    s = s.replace(rule.pattern, rep);
+    let usedLong = false;
+    s = s.replace(rule.pattern, () => {
+      if (usedLong) return pick(rule, locale, true);
+      usedLong = true;
+      return rep;
+    });
   }
   return s.replace(/\s{2,}/g, " ").trim();
 }
@@ -229,6 +238,18 @@ const SCHOOL_GRAD_RULES = [
         pattern: /Tuck(\s+School(\s+of\s+Business)?)?/gi,
         zh: "Dartmouth 本科相关专业（Tuck 为研究生商学院，非本科路径）",
         en: "Dartmouth undergraduate majors (Tuck is graduate-only—not an undergrad school)",
+      },
+    ],
+  },
+  {
+    schoolMatch: /rochester|罗切斯特/i,
+    replacements: [
+      {
+        pattern: /Simon(\s+Business\s+School)?/gi,
+        zh: "Rochester 本科商科/创业相关方向（Simon 为研究生商学院，非本科路径）",
+        en: "Rochester undergraduate business/entrepreneurship paths (Simon is graduate-only—not an undergrad school)",
+        shortZh: "本科商科项目",
+        shortEn: "undergrad business offerings",
       },
     ],
   },

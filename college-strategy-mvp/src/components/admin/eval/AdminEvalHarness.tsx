@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLanguage } from "../../../i18n/LanguageContext";
 import type { Locale } from "../../../i18n/strings";
 import type { ProfileDimensionKey } from "../../../lib/fiveDimensionProfile";
@@ -24,6 +24,8 @@ import {
 } from "../../../lib/admin/evalReviewState";
 import { AdminEvalQuestionnaireForm } from "../AdminEvalQuestionnaireForm";
 import { AdminEvalReviewForm } from "./AdminEvalReviewForm";
+import { EvalCaseDetail } from "./EvalCaseDetail";
+import { EvalCaseList } from "./EvalCaseList";
 import {
   createAdminEvalCase,
   createAdminEvalRun,
@@ -96,6 +98,12 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
   const [dashboard, setDashboard] = useState<AdminEvalDashboard | null>(null);
   const [exporting, setExporting] = useState<string | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [libraryPanel, setLibraryPanel] = useState<"list" | "detail" | "add">("list");
+  const [generatePanel, setGeneratePanel] = useState<"list" | "detail">("list");
+  const [reviewPanel, setReviewPanel] = useState<"list" | "detail">("list");
+  const prevStepRef = useRef<EvalStep>(step);
+  const selectedRunIdRef = useRef(selectedRunId);
+  selectedRunIdRef.current = selectedRunId;
 
   const profileLabel = useCallback(
     (key: ProfileDimensionKey) => t(`admin.evalHarness.profile.${key}`),
@@ -130,8 +138,8 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
     try {
       await refreshCases();
       const { runs } = await listAdminEvalRuns(token);
-      const runId = selectedRunId || runs[0]?.id || "";
-      if (runId && runId !== selectedRunId) setSelectedRunId(runId);
+      const runId = selectedRunIdRef.current || runs[0]?.id || "";
+      if (runId && runId !== selectedRunIdRef.current) setSelectedRunId(runId);
       if (runId) await loadRunDetail(runId);
       await refreshDashboard();
     } catch (e) {
@@ -139,7 +147,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [loadRunDetail, refreshCases, refreshDashboard, selectedRunId, t, token]);
+  }, [loadRunDetail, refreshCases, refreshDashboard, t, token]);
 
   useEffect(() => {
     void refreshAll();
@@ -149,6 +157,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
     if (loading) return;
     if (cases.length === 0) {
       setAddingCase(true);
+      setLibraryPanel("add");
       setSelectedCaseId("");
       return;
     }
@@ -159,6 +168,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
 
   const activeCases = useMemo(() => cases.filter((c) => c.active), [cases]);
   const selectedCase = useMemo(() => cases.find((c) => c.id === selectedCaseId) ?? null, [cases, selectedCaseId]);
+  const showAddForm = addingCase || libraryPanel === "add" || (cases.length === 0 && !loading);
 
   const reviewableResults = useMemo(
     () => runDetail?.results.filter((r) => r.status === "ok" && r.case) ?? [],
@@ -182,11 +192,24 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
   }, [selectedReviewRow, profileLabel]);
 
   useEffect(() => {
-    if (reviewableResults.length === 0) return;
-    setReviewCaseId((prev) =>
-      prev && reviewableResults.some((r) => r.caseId === prev) ? prev : reviewableResults[0].caseId,
-    );
-  }, [reviewableResults]);
+    const prev = prevStepRef.current;
+    if (step === "generate" && prev !== "generate" && prev !== "library") {
+      setGeneratePanel("list");
+    }
+    if (step === "review" && prev !== "review") {
+      if (reviewableResults.length === 1) {
+        setReviewCaseId(reviewableResults[0].caseId);
+        setReviewPanel("detail");
+      } else if (reviewableResults.length > 1 && prev !== "generate") {
+        setReviewCaseId("");
+        setReviewPanel("list");
+      }
+    }
+    if (step === "library" && prev !== "library" && !addingCase) {
+      setLibraryPanel("list");
+    }
+    prevStepRef.current = step;
+  }, [addingCase, step, reviewableResults]);
 
   useEffect(() => {
     if (step !== "summary" || !selectedRunId) return;
@@ -224,6 +247,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
       setCaseDraft(emptyEvalCaseDraft(caseDraft.locale));
       setAddingCase(false);
       setSelectedCaseId(created.id);
+      setLibraryPanel("detail");
       await refreshCases();
     } catch (e) {
       setPanelError(evalErrorMessage((e as Error & { code?: string }).code, t));
@@ -248,6 +272,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
       await generateAdminEvalRunCase(token, run.id, selectedCaseId);
       await loadRunDetail(run.id);
       setReviewCaseId(selectedCaseId);
+      setReviewPanel("detail");
       setStep("review");
     } catch (e) {
       setPanelError(evalErrorMessage((e as Error & { code?: string }).code, t));
@@ -342,35 +367,36 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
           <section className="admin-eval__section">
             <h3 className="admin-eval__heading">{t("admin.evalHarness.steps.library")}</h3>
             <p className="admin-eval__sub">{t("admin.evalHarness.stepsLead.library")}</p>
-            {cases.length > 0 && !addingCase ? (
-              <div className="admin-eval__case-picker">
-                <label className="admin-eval__case-select">
-                  {t("admin.eval.caseSelectLabel")}
-                  <select value={selectedCaseId} onChange={(e) => setSelectedCaseId(e.target.value)} disabled={busy || loading}>
-                    {cases.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.title}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <div className="admin-eval__case-picker-actions">
-                  <button type="button" className="admin-portal__btn admin-portal__btn--primary" disabled={busy} onClick={() => { setCaseDraft(emptyEvalCaseDraft(locale)); setAddingCase(true); }}>
-                    {t("admin.eval.addAnotherCase")}
-                  </button>
-                  <button type="button" className="admin-portal__btn admin-portal__btn--ghost" disabled={busy || !selectedCaseId} onClick={() => void onRun(async () => { await deleteAdminEvalCase(token, selectedCaseId); await refreshCases(); })}>
-                    {t("admin.eval.delete")}
-                  </button>
-                </div>
-              </div>
-            ) : (
+            {showAddForm ? (
               <>
-                <AdminEvalQuestionnaireForm draft={caseDraft} onChange={setCaseDraft} onSave={() => void handleSaveCase()} saving={savingCase} disabled={busy} />
+                <AdminEvalQuestionnaireForm draft={caseDraft} onChange={setCaseDraft} onSave={() => void handleSaveCase()} saving={savingCase} />
                 {cases.length > 0 ? (
-                  <button type="button" className="admin-portal__btn admin-portal__btn--ghost admin-eval__cancel-add" onClick={() => setAddingCase(false)}>
-                    {t("admin.eval.cancelAddCase")}
+                  <button type="button" className="admin-portal__btn admin-portal__btn--ghost admin-eval__cancel-add" onClick={() => { setAddingCase(false); setLibraryPanel("list"); }}>
+                    {t("admin.evalHarness.backToList")}
                   </button>
                 ) : null}
+              </>
+            ) : libraryPanel === "detail" && selectedCase ? (
+              <EvalCaseDetail
+                evalCase={selectedCase}
+                results={runDetail?.results}
+                t={t}
+                onBack={() => setLibraryPanel("list")}
+                onDelete={() => void onRun(async () => { await deleteAdminEvalCase(token, selectedCase.id); setLibraryPanel("list"); await refreshCases(); })}
+                onGenerate={() => { setGeneratePanel("detail"); setStep("generate"); }}
+              />
+            ) : (
+              <>
+                <EvalCaseList
+                  cases={cases}
+                  selectedId={selectedCaseId}
+                  results={runDetail?.results}
+                  onSelect={(id) => { setSelectedCaseId(id); setLibraryPanel("detail"); }}
+                  t={t}
+                />
+                <button type="button" className="admin-portal__btn admin-portal__btn--primary admin-eval-case-list__add" disabled={busy} onClick={() => { setCaseDraft(emptyEvalCaseDraft(locale)); setAddingCase(true); setLibraryPanel("add"); }}>
+                  {t("admin.eval.addAnotherCase")}
+                </button>
               </>
             )}
           </section>
@@ -379,22 +405,41 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
         {step === "generate" ? (
           <section className="admin-eval__section">
             <h3 className="admin-eval__heading">{t("admin.evalHarness.steps.generate")}</h3>
-            <p className="admin-eval__sub">
-              {selectedCase ? t("admin.eval.testLeadOne", { name: selectedCase.title }) : t("admin.eval.testLeadPick")}
-            </p>
-            <div className="admin-eval-harness__generate-card">
-              <p className="admin-eval-harness__versions">
-                {t("admin.evalHarness.versionLine", {
-                  prompt: REPORT_PROMPT_VERSION,
-                  rubric: REPORT_RUBRIC_VERSION,
-                  template: REPORT_TEMPLATE_VERSION,
-                  model: "—",
-                })}
-              </p>
-              <button type="button" className="admin-portal__btn admin-portal__btn--primary" disabled={testing || busy || !selectedCaseId} onClick={() => void handleGenerate()}>
-                {testing ? t("admin.eval.generatingLabel") : t("admin.eval.startTest")}
-              </button>
-            </div>
+            {generatePanel === "list" || !selectedCase ? (
+              <>
+                <p className="admin-eval__sub">{t("admin.evalHarness.pickCaseToGenerate")}</p>
+                <EvalCaseList
+                  cases={activeCases.length ? activeCases : cases}
+                  selectedId={selectedCaseId}
+                  results={runDetail?.results}
+                  onSelect={(id) => { setSelectedCaseId(id); setGeneratePanel("detail"); }}
+                  t={t}
+                />
+              </>
+            ) : selectedCase ? (
+              <>
+                <EvalCaseDetail
+                  evalCase={selectedCase}
+                  results={runDetail?.results}
+                  t={t}
+                  onBack={() => setGeneratePanel("list")}
+                />
+                <div className="admin-eval-harness__generate-card">
+                  <p className="admin-eval__sub">{t("admin.eval.testLeadOne", { name: selectedCase.title })}</p>
+                  <p className="admin-eval-harness__versions">
+                    {t("admin.evalHarness.versionLine", {
+                      prompt: REPORT_PROMPT_VERSION,
+                      rubric: REPORT_RUBRIC_VERSION,
+                      template: REPORT_TEMPLATE_VERSION,
+                      model: "—",
+                    })}
+                  </p>
+                  <button type="button" className="admin-portal__btn admin-portal__btn--primary" disabled={testing || busy} onClick={() => void handleGenerate()}>
+                    {testing ? t("admin.eval.generatingLabel") : t("admin.eval.startTest")}
+                  </button>
+                </div>
+              </>
+            ) : null}
           </section>
         ) : null}
 
@@ -405,35 +450,35 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
                 <h3 className="admin-eval__heading">{t("admin.evalHarness.steps.review")}</h3>
                 <p className="admin-eval__empty">{t("admin.evalHarness.noReportYet")}</p>
               </>
-            ) : (
+            ) : reviewPanel === "list" ? (
               <>
-                {reviewableResults.length > 1 ? (
-                  <label className="admin-eval-harness__inline-select">
-                    {t("admin.eval.scoreSelectLabel")}
-                    <select value={reviewCaseId} onChange={(e) => setReviewCaseId(e.target.value)}>
-                      {reviewableResults.map((row) => (
-                        <option key={row.caseId} value={row.caseId}>
-                          {row.case?.title ?? row.caseId}
-                          {row.review?.status === "submitted" ? ` · ${t("admin.evalHarness.submitted")}` : ""}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                ) : null}
-                {selectedReviewRow?.case && runDetail && reviewDraft ? (
-                  <AdminEvalReviewForm
-                    evalCase={selectedReviewRow.case}
-                    run={runDetail.run}
-                    result={selectedReviewRow}
-                    draft={reviewDraft}
-                    onChange={setReviewDraft}
-                    onSave={(status) => void handleSaveReview(status)}
-                    saving={savingReview}
-                    t={t}
-                  />
-                ) : null}
+                <h3 className="admin-eval__heading">{t("admin.evalHarness.steps.review")}</h3>
+                <p className="admin-eval__sub">{t("admin.evalHarness.pickCaseToReview")}</p>
+                <EvalCaseList
+                  cases={reviewableResults.map((r) => r.case!).filter(Boolean)}
+                  selectedId={reviewCaseId}
+                  results={runDetail?.results}
+                  onSelect={(id) => { setReviewCaseId(id); setReviewPanel("detail"); }}
+                  t={t}
+                />
               </>
-            )}
+            ) : selectedReviewRow?.case && runDetail && reviewDraft ? (
+              <>
+                <button type="button" className="admin-eval-case-detail__back admin-portal__btn admin-portal__btn--ghost" onClick={() => setReviewPanel("list")}>
+                  {t("admin.evalHarness.backToList")}
+                </button>
+                <AdminEvalReviewForm
+                  evalCase={selectedReviewRow.case}
+                  run={runDetail.run}
+                  result={selectedReviewRow}
+                  draft={reviewDraft}
+                  onChange={setReviewDraft}
+                  onSave={(status) => void handleSaveReview(status)}
+                  saving={savingReview}
+                  t={t}
+                />
+              </>
+            ) : null}
           </section>
         ) : null}
 

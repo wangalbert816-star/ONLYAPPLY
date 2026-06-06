@@ -1,6 +1,6 @@
 /** Eval harness constants — prompt/rubric evaluation, not model fine-tuning. */
 
-export const REPORT_PROMPT_VERSION = "2026.06.1";
+export const REPORT_PROMPT_VERSION = "2026.06.2";
 export const REPORT_RUBRIC_VERSION = "1.0";
 export const REPORT_TEMPLATE_VERSION = "1.0";
 

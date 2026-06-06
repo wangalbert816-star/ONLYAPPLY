@@ -7,6 +7,7 @@ import type { GuideTouch } from "./GuidedQuestionnaire";
 import {
   DEALBREAKER_PRESET_KEYS,
   GuidedContextLine,
+  GuidedFieldPicker,
   GuidedScreenShell,
   activityItemMeetsWizardRequirement,
   createActivityItem,
@@ -48,6 +49,7 @@ export function GuidedStep3Flow({
   guideTouch,
   markTouch,
   onSkipAdvance,
+  useButtonPickers = false,
 }: {
   screen: Step3ScreenId;
   form: FormState;
@@ -56,7 +58,9 @@ export function GuidedStep3Flow({
   guideTouch: GuideTouch;
   markTouch: (k: keyof GuideTouch) => void;
   onSkipAdvance: () => void;
+  useButtonPickers?: boolean;
 }) {
+  const choose = t("form.opt.choose");
   const structuredActivities = form.structuredActivities ?? [];
 
   useEffect(() => {
@@ -123,17 +127,18 @@ export function GuidedStep3Flow({
             {t("wizard.s3.risk.q")}
           </h2>
           <GuidedContextLine step={3} screenId="risk" t={t} />
-          <select
-            className="select-modern select-modern--action"
-            aria-labelledby="gq-s3-risk"
+          <GuidedFieldPicker
+            labelledBy="gq-s3-risk"
             value={form.riskStyle}
-            onChange={(e) => update("riskStyle", e.target.value as FormState["riskStyle"])}
-          >
-            <option value="">{t("form.opt.choose")}</option>
-            <option value="conservative">{t("form.opt.riskCon")}</option>
-            <option value="balanced">{t("form.opt.riskBal")}</option>
-            <option value="aggressive">{t("form.opt.riskAgg")}</option>
-          </select>
+            placeholder={choose}
+            useButtonPickers={useButtonPickers}
+            options={[
+              { value: "conservative", label: t("form.opt.riskCon") },
+              { value: "balanced", label: t("form.opt.riskBal") },
+              { value: "aggressive", label: t("form.opt.riskAgg") },
+            ]}
+            onChange={(v) => update("riskStyle", v)}
+          />
           {(() => {
             const fb = riskFeedback(form, t);
             return fb ? <p className="field-feedback">{fb}</p> : null;

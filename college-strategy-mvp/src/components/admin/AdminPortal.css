@@ -1,5 +1,6 @@
 .admin-portal {
   position: relative;
+  z-index: 1;
   min-height: 100vh;
   padding: calc(var(--app-top-chrome-h, 0px) + 1.5rem) 1.25rem 3rem;
   max-width: 1120px;
@@ -981,7 +982,30 @@
 }
 
 .admin-eval-questionnaire {
+  position: relative;
+  z-index: 1;
   margin-top: 0.75rem;
+}
+
+.admin-eval-questionnaire.app--flow {
+  padding-top: 0;
+}
+
+.admin-eval-questionnaire .guided-screen {
+  animation: none;
+}
+
+.admin-eval-questionnaire input,
+.admin-eval-questionnaire textarea,
+.admin-eval-questionnaire button,
+.admin-eval-questionnaire select {
+  pointer-events: auto;
+}
+
+.admin-eval-questionnaire__card {
+  position: relative;
+  z-index: 1;
+  max-width: none;
 }
 
 .admin-eval-questionnaire .steps-caption {
@@ -1005,10 +1029,6 @@
 
 .admin-eval-questionnaire .step-dot.on {
   background: #006644;
-}
-
-.admin-eval-questionnaire__card {
-  max-width: none;
 }
 
 .admin-eval-questionnaire__expected .actions {
@@ -1346,6 +1366,164 @@
 .admin-eval-harness__export-card span {
   font-size: 0.78rem;
   color: var(--admin-muted, #64748b);
+}
+
+.admin-eval-case-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.admin-eval-case-list__item {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--admin-border, #e2e8f0);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  background: #fff;
+  cursor: pointer;
+  display: grid;
+  gap: 0.35rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.admin-eval-case-list__item:hover {
+  border-color: rgba(37, 99, 235, 0.45);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
+}
+
+.admin-eval-case-list__item--active {
+  border-color: var(--admin-accent, #2563eb);
+  background: rgba(37, 99, 235, 0.04);
+}
+
+.admin-eval-case-list__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.admin-eval-case-list__head strong {
+  font-size: 0.95rem;
+}
+
+.admin-eval-case-list__status {
+  flex-shrink: 0;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  background: #f1f5f9;
+  color: var(--admin-muted, #64748b);
+}
+
+.admin-eval-case-list__status--generated,
+.admin-eval-case-list__status--approved {
+  background: rgba(34, 197, 94, 0.12);
+  color: #15803d;
+}
+
+.admin-eval-case-list__status--draft {
+  background: rgba(234, 179, 8, 0.12);
+  color: #a16207;
+}
+
+.admin-eval-case-list__status--submitted {
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--admin-accent, #2563eb);
+}
+
+.admin-eval-case-list__status--error {
+  background: rgba(239, 68, 68, 0.1);
+  color: #b91c1c;
+}
+
+.admin-eval-case-list__meta {
+  font-size: 0.75rem;
+  color: var(--admin-muted, #94a3b8);
+}
+
+.admin-eval-case-list__schools {
+  font-size: 0.8rem;
+  color: var(--admin-muted, #64748b);
+  line-height: 1.35;
+}
+
+.admin-eval-case-list__enter {
+  font-size: 0.78rem;
+  color: var(--admin-accent, #2563eb);
+  font-weight: 600;
+}
+
+.admin-eval-case-list__add {
+  margin-top: 0.25rem;
+}
+
+.admin-eval-case-detail {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.admin-eval-case-detail__back {
+  justify-self: start;
+  margin-bottom: 0.25rem;
+}
+
+.admin-eval-case-detail__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.admin-eval-case-detail__head h4 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.admin-eval-case-detail__meta {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--admin-muted, #94a3b8);
+}
+
+.admin-eval-case-detail__schools {
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.admin-eval-case-detail__schools div {
+  display: grid;
+  grid-template-columns: 3.5rem 1fr;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.admin-eval-case-detail__schools dt {
+  margin: 0;
+  color: var(--admin-muted, #64748b);
+}
+
+.admin-eval-case-detail__schools dd {
+  margin: 0;
+}
+
+.admin-eval-case-detail__notes {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--admin-muted, #64748b);
+}
+
+.admin-eval-case-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .admin-eval__section--flush {

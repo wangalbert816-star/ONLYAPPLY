@@ -132,6 +132,13 @@ export function AdminPortal({ onBack }: Props) {
     };
   }, [user, token, authLoading, refreshAll]);
 
+  useEffect(() => {
+    document.documentElement.setAttribute("data-hide-brand-wall", "");
+    return () => {
+      document.documentElement.removeAttribute("data-hide-brand-wall");
+    };
+  }, []);
+
   if (!configured) {
     return (
       <div className="admin-portal admin-portal--center">

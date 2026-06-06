@@ -476,7 +476,10 @@ export function registerAdminEvalRoutes(app, { requireAdmin, generateReportForAd
 
       let resultPayload;
       try {
-        const generated = await generateReportForAdmin(evalCase.report_body);
+        const generated = await generateReportForAdmin({
+          ...(evalCase.report_body ?? {}),
+          forbiddenSchools: evalCase.forbidden_schools ?? [],
+        });
         resultPayload = {
           status: "ok",
           report_payload: generated.report,
