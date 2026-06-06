@@ -15,6 +15,7 @@ import { buildApplicationInfoRows } from "../../lib/applicationInfoRows";
 import { buildFiveDimensionProfile, type ProfileDimensionKey } from "../../lib/fiveDimensionProfile";
 import type { ActivityItem, FormState, GeoPref, ReportPayload, SupplementaryNote } from "../../types";
 import { BrandLogo } from "../BrandLogo";
+import { HighSchoolSearchCombobox } from "../HighSchoolSearchCombobox";
 import { ActivityCard } from "../ActivityCard";
 import { ExportActivitiesCsvButton } from "../ExportActivitiesCsvButton";
 import { AccountReportSnapshot } from "./AccountReportSnapshot";
@@ -720,10 +721,13 @@ export function AccountHome({
                       </label>
                       <label>
                         <span>{t("form.currentHighSchool")}</span>
-                        <input
+                        <HighSchoolSearchCombobox
                           value={profileDraft.currentHighSchool}
-                          onChange={(e) => updateProfileDraft("currentHighSchool", e.target.value)}
+                          onChange={(v) => updateProfileDraft("currentHighSchool", v)}
                           placeholder={t("form.placeholder.currentHighSchool")}
+                          emptyHint={t("form.highSchoolSearch.empty")}
+                          manualHint={t("form.highSchoolSearch.manual")}
+                          loadingHint={t("form.highSchoolSearch.loading")}
                         />
                       </label>
                       <label>

@@ -1,0 +1,64 @@
+.hs-combobox {
+  position: relative;
+  width: 100%;
+}
+
+.hs-combobox__input {
+  width: 100%;
+}
+
+.hs-combobox__list {
+  position: absolute;
+  z-index: 40;
+  left: 0;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  margin: 0;
+  padding: 0.35rem 0;
+  list-style: none;
+  max-height: min(16rem, 42vh);
+  overflow-y: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 102, 68, 0.18);
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+}
+
+.hs-combobox__option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  width: 100%;
+  padding: 0.55rem 0.85rem;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.hs-combobox__option:hover,
+.hs-combobox__option--active {
+  background: rgba(0, 102, 68, 0.08);
+}
+
+.hs-combobox__name {
+  font-weight: 600;
+  color: #1a2e1a;
+}
+
+.hs-combobox__meta {
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.hs-combobox__hint {
+  padding: 0.55rem 0.85rem;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.hs-combobox__hint--manual {
+  border-top: 1px solid rgba(0, 102, 68, 0.1);
+}

@@ -172,7 +172,7 @@
       "majorSecondary": "Artificial Intelligence",
       "schoolSize": "large",
       "campusCulturePref": "academic",
-      "geoPrefs": ["west", "northeast"],
+      "geoPrefs": ["west", "east"],
       "structuredActivities": [
         {
           "id": "1",
@@ -364,5 +364,703 @@
     ],
     "forbiddenSchools": [],
     "notes": "活动偏泛、无标化：测试个性化理由是否套话；档位应保守。"
+  },
+  {
+    "caseKey": "CASE-006",
+    "title": "高SAT低GPA · 成绩下滑 · CS · 档位争议",
+    "tags": ["split-profile", "sat-1550", "gpa-3.2", "downward", "cs", "tier-dispute"],
+    "reportBody": {
+      "locale": "zh",
+      "intakeTerm": "2027 Fall",
+      "applicantIdentity": "intl",
+      "citizenship": "中国",
+      "residenceRegion": "江苏",
+      "budget": "full_pay",
+      "testing": "will_submit",
+      "satScore": "1550",
+      "actScore": "",
+      "highSchoolSystem": "国内普高 + AP",
+      "currentHighSchool": "南京某重点高中国际部",
+      "gpa": "Unweighted 3.22 / Weighted 3.85",
+      "gpaTrend": "downward",
+      "languageScores": "TOEFL 110",
+      "academicSpecialFlags": ["low_grades"],
+      "academicSpecialNotes": "11年级因家庭变故 GPA 从 3.7 跌至 3.1，12年级回升至 3.5 但未完全恢复",
+      "majorPrimary": "Computer Science",
+      "majorSecondary": "",
+      "schoolSize": "large",
+      "campusCulturePref": "academic",
+      "geoPrefs": ["west", "any"],
+      "structuredActivities": [
+        {
+          "id": "1",
+          "name": "NOIP 省赛",
+          "kind": "competition",
+          "award": "省一等奖",
+          "description": "算法竞赛训练 2 年，省赛一等奖；无 IOI 国家队级别",
+          "majorRelated": "yes",
+          "scope": "regional"
+        },
+        {
+          "id": "2",
+          "name": "线上 CS 课程项目",
+          "kind": "activity",
+          "role": "自学",
+          "hours": "12 hrs/week",
+          "description": "完成 Stanford CS106B 等价项目集 + 个人网站全栈项目，GitHub 800+ stars",
+          "majorRelated": "yes",
+          "scope": "international"
+        }
+      ],
+      "riskStyle": "aggressive",
+      "dealbreakers": ""
+    },
+    "expectedReach": [
+      { "school": "University of Illinois Urbana-Champaign", "note": "CS 强但 GPA 是硬伤；有人标 Match 有人标 Reach" },
+      { "school": "Georgia Institute of Technology", "note": "标化够、趋势差——争议档" },
+      { "school": "University of Washington", "note": "对国际生 CS 极难，不应因 SAT 标 Match" }
+    ],
+    "expectedMatch": [
+      { "school": "Purdue University" },
+      { "school": "Ohio State University" },
+      { "school": "University of Minnesota Twin Cities" }
+    ],
+    "expectedSafety": [
+      { "school": "Michigan State University" },
+      { "school": "University of Arizona" },
+      { "school": "Iowa State University" }
+    ],
+    "forbiddenSchools": [],
+    "notes": "经典 split profile：AI 易因 SAT 1550 把 UIUC/GT 标 Match；顾问应更看 GPA 趋势。"
+  },
+  {
+    "caseKey": "CASE-007",
+    "title": "Gap Year · 影视媒体 · 作品集型 · 中文",
+    "tags": ["gap-year", "film", "portfolio", "non-traditional"],
+    "reportBody": {
+      "locale": "zh",
+      "intakeTerm": "2027 Fall",
+      "applicantIdentity": "intl",
+      "citizenship": "中国",
+      "residenceRegion": "成都",
+      "budget": "high_budget",
+      "testing": "test_optional",
+      "satScore": "",
+      "actScore": "",
+      "highSchoolSystem": "国内普高",
+      "currentHighSchool": "成都某公立高中（已毕业 gap 1 年）",
+      "gpa": "Unweighted 3.55",
+      "gpaTrend": "stable",
+      "languageScores": "TOEFL 105",
+      "academicSpecialFlags": ["gap_year"],
+      "academicSpecialNotes": "Gap year 全职制作纪录片，未再修课；高中 transcript 无 12 年级下半学期更新",
+      "majorPrimary": "Film / Media Studies",
+      "majorSecondary": "Communication",
+      "schoolSize": "medium",
+      "campusCulturePref": "balanced",
+      "geoPrefs": ["west", "east"],
+      "structuredActivities": [
+        {
+          "id": "1",
+          "name": "独立纪录片",
+          "kind": "arts",
+          "role": "导演/剪辑",
+          "hours": "40 hrs/week (gap year)",
+          "description": "跟拍成都外卖骑手 8 个月，30 分钟纪录片入围某青年影展；B站 12 万播放",
+          "outcome": "影展入围 + 媒体转载",
+          "majorRelated": "yes",
+          "scope": "regional"
+        },
+        {
+          "id": "2",
+          "name": "校广播站",
+          "kind": "club",
+          "role": "主编",
+          "description": "高中校广播站策划专题节目，负责选题、采访、后期；无全国级奖项",
+          "majorRelated": "yes",
+          "scope": "school"
+        }
+      ],
+      "riskStyle": "balanced",
+      "dealbreakers": "不想去纯理工校或无可选影视资源的学校"
+    },
+    "expectedReach": [
+      { "school": "Emerson College", "note": "影视强校但 stats 一般——专业 fit vs 录取率" },
+      { "school": "Chapman University", "note": "Dodge 电影学院路径" },
+      { "school": "UC Santa Barbara", "note": "Film & Media 可选，但 UC 对 gap year 叙事要求高" }
+    ],
+    "expectedMatch": [
+      { "school": "San Francisco State University" },
+      { "school": "California State University, Long Beach" },
+      { "school": "University of Oregon" }
+    ],
+    "expectedSafety": [
+      { "school": "Montana State University" },
+      { "school": "University of Idaho" },
+      { "school": "Eastern Washington University" }
+    ],
+    "forbiddenSchools": [],
+    "notes": "Gap year + 作品集：AI 易按 GPA/无标化推综合排名校，忽略影视专业校或标过高。"
+  },
+  {
+    "caseKey": "CASE-008",
+    "title": "CS + Music · 跨学科 · 叙事分裂",
+    "tags": ["interdisciplinary", "cs", "music", "narrative-split"],
+    "reportBody": {
+      "locale": "en",
+      "intakeTerm": "2027 Fall",
+      "applicantIdentity": "us_citizen",
+      "citizenship": "United States",
+      "residenceRegion": "Texas (Austin)",
+      "budget": "need_aid",
+      "testing": "will_submit",
+      "satScore": "1480",
+      "actScore": "",
+      "highSchoolSystem": "Public high school",
+      "currentHighSchool": "Austin area public high school",
+      "gpa": "Unweighted 3.78",
+      "gpaTrend": "upward",
+      "languageScores": "",
+      "academicSpecialFlags": [],
+      "academicSpecialNotes": "AP Music Theory 5, AP CS A 5; school has strong band program",
+      "majorPrimary": "Computer Science",
+      "majorSecondary": "Music Technology / Composition",
+      "schoolSize": "medium",
+      "campusCulturePref": "balanced",
+      "geoPrefs": ["south", "west"],
+      "structuredActivities": [
+        {
+          "id": "1",
+          "name": "Marching band section leader",
+          "kind": "arts",
+          "role": "Section leader",
+          "hours": "15 hrs/week",
+          "description": "Led 30-person trumpet section; arranged halftime show music; state UIL superior rating",
+          "majorRelated": "yes",
+          "scope": "state"
+        },
+        {
+          "id": "2",
+          "name": "Audio plugin development",
+          "kind": "activity",
+          "role": "Developer",
+          "description": "Built VST audio plugins in C++ for school orchestra; 2 plugins used in regional concerts",
+          "majorRelated": "yes",
+          "scope": "regional"
+        },
+        {
+          "id": "3",
+          "name": "Hackathon projects",
+          "kind": "competition",
+          "description": "3 local hackathons; one music-ML project won best UX; no national hackathon wins",
+          "majorRelated": "yes",
+          "scope": "local"
+        }
+      ],
+      "riskStyle": "balanced",
+      "dealbreakers": "Must have real music + tech crossover, not generic CS only"
+    },
+    "expectedReach": [
+      { "school": "Carnegie Mellon University", "note": "CS + music tech — reach for aid applicant" },
+      { "school": "Georgia Institute of Technology", "note": "Music tech minor path; not pure SCS lottery" },
+      { "school": "University of Michigan", "note": "STAMPS / LSA+Engineering narrative" }
+    ],
+    "expectedMatch": [
+      { "school": "University of Texas at Austin" },
+      { "school": "Northeastern University" },
+      { "school": "University of Rochester" }
+    ],
+    "expectedSafety": [
+      { "school": "University of Colorado Boulder" },
+      { "school": "University of Utah" },
+      { "school": "Arizona State University" }
+    ],
+    "forbiddenSchools": [],
+    "notes": "跨学科：AI 易只推 CS 排名校，忽略 music tech fit；need aid 时档位应更保守。"
+  },
+  {
+    "caseKey": "CASE-009",
+    "title": "国际生需奖助 · 高标化 · 预算硬约束",
+    "tags": ["intl", "need-aid", "budget-hard", "sat-1510"],
+    "reportBody": {
+      "locale": "zh",
+      "intakeTerm": "2027 Fall",
+      "applicantIdentity": "intl",
+      "citizenship": "印度",
+      "residenceRegion": "迪拜（长期居住）",
+      "budget": "need_aid",
+      "testing": "will_submit",
+      "satScore": "1510",
+      "actScore": "",
+      "highSchoolSystem": "IB",
+      "currentHighSchool": "Dubai IB school",
+      "gpa": "IB predicted 42/45 (≈ unweighted 3.9)",
+      "gpaTrend": "stable",
+      "languageScores": "TOEFL 112",
+      "academicSpecialFlags": [],
+      "academicSpecialNotes": "家庭收入有限，只能接受 generous merit 或 need-based 对国际生友好的校",
+      "majorPrimary": "Economics",
+      "majorSecondary": "Mathematics",
+      "schoolSize": "any",
+      "campusCulturePref": "academic",
+      "geoPrefs": ["midwest", "south", "any"],
+      "structuredActivities": [
+        {
+          "id": "1",
+          "name": "学校经济学社",
+          "kind": "club",
+          "role": "社长",
+          "description": "组织模拟联合国经济委员会与校内 case study 联赛，参与人数 80+",
+          "majorRelated": "yes",
+          "scope": "school"
+        },
+        {
+          "id": "2",
+          "name": "Kaggle 入门项目",
+          "kind": "activity",
+          "description": "自学 Python 完成 2 个 Kaggle 银牌级 notebook，聚焦 public dataset 分析",
+          "majorRelated": "yes",
+          "scope": "international"
+        }
+      ],
+      "riskStyle": "conservative",
+      "dealbreakers": "不能接受无奖学金可能的全额自费私立；不要推荐 need-blind 对国际生不存在的藤校作 reach"
+    },
+    "expectedReach": [
+      { "school": "Macalester College", "note": "对国际生 aid 相对友好；仍应是 reach" },
+      { "school": "Oberlin College", "note": "Liberal arts + econ，aid 政策需核对" },
+      { "school": "University of Richmond", "note": "Merit 可能但不应标 match" }
+    ],
+    "expectedMatch": [
+      { "school": "University of Florida" },
+      { "school": "University of Georgia" },
+      { "school": "Binghamton University" }
+    ],
+    "expectedSafety": [
+      { "school": "University of Alabama" },
+      { "school": "University of Mississippi" },
+      { "school": "University of Arkansas" }
+    ],
+    "forbiddenSchools": ["Harvard University", "Yale University", "Princeton University"],
+    "notes": "国际生 need aid：AI 常推名校 reach 却忽略 aid 现实；禁藤校测试 top_reference 泄漏。"
+  },
+  {
+    "caseKey": "CASE-010",
+    "title": "Community College 学分 · 转轨 CS · 年龄偏大",
+    "tags": ["cc-credits", "non-traditional", "cs-switch", "older-applicant"],
+    "reportBody": {
+      "locale": "en",
+      "intakeTerm": "2027 Fall",
+      "applicantIdentity": "us_citizen",
+      "citizenship": "United States",
+      "residenceRegion": "California (Inland Empire)",
+      "budget": "budget_cap",
+      "testing": "will_submit",
+      "satScore": "1320",
+      "actScore": "",
+      "highSchoolSystem": "Public high school (2019 grad)",
+      "currentHighSchool": "Riverside Community College + part-time work",
+      "gpa": "HS unweighted 3.1; CC cumulative 3.85 (24 units, calc + CS)",
+      "gpaTrend": "upward",
+      "languageScores": "",
+      "academicSpecialFlags": ["gap_year"],
+      "academicSpecialNotes": "高中毕业后工作 2 年，CC 重修 STEM；申请时为 21 岁 freshman",
+      "majorPrimary": "Computer Science",
+      "majorSecondary": "",
+      "schoolSize": "large",
+      "campusCulturePref": "any",
+      "geoPrefs": ["west", "any"],
+      "structuredActivities": [
+        {
+          "id": "1",
+          "name": "CC programming tutor",
+          "kind": "service",
+          "role": "Peer tutor",
+          "hours": "6 hrs/week",
+          "description": "Tutored intro Python and discrete math at community college learning center",
+          "majorRelated": "yes",
+          "scope": "local"
+        },
+        {
+          "id": "2",
+          "name": "Warehouse logistics automation",
+          "kind": "internship",
+          "role": "Operations assistant",
+          "description": "Family small business; built Excel+Python inventory tool saving 10 hrs/week",
+          "majorRelated": "yes",
+          "scope": "local"
+        }
+      ],
+      "riskStyle": "conservative",
+      "dealbreakers": "Must stay in California if possible; total COA under ~45k/year"
+    },
+    "expectedReach": [
+      { "school": "UC Merced", "note": "UC 对 CC 转轨友好；仍是 reach 因 CS" },
+      { "school": "Cal Poly Pomona", "note": "CS 竞争但地理 fit" },
+      { "school": "San José State University", "note": "本地 CS — 对 CC 3.85 可能是 match/reach 边界" }
+    ],
+    "expectedMatch": [
+      { "school": "California State University, Fullerton" },
+      { "school": "California State University, Long Beach" },
+      { "school": "University of California, Riverside" }
+    ],
+    "expectedSafety": [
+      { "school": "California State University, Stanislaus" },
+      { "school": "California State University, Bakersfield" },
+      { "school": "University of California, Merced" }
+    ],
+    "forbiddenSchools": [],
+    "notes": "CC + 非传统路径：AI 易忽略 CC GPA 或反向把 SJSU 标 safety；UC 档位需单独校准。"
+  },
+  {
+    "caseKey": "CASE-011",
+    "title": "D3 运动员 · Pre-law · 标化中等 · hook 边界",
+    "tags": ["athlete", "pre-law", "hook-edge", "moderate-stats"],
+    "reportBody": {
+      "locale": "en",
+      "intakeTerm": "2027 Fall",
+      "applicantIdentity": "us_citizen",
+      "citizenship": "United States",
+      "residenceRegion": "Ohio",
+      "budget": "need_aid",
+      "testing": "will_submit",
+      "satScore": "1360",
+      "actScore": "",
+      "highSchoolSystem": "Public high school",
+      "currentHighSchool": "Suburban Ohio public high school",
+      "gpa": "Unweighted 3.62",
+      "gpaTrend": "stable",
+      "languageScores": "",
+      "academicSpecialFlags": [],
+      "academicSpecialNotes": "",
+      "majorPrimary": "Political Science",
+      "majorSecondary": "Philosophy",
+      "schoolSize": "small",
+      "campusCulturePref": "balanced",
+      "geoPrefs": ["midwest", "great_lakes", "any"],
+      "structuredActivities": [
+        {
+          "id": "1",
+          "name": "Varsity lacrosse",
+          "kind": "sports",
+          "role": "Starter / captain",
+          "hours": "18 hrs/week",
+          "description": "4-year varsity; captain senior year; contacted by several D3 programs, no D1 offers",
+          "majorRelated": "no",
+          "scope": "regional"
+        },
+        {
+          "id": "2",
+          "name": "Mock trial",
+          "kind": "competition",
+          "role": "Attorney",
+          "description": "State mock trial semifinalist; led witness prep for team of 8",
+          "majorRelated": "yes",
+          "scope": "state"
+        },
+        {
+          "id": "3",
+          "name": "Campaign volunteer",
+          "kind": "service",
+          "description": "Local city council campaign: canvassing, voter data entry, 150+ hours",
+          "majorRelated": "yes",
+          "scope": "local"
+        }
+      ],
+      "riskStyle": "balanced",
+      "dealbreakers": "Prefer small campus; cold weather OK"
+    },
+    "expectedReach": [
+      { "school": "Denison University", "note": "D3 lacrosse + poli sci； athletic hook 不等于 reach 降级" },
+      { "school": "Kenyon College", "note": "Liberal arts reach；stats 略弱" },
+      { "school": "College of Wooster" }
+    ],
+    "expectedMatch": [
+      { "school": "Ohio Wesleyan University" },
+      { "school": "Wittenberg University" },
+      { "school": "Miami University (Ohio)" }
+    ],
+    "expectedSafety": [
+      { "school": "Ohio University" },
+      { "school": "Kent State University" },
+      { "school": "Bowling Green State University" }
+    ],
+    "forbiddenSchools": [],
+    "notes": "D3 hook 边界：AI 不应把 athlete 自动降档到 safety flagship，也不应夸大 hook 进 Top 20。"
+  },
+  {
+    "caseKey": "CASE-012",
+    "title": "建筑/设计 · 作品集校 vs 综合排名",
+    "tags": ["architecture", "portfolio", "rank-vs-fit"],
+    "reportBody": {
+      "locale": "en",
+      "intakeTerm": "2027 Fall",
+      "applicantIdentity": "intl",
+      "citizenship": "South Korea",
+      "residenceRegion": "Seoul",
+      "budget": "full_pay",
+      "testing": "will_submit",
+      "satScore": "1420",
+      "actScore": "",
+      "highSchoolSystem": "International school (AP)",
+      "currentHighSchool": "Seoul international school",
+      "gpa": "Unweighted 3.68",
+      "gpaTrend": "stable",
+      "languageScores": "TOEFL 106",
+      "academicSpecialFlags": [],
+      "academicSpecialNotes": "Strong art portfolio; AP Art 2D Design 5; no physics AP",
+      "majorPrimary": "Architecture",
+      "majorSecondary": "Urban Design",
+      "schoolSize": "medium",
+      "campusCulturePref": "academic",
+      "geoPrefs": ["east", "west"],
+      "structuredActivities": [
+        {
+          "id": "1",
+          "name": "Architecture portfolio",
+          "kind": "arts",
+          "description": "12-piece portfolio: 4 built models, 3 urban sketch series, 2 community pavilion proposals",
+          "majorRelated": "yes",
+          "scope": "regional"
+        },
+        {
+          "id": "2",
+          "name": "Youth architecture workshop",
+          "kind": "service",
+          "role": "Teaching assistant",
+          "description": "Assisted professor-led summer workshop for middle schoolers; taught basic Rhino modeling",
+          "majorRelated": "yes",
+          "scope": "local"
+        }
+      ],
+      "riskStyle": "balanced",
+      "dealbreakers": "Must have accredited B.Arch or strong M.Arch pipeline; reject pure liberal arts without studio"
+    },
+    "expectedReach": [
+      { "school": "Rhode Island School of Design", "note": "Portfolio school — 不是普通 reach" },
+      { "school": "Syracuse University", "note": "Strong architecture school" },
+      { "school": "Virginia Tech", "note": "Architecture + engineering crossover" }
+    ],
+    "expectedMatch": [
+      { "school": "University of Oregon" },
+      { "school": "Auburn University" },
+      { "school": "University of Arizona" }
+    ],
+    "expectedSafety": [
+      { "school": "Lawrence Technological University" },
+      { "school": "Montana State University" },
+      { "school": "Ball State University" }
+    ],
+    "forbiddenSchools": [],
+    "notes": "作品集专业：AI 易推 US News 综合排名校，漏 RISD/Syracuse 等 studio 路径或档位错误。"
+  },
+  {
+    "caseKey": "CASE-013",
+    "title": "美高完美GPA · 活动弱 · 藤校预期过高",
+    "tags": ["perfect-gpa", "weak-ec", "ivy-overreach", "boarding"],
+    "reportBody": {
+      "locale": "en",
+      "intakeTerm": "2027 Fall",
+      "applicantIdentity": "intl",
+      "citizenship": "China",
+      "residenceRegion": "Massachusetts (boarding school)",
+      "budget": "full_pay",
+      "testing": "will_submit",
+      "satScore": "1540",
+      "actScore": "",
+      "highSchoolSystem": "US boarding school",
+      "currentHighSchool": "New England boarding school",
+      "gpa": "Unweighted 3.97 / school does not rank",
+      "gpaTrend": "stable",
+      "languageScores": "TOEFL 117",
+      "academicSpecialFlags": [],
+      "academicSpecialNotes": "Rigorous course load but few APs offered; mostly honors",
+      "majorPrimary": "Undecided / Exploring",
+      "majorSecondary": "",
+      "schoolSize": "small",
+      "campusCulturePref": "academic",
+      "geoPrefs": ["east", "any"],
+      "structuredActivities": [
+        {
+          "id": "1",
+          "name": "Library volunteer",
+          "kind": "service",
+          "role": "Volunteer",
+          "hours": "2 hrs/week",
+          "description": "Shelved books and assisted weekend reading program; minimal leadership",
+          "majorRelated": "no",
+          "scope": "school"
+        },
+        {
+          "id": "2",
+          "name": "Piano Grade 8",
+          "kind": "arts",
+          "description": "ABRSM Grade 8 piano; no competitions or performances beyond school recitals",
+          "majorRelated": "unsure",
+          "scope": "school"
+        }
+      ],
+      "riskStyle": "aggressive",
+      "dealbreakers": "Parents expect Ivy but open to top LAC"
+    },
+    "expectedReach": [
+      { "school": "Boston College", "note": "Stats 强但 EC 弱 —  realistic reach" },
+      { "school": "Tufts University", "note": "不应标 match" },
+      { "school": "New York University", "note": "国际生竞争大" }
+    ],
+    "expectedMatch": [
+      { "school": "Northeastern University" },
+      { "school": "University of Rochester" },
+      { "school": "Brandeis University" }
+    ],
+    "expectedSafety": [
+      { "school": "University of Connecticut" },
+      { "school": "University of Massachusetts Amherst" },
+      { "school": "Penn State University" }
+    ],
+    "forbiddenSchools": ["Harvard University", "Yale University", "Princeton University", "Columbia University"],
+    "notes": "Parent Ivy 预期 vs 弱 EC：AI 易给 Cornell/Brown reach；顾问应压预期并禁藤。"
+  },
+  {
+    "caseKey": "CASE-014",
+    "title": "环科+政策 · 保守选校 vs 学生想冲",
+    "tags": ["environmental", "policy", "risk-conflict", "conservative-parent"],
+    "reportBody": {
+      "locale": "zh",
+      "intakeTerm": "2027 Fall",
+      "applicantIdentity": "us_citizen",
+      "citizenship": "United States",
+      "residenceRegion": "Pacific Northwest",
+      "budget": "need_aid",
+      "testing": "will_submit",
+      "satScore": "1410",
+      "actScore": "",
+      "highSchoolSystem": "Public high school",
+      "currentHighSchool": "Seattle area public high school",
+      "gpa": "Unweighted 3.71",
+      "gpaTrend": "mixed",
+      "languageScores": "",
+      "academicSpecialFlags": [],
+      "academicSpecialNotes": "10年级 online school 一学期 GPA 波动，11-12 恢复",
+      "majorPrimary": "Environmental Science",
+      "majorSecondary": "Public Policy",
+      "schoolSize": "large",
+      "campusCulturePref": "academic",
+      "geoPrefs": ["west", "any"],
+      "structuredActivities": [
+        {
+          "id": "1",
+          "name": "Climate policy youth council",
+          "kind": "club",
+          "role": "Co-chair",
+          "description": "City youth climate council advising local sustainability office; led carbon audit proposal",
+          "majorRelated": "yes",
+          "scope": "local"
+        },
+        {
+          "id": "2",
+          "name": "Salmon habitat restoration",
+          "kind": "service",
+          "hours": "5 hrs/week",
+          "description": "Volunteered with regional NGO on creek restoration; 120+ hours field work",
+          "majorRelated": "yes",
+          "scope": "regional"
+        }
+      ],
+      "riskStyle": "aggressive",
+      "dealbreakers": "家长希望保守；学生问卷选 aggressive — 报告应解释分歧并给 balanced 方案"
+    },
+    "expectedReach": [
+      { "school": "University of California, Berkeley", "note": "环科强但 aid+国际竞争 — 典型 reach" },
+      { "school": "University of Washington", "note": "州内 flagship；match/reach 边界" },
+      { "school": "University of Colorado Boulder", "note": "ENVST 项目 fit" }
+    ],
+    "expectedMatch": [
+      { "school": "Oregon State University" },
+      { "school": "Washington State University" },
+      { "school": "University of Oregon" }
+    ],
+    "expectedSafety": [
+      { "school": "Western Washington University" },
+      { "school": "Central Washington University" },
+      { "school": "Eastern Oregon University" }
+    ],
+    "forbiddenSchools": [],
+    "notes": "riskStyle=aggressive 但 stats 一般：AI 不应因 aggressive 把 UC Berkeley 标 match；须解释 risk 与档位关系。"
+  },
+  {
+    "caseKey": "CASE-015",
+    "title": "Test-Optional 藏 1520 · 方向未定 · 活动分散",
+    "tags": ["hidden-scores", "undecided", "scattered", "test-optional"],
+    "reportBody": {
+      "locale": "en",
+      "intakeTerm": "2027 Fall",
+      "applicantIdentity": "intl",
+      "citizenship": "China",
+      "residenceRegion": "Hangzhou",
+      "budget": "high_budget",
+      "testing": "test_optional",
+      "satScore": "1520",
+      "actScore": "",
+      "highSchoolSystem": "International school (AP)",
+      "currentHighSchool": "Hangzhou international school",
+      "gpa": "Unweighted 3.74",
+      "gpaTrend": "stable",
+      "languageScores": "TOEFL 109",
+      "academicSpecialFlags": [],
+      "academicSpecialNotes": "有 SAT 1520 但策略选择 test-optional；部分学校仍能看到分数若提交",
+      "majorPrimary": "Undecided / Exploring",
+      "majorSecondary": "Psychology",
+      "schoolSize": "any",
+      "campusCulturePref": "any",
+      "geoPrefs": ["any"],
+      "structuredActivities": [
+        {
+          "id": "1",
+          "name": "Psychology club",
+          "kind": "club",
+          "role": "Member",
+          "description": "Organized 2 campus mental health awareness weeks; no research or publication",
+          "majorRelated": "unsure",
+          "scope": "school"
+        },
+        {
+          "id": "2",
+          "name": "Badminton",
+          "kind": "sports",
+          "role": "School team",
+          "description": "Varsity badminton doubles; provincial top 8; not national level",
+          "majorRelated": "no",
+          "scope": "regional"
+        },
+        {
+          "id": "3",
+          "name": "Stock trading club",
+          "kind": "club",
+          "description": "Paper trading competition 3rd place in school; casual interest in finance",
+          "majorRelated": "unsure",
+          "scope": "school"
+        }
+      ],
+      "riskStyle": "balanced",
+      "dealbreakers": ""
+    },
+    "expectedReach": [
+      { "school": "University of Wisconsin–Madison", "note": "Test-optional 下档位应保守；有 1520 未提交" },
+      { "school": "University of Illinois Urbana-Champaign", "note": "若报告假设提交标化则 reach 上调 — 争议点" },
+      { "school": "Ohio State University" }
+    ],
+    "expectedMatch": [
+      { "school": "Penn State University" },
+      { "school": "University of Minnesota Twin Cities" },
+      { "school": "Indiana University Bloomington" }
+    ],
+    "expectedSafety": [
+      { "school": "University of Iowa" },
+      { "school": "Michigan State University" },
+      { "school": "University of Kansas" }
+    ],
+    "forbiddenSchools": [],
+    "notes": "Test-optional 但表单有 SAT：AI 是否使用该分数争议大；undecided 易给套话名单。"
   }
 ]

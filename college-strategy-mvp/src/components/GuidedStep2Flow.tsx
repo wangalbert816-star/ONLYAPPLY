@@ -13,6 +13,7 @@ import {
   toggleAcademicSpecialFlag,
   toggleGeo,
 } from "./guidedStepShared";
+import { HighSchoolSearchCombobox } from "./HighSchoolSearchCombobox";
 
 export type Step2ScreenId =
   | "gpa"
@@ -338,13 +339,15 @@ export function GuidedStep2Flow({
             {t("wizard.s2.currentSchool.q")}
           </h2>
           <GuidedContextLine step={2} screenId="currentSchool" t={t} />
-          <input
+          <HighSchoolSearchCombobox
             id="currentHighSchool"
-            className="input-modern input-modern--action"
-            aria-labelledby="gq-s2-currentSchool"
+            ariaLabelledBy="gq-s2-currentSchool"
             placeholder={t("form.placeholder.currentHighSchool")}
             value={form.currentHighSchool}
-            onChange={(e) => update("currentHighSchool", e.target.value)}
+            onChange={(v) => update("currentHighSchool", v)}
+            emptyHint={t("form.highSchoolSearch.empty")}
+            manualHint={t("form.highSchoolSearch.manual")}
+            loadingHint={t("form.highSchoolSearch.loading")}
           />
           {form.currentHighSchool.trim() ? (
             <p className="field-feedback">{t("wizard.s2.currentSchool.fb")}</p>
