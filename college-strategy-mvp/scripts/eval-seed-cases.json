@@ -1,0 +1,368 @@
+[
+  {
+    "caseKey": "CASE-001",
+    "title": "弱GPA · 国际生 · CS · Test-Optional",
+    "tags": ["weak-gpa", "intl", "cs", "test-optional"],
+    "reportBody": {
+      "locale": "zh",
+      "intakeTerm": "2027 Fall",
+      "applicantIdentity": "intl",
+      "citizenship": "中国",
+      "residenceRegion": "广东",
+      "budget": "high_budget",
+      "testing": "test_optional",
+      "satScore": "",
+      "actScore": "",
+      "highSchoolSystem": "国内普高 + AP",
+      "currentHighSchool": "深圳某国际学校",
+      "gpa": "Unweighted 3.35 / 4.0",
+      "gpaTrend": "upward",
+      "languageScores": "TOEFL 102",
+      "academicSpecialFlags": [],
+      "academicSpecialNotes": "10年级GPA偏低，11-12年级有明显回升",
+      "majorPrimary": "Computer Science",
+      "majorSecondary": "Data Science",
+      "schoolSize": "medium",
+      "campusCulturePref": "balanced",
+      "geoPrefs": ["west", "any"],
+      "structuredActivities": [
+        {
+          "id": "1",
+          "name": "校编程社",
+          "kind": "club",
+          "role": "社长",
+          "hours": "6 hrs/week",
+          "description": "组织校内 Python 入门 workshop，带 30+ 新生完成小项目",
+          "outcome": "社团人数从 12 增至 45",
+          "majorRelated": "yes",
+          "scope": "school"
+        },
+        {
+          "id": "2",
+          "name": "个人开源项目",
+          "kind": "activity",
+          "role": "开发者",
+          "description": "GitHub 上维护一个校园二手交易小程序，300+ 活跃用户",
+          "majorRelated": "yes",
+          "scope": "local"
+        }
+      ],
+      "riskStyle": "balanced",
+      "dealbreakers": "不考虑宗教氛围过强的学校"
+    },
+    "expectedReach": [
+      { "school": "UC Irvine", "note": "CS 竞争大但活动有技术深度" },
+      { "school": "UC San Diego", "note": "对国际生应为 Reach" },
+      { "school": "Northeastern University", "note": "Co-op 路径匹配 CS" }
+    ],
+    "expectedMatch": [
+      { "school": "UC Santa Cruz" },
+      { "school": "San Jose State University" },
+      { "school": "University of Arizona" }
+    ],
+    "expectedSafety": [
+      { "school": "Arizona State University" },
+      { "school": "University of Oregon" },
+      { "school": "Washington State University" }
+    ],
+    "forbiddenSchools": [],
+    "notes": "测试弱GPA + test-optional 时档位是否偏乐观；UC 高选择性校区应偏 Reach。"
+  },
+  {
+    "caseKey": "CASE-002",
+    "title": "Entrepreneurship · SAT 1440 · 禁 MIT/Stanford",
+    "tags": ["entrepreneurship", "sat-1440", "forbidden-schools", "business"],
+    "reportBody": {
+      "locale": "en",
+      "intakeTerm": "2027 Fall",
+      "applicantIdentity": "intl",
+      "citizenship": "China",
+      "residenceRegion": "Shanghai",
+      "budget": "full_pay",
+      "testing": "will_submit",
+      "satScore": "1440",
+      "actScore": "",
+      "highSchoolSystem": "International school (IB)",
+      "currentHighSchool": "Shanghai international high school",
+      "gpa": "Unweighted 3.72",
+      "gpaTrend": "stable",
+      "languageScores": "TOEFL 108",
+      "academicSpecialFlags": [],
+      "academicSpecialNotes": "",
+      "majorPrimary": "Entrepreneurship",
+      "majorSecondary": "Business",
+      "schoolSize": "medium",
+      "campusCulturePref": "balanced",
+      "geoPrefs": ["east", "any"],
+      "structuredActivities": [
+        {
+          "id": "1",
+          "name": "E-commerce side project",
+          "kind": "activity",
+          "role": "Founder",
+          "hours": "10 hrs/week",
+          "description": "Built a DTC skincare brand; $18k revenue in 12 months via WeChat + Shopify",
+          "outcome": "Profitable after month 8",
+          "majorRelated": "yes",
+          "scope": "local"
+        },
+        {
+          "id": "2",
+          "name": "DECA",
+          "kind": "competition",
+          "role": "Team lead",
+          "description": "Regional finalist in entrepreneurship category",
+          "award": "Regional finalist",
+          "majorRelated": "yes",
+          "scope": "regional"
+        },
+        {
+          "id": "3",
+          "name": "School investment club",
+          "kind": "club",
+          "role": "President",
+          "description": "Paper portfolio beat benchmark by 12% over 2 semesters",
+          "majorRelated": "yes",
+          "scope": "school"
+        }
+      ],
+      "riskStyle": "balanced",
+      "dealbreakers": "Family asked to avoid MIT and Stanford"
+    },
+    "expectedReach": [
+      { "school": "Babson College", "note": "Entrepreneurship program fit" },
+      { "school": "NYU Stern", "note": "Business depth + NYC ecosystem" },
+      { "school": "Boston College", "note": "Strong undergrad business path" }
+    ],
+    "expectedMatch": [
+      { "school": "Rutgers University–New Brunswick" },
+      { "school": "Indiana University Bloomington" },
+      { "school": "University of Washington" }
+    ],
+    "expectedSafety": [
+      { "school": "Stony Brook University" },
+      { "school": "University at Buffalo" },
+      { "school": "University of Connecticut" }
+    ],
+    "forbiddenSchools": ["MIT", "Stanford University"],
+    "notes": "顾问曾指出 UCSD 应为 Reach；名单应含 Babson 等专业匹配校，禁校不得出现在任何区块。"
+  },
+  {
+    "caseKey": "CASE-003",
+    "title": "强STEM · SAT 1520 · CS/AI · 美籍",
+    "tags": ["strong-stats", "cs", "ai", "us-citizen"],
+    "reportBody": {
+      "locale": "en",
+      "intakeTerm": "2027 Fall",
+      "applicantIdentity": "us_citizen",
+      "citizenship": "United States",
+      "residenceRegion": "California (Bay Area)",
+      "budget": "need_aid",
+      "testing": "will_submit",
+      "satScore": "1520",
+      "actScore": "",
+      "highSchoolSystem": "Public high school",
+      "currentHighSchool": "Cupertino public high school",
+      "gpa": "Weighted 4.35 / Unweighted 3.92",
+      "gpaTrend": "stable",
+      "languageScores": "",
+      "academicSpecialFlags": [],
+      "academicSpecialNotes": "Strong math track; AP Calc BC, AP CS A, AP Physics C",
+      "majorPrimary": "Computer Science",
+      "majorSecondary": "Artificial Intelligence",
+      "schoolSize": "large",
+      "campusCulturePref": "academic",
+      "geoPrefs": ["west", "northeast"],
+      "structuredActivities": [
+        {
+          "id": "1",
+          "name": "USACO Gold",
+          "kind": "competition",
+          "award": "Gold division",
+          "majorRelated": "yes",
+          "scope": "national"
+        },
+        {
+          "id": "2",
+          "name": "ML research with local professor",
+          "kind": "research",
+          "role": "Research assistant",
+          "hours": "8 hrs/week",
+          "description": "Computer vision project on medical imaging; co-authored poster",
+          "majorRelated": "yes",
+          "scope": "regional"
+        },
+        {
+          "id": "3",
+          "name": "Math tutoring nonprofit",
+          "kind": "service",
+          "role": "Lead tutor",
+          "description": "200+ hours tutoring underserved middle school students",
+          "majorRelated": "no",
+          "scope": "local"
+        }
+      ],
+      "riskStyle": "aggressive",
+      "dealbreakers": ""
+    },
+    "expectedReach": [
+      { "school": "Carnegie Mellon University", "note": "SCS fit" },
+      { "school": "Georgia Institute of Technology", "note": "CS flagship" },
+      { "school": "University of Illinois Urbana-Champaign", "note": "Strong CS" }
+    ],
+    "expectedMatch": [
+      { "school": "University of Washington" },
+      { "school": "Purdue University" },
+      { "school": "University of Wisconsin–Madison" }
+    ],
+    "expectedSafety": [
+      { "school": "University of California, Santa Cruz" },
+      { "school": "University of Maryland" },
+      { "school": "Virginia Tech" }
+    ],
+    "forbiddenSchools": [],
+    "notes": "强背景案例：Reach 可以更高但不应全是彩票校；理由须引用 USACO/科研。"
+  },
+  {
+    "caseKey": "CASE-004",
+    "title": "Pre-med · 国际生 · 中等标化 · 中文",
+    "tags": ["pre-med", "intl", "bio", "moderate-stats"],
+    "reportBody": {
+      "locale": "zh",
+      "intakeTerm": "2027 Fall",
+      "applicantIdentity": "intl",
+      "citizenship": "中国",
+      "residenceRegion": "北京",
+      "budget": "budget_cap",
+      "testing": "will_submit",
+      "satScore": "1380",
+      "actScore": "",
+      "highSchoolSystem": "国内普高",
+      "currentHighSchool": "北京某公立高中国际部",
+      "gpa": "Unweighted 3.68",
+      "gpaTrend": "stable",
+      "languageScores": "TOEFL 98",
+      "academicSpecialFlags": [],
+      "academicSpecialNotes": "",
+      "majorPrimary": "Biology",
+      "majorSecondary": "Public Health",
+      "schoolSize": "medium",
+      "campusCulturePref": "academic",
+      "geoPrefs": ["midwest", "south"],
+      "structuredActivities": [
+        {
+          "id": "1",
+          "name": "医院志愿者",
+          "kind": "service",
+          "role": "志愿者",
+          "hours": "4 hrs/week × 2 years",
+          "description": "门诊导诊与患者沟通，累计 180+ 小时",
+          "majorRelated": "yes",
+          "scope": "local"
+        },
+        {
+          "id": "2",
+          "name": "生物竞赛",
+          "kind": "competition",
+          "award": "省级二等奖",
+          "majorRelated": "yes",
+          "scope": "regional"
+        },
+        {
+          "id": "3",
+          "name": "校园环保社",
+          "kind": "club",
+          "role": "成员",
+          "description": "组织校园垃圾分类项目",
+          "majorRelated": "no",
+          "scope": "school"
+        }
+      ],
+      "riskStyle": "conservative",
+      "dealbreakers": "预算有限，希望总费用控制在合理范围"
+    },
+    "expectedReach": [
+      { "school": "University of Florida", "note": "公立旗舰 + 生物" },
+      { "school": "Ohio State University", "note": "Pre-med 路径清晰" },
+      { "school": "University of Pittsburgh" }
+    ],
+    "expectedMatch": [
+      { "school": "University of Iowa" },
+      { "school": "University of Kansas" },
+      { "school": "University of Alabama" }
+    ],
+    "expectedSafety": [
+      { "school": "University of Mississippi" },
+      { "school": "Kent State University" },
+      { "school": "University of Arkansas" }
+    ],
+    "forbiddenSchools": [],
+    "notes": "预算敏感 + pre-med：不应推荐明显超预算的私立；Safety 须真实可录。"
+  },
+  {
+    "caseKey": "CASE-005",
+    "title": "商科 · Test-Optional · 活动偏泛",
+    "tags": ["business", "test-optional", "generic-activities", "intl"],
+    "reportBody": {
+      "locale": "en",
+      "intakeTerm": "2027 Fall",
+      "applicantIdentity": "intl",
+      "citizenship": "China",
+      "residenceRegion": "Guangzhou",
+      "budget": "high_budget",
+      "testing": "test_optional",
+      "satScore": "",
+      "actScore": "",
+      "highSchoolSystem": "A-Level",
+      "currentHighSchool": "Guangzhou bilingual school",
+      "gpa": "A-Level: AAB predicted (Economics, Math, Psychology)",
+      "gpaTrend": "stable",
+      "languageScores": "IELTS 7.0",
+      "academicSpecialFlags": [],
+      "academicSpecialNotes": "",
+      "majorPrimary": "Business / Economics",
+      "majorSecondary": "Finance",
+      "schoolSize": "any",
+      "campusCulturePref": "social",
+      "geoPrefs": ["east", "any"],
+      "structuredActivities": [
+        {
+          "id": "1",
+          "name": "Student council",
+          "kind": "club",
+          "role": "Member",
+          "description": "Helped organize school events",
+          "majorRelated": "unsure",
+          "scope": "school"
+        },
+        {
+          "id": "2",
+          "name": "Volunteer tutoring",
+          "kind": "service",
+          "description": "Tutored classmates in math",
+          "majorRelated": "no",
+          "scope": "school"
+        }
+      ],
+      "riskStyle": "balanced",
+      "dealbreakers": ""
+    },
+    "expectedReach": [
+      { "school": "Indiana University Bloomington (Kelley)" },
+      { "school": "University of Minnesota Twin Cities" },
+      { "school": "Penn State University" }
+    ],
+    "expectedMatch": [
+      { "school": "University of Arizona" },
+      { "school": "University of Oregon" },
+      { "school": "Michigan State University" }
+    ],
+    "expectedSafety": [
+      { "school": "University of Kansas" },
+      { "school": "University of Utah" },
+      { "school": "Oregon State University" }
+    ],
+    "forbiddenSchools": [],
+    "notes": "活动偏泛、无标化：测试个性化理由是否套话；档位应保守。"
+  }
+]

@@ -3,6 +3,8 @@ import type { Locale } from "../../i18n/strings";
 import { emptyFormState } from "../formDefaults";
 import { INTAKE_OTHER_VALUE, INTAKE_PRESETS } from "../intakeTerm";
 import { buildReportApiBody } from "../reportApiBody";
+import { buildFullSnapshotRows, type SnapshotRow } from "../../components/formSnapshotRows";
+import type { Translate } from "../../i18n/LanguageContext";
 
 export type EvalCaseMeta = {
   title: string;
@@ -144,9 +146,112 @@ export function reportBodyToFormState(body: Record<string, unknown>): FormState 
   return form;
 }
 
+const ADMIN_FIELD_LABEL_KEYS: Record<string, string> = {
+  gpa: "admin.evalHarness.field.gpa",
+  scores: "admin.evalHarness.field.scores",
+  sat: "admin.evalHarness.field.sat",
+  act: "admin.evalHarness.field.act",
+  activities: "admin.evalHarness.field.activities",
+};
+
+function adminActivitiesSummary(form: FormState, t: Translate): string | null {
+  const named = (form.structuredActivities ?? []).map((item) => item.name.trim()).filter(Boolean);
+  if (named.length > 0) {
+    return t("admin.evalHarness.activityListSummary", { names: named.join("、") });
+  }
+  const legacy = form.activities.trim();
+  return legacy || null;
+}
+
+function adminTestScoreValue(raw: string, form: FormState, t: Translate): string {
+  if (form.testing === "test_optional") return t("admin.evalHarness.testNotSubmitted");
+  const v = raw.trim();
+  return v || "—";
+}
+
+/** Read-only admin case view: full values, no wizard placeholder hints. */
+export function buildAdminEvalFormRows(form: FormState, t: Translate): SnapshotRow[] {
+  const rows = buildFullSnapshotRows(form, t).filter((row) => row.id !== "scores");
+  const next: SnapshotRow[] = [];
+
+  for (const row of rows) {
+    const labelKey = ADMIN_FIELD_LABEL_KEYS[row.id];
+    if (labelKey) {
+      const label = t(labelKey);
+      if (label !== labelKey) row.label = label;
+    }
+
+    if (row.id === "activities") {
+      row.value = adminActivitiesSummary(form, t);
+    }
+
+    if (!row.isStepSummary && !row.value) {
+      row.value = "—";
+    }
+
+    next.push(row);
+
+    if (row.id === "testing") {
+      next.push(
+        {
+          id: "sat",
+          section: 2,
+          label: t("admin.evalHarness.field.sat"),
+          value: adminTestScoreValue(form.satScore, form, t),
+          status: "filled",
+          hint: "",
+          isNext: false,
+        },
+        {
+          id: "act",
+          section: 2,
+          label: t("admin.evalHarness.field.act"),
+          value: adminTestScoreValue(form.actScore, form, t),
+          status: "filled",
+          hint: "",
+          isNext: false,
+        },
+      );
+    }
+  }
+
+  return next;
+}
+
 export function expectedSchoolsToText(rows: { school: string; note?: string }[] | undefined) {
   if (!rows?.length) return "";
   return rows.map((row) => (row.note ? `${row.school}（${row.note}）` : row.school)).join("\n");
+}
+
+export type EvalCaseExpectedDraft = Pick<
+  EvalCaseMeta,
+  "reachSchools" | "matchSchools" | "safetySchools" | "forbiddenSchools" | "notes"
+>;
+
+export function evalCaseToExpectedDraft(caseRow: {
+  expectedReach: { school: string; note?: string }[];
+  expectedMatch: { school: string; note?: string }[];
+  expectedSafety: { school: string; note?: string }[];
+  forbiddenSchools: string[];
+  notes: string | null;
+}): EvalCaseExpectedDraft {
+  return {
+    reachSchools: expectedSchoolsToText(caseRow.expectedReach),
+    matchSchools: expectedSchoolsToText(caseRow.expectedMatch),
+    safetySchools: expectedSchoolsToText(caseRow.expectedSafety),
+    forbiddenSchools: caseRow.forbiddenSchools.join("\n"),
+    notes: caseRow.notes ?? "",
+  };
+}
+
+export function buildEvalCaseExpectedPatch(draft: EvalCaseExpectedDraft) {
+  return {
+    expectedReach: toExpectedSchools(draft.reachSchools),
+    expectedMatch: toExpectedSchools(draft.matchSchools),
+    expectedSafety: toExpectedSchools(draft.safetySchools),
+    forbiddenSchools: splitSchoolLines(draft.forbiddenSchools),
+    notes: draft.notes.trim() || null,
+  };
 }
 
 export function buildEvalCasePayload(draft: EvalCaseDraft, existingCaseKeys: string[] = []) {

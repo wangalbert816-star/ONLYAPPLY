@@ -5,6 +5,7 @@ import type { ProfileDimensionKey } from "../../../lib/fiveDimensionProfile";
 import {
   buildEvalCasePayload,
   emptyEvalCaseDraft,
+  type buildEvalCaseExpectedPatch,
 } from "../../../lib/admin/evalCaseForm";
 import {
   CORRECTION_REASON_CATEGORIES,
@@ -37,6 +38,7 @@ import {
   generateAdminEvalRunCase,
   listAdminEvalCases,
   listAdminEvalRuns,
+  patchAdminEvalCase,
   saveAdminEvalReview,
   type AdminEvalDashboard,
   type AdminEvalRun,
@@ -89,6 +91,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
   const [addingCase, setAddingCase] = useState(false);
   const [caseDraft, setCaseDraft] = useState(() => emptyEvalCaseDraft(locale));
   const [savingCase, setSavingCase] = useState(false);
+  const [savingExpected, setSavingExpected] = useState(false);
 
   const [selectedRunId, setSelectedRunId] = useState("");
   const [runs, setRuns] = useState<AdminEvalRun[]>([]);
@@ -263,6 +266,24 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
     }
   };
 
+  const handleSaveExpected = useCallback(
+    async (caseId: string, patch: ReturnType<typeof buildEvalCaseExpectedPatch>) => {
+      if (savingExpected || busy) return;
+      setSavingExpected(true);
+      setPanelError(null);
+      try {
+        await patchAdminEvalCase(token, caseId, patch);
+        await refreshCases();
+      } catch (e) {
+        setPanelError(evalErrorMessage((e as Error & { code?: string }).code, t));
+        throw e;
+      } finally {
+        setSavingExpected(false);
+      }
+    },
+    [busy, refreshCases, savingExpected, t, token],
+  );
+
   const handleSelectRun = useCallback(
     async (runId: string) => {
       setSelectedRunId(runId);
@@ -415,6 +436,8 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
                 results={runDetail?.results}
                 t={t}
                 onBack={() => setLibraryPanel("list")}
+                onSaveExpected={(patch) => handleSaveExpected(selectedCase.id, patch)}
+                savingExpected={savingExpected}
                 onDelete={() => void onRun(async () => { await deleteAdminEvalCase(token, selectedCase.id); setLibraryPanel("list"); await refreshCases(); })}
                 onGenerate={() => { setGeneratePanel("detail"); setStep("generate"); }}
               />
@@ -456,6 +479,8 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
                   results={runDetail?.results}
                   t={t}
                   onBack={() => setGeneratePanel("list")}
+                  onSaveExpected={(patch) => handleSaveExpected(selectedCase.id, patch)}
+                  savingExpected={savingExpected}
                 />
                 <div className="admin-eval-harness__generate-card">
                   <p className="admin-eval__sub">{t("admin.eval.testLeadOne", { name: selectedCase.title })}</p>

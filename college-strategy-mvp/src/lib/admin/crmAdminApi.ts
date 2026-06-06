@@ -521,6 +521,17 @@ export async function importAdminEvalCases(
   });
 }
 
+export async function patchAdminEvalCase(
+  accessToken: string,
+  id: string,
+  input: Record<string, unknown>,
+): Promise<{ case: AdminEvalCase }> {
+  return adminFetch(`/api/admin/crm/eval/cases/${id}`, accessToken, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
 export async function deleteAdminEvalCase(accessToken: string, id: string): Promise<{ ok: true }> {
   return adminFetch(`/api/admin/crm/eval/cases/${id}`, accessToken, { method: "DELETE" });
 }

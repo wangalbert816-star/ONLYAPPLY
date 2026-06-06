@@ -1,5 +1,8 @@
 import type { AdminEvalCase, AdminEvalRunResult } from "../../../lib/admin/crmAdminApi";
+import type { buildEvalCaseExpectedPatch } from "../../../lib/admin/evalCaseForm";
 import type { Translate } from "../../../i18n/LanguageContext";
+import { EvalCaseExpectedEditor } from "./EvalCaseExpectedEditor";
+import { EvalCaseFormSummary } from "./EvalCaseFormSummary";
 import { resultStatusForCase, type CaseListStatus } from "./EvalCaseList";
 
 type Props = {
@@ -10,6 +13,8 @@ type Props = {
   onDelete?: () => void;
   onGenerate?: () => void;
   onReview?: () => void;
+  onSaveExpected?: (patch: ReturnType<typeof buildEvalCaseExpectedPatch>) => Promise<void>;
+  savingExpected?: boolean;
   deleting?: boolean;
 };
 
@@ -30,6 +35,8 @@ export function EvalCaseDetail({
   onDelete,
   onGenerate,
   onReview,
+  onSaveExpected,
+  savingExpected,
   deleting,
 }: Props) {
   const status = resultStatusForCase(evalCase.id, results);
@@ -47,21 +54,25 @@ export function EvalCaseDetail({
         </span>
       </div>
       <p className="admin-eval-case-detail__meta">{evalCase.caseKey}</p>
-      <dl className="admin-eval-case-detail__schools">
-        <div>
-          <dt>{t("admin.eval.reachLabel")}</dt>
-          <dd>{evalCase.expectedReach.map((s) => s.school).filter(Boolean).join("、") || "—"}</dd>
-        </div>
-        <div>
-          <dt>{t("admin.eval.matchLabel")}</dt>
-          <dd>{evalCase.expectedMatch.map((s) => s.school).filter(Boolean).join("、") || "—"}</dd>
-        </div>
-        <div>
-          <dt>{t("admin.eval.safetyLabel")}</dt>
-          <dd>{evalCase.expectedSafety.map((s) => s.school).filter(Boolean).join("、") || "—"}</dd>
-        </div>
-      </dl>
-      {evalCase.notes ? <p className="admin-eval-case-detail__notes">{evalCase.notes}</p> : null}
+      {onSaveExpected ? (
+        <EvalCaseExpectedEditor evalCase={evalCase} saving={savingExpected} onSave={onSaveExpected} />
+      ) : (
+        <dl className="admin-eval-case-detail__schools">
+          <div>
+            <dt>{t("admin.eval.reachLabel")}</dt>
+            <dd>{evalCase.expectedReach.map((s) => s.school).filter(Boolean).join("、") || "—"}</dd>
+          </div>
+          <div>
+            <dt>{t("admin.eval.matchLabel")}</dt>
+            <dd>{evalCase.expectedMatch.map((s) => s.school).filter(Boolean).join("、") || "—"}</dd>
+          </div>
+          <div>
+            <dt>{t("admin.eval.safetyLabel")}</dt>
+            <dd>{evalCase.expectedSafety.map((s) => s.school).filter(Boolean).join("、") || "—"}</dd>
+          </div>
+        </dl>
+      )}
+      <EvalCaseFormSummary evalCase={evalCase} />
       <div className="admin-eval-case-detail__actions">
         {onGenerate ? (
           <button type="button" className="admin-portal__btn admin-portal__btn--primary" onClick={onGenerate}>

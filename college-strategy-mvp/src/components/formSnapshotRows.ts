@@ -207,6 +207,22 @@ function applyNextHighlight(
   }
 }
 
+function labelGeoPrefs(form: FormState, t: Translate): string | null {
+  if (!form.geoPrefs.length) return null;
+  const aliases: Record<string, string> = {
+    west_coast: "west",
+    northeast: "east",
+    west_coast_us: "west",
+  };
+  return form.geoPrefs
+    .map((g) => {
+      const key = aliases[g] ?? g;
+      const label = t(`geo.${key}`);
+      return label === `geo.${key}` ? g : label;
+    })
+    .join("、");
+}
+
 const ROW_DEFS: RowDef[] = [
   {
     id: "intake",
@@ -356,7 +372,7 @@ const ROW_DEFS: RowDef[] = [
     labelKey: "wizard.summary.row.geo",
     hintKey: "wizard.summary.hint.geo",
     filled: (f) => f.geoPrefs.length > 0,
-    value: (f, t) => (f.geoPrefs.length ? f.geoPrefs.map((g) => t(`geo.${g}`)).join("、") : null),
+    value: (f, t) => labelGeoPrefs(f, t),
   },
   {
     id: "activities",
@@ -413,6 +429,42 @@ const STEP2_SCREEN_IDS = new Set<Step2ScreenId>([
   "geo",
 ]);
 const STEP3_SCREEN_IDS = new Set<Step3ScreenId>(["activities", "risk", "deal"]);
+
+function specialDisplayFull(form: FormState, t: Translate): string | null {
+  const parts = form.academicSpecialFlags.map((flag) => t(`form.opt.special.${flag}`));
+  const notes = form.academicSpecialNotes.trim();
+  if (notes) parts.push(notes);
+  return parts.length ? parts.join(" · ") : null;
+}
+
+/** All questionnaire fields expanded (admin eval case read-only view). */
+export function buildFullSnapshotRows(form: FormState, t: Translate): SnapshotRow[] {
+  const rows: SnapshotRow[] = [];
+  for (const section of [1, 2, 3] as const) {
+    rows.push({
+      id: `step-${section}-header`,
+      section,
+      label: t(`steps.${section}.title`),
+      value: null,
+      status: "filled",
+      hint: "",
+      isNext: false,
+      isStepSummary: true,
+    });
+    rows.push(...buildDetailRows(section, form, t));
+  }
+  for (const row of rows) {
+    if (row.id === "deal") {
+      const d = form.dealbreakers.trim();
+      if (d) row.value = d;
+    }
+    if (row.id === "special") {
+      const v = specialDisplayFull(form, t);
+      if (v) row.value = v;
+    }
+  }
+  return rows;
+}
 
 export function buildSnapshotRows(
   form: FormState,
