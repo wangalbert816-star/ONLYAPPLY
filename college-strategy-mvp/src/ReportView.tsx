@@ -1,8 +1,9 @@
 import type { FormState, PaywallCopy, PaywallTone, ReportDiff, ReportPayload, SchoolRow, SchoolTier, SupplementaryNote } from "./types";
 import "./ReportView.css";
 import "./ReportViewTheme.css";
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useLanguage } from "./i18n/LanguageContext";
+import { EN_PAYWALL } from "./i18n/paywallEn";
 import { InformationGapsInteractive } from "./components/InformationGapsInteractive";
 import { ExpertConsultSection } from "./components/ExpertConsultSection";
 import { ApplicationProfileRadar } from "./components/ApplicationProfileRadar";
@@ -194,14 +195,15 @@ export function ReportView({
   pdfRecipientName = null,
   purchaseBusy = false,
   purchaseNotice = null,
-  stripeCheckoutEnabled: _stripeCheckoutEnabled = false,
-  inviteCodesEnabled: _inviteCodesEnabled = false,
-  inviteRedeemBusy: _inviteRedeemBusy = false,
-  onRedeemInviteCode: _onRedeemInviteCode,
+  stripeCheckoutEnabled = false,
+  inviteCodesEnabled = false,
+  inviteRedeemBusy = false,
+  onRedeemInviteCode,
 }: ReportViewProps) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const reportLocale = REPORT_CONTENT_LOCALE;
   const safeReport = useMemo(() => sanitizeReportProse(report, reportLocale), [report, reportLocale]);
+  const [inviteInput, setInviteInput] = useState("");
   const pdfSourceRef = useRef<HTMLDivElement>(null);
   const intakeLabel = useMemo(() => getEffectiveIntake(form) || t("report.title"), [form, t]);
   const planHorizon = useMemo(() => getIntakeHorizon(getEffectiveIntake(form)), [form]);
@@ -225,6 +227,9 @@ export function ReportView({
     [form, profileFive, reportLocale, safeReport.executive_summary],
   );
   const biggestGap = useMemo(() => buildBiggestGapBlock(profileFive, reportLocale), [profileFive, reportLocale]);
+  const paywallTone = getPaywallTone();
+  const paywallCopy = locale === "zh" ? PAYWALL_PACKS[paywallTone] : EN_PAYWALL[paywallTone];
+  const inviteModeOnly = inviteCodesEnabled && !stripeCheckoutEnabled;
 
   const tw = safeReport.improvement_plan?.this_week || [];
   const tierLabel = (tier: SchoolTier) =>
@@ -355,7 +360,23 @@ export function ReportView({
       )}
 
       <div className="report-shell">
-        <ReportSectionNav items={sectionNavItems} t={t} onRefresh={onReset} />
+        <ReportSectionNav
+          items={sectionNavItems}
+          t={t}
+          onRefresh={onReset}
+          inviteSection={
+            !unlocked && inviteCodesEnabled
+              ? {
+                  inviteInput,
+                  onInviteInputChange: setInviteInput,
+                  inviteRedeemBusy,
+                  onRedeemInviteCode: () => void onRedeemInviteCode?.(inviteInput),
+                  isAuthenticated,
+                  sessionSaved,
+                }
+              : undefined
+          }
+        />
 
         <div className="report-main">
           <div className="report-main__toolbar" role="toolbar" aria-label={t("report.title")}>
@@ -389,17 +410,39 @@ export function ReportView({
           </div>
 
           {!unlocked && (
-            <div className="report-banner report-banner--unlock" data-no-pdf>
-              <div className="report-banner--unlock__copy">
-                <span className="report-banner__lock" aria-hidden>
-                  🔒
-                </span>
-                <p>{t("report.unlockBannerTitle")}</p>
+            <div className="report-unlock-block" data-no-pdf>
+              <div className="report-banner report-banner--unlock">
+                <div className="report-banner--unlock__copy">
+                  <span className="report-banner__lock" aria-hidden>
+                    🔒
+                  </span>
+                  <div className="report-banner--unlock__text">
+                    <p className="report-banner--unlock__title">{t("report.unlockBannerTitle")}</p>
+                    {purchaseNotice ? (
+                      <p className="report-banner--unlock__notice">{purchaseNotice}</p>
+                    ) : (
+                      <p className="report-banner--unlock__hint">
+                        {inviteModeOnly ? t("report.inviteUnlockHint") : paywallCopy.ctaHint}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {(stripeCheckoutEnabled || inviteModeOnly || !inviteCodesEnabled) && (
+                  <button type="button" className="btn report-banner--unlock__cta" onClick={onUnlock} disabled={purchaseBusy}>
+                    {purchaseBusy
+                      ? t("report.checkoutOpening")
+                      : inviteModeOnly
+                        ? t("report.inviteUnlockCta")
+                        : stripeCheckoutEnabled
+                          ? paywallCopy.ctaPrimary
+                          : t("report.unlockBannerCta")}
+                  </button>
+                )}
               </div>
-              <button type="button" className="btn report-banner--unlock__cta" onClick={onUnlock} disabled={purchaseBusy}>
-                {purchaseBusy ? t("report.checkoutOpening") : t("report.unlockBannerCta")}
-              </button>
-              {purchaseNotice ? <p className="report-banner--unlock__notice">{purchaseNotice}</p> : null}
+
+              {inviteCodesEnabled && stripeCheckoutEnabled && (
+                <p className="report-unlock-block__hybrid-hint">{t("report.inviteHybridHint")}</p>
+              )}
             </div>
           )}
 

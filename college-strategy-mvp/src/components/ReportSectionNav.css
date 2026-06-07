@@ -58,6 +58,51 @@
   box-shadow: inset 3px 0 0 #006644;
 }
 
+.report-sidebar__invite {
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.55rem 0;
+  border-top: 1px solid rgba(0, 77, 64, 0.08);
+}
+
+.report-sidebar__invite .invite-redeem__label {
+  margin: 0 0 0.4rem;
+  padding: 0;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.report-sidebar__invite .invite-redeem__hint {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.report-sidebar__invite-row {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+
+.report-sidebar__invite .invite-redeem__input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.42rem 0.55rem;
+  border: 1px solid rgba(0, 102, 68, 0.14);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.report-sidebar__invite-btn {
+  width: 100%;
+  font-size: 0.76rem;
+  padding: 0.4rem 0.55rem;
+}
+
 .report-sidebar__footer {
   margin-top: auto;
   padding-top: 1rem;

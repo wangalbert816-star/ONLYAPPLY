@@ -100,115 +100,121 @@ export function ApplicationProfileRadar({
 
   const spot = spotKey ? items.find((x) => x.key === spotKey) : null;
 
+  const radarSvg = (
+    <svg
+      className="profile-five-radar"
+      viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+      role="img"
+      aria-label={t("report.profileFive.title")}
+    >
+      <title>{t("report.profileFive.title")}</title>
+      {[0.25, 0.5, 0.75, 1].map((s) => (
+        <polygon key={s} className="profile-five-grid" points={polygonForScale(s)} fill="none" />
+      ))}
+      {ANGLES_DEG.map((deg) => {
+        const outer = pt(deg, R);
+        const inner = pt(deg, 0);
+        return <line key={deg} className="profile-five-axis" x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y} />;
+      })}
+      <polygon className="profile-five-area" points={dataPoly} />
+      <polyline className="profile-five-stroke" points={dataPoly} />
+      {ANGLES_DEG.map((deg, i) => {
+        const dim = items[i];
+        const { x, y } = pt(deg, R_LABEL);
+        const anchor = x > CX + 10 ? "start" : x < CX - 10 ? "end" : "middle";
+        const dy = y < CY - 18 ? -4 : y > CY + 18 ? 16 : 6;
+        return (
+          <text key={`lbl-${dim.key}`} className="profile-five-label" x={x} y={y + dy} textAnchor={anchor}>
+            {t(`report.profileFive.axisShort.${dim.key}`)}
+          </text>
+        );
+      })}
+      {dataPts.map((p, i) => {
+        const dim = items[i];
+        const active = spotKey === dim.key;
+        const band = profileScoreBand(dim.score);
+        const interactive = !previewLocked && !mockupLayout;
+        return (
+          <g
+            key={dim.key}
+            role={interactive ? "button" : undefined}
+            tabIndex={interactive ? 0 : undefined}
+            className="profile-five-axis-hit"
+            aria-pressed={active}
+            aria-label={
+              previewLocked || mockupLayout
+                ? t(`report.profileFive.axisShort.${dim.key}`)
+                : t("report.profileFive.axisTapAria", { axis: t(`report.profileFive.axisShort.${dim.key}`) })
+            }
+            onClick={interactive ? () => toggleSpot(dim.key) : undefined}
+            onKeyDown={interactive ? (e) => onAxisKeyDown(e, dim.key) : undefined}
+          >
+            <circle className="profile-five-hit" cx={p.x} cy={p.y} r="18" fill="transparent" />
+            <circle
+              className={`profile-five-node profile-five-node--${band}${active ? " profile-five-node--active" : ""}`}
+              cx={p.x}
+              cy={p.y}
+              r={active ? 6 : 4.5}
+            />
+          </g>
+        );
+      })}
+    </svg>
+  );
+
+  const mockupBars = (
+    <div className="profile-five-mockup-bars" aria-label={t("report.profileFive.title")}>
+      {items.map((it) => {
+        const band = profileScoreBand(it.score);
+        const pct = Math.max(8, Math.min(100, it.score));
+        return (
+          <div key={it.key} className={`profile-five-mockup-row profile-five-mockup-row--${band}`}>
+            <span className="profile-five-mockup-row__label">{t(`report.profileFive.axisShort.${it.key}`)}</span>
+            <div className="profile-five-mockup-row__track" aria-hidden>
+              <span style={{ width: `${pct}%` }} />
+            </div>
+            <span className={`profile-five-mockup-row__score profile-five-mockup-row__score--${band}`}>{it.score}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+
   return (
     <div className={`profile-five${previewLocked ? " profile-five--preview-locked" : ""}${mockupLayout ? " profile-five--mockup" : ""}`}>
-      <div className="profile-five-radar-wrap">
-        <svg
-          className="profile-five-radar"
-          viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-          role="img"
-          aria-label={t("report.profileFive.title")}
-        >
-          <title>{t("report.profileFive.title")}</title>
-          {[0.25, 0.5, 0.75, 1].map((s) => (
-            <polygon key={s} className="profile-five-grid" points={polygonForScale(s)} fill="none" />
-          ))}
-          {ANGLES_DEG.map((deg) => {
-            const outer = pt(deg, R);
-            const inner = pt(deg, 0);
-            return <line key={deg} className="profile-five-axis" x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y} />;
-          })}
-          <polygon className="profile-five-area" points={dataPoly} />
-          <polyline className="profile-five-stroke" points={dataPoly} />
-          {ANGLES_DEG.map((deg, i) => {
-            const dim = items[i];
-            const { x, y } = pt(deg, R_LABEL);
-            const anchor = x > CX + 10 ? "start" : x < CX - 10 ? "end" : "middle";
-            const dy = y < CY - 18 ? -4 : y > CY + 18 ? 16 : 6;
-            return (
-              <text key={`lbl-${dim.key}`} className="profile-five-label" x={x} y={y + dy} textAnchor={anchor}>
-                {t(`report.profileFive.axisShort.${dim.key}`)}
-              </text>
-            );
-          })}
-          {dataPts.map((p, i) => {
-            const dim = items[i];
-            const active = spotKey === dim.key;
-            const band = profileScoreBand(dim.score);
-            return (
-              <g
-                key={dim.key}
-                role={previewLocked ? undefined : "button"}
-                tabIndex={previewLocked ? undefined : 0}
-                className="profile-five-axis-hit"
-                aria-pressed={active}
-                aria-label={
-                  previewLocked
-                    ? t(`report.profileFive.axisShort.${dim.key}`)
-                    : t("report.profileFive.axisTapAria", { axis: t(`report.profileFive.axisShort.${dim.key}`) })
-                }
-                onClick={previewLocked ? undefined : () => toggleSpot(dim.key)}
-                onKeyDown={previewLocked ? undefined : (e) => onAxisKeyDown(e, dim.key)}
-              >
-                <circle className="profile-five-hit" cx={p.x} cy={p.y} r="18" fill="transparent" />
-                <circle
-                  className={`profile-five-node profile-five-node--${band}${active ? " profile-five-node--active" : ""}`}
-                  cx={p.x}
-                  cy={p.y}
-                  r={active ? 6 : 4.5}
-                />
-              </g>
-            );
-          })}
-        </svg>
-
-        {spot && !previewLocked && (
-          <div className="profile-five-spotlight" role="region" aria-live="polite" id="profile-five-spotlight">
-            <div className="profile-five-spotlight-head">
-              <strong className="profile-five-spotlight-title">{t(`report.profileFive.axis.${spot.key}`)}</strong>
-              <button type="button" className="profile-five-spotlight-close btn btn-secondary" onClick={() => setSpotKey(null)}>
-                {t("report.profileFive.spotClose")}
-              </button>
-            </div>
-            <p className="profile-five-spotlight-line profile-five-spotlight-line--judgment">{spot.judgment}</p>
-            <p className="profile-five-spotlight-line">
-              <span className="profile-five-k">{t("report.profileFive.reasonLabel")}</span>
-              {spot.explain}
-            </p>
-            <p className="profile-five-spotlight-line profile-five-spotlight-line--suggest">
-              <span className="profile-five-k">{t("report.profileFive.suggestAdvisorLabel")}</span>
-              {spot.suggest}
-            </p>
-          </div>
-        )}
-
-        {!mockupLayout && (
-          <p className="profile-five-radar-hint">
-            {previewLocked ? t("report.profileFive.previewHint") : t("report.profileFive.chartHint")}
-          </p>
-        )}
-      </div>
-
       {mockupLayout ? (
-        <div className="profile-five-mockup-grid" aria-label={t("report.profileFive.title")}>
-          {items.map((it) => {
-            const band = profileScoreBand(it.score);
-            const pct = Math.max(8, Math.min(100, it.score));
-            return (
-              <div key={it.key} className={`profile-five-mockup-card profile-five-mockup-card--${band}`}>
-                <div className="profile-five-mockup-card__head">
-                  <span className="profile-five-mockup-card__label">{t(`report.profileFive.axisShort.${it.key}`)}</span>
-                  <span className={`profile-five-mockup-card__score profile-five-mockup-card__score--${band}`}>{it.score}</span>
-                </div>
-                <div className="profile-five-mockup-card__track" aria-hidden>
-                  <span style={{ width: `${pct}%` }} />
-                </div>
-              </div>
-            );
-          })}
+        <div className="profile-five-mockup-layout">
+          <div className="profile-five-radar-wrap">{radarSvg}</div>
+          {mockupBars}
         </div>
       ) : (
-      <ul className="profile-five-list">
+        <>
+          <div className="profile-five-radar-wrap">
+            {radarSvg}
+            {spot && !previewLocked && (
+              <div className="profile-five-spotlight" role="region" aria-live="polite" id="profile-five-spotlight">
+                <div className="profile-five-spotlight-head">
+                  <strong className="profile-five-spotlight-title">{t(`report.profileFive.axis.${spot.key}`)}</strong>
+                  <button type="button" className="profile-five-spotlight-close btn btn-secondary" onClick={() => setSpotKey(null)}>
+                    {t("report.profileFive.spotClose")}
+                  </button>
+                </div>
+                <p className="profile-five-spotlight-line profile-five-spotlight-line--judgment">{spot.judgment}</p>
+                <p className="profile-five-spotlight-line">
+                  <span className="profile-five-k">{t("report.profileFive.reasonLabel")}</span>
+                  {spot.explain}
+                </p>
+                <p className="profile-five-spotlight-line profile-five-spotlight-line--suggest">
+                  <span className="profile-five-k">{t("report.profileFive.suggestAdvisorLabel")}</span>
+                  {spot.suggest}
+                </p>
+              </div>
+            )}
+            <p className="profile-five-radar-hint">
+              {previewLocked ? t("report.profileFive.previewHint") : t("report.profileFive.chartHint")}
+            </p>
+          </div>
+          <ul className="profile-five-list">
         {items.map((it) => {
           const band = profileScoreBand(it.score);
           return (
@@ -261,7 +267,8 @@ export function ApplicationProfileRadar({
           </li>
           );
         })}
-      </ul>
+          </ul>
+        </>
       )}
 
       {previewLocked && !mockupLayout && (

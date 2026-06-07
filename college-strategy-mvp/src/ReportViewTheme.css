@@ -169,14 +169,73 @@
 
 .report-view .report-banner--unlock__copy {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
   flex: 1;
   min-width: 12rem;
 }
 
+.report-view .report-banner--unlock__text {
+  min-width: 0;
+}
+
+.report-view .report-banner--unlock__title {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.report-view .report-banner--unlock__hint,
+.report-view .report-banner--unlock__notice {
+  margin: 0.25rem 0 0;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  opacity: 0.9;
+}
+
+.report-view .report-banner--unlock__notice {
+  opacity: 1;
+  font-weight: 600;
+}
+
+.report-view .report-unlock-block {
+  margin-bottom: 0.65rem;
+}
+
+.report-view .report-unlock-block__hybrid-hint {
+  margin: 0.45rem 0 0;
+  padding: 0 0.15rem;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: var(--report-muted);
+}
+
+.report-view .report-unlock-block__invite {
+  margin-top: 0.65rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 10px;
+  background: rgba(236, 253, 245, 0.72);
+  border: 1px solid rgba(0, 102, 68, 0.14);
+  border-top: none;
+}
+
+.report-view .report-unlock-block__invite .invite-redeem__label {
+  color: var(--report-text);
+}
+
+.report-view .report-unlock-block__invite .invite-redeem__hint {
+  color: var(--report-muted);
+}
+
+.report-view .report-unlock-block__invite .invite-redeem__input {
+  border-color: rgba(0, 102, 68, 0.18);
+  background: rgba(255, 255, 255, 0.9);
+}
+
 .report-view .report-banner__lock {
   font-size: 1rem;
+  flex-shrink: 0;
 }
 
 .report-view .report-banner--unlock__cta {
@@ -187,13 +246,7 @@
   border-radius: 10px;
   padding: 0.45rem 0.85rem;
   white-space: nowrap;
-}
-
-.report-view .report-banner--unlock__notice {
-  flex-basis: 100%;
-  margin: 0;
-  font-size: 0.75rem;
-  opacity: 0.85;
+  flex-shrink: 0;
 }
 
 /* —— Flat numbered sections —— */
@@ -351,61 +404,102 @@
 }
 
 /* —— Five dimensions mockup —— */
-.report-view .profile-five--mockup .profile-five-radar-wrap {
-  margin-bottom: 0;
+.report-view .profile-five-mockup-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  align-items: stretch;
 }
 
-.report-view .profile-five-mockup-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.55rem;
-  align-content: start;
-}
-
-.report-view .profile-five-mockup-card:nth-child(5) {
-  grid-column: 1 / -1;
-  max-width: calc(50% - 0.28rem);
-  justify-self: center;
-  width: 100%;
-}
-
-@media (min-width: 1100px) {
-  .report-view .profile-five--mockup {
-    display: grid;
-    grid-template-columns: minmax(280px, 400px) minmax(220px, 1fr);
-    grid-template-rows: auto auto;
-    gap: 0.75rem 1.5rem;
-    align-items: start;
+@media (min-width: 768px) {
+  .report-view .profile-five-mockup-layout {
+    flex-direction: row;
+    align-items: center;
+    gap: clamp(1.25rem, 3vw, 2.5rem);
   }
 
   .report-view .profile-five--mockup .profile-five-radar-wrap {
-    grid-column: 1;
-    grid-row: 1;
-    max-width: none;
+    flex: 0 0 min(340px, 38%);
+    max-width: min(380px, 100%);
     margin: 0;
-    align-self: center;
   }
 
-  .report-view .profile-five--mockup .profile-five-mockup-grid {
-    grid-column: 2;
-    grid-row: 1;
-    grid-template-columns: 1fr;
-    max-width: min(20rem, 100%);
-    justify-self: stretch;
+  .report-view .profile-five-mockup-bars {
+    flex: 1;
+    min-width: 0;
   }
+}
 
-  .report-view .profile-five--mockup .profile-five-mockup-card:nth-child(5) {
-    grid-column: auto;
-    max-width: none;
-    justify-self: stretch;
-  }
+.report-view .profile-five--mockup .profile-five-radar-wrap {
+  margin: 0 auto;
+  max-width: min(320px, 100%);
+}
 
-  .report-view .profile-five--mockup .profile-five-commit {
-    grid-column: 1 / -1;
-    max-width: min(28rem, 100%);
-    margin-left: 0;
-    margin-right: 0;
-  }
+.report-view .profile-five-mockup-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  padding: 0.15rem 0;
+}
+
+.report-view .profile-five-mockup-row {
+  display: grid;
+  grid-template-columns: minmax(4.25rem, 5.5rem) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0;
+}
+
+.report-view .profile-five-mockup-row + .profile-five-mockup-row {
+  border-top: 1px solid rgba(0, 102, 68, 0.08);
+}
+
+.report-view .profile-five-mockup-row__label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--report-text);
+}
+
+.report-view .profile-five-mockup-row__track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(0, 102, 68, 0.1);
+  overflow: hidden;
+}
+
+.report-view .profile-five-mockup-row__track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--report-accent);
+}
+
+.report-view .profile-five-mockup-row__score {
+  min-width: 1.75rem;
+  font-size: 0.95rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: #047857;
+}
+
+.report-view .profile-five-mockup-row__score--low {
+  color: #b91c1c;
+}
+
+.report-view .profile-five-mockup-row__score--mid {
+  color: #a16207;
+}
+
+.report-view .profile-five-mockup-row__score--high {
+  color: #047857;
+}
+
+.report-view .profile-five--mockup .profile-five-commit {
+  width: 100%;
+  max-width: none;
+  margin: 0.85rem 0 0;
 }
 
 @media (min-width: 1100px) {
@@ -420,59 +514,6 @@
     max-width: none;
     margin: 0;
   }
-}
-
-.report-view .profile-five-mockup-card {
-  padding: 0.65rem 0.75rem;
-  border-radius: 10px;
-  background: #ecfdf5;
-  border: 1px solid #bbf7d0;
-}
-
-.report-view .profile-five-mockup-card__head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.45rem;
-}
-
-.report-view .profile-five-mockup-card__label {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--report-text);
-}
-
-.report-view .profile-five-mockup-card__score {
-  font-size: 1.1rem;
-  font-weight: 750;
-  color: #047857;
-}
-
-.report-view .profile-five-mockup-card__score--low {
-  color: #b91c1c;
-}
-
-.report-view .profile-five-mockup-card__score--mid {
-  color: #a16207;
-}
-
-.report-view .profile-five-mockup-card__score--high {
-  color: #047857;
-}
-
-.report-view .profile-five-mockup-card__track {
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(0, 102, 68, 0.12);
-  overflow: hidden;
-}
-
-.report-view .profile-five-mockup-card__track span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--report-accent);
 }
 
 .report-view .profile-five-stroke {

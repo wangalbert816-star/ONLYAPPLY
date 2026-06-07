@@ -664,10 +664,6 @@
   .report-view .profile-five-radar {
     max-width: min(480px, 100%);
   }
-
-  .report-view .profile-five-mockup-grid {
-    max-width: none;
-  }
 }
 
 .profile-five-radar {
@@ -982,7 +978,8 @@
 }
 
 .report-view .profile-five--mockup .profile-five-commit {
-  max-width: min(28rem, 100%);
+  width: 100%;
+  max-width: none;
   margin-left: 0;
   margin-right: 0;
 }
