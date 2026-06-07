@@ -2,7 +2,12 @@
   {
     "caseKey": "CASE-001",
     "title": "弱GPA · 国际生 · CS · Test-Optional",
-    "tags": ["weak-gpa", "intl", "cs", "test-optional"],
+    "tags": [
+      "weak-gpa",
+      "intl",
+      "cs",
+      "test-optional"
+    ],
     "reportBody": {
       "locale": "zh",
       "intakeTerm": "2027 Fall",
@@ -24,7 +29,10 @@
       "majorSecondary": "Data Science",
       "schoolSize": "medium",
       "campusCulturePref": "balanced",
-      "geoPrefs": ["west", "any"],
+      "geoPrefs": [
+        "west",
+        "any"
+      ],
       "structuredActivities": [
         {
           "id": "1",
@@ -51,19 +59,41 @@
       "dealbreakers": "不考虑宗教氛围过强的学校"
     },
     "expectedReach": [
-      { "school": "UC Irvine", "note": "CS 竞争大但活动有技术深度" },
-      { "school": "UC San Diego", "note": "对国际生应为 Reach" },
-      { "school": "Northeastern University", "note": "Co-op 路径匹配 CS" }
+      {
+        "school": "UC Irvine",
+        "note": "CS 竞争大但活动有技术深度"
+      },
+      {
+        "school": "UC San Diego",
+        "note": "对国际生应为 Reach"
+      },
+      {
+        "school": "Northeastern University",
+        "note": "Co-op 路径匹配 CS"
+      }
     ],
     "expectedMatch": [
-      { "school": "UC Santa Cruz" },
-      { "school": "San Jose State University" },
-      { "school": "University of Arizona" }
+      {
+        "school": "UC Santa Cruz"
+      },
+      {
+        "school": "San Jose State University"
+      },
+      {
+        "school": "Cal Poly Pomona",
+        "note": "CS-adjacent Cal State; more realistic Match than U of A"
+      }
     ],
     "expectedSafety": [
-      { "school": "Arizona State University" },
-      { "school": "University of Oregon" },
-      { "school": "Washington State University" }
+      {
+        "school": "Arizona State University"
+      },
+      {
+        "school": "University of Oregon"
+      },
+      {
+        "school": "Washington State University"
+      }
     ],
     "forbiddenSchools": [],
     "notes": "测试弱GPA + test-optional 时档位是否偏乐观；UC 高选择性校区应偏 Reach。"
@@ -71,7 +101,12 @@
   {
     "caseKey": "CASE-002",
     "title": "Entrepreneurship · SAT 1440 · 禁 MIT/Stanford",
-    "tags": ["entrepreneurship", "sat-1440", "forbidden-schools", "business"],
+    "tags": [
+      "entrepreneurship",
+      "sat-1440",
+      "forbidden-schools",
+      "business"
+    ],
     "reportBody": {
       "locale": "en",
       "intakeTerm": "2027 Fall",
@@ -93,7 +128,10 @@
       "majorSecondary": "Business",
       "schoolSize": "medium",
       "campusCulturePref": "balanced",
-      "geoPrefs": ["east", "any"],
+      "geoPrefs": [
+        "east",
+        "any"
+      ],
       "structuredActivities": [
         {
           "id": "1",
@@ -130,27 +168,56 @@
       "dealbreakers": "Family asked to avoid MIT and Stanford"
     },
     "expectedReach": [
-      { "school": "Babson College", "note": "Entrepreneurship program fit" },
-      { "school": "NYU Stern", "note": "Business depth + NYC ecosystem" },
-      { "school": "Boston College", "note": "Strong undergrad business path" }
+      {
+        "school": "Babson College",
+        "note": "Entrepreneurship program fit"
+      },
+      {
+        "school": "NYU Stern",
+        "note": "Business depth + NYC ecosystem"
+      },
+      {
+        "school": "Boston College",
+        "note": "Strong undergrad business path"
+      }
     ],
     "expectedMatch": [
-      { "school": "Rutgers University–New Brunswick" },
-      { "school": "Indiana University Bloomington" },
-      { "school": "University of Washington" }
+      {
+        "school": "Rutgers University–New Brunswick"
+      },
+      {
+        "school": "Indiana University Bloomington"
+      },
+      {
+        "school": "University of Washington"
+      }
     ],
     "expectedSafety": [
-      { "school": "Stony Brook University" },
-      { "school": "University at Buffalo" },
-      { "school": "University of Connecticut" }
+      {
+        "school": "Stony Brook University"
+      },
+      {
+        "school": "University at Buffalo"
+      },
+      {
+        "school": "University of Connecticut"
+      }
     ],
-    "forbiddenSchools": ["MIT", "Stanford University"],
+    "forbiddenSchools": [
+      "MIT",
+      "Stanford University"
+    ],
     "notes": "顾问曾指出 UCSD 应为 Reach；名单应含 Babson 等专业匹配校，禁校不得出现在任何区块。"
   },
   {
     "caseKey": "CASE-003",
     "title": "强STEM · SAT 1520 · CS/AI · 美籍",
-    "tags": ["strong-stats", "cs", "ai", "us-citizen"],
+    "tags": [
+      "strong-stats",
+      "cs",
+      "ai",
+      "us-citizen"
+    ],
     "reportBody": {
       "locale": "en",
       "intakeTerm": "2027 Fall",
@@ -172,7 +239,10 @@
       "majorSecondary": "Artificial Intelligence",
       "schoolSize": "large",
       "campusCulturePref": "academic",
-      "geoPrefs": ["west", "east"],
+      "geoPrefs": [
+        "west",
+        "east"
+      ],
       "structuredActivities": [
         {
           "id": "1",
@@ -206,19 +276,40 @@
       "dealbreakers": ""
     },
     "expectedReach": [
-      { "school": "Carnegie Mellon University", "note": "SCS fit" },
-      { "school": "Georgia Institute of Technology", "note": "CS flagship" },
-      { "school": "University of Illinois Urbana-Champaign", "note": "Strong CS" }
+      {
+        "school": "Carnegie Mellon University",
+        "note": "SCS fit"
+      },
+      {
+        "school": "Georgia Institute of Technology",
+        "note": "CS flagship"
+      },
+      {
+        "school": "University of Illinois Urbana-Champaign",
+        "note": "Strong CS"
+      }
     ],
     "expectedMatch": [
-      { "school": "University of Washington" },
-      { "school": "Purdue University" },
-      { "school": "University of Wisconsin–Madison" }
+      {
+        "school": "University of Washington"
+      },
+      {
+        "school": "Purdue University"
+      },
+      {
+        "school": "University of Wisconsin–Madison"
+      }
     ],
     "expectedSafety": [
-      { "school": "University of California, Santa Cruz" },
-      { "school": "University of Maryland" },
-      { "school": "Virginia Tech" }
+      {
+        "school": "University of California, Santa Cruz"
+      },
+      {
+        "school": "University of Maryland"
+      },
+      {
+        "school": "Virginia Tech"
+      }
     ],
     "forbiddenSchools": [],
     "notes": "强背景案例：Reach 可以更高但不应全是彩票校；理由须引用 USACO/科研。"
@@ -226,7 +317,12 @@
   {
     "caseKey": "CASE-004",
     "title": "Pre-med · 国际生 · 中等标化 · 中文",
-    "tags": ["pre-med", "intl", "bio", "moderate-stats"],
+    "tags": [
+      "pre-med",
+      "intl",
+      "bio",
+      "moderate-stats"
+    ],
     "reportBody": {
       "locale": "zh",
       "intakeTerm": "2027 Fall",
@@ -248,7 +344,10 @@
       "majorSecondary": "Public Health",
       "schoolSize": "medium",
       "campusCulturePref": "academic",
-      "geoPrefs": ["midwest", "south"],
+      "geoPrefs": [
+        "midwest",
+        "south"
+      ],
       "structuredActivities": [
         {
           "id": "1",
@@ -282,19 +381,40 @@
       "dealbreakers": "预算有限，希望总费用控制在合理范围"
     },
     "expectedReach": [
-      { "school": "University of Florida", "note": "公立旗舰 + 生物" },
-      { "school": "Ohio State University", "note": "Pre-med 路径清晰" },
-      { "school": "University of Pittsburgh" }
+      {
+        "school": "Rutgers University",
+        "note": "预算友好公立 + 生物/pre-med"
+      },
+      {
+        "school": "Ohio State University",
+        "note": "Pre-med 路径清晰"
+      },
+      {
+        "school": "Penn State University",
+        "note": "大型公立旗舰，费用可控"
+      }
     ],
     "expectedMatch": [
-      { "school": "University of Iowa" },
-      { "school": "University of Kansas" },
-      { "school": "University of Alabama" }
+      {
+        "school": "University of Iowa"
+      },
+      {
+        "school": "University of Kansas"
+      },
+      {
+        "school": "University of Alabama"
+      }
     ],
     "expectedSafety": [
-      { "school": "University of Mississippi" },
-      { "school": "Kent State University" },
-      { "school": "University of Arkansas" }
+      {
+        "school": "University of Mississippi"
+      },
+      {
+        "school": "Kent State University"
+      },
+      {
+        "school": "University of Arkansas"
+      }
     ],
     "forbiddenSchools": [],
     "notes": "预算敏感 + pre-med：不应推荐明显超预算的私立；Safety 须真实可录。"
@@ -302,7 +422,12 @@
   {
     "caseKey": "CASE-005",
     "title": "商科 · Test-Optional · 活动偏泛",
-    "tags": ["business", "test-optional", "generic-activities", "intl"],
+    "tags": [
+      "business",
+      "test-optional",
+      "generic-activities",
+      "intl"
+    ],
     "reportBody": {
       "locale": "en",
       "intakeTerm": "2027 Fall",
@@ -324,7 +449,10 @@
       "majorSecondary": "Finance",
       "schoolSize": "any",
       "campusCulturePref": "social",
-      "geoPrefs": ["east", "any"],
+      "geoPrefs": [
+        "east",
+        "any"
+      ],
       "structuredActivities": [
         {
           "id": "1",
@@ -348,19 +476,37 @@
       "dealbreakers": ""
     },
     "expectedReach": [
-      { "school": "Indiana University Bloomington (Kelley)" },
-      { "school": "University of Minnesota Twin Cities" },
-      { "school": "Penn State University" }
+      {
+        "school": "Indiana University Bloomington (Kelley)"
+      },
+      {
+        "school": "University of Minnesota Twin Cities"
+      },
+      {
+        "school": "Penn State University"
+      }
     ],
     "expectedMatch": [
-      { "school": "University of Arizona" },
-      { "school": "University of Oregon" },
-      { "school": "Michigan State University" }
+      {
+        "school": "University of Arizona"
+      },
+      {
+        "school": "University of Oregon"
+      },
+      {
+        "school": "Michigan State University"
+      }
     ],
     "expectedSafety": [
-      { "school": "University of Kansas" },
-      { "school": "University of Utah" },
-      { "school": "Oregon State University" }
+      {
+        "school": "University of Kansas"
+      },
+      {
+        "school": "University of Utah"
+      },
+      {
+        "school": "Oregon State University"
+      }
     ],
     "forbiddenSchools": [],
     "notes": "活动偏泛、无标化：测试个性化理由是否套话；档位应保守。"
@@ -368,7 +514,14 @@
   {
     "caseKey": "CASE-006",
     "title": "高SAT低GPA · 成绩下滑 · CS · 档位争议",
-    "tags": ["split-profile", "sat-1550", "gpa-3.2", "downward", "cs", "tier-dispute"],
+    "tags": [
+      "split-profile",
+      "sat-1550",
+      "gpa-3.2",
+      "downward",
+      "cs",
+      "tier-dispute"
+    ],
     "reportBody": {
       "locale": "zh",
       "intakeTerm": "2027 Fall",
@@ -384,13 +537,18 @@
       "gpa": "Unweighted 3.22 / Weighted 3.85",
       "gpaTrend": "downward",
       "languageScores": "TOEFL 110",
-      "academicSpecialFlags": ["low_grades"],
+      "academicSpecialFlags": [
+        "low_grades"
+      ],
       "academicSpecialNotes": "11年级因家庭变故 GPA 从 3.7 跌至 3.1，12年级回升至 3.5 但未完全恢复",
       "majorPrimary": "Computer Science",
       "majorSecondary": "",
       "schoolSize": "large",
       "campusCulturePref": "academic",
-      "geoPrefs": ["west", "any"],
+      "geoPrefs": [
+        "west",
+        "any"
+      ],
       "structuredActivities": [
         {
           "id": "1",
@@ -416,19 +574,40 @@
       "dealbreakers": ""
     },
     "expectedReach": [
-      { "school": "University of Illinois Urbana-Champaign", "note": "CS 强但 GPA 是硬伤；有人标 Match 有人标 Reach" },
-      { "school": "Georgia Institute of Technology", "note": "标化够、趋势差——争议档" },
-      { "school": "University of Washington", "note": "对国际生 CS 极难，不应因 SAT 标 Match" }
+      {
+        "school": "University of Illinois Urbana-Champaign",
+        "note": "CS 强但 GPA 是硬伤；有人标 Match 有人标 Reach"
+      },
+      {
+        "school": "Georgia Institute of Technology",
+        "note": "标化够、趋势差——争议档"
+      },
+      {
+        "school": "University of Washington",
+        "note": "对国际生 CS 极难，不应因 SAT 标 Match"
+      }
     ],
     "expectedMatch": [
-      { "school": "Purdue University" },
-      { "school": "Ohio State University" },
-      { "school": "University of Minnesota Twin Cities" }
+      {
+        "school": "Purdue University"
+      },
+      {
+        "school": "Ohio State University"
+      },
+      {
+        "school": "University of Minnesota Twin Cities"
+      }
     ],
     "expectedSafety": [
-      { "school": "Michigan State University" },
-      { "school": "University of Arizona" },
-      { "school": "Iowa State University" }
+      {
+        "school": "Michigan State University"
+      },
+      {
+        "school": "University of Arizona"
+      },
+      {
+        "school": "Iowa State University"
+      }
     ],
     "forbiddenSchools": [],
     "notes": "经典 split profile：AI 易因 SAT 1550 把 UIUC/GT 标 Match；顾问应更看 GPA 趋势。"
@@ -436,7 +615,12 @@
   {
     "caseKey": "CASE-007",
     "title": "Gap Year · 影视媒体 · 作品集型 · 中文",
-    "tags": ["gap-year", "film", "portfolio", "non-traditional"],
+    "tags": [
+      "gap-year",
+      "film",
+      "portfolio",
+      "non-traditional"
+    ],
     "reportBody": {
       "locale": "zh",
       "intakeTerm": "2027 Fall",
@@ -452,13 +636,18 @@
       "gpa": "Unweighted 3.55",
       "gpaTrend": "stable",
       "languageScores": "TOEFL 105",
-      "academicSpecialFlags": ["gap_year"],
+      "academicSpecialFlags": [
+        "gap_year"
+      ],
       "academicSpecialNotes": "Gap year 全职制作纪录片，未再修课；高中 transcript 无 12 年级下半学期更新",
       "majorPrimary": "Film / Media Studies",
       "majorSecondary": "Communication",
       "schoolSize": "medium",
       "campusCulturePref": "balanced",
-      "geoPrefs": ["west", "east"],
+      "geoPrefs": [
+        "west",
+        "east"
+      ],
       "structuredActivities": [
         {
           "id": "1",
@@ -485,19 +674,40 @@
       "dealbreakers": "不想去纯理工校或无可选影视资源的学校"
     },
     "expectedReach": [
-      { "school": "Emerson College", "note": "影视强校但 stats 一般——专业 fit vs 录取率" },
-      { "school": "Chapman University", "note": "Dodge 电影学院路径" },
-      { "school": "UC Santa Barbara", "note": "Film & Media 可选，但 UC 对 gap year 叙事要求高" }
+      {
+        "school": "Emerson College",
+        "note": "影视强校但 stats 一般——专业 fit vs 录取率"
+      },
+      {
+        "school": "Chapman University",
+        "note": "Dodge 电影学院路径"
+      },
+      {
+        "school": "UC Santa Barbara",
+        "note": "Film & Media 可选，但 UC 对 gap year 叙事要求高"
+      }
     ],
     "expectedMatch": [
-      { "school": "San Francisco State University" },
-      { "school": "California State University, Long Beach" },
-      { "school": "University of Oregon" }
+      {
+        "school": "San Francisco State University"
+      },
+      {
+        "school": "California State University, Long Beach"
+      },
+      {
+        "school": "University of Oregon"
+      }
     ],
     "expectedSafety": [
-      { "school": "Montana State University" },
-      { "school": "University of Idaho" },
-      { "school": "Eastern Washington University" }
+      {
+        "school": "Montana State University"
+      },
+      {
+        "school": "University of Idaho"
+      },
+      {
+        "school": "Eastern Washington University"
+      }
     ],
     "forbiddenSchools": [],
     "notes": "Gap year + 作品集：AI 易按 GPA/无标化推综合排名校，忽略影视专业校或标过高。"
@@ -505,7 +715,12 @@
   {
     "caseKey": "CASE-008",
     "title": "CS + Music · 跨学科 · 叙事分裂",
-    "tags": ["interdisciplinary", "cs", "music", "narrative-split"],
+    "tags": [
+      "interdisciplinary",
+      "cs",
+      "music",
+      "narrative-split"
+    ],
     "reportBody": {
       "locale": "en",
       "intakeTerm": "2027 Fall",
@@ -527,7 +742,10 @@
       "majorSecondary": "Music Technology / Composition",
       "schoolSize": "medium",
       "campusCulturePref": "balanced",
-      "geoPrefs": ["south", "west"],
+      "geoPrefs": [
+        "south",
+        "west"
+      ],
       "structuredActivities": [
         {
           "id": "1",
@@ -561,19 +779,40 @@
       "dealbreakers": "Must have real music + tech crossover, not generic CS only"
     },
     "expectedReach": [
-      { "school": "Carnegie Mellon University", "note": "CS + music tech — reach for aid applicant" },
-      { "school": "Georgia Institute of Technology", "note": "Music tech minor path; not pure SCS lottery" },
-      { "school": "University of Michigan", "note": "STAMPS / LSA+Engineering narrative" }
+      {
+        "school": "Carnegie Mellon University",
+        "note": "CS + music tech — reach for aid applicant"
+      },
+      {
+        "school": "Georgia Institute of Technology",
+        "note": "Music tech minor path; not pure SCS lottery"
+      },
+      {
+        "school": "University of Michigan",
+        "note": "STAMPS / LSA+Engineering narrative"
+      }
     ],
     "expectedMatch": [
-      { "school": "University of Texas at Austin" },
-      { "school": "Northeastern University" },
-      { "school": "University of Rochester" }
+      {
+        "school": "University of Texas at Austin"
+      },
+      {
+        "school": "Northeastern University"
+      },
+      {
+        "school": "University of Rochester"
+      }
     ],
     "expectedSafety": [
-      { "school": "University of Colorado Boulder" },
-      { "school": "University of Utah" },
-      { "school": "Arizona State University" }
+      {
+        "school": "University of Colorado Boulder"
+      },
+      {
+        "school": "University of Utah"
+      },
+      {
+        "school": "Arizona State University"
+      }
     ],
     "forbiddenSchools": [],
     "notes": "跨学科：AI 易只推 CS 排名校，忽略 music tech fit；need aid 时档位应更保守。"
@@ -581,7 +820,12 @@
   {
     "caseKey": "CASE-009",
     "title": "国际生需奖助 · 高标化 · 预算硬约束",
-    "tags": ["intl", "need-aid", "budget-hard", "sat-1510"],
+    "tags": [
+      "intl",
+      "need-aid",
+      "budget-hard",
+      "sat-1510"
+    ],
     "reportBody": {
       "locale": "zh",
       "intakeTerm": "2027 Fall",
@@ -603,7 +847,11 @@
       "majorSecondary": "Mathematics",
       "schoolSize": "any",
       "campusCulturePref": "academic",
-      "geoPrefs": ["midwest", "south", "any"],
+      "geoPrefs": [
+        "midwest",
+        "south",
+        "any"
+      ],
       "structuredActivities": [
         {
           "id": "1",
@@ -627,27 +875,57 @@
       "dealbreakers": "不能接受无奖学金可能的全额自费私立；不要推荐 need-blind 对国际生不存在的藤校作 reach"
     },
     "expectedReach": [
-      { "school": "Macalester College", "note": "对国际生 aid 相对友好；仍应是 reach" },
-      { "school": "Oberlin College", "note": "Liberal arts + econ，aid 政策需核对" },
-      { "school": "University of Richmond", "note": "Merit 可能但不应标 match" }
+      {
+        "school": "Macalester College",
+        "note": "对国际生 aid 相对友好；仍应是 reach"
+      },
+      {
+        "school": "Oberlin College",
+        "note": "Liberal arts + econ，aid 政策需核对"
+      },
+      {
+        "school": "University of Richmond",
+        "note": "Merit 可能但不应标 match"
+      }
     ],
     "expectedMatch": [
-      { "school": "University of Florida" },
-      { "school": "University of Georgia" },
-      { "school": "Binghamton University" }
+      {
+        "school": "University of Florida"
+      },
+      {
+        "school": "University of Georgia"
+      },
+      {
+        "school": "Binghamton University"
+      }
     ],
     "expectedSafety": [
-      { "school": "University of Alabama" },
-      { "school": "University of Mississippi" },
-      { "school": "University of Arkansas" }
+      {
+        "school": "University of Alabama"
+      },
+      {
+        "school": "University of Mississippi"
+      },
+      {
+        "school": "University of Arkansas"
+      }
     ],
-    "forbiddenSchools": ["Harvard University", "Yale University", "Princeton University"],
+    "forbiddenSchools": [
+      "Harvard University",
+      "Yale University",
+      "Princeton University"
+    ],
     "notes": "国际生 need aid：AI 常推名校 reach 却忽略 aid 现实；禁藤校测试 top_reference 泄漏。"
   },
   {
     "caseKey": "CASE-010",
     "title": "Community College 学分 · 转轨 CS · 年龄偏大",
-    "tags": ["cc-credits", "non-traditional", "cs-switch", "older-applicant"],
+    "tags": [
+      "cc-credits",
+      "non-traditional",
+      "cs-switch",
+      "older-applicant"
+    ],
     "reportBody": {
       "locale": "en",
       "intakeTerm": "2027 Fall",
@@ -663,13 +941,18 @@
       "gpa": "HS unweighted 3.1; CC cumulative 3.85 (24 units, calc + CS)",
       "gpaTrend": "upward",
       "languageScores": "",
-      "academicSpecialFlags": ["gap_year"],
+      "academicSpecialFlags": [
+        "gap_year"
+      ],
       "academicSpecialNotes": "高中毕业后工作 2 年，CC 重修 STEM；申请时为 21 岁 freshman",
       "majorPrimary": "Computer Science",
       "majorSecondary": "",
       "schoolSize": "large",
       "campusCulturePref": "any",
-      "geoPrefs": ["west", "any"],
+      "geoPrefs": [
+        "west",
+        "any"
+      ],
       "structuredActivities": [
         {
           "id": "1",
@@ -695,19 +978,40 @@
       "dealbreakers": "Must stay in California if possible; total COA under ~45k/year"
     },
     "expectedReach": [
-      { "school": "UC Merced", "note": "UC 对 CC 转轨友好；仍是 reach 因 CS" },
-      { "school": "Cal Poly Pomona", "note": "CS 竞争但地理 fit" },
-      { "school": "San José State University", "note": "本地 CS — 对 CC 3.85 可能是 match/reach 边界" }
+      {
+        "school": "UC Merced",
+        "note": "UC 对 CC 转轨友好；仍是 reach 因 CS"
+      },
+      {
+        "school": "Cal Poly Pomona",
+        "note": "CS 竞争但地理 fit"
+      },
+      {
+        "school": "San José State University",
+        "note": "本地 CS — 对 CC 3.85 可能是 match/reach 边界"
+      }
     ],
     "expectedMatch": [
-      { "school": "California State University, Fullerton" },
-      { "school": "California State University, Long Beach" },
-      { "school": "University of California, Riverside" }
+      {
+        "school": "California State University, Fullerton"
+      },
+      {
+        "school": "California State University, Long Beach"
+      },
+      {
+        "school": "University of California, Riverside"
+      }
     ],
     "expectedSafety": [
-      { "school": "California State University, Stanislaus" },
-      { "school": "California State University, Bakersfield" },
-      { "school": "University of California, Merced" }
+      {
+        "school": "California State University, Stanislaus"
+      },
+      {
+        "school": "California State University, Bakersfield"
+      },
+      {
+        "school": "University of California, Merced"
+      }
     ],
     "forbiddenSchools": [],
     "notes": "CC + 非传统路径：AI 易忽略 CC GPA 或反向把 SJSU 标 safety；UC 档位需单独校准。"
@@ -715,7 +1019,12 @@
   {
     "caseKey": "CASE-011",
     "title": "D3 运动员 · Pre-law · 标化中等 · hook 边界",
-    "tags": ["athlete", "pre-law", "hook-edge", "moderate-stats"],
+    "tags": [
+      "athlete",
+      "pre-law",
+      "hook-edge",
+      "moderate-stats"
+    ],
     "reportBody": {
       "locale": "en",
       "intakeTerm": "2027 Fall",
@@ -737,7 +1046,11 @@
       "majorSecondary": "Philosophy",
       "schoolSize": "small",
       "campusCulturePref": "balanced",
-      "geoPrefs": ["midwest", "great_lakes", "any"],
+      "geoPrefs": [
+        "midwest",
+        "great_lakes",
+        "any"
+      ],
       "structuredActivities": [
         {
           "id": "1",
@@ -771,19 +1084,39 @@
       "dealbreakers": "Prefer small campus; cold weather OK"
     },
     "expectedReach": [
-      { "school": "Denison University", "note": "D3 lacrosse + poli sci； athletic hook 不等于 reach 降级" },
-      { "school": "Kenyon College", "note": "Liberal arts reach；stats 略弱" },
-      { "school": "College of Wooster" }
+      {
+        "school": "Denison University",
+        "note": "D3 lacrosse + poli sci； athletic hook 不等于 reach 降级"
+      },
+      {
+        "school": "Kenyon College",
+        "note": "Liberal arts reach；stats 略弱"
+      },
+      {
+        "school": "College of Wooster"
+      }
     ],
     "expectedMatch": [
-      { "school": "Ohio Wesleyan University" },
-      { "school": "Wittenberg University" },
-      { "school": "Miami University (Ohio)" }
+      {
+        "school": "Ohio Wesleyan University"
+      },
+      {
+        "school": "Wittenberg University"
+      },
+      {
+        "school": "Miami University (Ohio)"
+      }
     ],
     "expectedSafety": [
-      { "school": "Ohio University" },
-      { "school": "Kent State University" },
-      { "school": "Bowling Green State University" }
+      {
+        "school": "Ohio University"
+      },
+      {
+        "school": "Kent State University"
+      },
+      {
+        "school": "Bowling Green State University"
+      }
     ],
     "forbiddenSchools": [],
     "notes": "D3 hook 边界：AI 不应把 athlete 自动降档到 safety flagship，也不应夸大 hook 进 Top 20。"
@@ -791,7 +1124,11 @@
   {
     "caseKey": "CASE-012",
     "title": "建筑/设计 · 作品集校 vs 综合排名",
-    "tags": ["architecture", "portfolio", "rank-vs-fit"],
+    "tags": [
+      "architecture",
+      "portfolio",
+      "rank-vs-fit"
+    ],
     "reportBody": {
       "locale": "en",
       "intakeTerm": "2027 Fall",
@@ -813,7 +1150,10 @@
       "majorSecondary": "Urban Design",
       "schoolSize": "medium",
       "campusCulturePref": "academic",
-      "geoPrefs": ["east", "west"],
+      "geoPrefs": [
+        "east",
+        "west"
+      ],
       "structuredActivities": [
         {
           "id": "1",
@@ -837,19 +1177,40 @@
       "dealbreakers": "Must have accredited B.Arch or strong M.Arch pipeline; reject pure liberal arts without studio"
     },
     "expectedReach": [
-      { "school": "Rhode Island School of Design", "note": "Portfolio school — 不是普通 reach" },
-      { "school": "Syracuse University", "note": "Strong architecture school" },
-      { "school": "Virginia Tech", "note": "Architecture + engineering crossover" }
+      {
+        "school": "Rhode Island School of Design",
+        "note": "Portfolio school — 不是普通 reach"
+      },
+      {
+        "school": "Syracuse University",
+        "note": "Strong architecture school"
+      },
+      {
+        "school": "Virginia Tech",
+        "note": "Architecture + engineering crossover"
+      }
     ],
     "expectedMatch": [
-      { "school": "University of Oregon" },
-      { "school": "Auburn University" },
-      { "school": "University of Arizona" }
+      {
+        "school": "University of Oregon"
+      },
+      {
+        "school": "Auburn University"
+      },
+      {
+        "school": "University of Arizona"
+      }
     ],
     "expectedSafety": [
-      { "school": "Lawrence Technological University" },
-      { "school": "Montana State University" },
-      { "school": "Ball State University" }
+      {
+        "school": "Lawrence Technological University"
+      },
+      {
+        "school": "Montana State University"
+      },
+      {
+        "school": "Ball State University"
+      }
     ],
     "forbiddenSchools": [],
     "notes": "作品集专业：AI 易推 US News 综合排名校，漏 RISD/Syracuse 等 studio 路径或档位错误。"
@@ -857,7 +1218,12 @@
   {
     "caseKey": "CASE-013",
     "title": "美高完美GPA · 活动弱 · 藤校预期过高",
-    "tags": ["perfect-gpa", "weak-ec", "ivy-overreach", "boarding"],
+    "tags": [
+      "perfect-gpa",
+      "weak-ec",
+      "ivy-overreach",
+      "boarding"
+    ],
     "reportBody": {
       "locale": "en",
       "intakeTerm": "2027 Fall",
@@ -879,7 +1245,10 @@
       "majorSecondary": "",
       "schoolSize": "small",
       "campusCulturePref": "academic",
-      "geoPrefs": ["east", "any"],
+      "geoPrefs": [
+        "east",
+        "any"
+      ],
       "structuredActivities": [
         {
           "id": "1",
@@ -904,27 +1273,58 @@
       "dealbreakers": "Parents expect Ivy but open to top LAC"
     },
     "expectedReach": [
-      { "school": "Boston College", "note": "Stats 强但 EC 弱 —  realistic reach" },
-      { "school": "Tufts University", "note": "不应标 match" },
-      { "school": "New York University", "note": "国际生竞争大" }
+      {
+        "school": "Boston College",
+        "note": "Stats 强但 EC 弱 —  realistic reach"
+      },
+      {
+        "school": "Tufts University",
+        "note": "不应标 match"
+      },
+      {
+        "school": "New York University",
+        "note": "国际生竞争大"
+      }
     ],
     "expectedMatch": [
-      { "school": "Northeastern University" },
-      { "school": "University of Rochester" },
-      { "school": "Brandeis University" }
+      {
+        "school": "Northeastern University"
+      },
+      {
+        "school": "University of Rochester"
+      },
+      {
+        "school": "Brandeis University"
+      }
     ],
     "expectedSafety": [
-      { "school": "University of Connecticut" },
-      { "school": "University of Massachusetts Amherst" },
-      { "school": "Penn State University" }
+      {
+        "school": "University of Connecticut"
+      },
+      {
+        "school": "University of Massachusetts Amherst"
+      },
+      {
+        "school": "Penn State University"
+      }
     ],
-    "forbiddenSchools": ["Harvard University", "Yale University", "Princeton University", "Columbia University"],
+    "forbiddenSchools": [
+      "Harvard University",
+      "Yale University",
+      "Princeton University",
+      "Columbia University"
+    ],
     "notes": "Parent Ivy 预期 vs 弱 EC：AI 易给 Cornell/Brown reach；顾问应压预期并禁藤。"
   },
   {
     "caseKey": "CASE-014",
     "title": "环科+政策 · 保守选校 vs 学生想冲",
-    "tags": ["environmental", "policy", "risk-conflict", "conservative-parent"],
+    "tags": [
+      "environmental",
+      "policy",
+      "risk-conflict",
+      "conservative-parent"
+    ],
     "reportBody": {
       "locale": "zh",
       "intakeTerm": "2027 Fall",
@@ -946,7 +1346,10 @@
       "majorSecondary": "Public Policy",
       "schoolSize": "large",
       "campusCulturePref": "academic",
-      "geoPrefs": ["west", "any"],
+      "geoPrefs": [
+        "west",
+        "any"
+      ],
       "structuredActivities": [
         {
           "id": "1",
@@ -971,19 +1374,40 @@
       "dealbreakers": "家长希望保守；学生问卷选 aggressive — 报告应解释分歧并给 balanced 方案"
     },
     "expectedReach": [
-      { "school": "University of California, Berkeley", "note": "环科强但 aid+国际竞争 — 典型 reach" },
-      { "school": "University of Washington", "note": "州内 flagship；match/reach 边界" },
-      { "school": "University of Colorado Boulder", "note": "ENVST 项目 fit" }
+      {
+        "school": "University of California, Berkeley",
+        "note": "环科强但 aid+国际竞争 — 典型 reach"
+      },
+      {
+        "school": "University of Washington",
+        "note": "州内 flagship；match/reach 边界"
+      },
+      {
+        "school": "University of Colorado Boulder",
+        "note": "ENVST 项目 fit"
+      }
     ],
     "expectedMatch": [
-      { "school": "Oregon State University" },
-      { "school": "Washington State University" },
-      { "school": "University of Oregon" }
+      {
+        "school": "Oregon State University"
+      },
+      {
+        "school": "Washington State University"
+      },
+      {
+        "school": "University of Oregon"
+      }
     ],
     "expectedSafety": [
-      { "school": "Western Washington University" },
-      { "school": "Central Washington University" },
-      { "school": "Eastern Oregon University" }
+      {
+        "school": "Western Washington University"
+      },
+      {
+        "school": "Central Washington University"
+      },
+      {
+        "school": "Eastern Oregon University"
+      }
     ],
     "forbiddenSchools": [],
     "notes": "riskStyle=aggressive 但 stats 一般：AI 不应因 aggressive 把 UC Berkeley 标 match；须解释 risk 与档位关系。"
@@ -991,7 +1415,12 @@
   {
     "caseKey": "CASE-015",
     "title": "Test-Optional 藏 1520 · 方向未定 · 活动分散",
-    "tags": ["hidden-scores", "undecided", "scattered", "test-optional"],
+    "tags": [
+      "hidden-scores",
+      "undecided",
+      "scattered",
+      "test-optional"
+    ],
     "reportBody": {
       "locale": "en",
       "intakeTerm": "2027 Fall",
@@ -1013,7 +1442,9 @@
       "majorSecondary": "Psychology",
       "schoolSize": "any",
       "campusCulturePref": "any",
-      "geoPrefs": ["any"],
+      "geoPrefs": [
+        "any"
+      ],
       "structuredActivities": [
         {
           "id": "1",
@@ -1046,19 +1477,39 @@
       "dealbreakers": ""
     },
     "expectedReach": [
-      { "school": "University of Wisconsin–Madison", "note": "Test-optional 下档位应保守；有 1520 未提交" },
-      { "school": "University of Illinois Urbana-Champaign", "note": "若报告假设提交标化则 reach 上调 — 争议点" },
-      { "school": "Ohio State University" }
+      {
+        "school": "University of Wisconsin–Madison",
+        "note": "Test-optional 下档位应保守；有 1520 未提交"
+      },
+      {
+        "school": "University of Illinois Urbana-Champaign",
+        "note": "若报告假设提交标化则 reach 上调 — 争议点"
+      },
+      {
+        "school": "Ohio State University"
+      }
     ],
     "expectedMatch": [
-      { "school": "Penn State University" },
-      { "school": "University of Minnesota Twin Cities" },
-      { "school": "Indiana University Bloomington" }
+      {
+        "school": "Penn State University"
+      },
+      {
+        "school": "University of Minnesota Twin Cities"
+      },
+      {
+        "school": "Indiana University Bloomington"
+      }
     ],
     "expectedSafety": [
-      { "school": "University of Iowa" },
-      { "school": "Michigan State University" },
-      { "school": "University of Kansas" }
+      {
+        "school": "University of Iowa"
+      },
+      {
+        "school": "Michigan State University"
+      },
+      {
+        "school": "University of Kansas"
+      }
     ],
     "forbiddenSchools": [],
     "notes": "Test-optional 但表单有 SAT：AI 是否使用该分数争议大；undecided 易给套话名单。"
