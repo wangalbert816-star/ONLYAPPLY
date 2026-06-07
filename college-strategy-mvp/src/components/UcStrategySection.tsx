@@ -1,6 +1,6 @@
 import type { FormState, SchoolRow, SchoolTier, UcAnalysis } from "../types";
 import type { Translate } from "../i18n/LanguageContext";
-import { useLanguage } from "../i18n/LanguageContext";
+import { REPORT_CONTENT_LOCALE } from "../lib/reportContentLocale";
 import { ReportCollapsibleSection } from "./ReportCollapsibleSection";
 import { SchoolStrategyCard } from "./SchoolStrategyCard";
 import "./UcStrategySection.css";
@@ -31,7 +31,7 @@ function UcTierBlock({
   t: Translate;
   unlocked: boolean;
 }) {
-  const { locale } = useLanguage();
+  const locale = REPORT_CONTENT_LOCALE;
   if (!rows.length) return null;
   const visible = unlocked ? rows : rows.slice(0, 1);
   const lockedCount = unlocked ? 0 : Math.max(0, rows.length - 1);

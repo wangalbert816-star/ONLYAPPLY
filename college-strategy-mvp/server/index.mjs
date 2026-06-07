@@ -834,8 +834,8 @@ function wantsUcFromBody(body) {
   return UC_KEYWORD_RE.test(blob);
 }
 
-function resolveReportLocale(body) {
-  return body && body.locale === "en" ? "en" : "zh";
+function resolveReportLocale(_body) {
+  return "en";
 }
 
 function systemPromptForLocale(locale, includeUc = false, horizon = "unknown") {

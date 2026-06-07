@@ -1,5 +1,6 @@
 import type { ReportPayload } from "../../types";
 import { sanitizeReportProse } from "../../lib/reportProseSanitize";
+import { REPORT_CONTENT_LOCALE } from "../../lib/reportContentLocale";
 import type { Locale } from "../../i18n/strings";
 import "./AccountReportBrief.css";
 
@@ -9,8 +10,8 @@ type Props = {
   t: (key: string, vars?: Record<string, string | number>) => string;
 };
 
-export function AccountReportBrief({ report, locale, t }: Props) {
-  const safe = sanitizeReportProse(report, locale);
+export function AccountReportBrief({ report, locale: _locale, t }: Props) {
+  const safe = sanitizeReportProse(report, REPORT_CONTENT_LOCALE);
   const bullets = (safe.executive_summary ?? []).filter(Boolean).slice(0, 3);
   const tiers = [
     { key: "reach" as const, label: t("report.tierReach"), school: safe.reach?.[0]?.school },

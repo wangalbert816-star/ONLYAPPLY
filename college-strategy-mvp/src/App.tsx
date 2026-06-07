@@ -3,6 +3,7 @@ import type { FormState, ReportDiff, ReportPayload, SupplementaryNote } from "./
 import { getEffectiveIntake } from "./lib/intakeTerm";
 import { buildReportApiBody } from "./lib/reportApiBody";
 import { collectHighlightKeys, compareReports, reportDiffIsEmpty } from "./lib/reportDiff";
+import { REPORT_CONTENT_LOCALE } from "./lib/reportContentLocale";
 import { apiUrl } from "./lib/apiBase";
 import { readApiJson } from "./lib/parseApiResponse";
 import { clearUnlockStorage, readUnlockFromStorage, ReportView, writeUnlockToStorage } from "./ReportView";
@@ -1125,7 +1126,7 @@ export default function App() {
       } else {
         writePendingSave({ form, locale, report: next, supplementaryNotes: merged, reportUnlocked });
       }
-      const diff = compareReports(prev, next, { prevForm: form, nextForm: form, locale });
+      const diff = compareReports(prev, next, { prevForm: form, nextForm: form, locale: REPORT_CONTENT_LOCALE });
       if (reportDiffIsEmpty(diff)) {
         setReportDiff(null);
         setHighlightSchoolKeys(new Set());

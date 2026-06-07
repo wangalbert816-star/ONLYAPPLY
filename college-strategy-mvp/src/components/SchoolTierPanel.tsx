@@ -1,6 +1,6 @@
 import type { FormState, SchoolRow, SchoolTier } from "../types";
 import type { Translate } from "../i18n/LanguageContext";
-import { useLanguage } from "../i18n/LanguageContext";
+import { REPORT_CONTENT_LOCALE } from "../lib/reportContentLocale";
 import { ReportCollapsibleSection } from "./ReportCollapsibleSection";
 import { SchoolStrategyCard } from "./SchoolStrategyCard";
 import "./SchoolTierPanel.css";
@@ -30,7 +30,7 @@ export function SchoolTierPanel({
   form,
   t,
 }: Props) {
-  const { locale } = useLanguage();
+  const locale = REPORT_CONTENT_LOCALE;
   if (!rows.length) return null;
 
   const visible = rows.slice(0, lockedSchoolRows);

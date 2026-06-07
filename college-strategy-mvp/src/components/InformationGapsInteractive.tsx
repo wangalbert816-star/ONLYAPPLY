@@ -4,6 +4,7 @@ import type { SupplementaryNote } from "../types";
 import { useLanguage } from "../i18n/LanguageContext";
 import { buildGapTasks, stableGapsSignature } from "../lib/gapTaskMeta";
 import { gapDimensionHint } from "../lib/gapDimensionHints";
+import { REPORT_CONTENT_LOCALE } from "../lib/reportContentLocale";
 import "./InformationGapsInteractive.css";
 
 const STORAGE_PREFIX = "college_strategy_gaps_completion_v1_";
@@ -49,8 +50,9 @@ export function InformationGapsInteractive({
   isRegenerating?: boolean;
   embedded?: boolean;
 }) {
-  const { t, locale } = useLanguage();
-  const tasks = useMemo(() => buildGapTasks(gaps, locale), [gaps, locale]);
+  const { t } = useLanguage();
+  const reportLocale = REPORT_CONTENT_LOCALE;
+  const tasks = useMemo(() => buildGapTasks(gaps, reportLocale), [gaps, reportLocale]);
   const validIds = useMemo(() => new Set(tasks.map((x) => x.id)), [tasks]);
   const storageKey = useMemo(
     () => `${STORAGE_PREFIX}${stableGapsSignature(gaps)}`,
@@ -258,8 +260,8 @@ export function InformationGapsInteractive({
                     <strong>{t("report.gapsInteractive.impactTitle")}</strong>
                     {task.impactIfMissing}
                   </p>
-                  {gapDimensionHint(task.rawLine, locale) && (
-                    <p className="gaps-card__dimension-hint">{gapDimensionHint(task.rawLine, locale)}</p>
+                  {gapDimensionHint(task.rawLine, reportLocale) && (
+                    <p className="gaps-card__dimension-hint">{gapDimensionHint(task.rawLine, reportLocale)}</p>
                   )}
                   {!filled && (
                     <p className="gaps-card__preview">

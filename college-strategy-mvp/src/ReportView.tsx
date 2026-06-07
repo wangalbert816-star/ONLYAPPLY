@@ -21,6 +21,7 @@ import { SchoolTierPanel } from "./components/SchoolTierPanel";
 import { ReportCollapsibleSection } from "./components/ReportCollapsibleSection";
 import { ReportImprovementPanel } from "./components/ReportImprovementPanel";
 import { sanitizeReportProse } from "./lib/reportProseSanitize";
+import { REPORT_CONTENT_LOCALE } from "./lib/reportContentLocale";
 import "./components/ReportImprovementPanel.css";
 import { ReportPdfDocument } from "./components/pdf/ReportPdfDocument";
 import { LegalLinks } from "./components/LegalLinks";
@@ -272,14 +273,15 @@ export function ReportView({
   onRedeemInviteCode,
 }: ReportViewProps) {
   const { t, locale } = useLanguage();
-  const safeReport = useMemo(() => sanitizeReportProse(report, locale), [report, locale]);
+  const reportLocale = REPORT_CONTENT_LOCALE;
+  const safeReport = useMemo(() => sanitizeReportProse(report, reportLocale), [report, reportLocale]);
   const [inviteInput, setInviteInput] = useState("");
   const pdfSourceRef = useRef<HTMLDivElement>(null);
   const intakeLabel = useMemo(() => getEffectiveIntake(form) || t("report.title"), [form, t]);
   const planHorizon = useMemo(() => getIntakeHorizon(getEffectiveIntake(form)), [form]);
   const planLabels = useMemo(
-    () => getImprovementPlanLabels(planHorizon, locale),
-    [planHorizon, locale],
+    () => getImprovementPlanLabels(planHorizon, reportLocale),
+    [planHorizon, reportLocale],
   );
   const improveLead = useMemo(() => {
     if (planHorizon === "urgent") return t("report.improveLeadUrgent");
@@ -288,15 +290,15 @@ export function ReportView({
     if (planHorizon === "unknown") return t("report.improveLeadUnknown");
     return null;
   }, [planHorizon, t]);
-  const profileFive = useMemo(() => buildFiveDimensionProfile(form, locale), [form, locale]);
+  const profileFive = useMemo(() => buildFiveDimensionProfile(form, reportLocale), [form, reportLocale]);
   const verdict = useMemo(
     () =>
-      buildOverallVerdict(form, profileFive, locale, {
+      buildOverallVerdict(form, profileFive, reportLocale, {
         executiveLead: safeReport.executive_summary?.[0] ?? null,
       }),
-    [form, profileFive, locale, safeReport.executive_summary],
+    [form, profileFive, reportLocale, safeReport.executive_summary],
   );
-  const biggestGap = useMemo(() => buildBiggestGapBlock(profileFive, locale), [profileFive, locale]);
+  const biggestGap = useMemo(() => buildBiggestGapBlock(profileFive, reportLocale), [profileFive, reportLocale]);
   const tone = getPaywallTone();
   const copy = locale === "zh" ? PAYWALL_PACKS[tone] : EN_PAYWALL[tone];
 
@@ -320,7 +322,7 @@ export function ReportView({
     ? safeReport.executive_summary ?? []
     : (safeReport.executive_summary ?? []).slice(0, 1);
   const previewGapCount = Math.min(2, safeReport.information_gaps?.length ?? 0);
-  const ucAnalysis = useMemo(() => resolveUcAnalysis(safeReport, form, locale), [safeReport, form, locale]);
+  const ucAnalysis = useMemo(() => resolveUcAnalysis(safeReport, form, reportLocale), [safeReport, form, reportLocale]);
 
   const sectionNavItems = useMemo(
     () => [
@@ -713,7 +715,7 @@ export function ReportView({
       <ReportImprovementPanel
         report={safeReport}
         form={form}
-        locale={locale}
+        locale={reportLocale}
         unlocked={unlocked}
         planLabels={planLabels}
         improveLead={improveLead}
@@ -757,7 +759,7 @@ export function ReportView({
         <ReportPdfDocument
           form={form}
           report={safeReport}
-          locale={locale}
+          locale={reportLocale}
           unlocked={unlocked}
           recipientName={pdfRecipientName}
         />
