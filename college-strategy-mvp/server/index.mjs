@@ -36,6 +36,7 @@ import { registerAdminCrmRoutes, crmAdminConfigured } from "./adminCrm.mjs";
 import { registerAdminEvalRoutes } from "./adminEval.mjs";
 import { registerCounselorCrmRoutes } from "./counselorCrm.mjs";
 import { registerUsHighSchoolRoutes } from "./usHighSchools.mjs";
+import { registerTranscriptParseRoutes, formatTranscriptSheetBlock } from "./transcriptParse.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // 始终从项目根目录加载 .env（避免从别的 cwd 启动 node 时读不到 OPENAI_BASE_URL，误连 OpenAI 官方导致 401）
@@ -1326,6 +1327,7 @@ function buildUserPayload(body, includeUc = false) {
   const cultureLine = campusCultureAnalysisHint(campusCulturePref, locale);
   const rigorLine = academicRigorAnalysisHint(body, locale);
   const forbiddenLine = formatForbiddenSchoolsLine(body, locale);
+  const transcriptBlock = formatTranscriptSheetBlock(body?.transcriptSheet, locale);
   let extra = "";
   if (supplementary.length > 0) {
     if (isEn) {
@@ -1359,6 +1361,7 @@ ${planHorizonLine}
 [Current high school] ${currentHighSchool || na}
 [Course rigor — analysis instruction] ${rigorLine}
 [GPA / transcript notes] ${gpa || na}
+${transcriptBlock ? `\n${transcriptBlock}` : ""}
 [GPA trend] ${gpaTrend || na}
 [Language scores] ${languageScores || na}
 [Transcript special circumstances] ${academicSpecialLine || na}
@@ -1394,6 +1397,7 @@ ${planHorizonLine}
 【就读学校】${currentHighSchool || "未填"}
 【课程 rigor · 分析要求】${rigorLine}
 【GPA/成绩说明】${gpa || "未填"}
+${transcriptBlock ? `\n${transcriptBlock}` : ""}
 【GPA 趋势】${gpaTrend || "未填"}
 【语言成绩】${languageScores || "未填"}
 【学业特殊情况】${academicSpecialLine || "无"}
@@ -2223,6 +2227,7 @@ registerAdminEvalRoutes(app, {
 });
 registerCounselorCrmRoutes(app, { supabaseAdmin });
 registerUsHighSchoolRoutes(app);
+registerTranscriptParseRoutes(app, express);
 
 app.post("/api/dev/seed-counselor", (req, res) => {
   if (IS_PROD) return res.status(404).json({ error: "not_found" });

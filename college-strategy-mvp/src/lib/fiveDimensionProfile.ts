@@ -1,6 +1,7 @@
 import type { ActivityItem, FormState } from "../types";
 import { meaningfulStructuredActivities } from "./activityEvidence";
 import type { Locale } from "../i18n/strings";
+import { computeTranscriptRigorStats, transcriptSheetIsUsable } from "./transcriptSheet";
 
 export type ProfileDimensionKey = "academic" | "testing" | "activities" | "rigor" | "strategy";
 
@@ -265,7 +266,27 @@ function gpaContextBonus(g: string): number {
   return linearRatio(g.trim().length, 14, 64) * 0.12;
 }
 
+function parseSheetGpaNumber(s: string): number | null {
+  const n = Number(String(s ?? "").trim());
+  if (!Number.isFinite(n)) return null;
+  return n;
+}
+
 function scoreAcademic(form: FormState): number {
+  const sheet = form.transcriptSheet;
+  if (transcriptSheetIsUsable(sheet)) {
+    const uw = parseSheetGpaNumber(sheet!.unweightedGpa);
+    const w = parseSheetGpaNumber(sheet!.weightedGpa);
+    const gpaNum = uw ?? w;
+    if (gpaNum != null && gpaNum > 0 && gpaNum <= 5.5) {
+      return Math.round(clampScore(scoreFromRatio(linearRatio(gpaNum, 2.4, 4.0), 34, 94), 34, 94));
+    }
+    const filled = sheet!.courses.filter((c) => c.courseName.trim() && c.grade.trim());
+    if (filled.length >= 6) return 62;
+    if (filled.length >= 3) return 54;
+    if (filled.length >= 1) return 46;
+  }
+
   const g = form.gpa.trim();
   if (!g) return 34;
   const signals = gpaSignalQuality(g);
@@ -445,6 +466,28 @@ function gpaRigorSignalQuality(g: string): number {
 }
 
 function scoreRigor(form: FormState): number {
+  const sheet = form.transcriptSheet;
+  const stats = sheet && !sheet.skipped ? computeTranscriptRigorStats(sheet) : null;
+  if (stats && stats.totalCourses > 0) {
+    const school = form.currentHighSchool.trim();
+    const system = form.highSchoolSystem;
+    const schoolNorm = school ? linearRatio(school.length, 3, 28) : 0;
+    const systemNorm = system ? 1 : 0;
+    const rigorNorm = clampScore(
+      stats.highRigorRatio * 0.5 +
+        Math.min(stats.apCount, 10) / 10 * 0.22 +
+        Math.min(stats.ibHlCount, 6) / 6 * 0.18 +
+        Math.min(stats.honorsCount, 8) / 8 * 0.1,
+      0,
+      1,
+    );
+    const trendBoost =
+      form.gpaTrend === "upward" ? 0.06 : form.gpaTrend === "stable" ? 0.03 : form.gpaTrend === "downward" ? 0.01 : 0;
+    let quality = clampScore(schoolNorm * 0.22 + systemNorm * 0.18 + rigorNorm * 0.52 + trendBoost, 0, 1);
+    if (!school && system) quality = Math.min(quality, 0.62);
+    return Math.round(clampScore(scoreFromRatio(quality, 34, 92), 34, 92));
+  }
+
   const school = form.currentHighSchool.trim();
   const system = form.highSchoolSystem;
   const schoolNorm = school ? linearRatio(school.length, 3, 28) : 0;

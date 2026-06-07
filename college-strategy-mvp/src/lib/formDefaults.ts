@@ -1,4 +1,5 @@
 import type { FormState } from "../types";
+import { emptyTranscriptSheet } from "./transcriptSheet";
 
 export function emptyFormState(): FormState {
   return {
@@ -14,6 +15,7 @@ export function emptyFormState(): FormState {
     highSchoolSystem: "",
     currentHighSchool: "",
     gpa: "",
+    transcriptSheet: emptyTranscriptSheet(),
     gpaTrend: "",
     languageScores: "",
     academicSpecialFlags: [],

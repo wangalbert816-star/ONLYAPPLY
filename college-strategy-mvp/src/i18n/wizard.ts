@@ -27,6 +27,7 @@ export const wizardZhNested = {
         hs: "高中体系",
         currentSchool: "就读学校",
         gpa: "成绩说明",
+        transcriptSheet: "课程成绩表",
         gpaTrend: "GPA 趋势",
         testing: "标化策略",
         scores: "标化分数",
@@ -47,6 +48,7 @@ export const wizardZhNested = {
         environment: "可选：填写护照地区或常住地",
         budget: "选择资金/奖助预期",
         gpa: "填写 GPA 或成绩说明",
+        transcriptSheet: "上传并确认成绩表，或选择跳过",
         gpaTrend: "选择整体 GPA 走势",
         testing: "选择是否递交标化",
         scores: "填写 SAT 或 ACT（至少一项）",
@@ -123,6 +125,10 @@ export const wizardZhNested = {
           title: "第 2 步 — 成绩说明",
           context: "比单一 GPA 数字更重要的是可验证的学术信号。",
         },
+        transcriptSheet: {
+          title: "第 2 步 — 课程成绩表",
+          context: "上传成绩单后我们会预填表格；请核对并确认，报告将据此分析学术与 rigor。",
+        },
         gpaTrend: {
           title: "第 2 步 — GPA 趋势",
           context: "上升/下滑趋势会影响招生官如何读你的成绩单。",
@@ -191,6 +197,11 @@ export const wizardZhNested = {
         q: "请用几句话描述你的成绩与年级位置（GPA、排名、核心科目等）。",
         why: "这是招生官判断学术可信度与课程强度的第一手材料，比单一数字更重要。",
         fb: "好。我们会把这些信息转译成可验证信号，并在不匹配处标出风险。",
+      },
+      transcriptSheet: {
+        q: "上传成绩单，核对课程成绩表",
+        why: "结构化课程与级别是判断 rigor 的核心；自动识别后请务必核对。",
+        fb: "收到。确认后的成绩表会进入报告的五维学术与课程分析。",
       },
       gpaTrend: {
         q: "整体来看，你的 GPA / 成绩走势更接近哪一种？",
@@ -399,6 +410,7 @@ export const wizardEnNested = {
         hs: "High school system",
         currentSchool: "Current school",
         gpa: "Academic record",
+        transcriptSheet: "Transcript grade sheet",
         gpaTrend: "GPA trend",
         testing: "Testing strategy",
         scores: "Test scores",
@@ -419,6 +431,7 @@ export const wizardEnNested = {
         environment: "Optional: passport region or where you live",
         budget: "Choose your cost / aid posture",
         gpa: "Enter GPA or academic summary",
+        transcriptSheet: "Upload and confirm grade sheet, or skip",
         gpaTrend: "Select overall GPA trend",
         testing: "Choose whether you will submit scores",
         scores: "Enter SAT or ACT (at least one)",
@@ -495,6 +508,10 @@ export const wizardEnNested = {
           title: "Step 2 — Academic record",
           context: "Verifiable signals matter more than a single GPA number alone.",
         },
+        transcriptSheet: {
+          title: "Step 2 — Course grade sheet",
+          context: "Upload a transcript to pre-fill the table; confirm before the report uses it for academic & rigor analysis.",
+        },
         gpaTrend: {
           title: "Step 2 — GPA trend",
           context: "Upward or downward patterns change how officers read your transcript.",
@@ -564,6 +581,11 @@ export const wizardEnNested = {
         q: "In a few sentences, describe grades and standing (GPA scale, rank, key courses).",
         why: "This is how officers judge rigor—richer than a single number for many contexts.",
         fb: "Great. We’ll translate this into verifiable signals and flag mismatches as risk.",
+      },
+      transcriptSheet: {
+        q: "Upload your transcript and review the grade sheet",
+        why: "Structured courses and levels drive rigor analysis—please verify anything we auto-fill.",
+        fb: "Got it. After you confirm, this sheet feeds academic and course-rigor analysis in your report.",
       },
       gpaTrend: {
         q: "Overall, which best describes your GPA / grade trend?",

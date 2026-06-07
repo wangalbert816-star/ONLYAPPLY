@@ -2,6 +2,46 @@ export type ApplicantIdentity = "intl" | "us_citizen" | "other";
 export type Budget = "full_pay" | "high_budget" | "budget_cap" | "need_aid" | "unsure";
 export type Testing = "test_optional" | "will_submit";
 export type GpaTrend = "upward" | "stable" | "downward" | "mixed" | "unsure";
+
+export type GradingScale = "4.0_uw" | "4.0_w" | "100" | "ib" | "a_level" | "other";
+
+export type TranscriptCourseLevel =
+  | "regular"
+  | "honors"
+  | "ap"
+  | "ib_hl"
+  | "ib_sl"
+  | "a_level"
+  | "dual_enrollment"
+  | "other";
+
+export type TranscriptGradeYear = "9" | "10" | "11" | "12" | "other";
+
+export type TranscriptParseStatus = "idle" | "parsing" | "ready" | "failed";
+
+export interface TranscriptCourseRow {
+  id: string;
+  gradeYear: TranscriptGradeYear;
+  subject: string;
+  courseName: string;
+  level: TranscriptCourseLevel;
+  grade: string;
+  confidence?: "high" | "medium" | "low";
+  source?: "ocr" | "user";
+}
+
+export interface TranscriptSheet {
+  gradingScale: GradingScale | "";
+  scaleNotes: string;
+  unweightedGpa: string;
+  weightedGpa: string;
+  courses: TranscriptCourseRow[];
+  parseStatus: TranscriptParseStatus;
+  parseError: string;
+  confirmedAt: string;
+  fileName: string;
+  skipped: boolean;
+}
 export type AcademicSpecialFlag = "low_grades" | "gap_year" | "health";
 export type SchoolSize = "small" | "medium" | "large" | "any";
 /** 校园社区气质偏好：学术 / 平衡 / 社交派对活跃 / 无强烈偏好 */
@@ -61,6 +101,8 @@ export interface FormState {
   /** 当前就读高中/中学名称，用于课程 rigor 语境分析 */
   currentHighSchool: string;
   gpa: string;
+  /** Structured course grades (Common App–style sheet); preferred for academic/rigor when confirmed. */
+  transcriptSheet?: TranscriptSheet;
   gpaTrend: GpaTrend | "";
   languageScores: string;
   academicSpecialFlags: AcademicSpecialFlag[];

@@ -1,5 +1,6 @@
 import type { FormState } from "../types";
 import { isActivityThinFromForm } from "./activityEvidence";
+import { transcriptSheetIsUsable } from "./transcriptSheet";
 
 export type UcAcademicBand = "weak" | "mid" | "strong";
 
@@ -36,7 +37,20 @@ function parseSatScore(form: FormState): number | null {
 }
 
 export function assessUcProfileSignals(form: FormState): UcProfileSignals {
-  const { unweighted, weighted } = parseGpaNumbers(form.gpa);
+  let unweighted: number | null = null;
+  let weighted: number | null = null;
+  if (transcriptSheetIsUsable(form.transcriptSheet)) {
+    const sheet = form.transcriptSheet!;
+    const uw = Number(sheet.unweightedGpa.trim());
+    const w = Number(sheet.weightedGpa.trim());
+    if (Number.isFinite(uw) && uw > 0) unweighted = uw;
+    if (Number.isFinite(w) && w > 0) weighted = w;
+  }
+  if (unweighted == null && weighted == null) {
+    const parsed = parseGpaNumbers(form.gpa);
+    unweighted = parsed.unweighted;
+    weighted = parsed.weighted;
+  }
   const sat = parseSatScore(form);
   const activityThin = isActivityThinFromForm(form);
 

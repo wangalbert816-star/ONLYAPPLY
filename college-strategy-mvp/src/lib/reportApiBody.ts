@@ -22,6 +22,7 @@ export function buildReportApiBody(
     currentHighSchool: form.currentHighSchool,
     gpa: form.gpa,
     gpaTrend: form.gpaTrend,
+    transcriptSheet: form.transcriptSheet,
     languageScores: form.languageScores,
     academicSpecialFlags: form.academicSpecialFlags ?? [],
     academicSpecialNotes: form.academicSpecialNotes,

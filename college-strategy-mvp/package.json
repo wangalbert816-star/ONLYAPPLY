@@ -22,6 +22,7 @@
     "seed:engagement": "node scripts/seed-engagement.mjs"
   },
   "dependencies": {
+    "@napi-rs/canvas": "^1.0.0",
     "@supabase/supabase-js": "^2.105.4",
     "cors": "^2.8.5",
     "docxtemplater": "^3.68.7",
@@ -29,6 +30,7 @@
     "express": "^4.21.0",
     "html2pdf.js": "^0.14.0",
     "openai": "^4.73.0",
+    "pdfjs-dist": "^6.0.227",
     "pizzip": "^3.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

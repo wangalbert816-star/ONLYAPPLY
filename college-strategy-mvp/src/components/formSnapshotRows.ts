@@ -5,6 +5,7 @@ import type { Step1ScreenId } from "./GuidedStep1Flow";
 import type { Step2ScreenId } from "./GuidedStep2Flow";
 import type { Step3ScreenId } from "./GuidedStep3Flow";
 import { activityItemMeetsWizardRequirement } from "./guidedStepShared";
+import { transcriptSheetIsUsable } from "../lib/transcriptSheet";
 
 export type SnapshotRowStatus = "filled" | "pending" | "optional" | "na";
 
@@ -271,6 +272,30 @@ const ROW_DEFS: RowDef[] = [
     value: (f) => f.gpa.trim() || null,
   },
   {
+    id: "transcriptSheet",
+    section: 2,
+    labelKey: "wizard.summary.row.transcriptSheet",
+    hintKey: "wizard.summary.hint.transcriptSheet",
+    filled: (f) => {
+      const s = f.transcriptSheet;
+      return Boolean(s?.skipped || s?.confirmedAt);
+    },
+    value: (f, t) => {
+      const s = f.transcriptSheet;
+      if (!s) return null;
+      if (s.skipped) return t("form.transcriptSheet.skippedShort");
+      if (transcriptSheetIsUsable(s)) {
+        const gpa = s.unweightedGpa.trim() || s.weightedGpa.trim();
+        const n = s.courses.filter((c) => c.courseName.trim()).length;
+        if (gpa && n > 0) return `${gpa} · ${n} ${t("form.transcriptSheet.courseUnit")}`;
+        if (gpa) return gpa;
+        if (n > 0) return `${n} ${t("form.transcriptSheet.courseUnit")}`;
+        return t("form.transcriptSheet.confirmedShort");
+      }
+      return null;
+    },
+  },
+  {
     id: "gpaTrend",
     section: 2,
     labelKey: "wizard.summary.row.gpaTrend",
@@ -415,6 +440,7 @@ const ROW_DEFS: RowDef[] = [
 
 const STEP2_SCREEN_IDS = new Set<Step2ScreenId>([
   "gpa",
+  "transcriptSheet",
   "gpaTrend",
   "testing",
   "scores",

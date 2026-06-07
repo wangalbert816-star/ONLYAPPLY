@@ -14,9 +14,11 @@ import {
   toggleGeo,
 } from "./guidedStepShared";
 import { HighSchoolSearchCombobox } from "./HighSchoolSearchCombobox";
+import { TranscriptGradeSheet } from "./TranscriptGradeSheet";
 
 export type Step2ScreenId =
   | "gpa"
+  | "transcriptSheet"
   | "gpaTrend"
   | "testing"
   | "scores"
@@ -35,7 +37,7 @@ type Updater = <K extends keyof FormState>(key: K, value: FormState[K]) => void;
 const SPECIAL_FLAG_KEYS: AcademicSpecialFlag[] = ["low_grades", "gap_year", "health"];
 
 export function getStep2Screens(form: FormState): Step2ScreenId[] {
-  const screens: Step2ScreenId[] = ["gpa", "gpaTrend", "testing"];
+  const screens: Step2ScreenId[] = ["gpa", "transcriptSheet", "gpaTrend", "testing"];
   if (form.testing === "will_submit") screens.push("scores");
   if (form.applicantIdentity === "intl") screens.push("language");
   screens.push("special", "hs", "currentSchool", "major", "major2", "size", "culture", "geo");
@@ -47,6 +49,12 @@ export function validateStep2Screen(screen: Step2ScreenId, f: FormState, tr: (pa
     case "gpa":
       if (!f.gpa.trim()) return tr("validation.gpa");
       return null;
+    case "transcriptSheet": {
+      const sheet = f.transcriptSheet;
+      if (!sheet || sheet.skipped) return null;
+      if (sheet.confirmedAt) return null;
+      return tr("validation.transcriptSheet");
+    }
     case "gpaTrend":
       if (!f.gpaTrend) return tr("validation.gpaTrend");
       return null;
@@ -131,6 +139,17 @@ export function GuidedStep2Flow({
             onBlur={() => markTouch("s2_gpa")}
           />
           {gpaOk && <p className="field-feedback">{t("wizard.s2.gpa.fb")}</p>}
+        </GuidedScreenShell>
+      );
+
+    case "transcriptSheet":
+      return (
+        <GuidedScreenShell step={2} screenId="transcriptSheet" t={t}>
+          <h2 className="guided-screen__question" id="gq-s2-transcript-sheet">
+            {t("wizard.s2.transcriptSheet.q")}
+          </h2>
+          <GuidedContextLine step={2} screenId="transcriptSheet" t={t} />
+          <TranscriptGradeSheet form={form} update={update} t={t} onSkipAdvance={onSkipAdvance} />
         </GuidedScreenShell>
       );
 
