@@ -504,6 +504,13 @@ export async function listAdminEvalCases(accessToken: string): Promise<{ cases: 
   return adminFetch("/api/admin/crm/eval/cases", accessToken);
 }
 
+/** Latest generation/review status per case across all eval runs. */
+export async function fetchAdminEvalCaseStatus(
+  accessToken: string,
+): Promise<{ results: AdminEvalRunResult[] }> {
+  return adminFetch("/api/admin/crm/eval/case-status", accessToken);
+}
+
 export async function createAdminEvalCase(
   accessToken: string,
   input: Record<string, unknown>,

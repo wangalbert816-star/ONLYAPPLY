@@ -335,6 +335,59 @@ export function registerAdminEvalRoutes(app, { requireAdmin, generateReportForAd
     }
   });
 
+  /** Best display status per case across all runs (for case library badges). */
+  function caseListStatusRank(row) {
+    if (row.status === "error") return 2;
+    if (row.status !== "ok") return 0;
+    const reviewStatus = row.review?.status;
+    if (reviewStatus === "approved") return 6;
+    if (reviewStatus === "submitted") return 5;
+    if (reviewStatus === "draft") return 4;
+    return 3;
+  }
+
+  function pickBetterCaseResult(a, b) {
+    const rankA = caseListStatusRank(a);
+    const rankB = caseListStatusRank(b);
+    if (rankA !== rankB) return rankA > rankB ? a : b;
+    const timeA = new Date(a.updatedAt || 0).getTime();
+    const timeB = new Date(b.updatedAt || 0).getTime();
+    return timeA >= timeB ? a : b;
+  }
+
+  app.get("/api/admin/crm/eval/case-status", async (req, res) => {
+    const ctx = await requireAdmin(req, res);
+    if (!ctx) return;
+    try {
+      const [{ data: results, error: resErr }, { data: reviews, error: reviewErr }] = await Promise.all([
+        ctx.admin.from("report_eval_run_results").select("*").order("updated_at", { ascending: false }),
+        ctx.admin.from("report_eval_reviews").select("*"),
+      ]);
+      if (resErr) throw resErr;
+      if (reviewErr && !/report_eval_reviews|relation.*does not exist/i.test(reviewErr.message ?? "")) {
+        throw reviewErr;
+      }
+
+      const reviewByRunCase = new Map((reviews ?? []).map((r) => [`${r.run_id}:${r.case_id}`, mapEvalReview(r)]));
+      const bestByCase = new Map();
+      for (const row of results ?? []) {
+        const mapped = {
+          ...mapEvalResult(row),
+          case: null,
+          score: null,
+          review: reviewByRunCase.get(`${row.run_id}:${row.case_id}`) ?? null,
+        };
+        const existing = bestByCase.get(row.case_id);
+        bestByCase.set(row.case_id, existing ? pickBetterCaseResult(existing, mapped) : mapped);
+      }
+
+      res.json({ results: [...bestByCase.values()] });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      res.status(500).json({ error: msg });
+    }
+  });
+
   app.get("/api/admin/crm/eval/runs", async (req, res) => {
     const ctx = await requireAdmin(req, res);
     if (!ctx) return;

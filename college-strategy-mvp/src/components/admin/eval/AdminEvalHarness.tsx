@@ -34,6 +34,7 @@ import {
   createAdminEvalRun,
   deleteAdminEvalCase,
   downloadAdminEvalExport,
+  fetchAdminEvalCaseStatus,
   fetchAdminEvalDashboard,
   fetchAdminEvalRun,
   generateAdminEvalRunCase,
@@ -97,6 +98,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
   const [selectedRunId, setSelectedRunId] = useState("");
   const [runs, setRuns] = useState<AdminEvalRun[]>([]);
   const [runDetail, setRunDetail] = useState<Awaited<ReturnType<typeof fetchAdminEvalRun>> | null>(null);
+  const [caseStatusResults, setCaseStatusResults] = useState<AdminEvalRunResult[]>([]);
   const [testing, setTesting] = useState(false);
   const [reviewCaseId, setReviewCaseId] = useState("");
   const [reviewDraft, setReviewDraft] = useState<EvalReviewDraft | null>(null);
@@ -142,6 +144,11 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
     setDashboard(data);
   }, [token]);
 
+  const refreshCaseStatus = useCallback(async () => {
+    const { results } = await fetchAdminEvalCaseStatus(token);
+    setCaseStatusResults(results);
+  }, [token]);
+
   const refreshAll = useCallback(async () => {
     setLoading(true);
     setPanelError(null);
@@ -155,13 +162,13 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
           : nextRuns[0]?.id || "";
       if (runId !== selectedRunIdRef.current) setSelectedRunId(runId);
       if (runId) await loadRunDetail(runId);
-      await refreshDashboard();
+      await Promise.all([refreshDashboard(), refreshCaseStatus()]);
     } catch (e) {
       setPanelError(evalErrorMessage((e as Error & { code?: string }).code, t));
     } finally {
       setLoading(false);
     }
-  }, [loadRunDetail, refreshCases, refreshDashboard, t, token]);
+  }, [loadRunDetail, refreshCaseStatus, refreshCases, refreshDashboard, t, token]);
 
   useEffect(() => {
     void refreshAll();
@@ -324,6 +331,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
       await generateAdminEvalRunCase(token, run.id, selectedCaseId);
       const detail = await fetchAdminEvalRun(token, run.id);
       setRunDetail(detail);
+      await refreshCaseStatus();
       const resultRow = detail.results.find((r) => r.caseId === selectedCaseId);
       if (resultRow?.case && resultRow.status === "ok") {
         const initialDraft = buildInitialReviewDraft(resultRow.case, resultRow, profileLabel);
@@ -371,7 +379,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
         } else {
           await loadRunDetail(runId);
         }
-        await refreshDashboard();
+        await Promise.all([refreshDashboard(), refreshCaseStatus()]);
         reviewLastSavedKeyRef.current = JSON.stringify({ ...draft, status: status === "submitted" ? status : "draft" });
         setReviewSaveState("saved");
         window.setTimeout(() => setReviewSaveState("idle"), 2500);
@@ -387,7 +395,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
         setSavingReview(false);
       }
     },
-    [loadRunDetail, refreshDashboard, reviewDraft, runDetail, savingReview, selectedReviewRow, t, token],
+    [loadRunDetail, refreshCaseStatus, refreshDashboard, reviewDraft, runDetail, savingReview, selectedReviewRow, t, token],
   );
 
   const autoSaveTimerRef = useRef<number | null>(null);
@@ -510,7 +518,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
             ) : libraryPanel === "detail" && selectedCase ? (
               <EvalCaseDetail
                 evalCase={selectedCase}
-                results={runDetail?.results}
+                results={caseStatusResults}
                 t={t}
                 onBack={() => setLibraryPanel("list")}
                 onSaveExpected={(patch) => handleSaveExpected(selectedCase.id, patch)}
@@ -523,7 +531,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
                 <EvalCaseList
                   cases={cases}
                   selectedId={selectedCaseId}
-                  results={runDetail?.results}
+                  results={caseStatusResults}
                   onSelect={(id) => { setSelectedCaseId(id); setLibraryPanel("detail"); }}
                   t={t}
                 />
@@ -544,7 +552,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
                 <EvalCaseList
                   cases={activeCases.length ? activeCases : cases}
                   selectedId={selectedCaseId}
-                  results={runDetail?.results}
+                  results={caseStatusResults}
                   onSelect={(id) => { setSelectedCaseId(id); setGeneratePanel("detail"); }}
                   t={t}
                 />
@@ -553,7 +561,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
               <>
                 <EvalCaseDetail
                   evalCase={selectedCase}
-                  results={runDetail?.results}
+                  results={caseStatusResults}
                   t={t}
                   onBack={() => setGeneratePanel("list")}
                   onSaveExpected={(patch) => handleSaveExpected(selectedCase.id, patch)}
