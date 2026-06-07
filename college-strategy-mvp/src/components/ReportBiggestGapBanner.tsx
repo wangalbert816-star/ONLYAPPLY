@@ -1,6 +1,10 @@
 import type { BiggestGapBlock } from "../lib/decisionReport";
 import type { Translate } from "../i18n/LanguageContext";
 
+function scrollToId(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 export function ReportBiggestGapBanner({
   block,
   t,
@@ -28,14 +32,27 @@ export function ReportBiggestGapBanner({
       </p>
       <p className="report-biggest-gap__judgment">{block.dimension.judgment}</p>
       <p className="report-biggest-gap__stake">{block.stakeLine}</p>
-      <p className="report-biggest-gap__reason">
-        <strong>{t("report.profileFive.reasonLabel")}</strong>
-        {block.dimension.explain}
-      </p>
-      <p className="report-biggest-gap__suggest">
-        <strong>{t("report.profileFive.suggestAdvisorLabel")}</strong>
-        {block.dimension.suggest}
-      </p>
+      {embedded ? (
+        <div className="report-biggest-gap__actions" role="group" aria-label={t("report.decision.gapActionsAria")}>
+          <button type="button" className="btn report-biggest-gap__btn" onClick={() => scrollToId("report-step-action")}>
+            {t("report.decision.gapActionFix")}
+          </button>
+          <button type="button" className="btn report-biggest-gap__btn report-biggest-gap__btn--secondary" onClick={() => scrollToId("report-step-schools")}>
+            {t("report.decision.gapActionSync")}
+          </button>
+        </div>
+      ) : (
+        <>
+          <p className="report-biggest-gap__reason">
+            <strong>{t("report.profileFive.reasonLabel")}</strong>
+            {block.dimension.explain}
+          </p>
+          <p className="report-biggest-gap__suggest">
+            <strong>{t("report.profileFive.suggestAdvisorLabel")}</strong>
+            {block.dimension.suggest}
+          </p>
+        </>
+      )}
     </div>
   );
 }

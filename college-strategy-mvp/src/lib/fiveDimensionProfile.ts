@@ -222,6 +222,11 @@ function bandForScore(score: number): ProfileBand {
   return "high";
 }
 
+/** Score band for UI coloring — same thresholds as profile copy. */
+export function profileScoreBand(score: number): ProfileBand {
+  return bandForScore(score);
+}
+
 function clampScore(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n));
 }

@@ -5,11 +5,40 @@
   background: #fff;
   color: #0f172a;
   margin-bottom: 0.75rem;
+  position: relative;
 }
 
 .school-card--hot {
   border-color: rgba(234, 88, 12, 0.45);
   box-shadow: 0 0 0 1px rgba(234, 88, 12, 0.12);
+}
+
+.school-card__tier {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.18rem 0.45rem;
+  border-radius: 999px;
+  z-index: 1;
+}
+
+.school-card__tier--reach {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.school-card__tier--match {
+  background: #fef9c3;
+  color: #a16207;
+}
+
+.school-card__tier--safety {
+  background: #dcfce7;
+  color: #15803d;
 }
 
 .school-card__trigger {
@@ -18,7 +47,7 @@
   gap: 0.45rem;
   width: 100%;
   margin: 0;
-  padding: 0;
+  padding: 0 4.5rem 0 0;
   border: none;
   background: transparent;
   text-align: left;
@@ -123,6 +152,63 @@
   margin: 0.5rem 0 0;
   font-size: 0.88rem;
   color: #64748b;
+}
+
+.school-card--blurred {
+  overflow: hidden;
+  min-height: 6.5rem;
+}
+
+.school-card--blurred .school-card__blur-target {
+  filter: blur(6px);
+  opacity: 0.78;
+  pointer-events: none;
+  user-select: none;
+}
+
+.school-card__trigger--static {
+  cursor: default;
+}
+
+.school-card__teaser {
+  margin-top: 0.55rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.school-card__teaser-list {
+  margin: 0;
+  padding-left: 1rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.school-card__teaser-list li + li {
+  margin-top: 0.2rem;
+}
+
+.school-card__blur-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.85rem;
+  background: linear-gradient(180deg, rgba(247, 251, 248, 0.08) 0%, rgba(255, 255, 255, 0.62) 100%);
+  text-align: center;
+}
+
+.school-card__blur-overlay-text {
+  margin: 0;
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: #5c6b60;
+  max-width: 15rem;
 }
 
 .school-cards-grid {

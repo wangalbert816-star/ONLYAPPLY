@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState, type KeyboardEvent } from "react";
 import type { ProfileDimension, ProfileDimensionKey } from "../lib/fiveDimensionProfile";
+import { profileScoreBand } from "../lib/fiveDimensionProfile";
 import type { Translate } from "../i18n/LanguageContext";
 import type { SupplementaryNote } from "../types";
 
@@ -9,6 +10,7 @@ type Props = {
   onCommitProfileFiveNotes?: (notes: SupplementaryNote[]) => Promise<void>;
   isCommitting?: boolean;
   previewLocked?: boolean;
+  mockupLayout?: boolean;
 };
 
 const MIN_DIRECT_LEN = 3;
@@ -42,7 +44,14 @@ function polygonForScale(scale: number): string {
   }).join("");
 }
 
-export function ApplicationProfileRadar({ items, t, onCommitProfileFiveNotes, isCommitting = false, previewLocked = false }: Props) {
+export function ApplicationProfileRadar({
+  items,
+  t,
+  onCommitProfileFiveNotes,
+  isCommitting = false,
+  previewLocked = false,
+  mockupLayout = false,
+}: Props) {
   const [spotKey, setSpotKey] = useState<ProfileDimensionKey | null>(null);
   const [drafts, setDrafts] = useState<Record<ProfileDimensionKey, string>>(() => ({ ...BLANK_DRAFTS }));
   const [submitErr, setSubmitErr] = useState<string | null>(null);
@@ -92,7 +101,7 @@ export function ApplicationProfileRadar({ items, t, onCommitProfileFiveNotes, is
   const spot = spotKey ? items.find((x) => x.key === spotKey) : null;
 
   return (
-    <div className={`profile-five${previewLocked ? " profile-five--preview-locked" : ""}`}>
+    <div className={`profile-five${previewLocked ? " profile-five--preview-locked" : ""}${mockupLayout ? " profile-five--mockup" : ""}`}>
       <div className="profile-five-radar-wrap">
         <svg
           className="profile-five-radar"
@@ -125,6 +134,7 @@ export function ApplicationProfileRadar({ items, t, onCommitProfileFiveNotes, is
           {dataPts.map((p, i) => {
             const dim = items[i];
             const active = spotKey === dim.key;
+            const band = profileScoreBand(dim.score);
             return (
               <g
                 key={dim.key}
@@ -142,7 +152,7 @@ export function ApplicationProfileRadar({ items, t, onCommitProfileFiveNotes, is
               >
                 <circle className="profile-five-hit" cx={p.x} cy={p.y} r="18" fill="transparent" />
                 <circle
-                  className={`profile-five-node${active ? " profile-five-node--active" : ""}`}
+                  className={`profile-five-node profile-five-node--${band}${active ? " profile-five-node--active" : ""}`}
                   cx={p.x}
                   cy={p.y}
                   r={active ? 6 : 4.5}
@@ -172,21 +182,44 @@ export function ApplicationProfileRadar({ items, t, onCommitProfileFiveNotes, is
           </div>
         )}
 
-        <p className="profile-five-radar-hint">
-          {previewLocked ? t("report.profileFive.previewHint") : t("report.profileFive.chartHint")}
-        </p>
+        {!mockupLayout && (
+          <p className="profile-five-radar-hint">
+            {previewLocked ? t("report.profileFive.previewHint") : t("report.profileFive.chartHint")}
+          </p>
+        )}
       </div>
 
+      {mockupLayout ? (
+        <div className="profile-five-mockup-grid" aria-label={t("report.profileFive.title")}>
+          {items.map((it) => {
+            const band = profileScoreBand(it.score);
+            const pct = Math.max(8, Math.min(100, it.score));
+            return (
+              <div key={it.key} className={`profile-five-mockup-card profile-five-mockup-card--${band}`}>
+                <div className="profile-five-mockup-card__head">
+                  <span className="profile-five-mockup-card__label">{t(`report.profileFive.axisShort.${it.key}`)}</span>
+                  <span className={`profile-five-mockup-card__score profile-five-mockup-card__score--${band}`}>{it.score}</span>
+                </div>
+                <div className="profile-five-mockup-card__track" aria-hidden>
+                  <span style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
       <ul className="profile-five-list">
-        {items.map((it) => (
+        {items.map((it) => {
+          const band = profileScoreBand(it.score);
+          return (
           <li
             key={it.key}
             id={`profile-five-row-${it.key}`}
-            className={`profile-five-row${spotKey === it.key ? " profile-five-row--spot" : ""}`}
+            className={`profile-five-row profile-five-row--${band}${spotKey === it.key ? " profile-five-row--spot" : ""}`}
           >
             <div className="profile-five-row-head">
               <span className="profile-five-row-title">{t(`report.profileFive.axis.${it.key}`)}</span>
-              <span className="profile-five-score">{t("report.profileFive.score", { n: it.score })}</span>
+              <span className={`profile-five-score profile-five-score--${band}`}>{t("report.profileFive.score", { n: it.score })}</span>
             </div>
             {!previewLocked ? (
               <>
@@ -201,7 +234,7 @@ export function ApplicationProfileRadar({ items, t, onCommitProfileFiveNotes, is
                 </p>
               </>
             ) : (
-              <div className="profile-five-preview-bar" aria-hidden>
+              <div className={`profile-five-preview-bar profile-five-preview-bar--${band}`} aria-hidden>
                 <span style={{ width: `${Math.max(8, Math.min(100, it.score))}%` }} />
               </div>
             )}
@@ -226,10 +259,12 @@ export function ApplicationProfileRadar({ items, t, onCommitProfileFiveNotes, is
               </div>
             )}
           </li>
-        ))}
+          );
+        })}
       </ul>
+      )}
 
-      {previewLocked && (
+      {previewLocked && !mockupLayout && (
         <p className="block-locked profile-five-preview-lock">
           <span className="lock-icon" aria-hidden>
             🔒

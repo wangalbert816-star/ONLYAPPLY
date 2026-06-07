@@ -36,6 +36,12 @@
   margin-top: 0.35rem;
 }
 
+.report-action-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
 .school-card__list--context li {
   color: #475569;
   font-size: 0.9rem;

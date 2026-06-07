@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { FormState, SchoolRow, SchoolTier } from "../types";
 import type { Locale } from "../i18n/strings";
+import { useLanguage } from "../i18n/LanguageContext";
 import { campusCultureAlignmentNote } from "../lib/campusCulturePref";
 import { enrichSchoolRow } from "../lib/enrichSchoolRow";
 import { splitToBullets } from "../lib/schoolRowDisplay";
@@ -15,7 +16,15 @@ type Props = {
   form: FormState;
   unlocked: boolean;
   highlighted?: boolean;
+  blurred?: boolean;
 };
+
+function tierBadgeLabel(tier: SchoolTier, locale: Locale): string {
+  if (locale === "en") {
+    return tier === "reach" ? "Reach" : tier === "match" ? "Match" : "Safety";
+  }
+  return tier === "reach" ? "冲刺" : tier === "match" ? "匹配" : "保底";
+}
 
 function whyText(row: SchoolRow, tier: SchoolTier): string {
   if (tier === "reach") return row.why_reach_for_you || "";
@@ -52,7 +61,8 @@ function sectionLabel(
   return locale === "en" ? en[key] : zh[key];
 }
 
-export function SchoolStrategyCard({ row, tier, locale, form, unlocked, highlighted }: Props) {
+export function SchoolStrategyCard({ row, tier, locale, form, unlocked, highlighted, blurred = false }: Props) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const enriched = enrichSchoolRow(row, form, locale, tier);
   const whyBullets = splitToBullets(whyText(enriched, tier), 4);
@@ -66,20 +76,43 @@ export function SchoolStrategyCard({ row, tier, locale, form, unlocked, highligh
   const cultureFit = campusCultureAlignmentNote(form, enriched, locale);
 
   return (
-    <article className={`school-card${highlighted ? " school-card--hot" : ""}${open ? " school-card--open" : ""}`}>
-      <button
-        type="button"
-        className="school-card__trigger"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-      >
-        <span className="school-card__chevron" aria-hidden>
-          {open ? "▾" : "▸"}
-        </span>
-        <span className="school-card__name">{enriched.school}</span>
-      </button>
+    <article
+      className={`school-card school-card--${tier}${highlighted ? " school-card--hot" : ""}${open ? " school-card--open" : ""}${blurred ? " school-card--blurred" : ""}`}
+    >
+      <span className={`school-card__tier school-card__tier--${tier}`}>{tierBadgeLabel(tier, locale)}</span>
+      <div className={blurred ? "school-card__blur-target" : undefined}>
+        {blurred ? (
+          <div className="school-card__trigger school-card__trigger--static" aria-hidden>
+            <span className="school-card__chevron" aria-hidden>
+              ▸
+            </span>
+            <span className="school-card__name">{enriched.school}</span>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="school-card__trigger"
+            aria-expanded={open}
+            onClick={() => setOpen((v) => !v)}
+          >
+            <span className="school-card__chevron" aria-hidden>
+              {open ? "▾" : "▸"}
+            </span>
+            <span className="school-card__name">{enriched.school}</span>
+          </button>
+        )}
 
-      {open && (
+        {blurred && whyBullets.length > 0 ? (
+          <div className="school-card__teaser" aria-hidden>
+            <ul className="school-card__teaser-list">
+              {whyBullets.slice(0, 3).map((item, i) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {open && !blurred && (
         <div className="school-card__body">
           {vibe ? (
             <div className="school-card__block">
@@ -191,6 +224,16 @@ export function SchoolStrategyCard({ row, tier, locale, form, unlocked, highligh
           )}
         </div>
       )}
+      </div>
+
+      {blurred ? (
+        <div className="school-card__blur-overlay" role="status" aria-live="polite">
+          <span className="lock-icon" aria-hidden>
+            🔒
+          </span>
+          <p className="school-card__blur-overlay-text">{t("report.lockRowSub")}</p>
+        </div>
+      ) : null}
     </article>
   );
 }

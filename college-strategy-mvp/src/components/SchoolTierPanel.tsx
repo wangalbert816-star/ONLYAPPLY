@@ -24,7 +24,7 @@ export function SchoolTierPanel({
   unlocked,
   highlightSchoolKeys,
   lockedSchoolRows,
-  tierTitle,
+  tierTitle: _tierTitle,
   guide,
   defaultOpen = false,
   form,
@@ -33,15 +33,15 @@ export function SchoolTierPanel({
   const locale = REPORT_CONTENT_LOCALE;
   if (!rows.length) return null;
 
-  const visible = rows.slice(0, lockedSchoolRows);
-  const lockedCount = unlocked ? 0 : Math.max(0, rows.length - 1);
+  const lockedCount = unlocked ? 0 : Math.max(0, rows.length - lockedSchoolRows);
+  const tierUpper = tier.toUpperCase();
 
   return (
     <ReportCollapsibleSection
       id={`report-tier-${tier}`}
       title={
         <>
-          {tierTitle}
+          {tierUpper} ({t("report.tierSchoolCount", { n: rows.length })})
           {!unlocked && lockedCount > 0 && (
             <span className="inline-hint"> {t("report.tierMore", { n: lockedCount })}</span>
           )}
@@ -52,7 +52,7 @@ export function SchoolTierPanel({
       className={`school-tier-panel school-tier-panel--${tier}`}
     >
       <div className="school-cards-grid">
-        {visible.map((row, i) => (
+        {rows.map((row, i) => (
           <SchoolStrategyCard
             key={`${row.school}-${i}`}
             row={row}
@@ -61,18 +61,9 @@ export function SchoolTierPanel({
             form={form}
             unlocked={unlocked}
             highlighted={highlightSchoolKeys.has(row.school.trim().toLowerCase())}
+            blurred={!unlocked && i >= lockedSchoolRows}
           />
         ))}
-        {!unlocked &&
-          rows.slice(1).map((_, i) => (
-            <div key={`lock-${i}`} className="school-card school-card--locked-row">
-              <span className="lock-icon" aria-hidden>
-                🔒
-              </span>
-              {t("report.lockRow", { n: i + 2 })}
-              <span className="lock-sub">{t("report.lockRowSub")}</span>
-            </div>
-          ))}
       </div>
     </ReportCollapsibleSection>
   );

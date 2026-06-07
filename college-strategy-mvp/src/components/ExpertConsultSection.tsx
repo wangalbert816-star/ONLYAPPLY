@@ -47,7 +47,7 @@ export function ExpertConsultSection({
   if (variant === "compact") {
     return (
       <section
-        className="card report-block expert-consult expert-consult--compact"
+        className="expert-consult expert-consult--compact"
         aria-labelledby="expert-consult-compact-heading"
         data-no-pdf
       >
@@ -82,7 +82,7 @@ export function ExpertConsultSection({
 
   return (
     <section
-      className="card report-block expert-consult expert-consult--full"
+      className="expert-consult expert-consult--full"
       id={id}
       aria-labelledby="expert-consult-heading"
       data-no-pdf

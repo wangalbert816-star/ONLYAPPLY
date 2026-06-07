@@ -650,6 +650,26 @@
   overflow: visible;
 }
 
+.report-view .profile-five-radar-wrap {
+  width: 100%;
+}
+
+@media (min-width: 900px) {
+  .report-view .profile-five-radar-wrap {
+    max-width: min(520px, 100%);
+    margin: 0;
+    align-items: flex-start;
+  }
+
+  .report-view .profile-five-radar {
+    max-width: min(480px, 100%);
+  }
+
+  .report-view .profile-five-mockup-grid {
+    max-width: none;
+  }
+}
+
 .profile-five-radar {
   width: 100%;
   max-width: 320px;
@@ -857,8 +877,20 @@
 .profile-five-score {
   font-size: 0.78rem;
   font-weight: 700;
-  color: #2563eb;
+  color: #047857;
   white-space: nowrap;
+}
+
+.profile-five-score--low {
+  color: #b91c1c;
+}
+
+.profile-five-score--mid {
+  color: #a16207;
+}
+
+.profile-five-score--high {
+  color: #047857;
 }
 
 .profile-five-explain,
@@ -890,7 +922,19 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #93c5fd, #2563eb);
+  background: linear-gradient(90deg, #6ee7b7, #047857);
+}
+
+.profile-five-preview-bar--low span {
+  background: linear-gradient(90deg, #fca5a5, #dc2626);
+}
+
+.profile-five-preview-bar--mid span {
+  background: linear-gradient(90deg, #fde68a, #ca8a04);
+}
+
+.profile-five-preview-bar--high span {
+  background: linear-gradient(90deg, #6ee7b7, #047857);
 }
 
 .profile-five-preview-lock {
@@ -937,6 +981,12 @@
   cursor: not-allowed;
 }
 
+.report-view .profile-five--mockup .profile-five-commit {
+  max-width: min(28rem, 100%);
+  margin-left: 0;
+  margin-right: 0;
+}
+
 .profile-five-commit {
   display: flex;
   flex-direction: column;
@@ -976,6 +1026,21 @@
 /* —— 阅读路径（决策顺序） */
 .report-main-layout__content {
   padding-bottom: 0.5rem;
+}
+
+.report-content-footer {
+  margin-top: 1.25rem;
+  padding-top: 0.25rem;
+}
+
+.report-view .report-content-footer .disclaimer {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.report-view .report-content-footer .report-legal-links {
+  justify-content: flex-start;
+  margin: 0.45rem 0 0;
 }
 
 .report-path {

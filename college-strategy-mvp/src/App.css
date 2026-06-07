@@ -228,7 +228,35 @@
 
 .app.report-view,
 .app.app--intro {
+  --report-pad-x: clamp(1rem, 2.5vw, 2rem);
+  --report-shell-max: min(72rem, calc(100vw - 2 * var(--report-pad-x)));
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--report-shell-max);
+  margin-left: auto;
+  margin-right: auto;
   padding-top: calc(var(--app-top-chrome-h, 4.25rem) + clamp(0.5rem, 1.5vh, 0.85rem));
+  padding-left: var(--report-pad-x);
+  padding-right: var(--report-pad-x);
+}
+
+@media (min-width: 960px) {
+  .app.report-view {
+    --report-shell-max: min(84rem, calc(100vw - 3rem));
+    --report-pad-x: clamp(1.25rem, 2vw, 2.5rem);
+  }
+}
+
+@media (min-width: 1280px) {
+  .app.report-view {
+    --report-shell-max: min(96rem, calc(100vw - 4rem));
+  }
+}
+
+@media (min-width: 1536px) {
+  .app.report-view {
+    --report-shell-max: min(108rem, calc(100vw - 5rem));
+  }
 }
 
 .landing-sheet {

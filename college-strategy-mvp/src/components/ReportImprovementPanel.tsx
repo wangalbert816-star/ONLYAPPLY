@@ -15,7 +15,14 @@ type Props = {
   improveLead: string | null;
   lockedWeekItems: number;
   t: Translate;
+  embedded?: boolean;
 };
+
+type ActionKind = "urgent" | "ok";
+
+function scrollToId(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 
 export function ReportImprovementPanel({
   report,
@@ -26,6 +33,7 @@ export function ReportImprovementPanel({
   improveLead,
   lockedWeekItems,
   t,
+  embedded = false,
 }: Props) {
   const tw = report.improvement_plan?.this_week || [];
   const tm = report.improvement_plan?.this_month || [];
@@ -34,6 +42,45 @@ export function ReportImprovementPanel({
   const priorityFrame = report.improvement_plan?.priority_frame?.trim() || "";
   const majorGuide = majorActivityHintBullets(form.majorPrimary, form.majorSecondary, locale);
   const showMajorGuide = unlocked && majorGuide.length > 0 && activityBuild.length < 2;
+
+  if (embedded) {
+    const lines: { text: string; kind: ActionKind }[] = [];
+    if (tw[0]) lines.push({ text: tw[0], kind: "urgent" });
+    if (tw[1]) lines.push({ text: tw[1], kind: "ok" });
+    else if (activityBuild[0]) lines.push({ text: activityBuild[0], kind: "ok" });
+    if (tw[2]) lines.push({ text: tw[2], kind: "ok" });
+    else if (activityBuild[1]) lines.push({ text: activityBuild[1], kind: "ok" });
+    else if (bs[0]) lines.push({ text: bs[0], kind: "ok" });
+
+    const items = lines.slice(0, 3);
+    if (items.length === 0) {
+      return <p className="report-action-list__empty">{t("report.mockup.noActions")}</p>;
+    }
+
+    return (
+      <ul className="report-action-list">
+        {items.map((item, i) => (
+          <li key={i} className="report-action-card">
+            <span className={`report-action-card__icon report-action-card__icon--${item.kind}`} aria-hidden />
+            <div className="report-action-card__body">
+              <p className="report-action-card__text">{item.text}</p>
+              <button type="button" className="report-action-card__link" onClick={() => scrollToId("report-step-action")}>
+                {t("report.mockup.seeInSheet")}
+              </button>
+            </div>
+          </li>
+        ))}
+        {!unlocked && (tw.length > lockedWeekItems || activityBuild.length > 0) ? (
+          <li className="report-action-card report-action-card--locked">
+            <span className="lock-icon" aria-hidden>
+              🔒
+            </span>
+            {t("report.improvePreview")}
+          </li>
+        ) : null}
+      </ul>
+    );
+  }
 
   return (
     <ReportCollapsibleSection
