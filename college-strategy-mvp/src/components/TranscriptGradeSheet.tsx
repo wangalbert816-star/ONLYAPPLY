@@ -349,9 +349,10 @@ export function TranscriptGradeSheet({ form, update, t, onSkipAdvance }: Props) 
       </section>
 
       <div className="transcript-sheet__footer">
+        <p className="transcript-sheet__footer-note">{t("form.transcriptSheet.confirmVsSkip")}</p>
         <button
           type="button"
-          className="admin-portal__btn admin-portal__btn--primary transcript-sheet__confirm"
+          className="btn btn-primary btn-primary--guided btn-block transcript-sheet__confirm"
           onClick={handleConfirm}
           disabled={isConfirmed}
         >
