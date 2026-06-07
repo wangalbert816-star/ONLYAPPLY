@@ -48,6 +48,11 @@ export function EvalCaseExpectedEditor({ evalCase, saving, onSave }: Props) {
     }
   }
 
+  async function handleBlurSave() {
+    if (!dirty || saving) return;
+    await handleSave();
+  }
+
   return (
     <section className="admin-eval-case-expected" aria-label={t("admin.evalHarness.expectedAnswerTitle")}>
       <div className="admin-eval-case-expected__head">
@@ -73,6 +78,7 @@ export function EvalCaseExpectedEditor({ evalCase, saving, onSave }: Props) {
             onChange={(e) => update("reachSchools", e.target.value)}
             placeholder={t("admin.eval.schoolsPlaceholder")}
             disabled={saving}
+            onBlur={() => void handleBlurSave()}
           />
         </label>
         <label className="admin-eval__span2">
@@ -83,6 +89,7 @@ export function EvalCaseExpectedEditor({ evalCase, saving, onSave }: Props) {
             onChange={(e) => update("matchSchools", e.target.value)}
             placeholder={t("admin.eval.schoolsPlaceholder")}
             disabled={saving}
+            onBlur={() => void handleBlurSave()}
           />
         </label>
         <label className="admin-eval__span2">
@@ -93,6 +100,7 @@ export function EvalCaseExpectedEditor({ evalCase, saving, onSave }: Props) {
             onChange={(e) => update("safetySchools", e.target.value)}
             placeholder={t("admin.eval.schoolsPlaceholder")}
             disabled={saving}
+            onBlur={() => void handleBlurSave()}
           />
         </label>
         <label className="admin-eval__span2">
@@ -102,6 +110,7 @@ export function EvalCaseExpectedEditor({ evalCase, saving, onSave }: Props) {
             onChange={(e) => update("forbiddenSchools", e.target.value)}
             placeholder={t("admin.eval.forbiddenPlaceholder")}
             disabled={saving}
+            onBlur={() => void handleBlurSave()}
           />
         </label>
         <label className="admin-eval__span2">
@@ -111,6 +120,7 @@ export function EvalCaseExpectedEditor({ evalCase, saving, onSave }: Props) {
             value={draft.notes}
             onChange={(e) => update("notes", e.target.value)}
             disabled={saving}
+            onBlur={() => void handleBlurSave()}
           />
         </label>
       </div>

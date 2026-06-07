@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import type { AdminEvalCase, AdminEvalRun, AdminEvalRunResult } from "../../../lib/admin/crmAdminApi";
 import {
   CORRECTION_REASON_CATEGORIES,
@@ -19,7 +19,9 @@ type Props = {
   draft: EvalReviewDraft;
   onChange: (draft: EvalReviewDraft) => void;
   onSave: (status: EvalReviewDraft["status"]) => void;
+  onAutoSave?: (mode?: "immediate" | "debounced", draftOverride?: EvalReviewDraft) => void;
   saving: boolean;
+  saveState?: "idle" | "saving" | "saved" | "error";
   t: Translate;
 };
 
@@ -35,12 +37,30 @@ function tierLabel(t: Translate, tier: "reach" | "match" | "safety" | null) {
   return "—";
 }
 
-export function AdminEvalReviewForm({ evalCase, run, result, draft, onChange, onSave, saving, t }: Props) {
+export function AdminEvalReviewForm({
+  evalCase,
+  run,
+  result,
+  draft,
+  onChange,
+  onSave,
+  onAutoSave,
+  saving,
+  saveState = "idle",
+  t,
+}: Props) {
   const [tab, setTab] = useState<ReviewTab>("report");
   const preview = buildEvalReportPreview(result.reportPayload);
   const avg = rubricAverage(draft.rubricScores);
   const schoolCorrections = countSchoolCorrections(draft);
   const profileAdjustments = countProfileAdjustments(draft);
+
+  const saveItem = useCallback(
+    (mode: "immediate" | "debounced" = "immediate", draftOverride?: EvalReviewDraft) => {
+      onAutoSave?.(mode, draftOverride);
+    },
+    [onAutoSave],
+  );
 
   const updateRubric = (key: RubricDimension, patch: Partial<(typeof draft.rubricScores)[RubricDimension]>) => {
     onChange({
@@ -126,7 +146,17 @@ export function AdminEvalReviewForm({ evalCase, run, result, draft, onChange, on
                           key={n}
                           type="button"
                           className={`admin-eval-review__score-pill${row.score === n ? " admin-eval-review__score-pill--active" : ""}`}
-                          onClick={() => updateRubric(key, { score: n })}
+                          onClick={() => {
+                            const nextDraft = {
+                              ...draft,
+                              rubricScores: {
+                                ...draft.rubricScores,
+                                [key]: { ...draft.rubricScores[key], score: n },
+                              },
+                            };
+                            onChange(nextDraft);
+                            saveItem("immediate", nextDraft);
+                          }}
                         >
                           {n}
                         </button>
@@ -139,6 +169,7 @@ export function AdminEvalReviewForm({ evalCase, run, result, draft, onChange, on
                     placeholder={t("admin.evalHarness.rubricNotesPlaceholder")}
                     value={row.notes}
                     onChange={(e) => updateRubric(key, { notes: e.target.value })}
+                    onBlur={() => saveItem("immediate")}
                   />
                 </div>
               );
@@ -174,7 +205,9 @@ export function AdminEvalReviewForm({ evalCase, run, result, draft, onChange, on
                           onClick={() => {
                             const next = [...draft.schoolReviews];
                             next[index] = { ...row, action };
-                            onChange({ ...draft, schoolReviews: next });
+                            const nextDraft = { ...draft, schoolReviews: next };
+                            onChange(nextDraft);
+                            saveItem("immediate", nextDraft);
                           }}
                         >
                           {action === "agree"
@@ -196,7 +229,9 @@ export function AdminEvalReviewForm({ evalCase, run, result, draft, onChange, on
                               ...row,
                               counselorTier: e.target.value as "reach" | "match" | "safety",
                             };
-                            onChange({ ...draft, schoolReviews: next });
+                            const nextDraft = { ...draft, schoolReviews: next };
+                            onChange(nextDraft);
+                            saveItem("immediate", nextDraft);
                           }}
                         >
                           <option value="reach">{t("admin.eval.reachLabel")}</option>
@@ -217,6 +252,7 @@ export function AdminEvalReviewForm({ evalCase, run, result, draft, onChange, on
                             next[index] = { ...row, reason: e.target.value };
                             onChange({ ...draft, schoolReviews: next });
                           }}
+                          onBlur={() => saveItem("immediate")}
                         />
                       </label>
                       <label>
@@ -228,6 +264,7 @@ export function AdminEvalReviewForm({ evalCase, run, result, draft, onChange, on
                             next[index] = { ...row, evidence: e.target.value };
                             onChange({ ...draft, schoolReviews: next });
                           }}
+                          onBlur={() => saveItem("immediate")}
                         />
                       </label>
                     </div>
@@ -265,6 +302,7 @@ export function AdminEvalReviewForm({ evalCase, run, result, draft, onChange, on
                           };
                           onChange({ ...draft, profileDimensionReviews: next });
                         }}
+                        onBlur={() => saveItem("immediate")}
                       />
                     </span>
                   </div>
@@ -277,7 +315,9 @@ export function AdminEvalReviewForm({ evalCase, run, result, draft, onChange, on
                           onChange={(e) => {
                             const next = [...draft.profileDimensionReviews];
                             next[index] = { ...row, reasonCategory: e.target.value as typeof row.reasonCategory };
-                            onChange({ ...draft, profileDimensionReviews: next });
+                            const nextDraft = { ...draft, profileDimensionReviews: next };
+                            onChange(nextDraft);
+                            saveItem("immediate", nextDraft);
                           }}
                         >
                           <option value="">{t("admin.eval.optional")}</option>
@@ -297,6 +337,7 @@ export function AdminEvalReviewForm({ evalCase, run, result, draft, onChange, on
                             next[index] = { ...row, reason: e.target.value };
                             onChange({ ...draft, profileDimensionReviews: next });
                           }}
+                          onBlur={() => saveItem("immediate")}
                         />
                       </label>
                     </div>
@@ -326,6 +367,7 @@ export function AdminEvalReviewForm({ evalCase, run, result, draft, onChange, on
                     },
                   })
                 }
+                onBlur={() => saveItem("immediate")}
               />
             </label>
             <label>
@@ -342,6 +384,7 @@ export function AdminEvalReviewForm({ evalCase, run, result, draft, onChange, on
                     },
                   })
                 }
+                onBlur={() => saveItem("immediate")}
               />
             </label>
             <label>
@@ -358,6 +401,7 @@ export function AdminEvalReviewForm({ evalCase, run, result, draft, onChange, on
                     },
                   })
                 }
+                onBlur={() => saveItem("immediate")}
               />
             </label>
           </div>
@@ -372,6 +416,7 @@ export function AdminEvalReviewForm({ evalCase, run, result, draft, onChange, on
                   finalApprovedRecommendation: { ...draft.finalApprovedRecommendation, notes: e.target.value },
                 })
               }
+              onBlur={() => saveItem("immediate")}
             />
           </label>
           <label className="admin-eval-review__notes">
@@ -380,6 +425,7 @@ export function AdminEvalReviewForm({ evalCase, run, result, draft, onChange, on
               rows={2}
               value={draft.overallNotes}
               onChange={(e) => onChange({ ...draft, overallNotes: e.target.value })}
+              onBlur={() => saveItem("immediate")}
             />
           </label>
         </section>
@@ -391,6 +437,9 @@ export function AdminEvalReviewForm({ evalCase, run, result, draft, onChange, on
             schools: String(schoolCorrections),
             profile: String(profileAdjustments),
           })}
+          {saveState === "saving" ? ` · ${t("admin.evalHarness.reviewAutoSaving")}` : null}
+          {saveState === "saved" ? ` · ${t("admin.evalHarness.reviewAutoSaved")}` : null}
+          {saveState === "error" ? ` · ${t("admin.evalHarness.reviewAutoSaveErr")}` : null}
         </p>
         <div className="admin-eval-review__footer-actions">
           <button type="button" className="admin-portal__btn admin-portal__btn--ghost" disabled={saving} onClick={() => onSave("draft")}>

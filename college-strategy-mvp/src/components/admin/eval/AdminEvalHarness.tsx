@@ -101,6 +101,9 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
   const [reviewCaseId, setReviewCaseId] = useState("");
   const [reviewDraft, setReviewDraft] = useState<EvalReviewDraft | null>(null);
   const [savingReview, setSavingReview] = useState(false);
+  const [reviewSaveState, setReviewSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const reviewLastSavedKeyRef = useRef("");
+  const reviewSyncKeyRef = useRef("");
 
   const [dashboard, setDashboard] = useState<AdminEvalDashboard | null>(null);
   const [exporting, setExporting] = useState<string | null>(null);
@@ -192,15 +195,21 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
   );
 
   useEffect(() => {
-    if (!selectedReviewRow?.case) {
+    if (!selectedReviewRow?.case || !runDetail) {
       setReviewDraft(null);
+      reviewLastSavedKeyRef.current = "";
+      reviewSyncKeyRef.current = "";
       return;
     }
+    const syncKey = `${runDetail.run.id}:${selectedReviewRow.caseId}`;
+    if (reviewSyncKeyRef.current === syncKey) return;
+    reviewSyncKeyRef.current = syncKey;
+
     const fallback = buildInitialReviewDraft(selectedReviewRow.case, selectedReviewRow, profileLabel);
-    setReviewDraft(
-      selectedReviewRow.review ? reviewToDraft(selectedReviewRow.review, fallback) : fallback,
-    );
-  }, [selectedReviewRow, profileLabel]);
+    const nextDraft = selectedReviewRow.review ? reviewToDraft(selectedReviewRow.review, fallback) : fallback;
+    setReviewDraft(nextDraft);
+    reviewLastSavedKeyRef.current = JSON.stringify(nextDraft);
+  }, [runDetail, selectedReviewRow, profileLabel]);
 
   useEffect(() => {
     const prev = prevStepRef.current;
@@ -313,7 +322,18 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
       setSelectedRunId(run.id);
       setRuns((prev) => [run, ...prev.filter((r) => r.id !== run.id)]);
       await generateAdminEvalRunCase(token, run.id, selectedCaseId);
-      await loadRunDetail(run.id);
+      const detail = await fetchAdminEvalRun(token, run.id);
+      setRunDetail(detail);
+      const resultRow = detail.results.find((r) => r.caseId === selectedCaseId);
+      if (resultRow?.case && resultRow.status === "ok") {
+        const initialDraft = buildInitialReviewDraft(resultRow.case, resultRow, profileLabel);
+        try {
+          await saveAdminEvalReview(token, run.id, selectedCaseId, draftToReviewPayload(initialDraft));
+          await loadRunDetail(run.id);
+        } catch (e) {
+          setPanelError(evalErrorMessage((e as Error & { code?: string }).code, t));
+        }
+      }
       setReviewCaseId(selectedCaseId);
       setReviewPanel("detail");
       setStep("review");
@@ -324,24 +344,80 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
     }
   };
 
-  const handleSaveReview = async (status: EvalReviewDraft["status"]) => {
-    if (!runDetail || !selectedReviewRow || !reviewDraft || savingReview) return;
-    setSavingReview(true);
-    setPanelError(null);
-    try {
-      const payload = draftToReviewPayload({ ...reviewDraft, status });
-      const runId = runDetail.run.id;
-      const caseId = selectedReviewRow.caseId;
-      await saveAdminEvalReview(token, runId, caseId, payload);
-      await loadRunDetail(runId);
-      await refreshDashboard();
-      if (status === "submitted") setStep("summary");
-    } catch (e) {
-      setPanelError(evalErrorMessage((e as Error & { code?: string }).code, t));
-    } finally {
-      setSavingReview(false);
-    }
-  };
+  const handleSaveReview = useCallback(
+    async (
+      status: EvalReviewDraft["status"],
+      options?: { silent?: boolean; draftOverride?: EvalReviewDraft },
+    ) => {
+      const draft = options?.draftOverride ?? reviewDraft;
+      if (!runDetail || !selectedReviewRow || !draft || savingReview) return false;
+      setSavingReview(true);
+      setReviewSaveState("saving");
+      if (!options?.silent) setPanelError(null);
+      try {
+        const payload = draftToReviewPayload({ ...draft, status: status === "submitted" ? status : "draft" });
+        const runId = runDetail.run.id;
+        const caseId = selectedReviewRow.caseId;
+        const { review } = await saveAdminEvalReview(token, runId, caseId, payload);
+        if (options?.silent) {
+          setRunDetail((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  results: prev.results.map((row) => (row.caseId === caseId ? { ...row, review } : row)),
+                }
+              : prev,
+          );
+        } else {
+          await loadRunDetail(runId);
+        }
+        await refreshDashboard();
+        reviewLastSavedKeyRef.current = JSON.stringify({ ...draft, status: status === "submitted" ? status : "draft" });
+        setReviewSaveState("saved");
+        window.setTimeout(() => setReviewSaveState("idle"), 2500);
+        if (status === "submitted" && !options?.silent) setStep("summary");
+        return true;
+      } catch (e) {
+        setReviewSaveState("error");
+        if (!options?.silent) {
+          setPanelError(evalErrorMessage((e as Error & { code?: string }).code, t));
+        }
+        return false;
+      } finally {
+        setSavingReview(false);
+      }
+    },
+    [loadRunDetail, refreshDashboard, reviewDraft, runDetail, savingReview, selectedReviewRow, t, token],
+  );
+
+  const autoSaveTimerRef = useRef<number | null>(null);
+
+  const triggerAutoSave = useCallback(
+    (mode: "immediate" | "debounced" = "immediate", draftOverride?: EvalReviewDraft) => {
+      const run = () => void handleSaveReview("draft", { silent: true, draftOverride });
+      if (mode === "immediate") {
+        if (autoSaveTimerRef.current != null) {
+          window.clearTimeout(autoSaveTimerRef.current);
+          autoSaveTimerRef.current = null;
+        }
+        run();
+        return;
+      }
+      if (autoSaveTimerRef.current != null) window.clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = window.setTimeout(() => {
+        autoSaveTimerRef.current = null;
+        run();
+      }, 400);
+    },
+    [handleSaveReview],
+  );
+
+  useEffect(
+    () => () => {
+      if (autoSaveTimerRef.current != null) window.clearTimeout(autoSaveTimerRef.current);
+    },
+    [],
+  );
 
   const handleExport = async (kind: "json" | "csv" | "summary") => {
     if (exporting) return;
@@ -533,7 +609,9 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
                   draft={reviewDraft}
                   onChange={setReviewDraft}
                   onSave={(status) => void handleSaveReview(status)}
+                  onAutoSave={triggerAutoSave}
                   saving={savingReview}
+                  saveState={reviewSaveState}
                   t={t}
                 />
               </>
