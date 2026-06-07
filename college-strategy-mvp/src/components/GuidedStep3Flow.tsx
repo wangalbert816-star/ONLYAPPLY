@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import type { ActivityItem, FormState } from "../types";
 import type { Translate } from "../i18n/LanguageContext";
 import { ExportActivitiesCsvButton } from "./ExportActivitiesCsvButton";
+import { ActivitiesImportPanel } from "./ActivitiesImportPanel";
 import { ActivityCard } from "./ActivityCard";
 import type { GuideTouch } from "./GuidedQuestionnaire";
 import {
@@ -97,6 +98,14 @@ export function GuidedStep3Flow({
           </h2>
           <GuidedContextLine step={3} screenId="activities" t={t} />
           <p className="activity-builder__required-note">{t("wizard.s3.activities.detailHint")}</p>
+          <ActivitiesImportPanel
+            t={t}
+            activityCount={structuredActivities.filter(activityItemMeetsWizardRequirement).length}
+            onImport={(items) => {
+              update("structuredActivities", items);
+              markTouch("s3_actv");
+            }}
+          />
           <div className="activity-builder activity-builder--guided activity-builder--open">
             <div className="activity-builder__body">
               {structuredActivities.map((item, index) => (

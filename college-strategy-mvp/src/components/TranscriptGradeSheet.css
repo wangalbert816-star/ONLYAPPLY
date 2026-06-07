@@ -5,6 +5,10 @@
   margin-top: 0.25rem;
 }
 
+.transcript-sheet--activities {
+  margin-bottom: 0.35rem;
+}
+
 /* —— 三步流程 —— */
 .transcript-sheet__flow {
   display: flex;

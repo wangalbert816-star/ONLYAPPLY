@@ -284,7 +284,7 @@ export const wizardZhNested = {
       screens: {
         activities: {
           title: "第 3 步 — 活动与角色",
-          context: "至少 1 条。名称与你具体做了什么为必填；信息越完整，判断越准。",
+          context: "可上传 PDF/图片/CSV 或粘贴文字预填；至少 1 条，名称与行动说明为必填。",
         },
         risk: {
           title: "第 3 步 — 名单风格",
@@ -668,7 +668,7 @@ export const wizardEnNested = {
       screens: {
         activities: {
           title: "Step 3 — Activities",
-          context: "At least one entry required. Name and what you actually did are required—the more detail, the sharper the read.",
+          context: "Upload PDF/image/CSV or paste text to pre-fill; at least one entry with name and actions required.",
         },
         risk: {
           title: "Step 3 — List posture",
