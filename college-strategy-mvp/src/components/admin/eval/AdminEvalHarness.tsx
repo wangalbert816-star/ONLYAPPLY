@@ -689,22 +689,37 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
       </div>
 
       <footer className="admin-eval-harness__footer">
-        <button
-          type="button"
-          className="admin-portal__btn admin-portal__btn--ghost"
-          disabled={STEPS.indexOf(step) === 0}
-          onClick={() => setStep(STEPS[Math.max(0, STEPS.indexOf(step) - 1)])}
-        >
-          {t("admin.evalHarness.prevStep")}
-        </button>
-        <button
-          type="button"
-          className="admin-portal__btn admin-portal__btn--primary"
-          disabled={STEPS.indexOf(step) >= STEPS.length - 1}
-          onClick={() => setStep(STEPS[Math.min(STEPS.length - 1, STEPS.indexOf(step) + 1)])}
-        >
-          {t("admin.evalHarness.nextStep")}
-        </button>
+        {(() => {
+          const stepIndex = STEPS.indexOf(step);
+          const isLastStep = stepIndex >= STEPS.length - 1;
+          return (
+            <>
+              <button
+                type="button"
+                className="admin-portal__btn admin-portal__btn--ghost"
+                disabled={stepIndex === 0}
+                onClick={() => setStep(STEPS[Math.max(0, stepIndex - 1)])}
+              >
+                {t("admin.evalHarness.prevStep")}
+              </button>
+              <button
+                type="button"
+                className="admin-portal__btn admin-portal__btn--primary"
+                onClick={() => {
+                  if (isLastStep) {
+                    setLibraryPanel("list");
+                    setStep("library");
+                    queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+                    return;
+                  }
+                  setStep(STEPS[stepIndex + 1]);
+                }}
+              >
+                {isLastStep ? t("admin.evalHarness.finishFlow") : t("admin.evalHarness.nextStep")}
+              </button>
+            </>
+          );
+        })()}
       </footer>
     </div>
   );

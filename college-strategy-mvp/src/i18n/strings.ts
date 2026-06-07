@@ -946,6 +946,7 @@ merge(zhFlat, {
       navLabel: "评测流程步骤",
       prevStep: "上一步",
       nextStep: "下一步",
+      finishFlow: "完成 · 返回案例库",
       currentCase: "当前案例：{name}",
       reviewTabsLabel: "评审分区",
       stepsShort: {
@@ -3067,6 +3068,7 @@ merge(enFlat, {
       navLabel: "Evaluation workflow steps",
       prevStep: "Previous",
       nextStep: "Next",
+      finishFlow: "Done — back to cases",
       currentCase: "Current case: {name}",
       reviewTabsLabel: "Review sections",
       stepsShort: {
