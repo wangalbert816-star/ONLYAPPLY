@@ -13,6 +13,7 @@ import {
   mapEvalReview,
   normalizeReviewInput,
 } from "./adminEvalReview.mjs";
+import { upsertGoldCaseFromEval } from "./trainingCorpus.mjs";
 
 function mapEvalCase(row) {
   return {
@@ -673,7 +674,40 @@ export function registerAdminEvalRoutes(app, { requireAdmin, generateReportForAd
         .select("*")
         .single();
       if (error) throw error;
-      res.json({ review: mapEvalReview(data) });
+      const review = mapEvalReview(data);
+
+      let trainingCorpus = null;
+      if (normalized.payload.status === "submitted" || normalized.payload.status === "approved") {
+        try {
+          const [{ data: caseRow }, { data: resultRow }, { data: runRow }] = await Promise.all([
+            ctx.admin.from("report_eval_cases").select("*").eq("id", caseId).single(),
+            ctx.admin
+              .from("report_eval_run_results")
+              .select("*")
+              .eq("run_id", runId)
+              .eq("case_id", caseId)
+              .maybeSingle(),
+            ctx.admin.from("report_eval_runs").select("*").eq("id", runId).single(),
+          ]);
+          if (caseRow) {
+            trainingCorpus = upsertGoldCaseFromEval({
+              evalCase: mapEvalCase(caseRow),
+              review,
+              result: resultRow
+                ? { reportPayload: resultRow.report_payload ?? null }
+                : null,
+              run: runRow
+                ? { id: runRow.id, promptVersion: runRow.prompt_version }
+                : null,
+            });
+          }
+        } catch (syncErr) {
+          console.warn("[training-corpus] review_sync_failed", syncErr);
+          trainingCorpus = { ok: false, reason: "sync_failed" };
+        }
+      }
+
+      res.json({ review, trainingCorpus });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       if (/report_eval_reviews|relation.*does not exist/i.test(msg)) {

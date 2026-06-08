@@ -39,6 +39,8 @@ import {
 } from "./reportTierHints.mjs";
 import { registerAdminCrmRoutes, crmAdminConfigured } from "./adminCrm.mjs";
 import { registerAdminEvalRoutes } from "./adminEval.mjs";
+import { buildFewShotPromptBlock } from "./trainingCorpus.mjs";
+import { registerTrainingCorpusRoutes } from "./trainingCorpusAdmin.mjs";
 import { registerCounselorCrmRoutes } from "./counselorCrm.mjs";
 import { registerUsHighSchoolRoutes } from "./usHighSchools.mjs";
 import { registerTranscriptParseRoutes, formatTranscriptSheetBlock } from "./transcriptParse.mjs";
@@ -1477,7 +1479,9 @@ async function generateReportWithConfig(cfg, body) {
   const locale = resolveReportLocale(body);
   const planHorizon = getIntakeHorizon(String(body?.intakeTerm || ""));
   const includeUc = wantsUcFromBody(body);
-  const userContent = buildUserPayload(body, includeUc);
+  let userContent = buildUserPayload(body, includeUc);
+  const fewShotBlock = buildFewShotPromptBlock(body, body?.tags ?? [], locale);
+  if (fewShotBlock) userContent += fewShotBlock;
   const maxTokens = reportCompletionMaxTokens();
   const baseMessages = [
     { role: "system", content: systemPromptForLocale(locale, includeUc, planHorizon) },
@@ -2237,8 +2241,7 @@ app.post("/api/consult-lead", (req, res) => {
 
 /** Local dev: create counselor Auth user + counselors row (needs SUPABASE_SERVICE_ROLE_KEY in .env). */
 registerAdminCrmRoutes(app, { supabaseAdmin });
-registerAdminEvalRoutes(app, {
-  requireAdmin: async (req, res) => {
+const requireCrmAdmin = async (req, res) => {
     const admin = supabaseAdmin();
     if (!admin) {
       res.status(503).json({ error: "supabase_admin_missing" });
@@ -2270,8 +2273,16 @@ registerAdminEvalRoutes(app, {
       return null;
     }
     return { admin, user: data.user };
-  },
+};
+
+registerAdminEvalRoutes(app, {
+  requireAdmin: requireCrmAdmin,
   generateReportForAdmin,
+});
+registerTrainingCorpusRoutes(app, {
+  requireAdmin: requireCrmAdmin,
+  buildUserPayload,
+  systemPromptForLocale,
 });
 registerCounselorCrmRoutes(app, { supabaseAdmin });
 registerUsHighSchoolRoutes(app);

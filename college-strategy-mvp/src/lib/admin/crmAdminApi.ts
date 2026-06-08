@@ -601,11 +601,53 @@ export async function saveAdminEvalReview(
   runId: string,
   caseId: string,
   input: Record<string, unknown>,
-): Promise<{ review: AdminEvalReview }> {
+): Promise<{
+  review: AdminEvalReview;
+  trainingCorpus?: { ok: boolean; caseKey?: string; goldCaseCount?: number; reason?: string } | null;
+}> {
   return adminFetch(`/api/admin/crm/eval/runs/${runId}/reviews/${caseId}`, accessToken, {
     method: "PUT",
     body: JSON.stringify(input),
   });
+}
+
+export type TrainingCorpusStats = {
+  enabled: boolean;
+  fewShotCount: number;
+  goldCaseCount: number;
+  tagCount: number;
+  tags: string[];
+  promptVersion: string;
+  cases: Array<{
+    caseKey: string;
+    title: string;
+    tags: string[];
+    locale: string;
+    reviewedAt: string;
+    reviewedBy: string | null;
+    reach: string[];
+    promptVersion: string;
+  }>;
+};
+
+export async function fetchTrainingCorpusStats(accessToken: string): Promise<TrainingCorpusStats> {
+  return adminFetch("/api/admin/crm/training-corpus", accessToken);
+}
+
+export async function downloadTrainingSftExport(accessToken: string): Promise<{ blob: Blob; filename: string }> {
+  const res = await fetch(apiUrl("/api/admin/crm/training-corpus/export/sft-jsonl"), {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error ?? "export_failed");
+  }
+  const text = await res.text();
+  const stamp = new Date().toISOString().slice(0, 10);
+  return {
+    blob: new Blob([text], { type: "application/x-ndjson" }),
+    filename: `onlyapply-sft-${stamp}.jsonl`,
+  };
 }
 
 export type AdminEvalDashboard = {

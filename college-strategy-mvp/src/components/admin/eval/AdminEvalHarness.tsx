@@ -34,8 +34,10 @@ import {
   createAdminEvalRun,
   deleteAdminEvalCase,
   downloadAdminEvalExport,
+  downloadTrainingSftExport,
   fetchAdminEvalCaseStatus,
   fetchAdminEvalDashboard,
+  fetchTrainingCorpusStats,
   fetchAdminEvalRun,
   generateAdminEvalRunCase,
   listAdminEvalCases,
@@ -45,6 +47,7 @@ import {
   type AdminEvalDashboard,
   type AdminEvalRun,
   type AdminEvalRunResult,
+  type TrainingCorpusStats,
 } from "../../../lib/admin/crmAdminApi";
 import type { EvalReviewDraft } from "../../../lib/admin/evalRubric";
 
@@ -108,6 +111,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
   const reviewSyncKeyRef = useRef("");
 
   const [dashboard, setDashboard] = useState<AdminEvalDashboard | null>(null);
+  const [trainingCorpus, setTrainingCorpus] = useState<TrainingCorpusStats | null>(null);
   const [exporting, setExporting] = useState<string | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [libraryPanel, setLibraryPanel] = useState<"list" | "detail" | "add">("list");
@@ -144,6 +148,15 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
     setDashboard(data);
   }, [token]);
 
+  const refreshTrainingCorpus = useCallback(async () => {
+    try {
+      const data = await fetchTrainingCorpusStats(token);
+      setTrainingCorpus(data);
+    } catch {
+      setTrainingCorpus(null);
+    }
+  }, [token]);
+
   const refreshCaseStatus = useCallback(async () => {
     const { results } = await fetchAdminEvalCaseStatus(token);
     setCaseStatusResults(results);
@@ -162,13 +175,13 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
           : nextRuns[0]?.id || "";
       if (runId !== selectedRunIdRef.current) setSelectedRunId(runId);
       if (runId) await loadRunDetail(runId);
-      await Promise.all([refreshDashboard(), refreshCaseStatus()]);
+      await Promise.all([refreshDashboard(), refreshCaseStatus(), refreshTrainingCorpus()]);
     } catch (e) {
       setPanelError(evalErrorMessage((e as Error & { code?: string }).code, t));
     } finally {
       setLoading(false);
     }
-  }, [loadRunDetail, refreshCaseStatus, refreshCases, refreshDashboard, t, token]);
+  }, [loadRunDetail, refreshCaseStatus, refreshCases, refreshDashboard, refreshTrainingCorpus, t, token]);
 
   useEffect(() => {
     void refreshAll();
@@ -366,7 +379,10 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
         const payload = draftToReviewPayload({ ...draft, status: status === "submitted" ? status : "draft" });
         const runId = runDetail.run.id;
         const caseId = selectedReviewRow.caseId;
-        const { review } = await saveAdminEvalReview(token, runId, caseId, payload);
+        const { review, trainingCorpus: corpusSync } = await saveAdminEvalReview(token, runId, caseId, payload);
+        if (corpusSync?.ok) {
+          await refreshTrainingCorpus();
+        }
         if (options?.silent) {
           setRunDetail((prev) =>
             prev
@@ -383,6 +399,9 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
         reviewLastSavedKeyRef.current = JSON.stringify({ ...draft, status: status === "submitted" ? status : "draft" });
         setReviewSaveState("saved");
         window.setTimeout(() => setReviewSaveState("idle"), 2500);
+        if (corpusSync?.ok && !options?.silent) {
+          setPanelError(null);
+        }
         if (status === "submitted" && !options?.silent) setStep("summary");
         return true;
       } catch (e) {
@@ -427,6 +446,20 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
     [],
   );
 
+  const handleExportSft = async () => {
+    if (exporting) return;
+    setExporting("sft");
+    setPanelError(null);
+    try {
+      const { blob, filename } = await downloadTrainingSftExport(token);
+      triggerDownload(blob, filename);
+    } catch (e) {
+      setPanelError(evalErrorMessage((e as Error & { message?: string }).message, t));
+    } finally {
+      setExporting(null);
+    }
+  };
+
   const handleExport = async (kind: "json" | "csv" | "summary", scope: "reviewed" | "generated" = "reviewed") => {
     if (exporting) return;
     setExporting(kind === "json" ? (scope === "generated" ? "json-generated" : "json-reviewed") : kind);
@@ -449,9 +482,26 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
         <div>
           <h2 className="admin-eval-harness__title">{t("admin.evalHarness.title")}</h2>
           <p className="admin-eval-harness__subtitle">{t("admin.evalHarness.notFineTuning")}</p>
+          {trainingCorpus ? (
+            <p className="admin-eval-harness__subtitle admin-eval-harness__subtitle--muted">
+              {t("admin.evalHarness.brainCorpus", { n: String(trainingCorpus.goldCaseCount) })}
+              {" · "}
+              {t("admin.evalHarness.brainCorpusHint")}
+            </p>
+          ) : null}
         </div>
         {dashboard ? (
           <div className="admin-eval-harness__header-actions">
+            {trainingCorpus && trainingCorpus.goldCaseCount > 0 ? (
+              <button
+                type="button"
+                className="admin-portal__btn admin-portal__btn--ghost admin-eval-harness__export-quick"
+                disabled={!!exporting}
+                onClick={() => void handleExportSft()}
+              >
+                {exporting === "sft" ? t("admin.eval.exportingFeedback") : t("admin.evalHarness.brainExportSft")}
+              </button>
+            ) : null}
             <span className="admin-eval-harness__progress">
               {t("admin.eval.exportProgress", {
                 saved: String(dashboard.reviewedCount),
