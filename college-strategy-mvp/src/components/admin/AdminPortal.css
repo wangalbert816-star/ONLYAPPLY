@@ -1196,6 +1196,25 @@
   white-space: nowrap;
 }
 
+.admin-eval-harness__header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.admin-eval-harness__export-quick {
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.admin-eval-harness__export-note {
+  margin-top: -0.35rem;
+  font-size: 0.78rem;
+  color: var(--admin-muted, #64748b);
+}
+
 .admin-eval-harness__stepper {
   display: flex;
   gap: 0;

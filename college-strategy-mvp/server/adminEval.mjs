@@ -749,13 +749,56 @@ export function registerAdminEvalRoutes(app, { requireAdmin, generateReportForAd
     return entries;
   }
 
+  async function loadGeneratedReportEntries(ctx) {
+    const [{ data: cases }, { data: results }, { data: runs }, { data: reviews }] = await Promise.all([
+      ctx.admin.from("report_eval_cases").select("*").order("case_key", { ascending: true }),
+      ctx.admin.from("report_eval_run_results").select("*").order("updated_at", { ascending: false }),
+      ctx.admin.from("report_eval_runs").select("*"),
+      ctx.admin.from("report_eval_reviews").select("*"),
+    ]);
+
+    const caseById = new Map((cases ?? []).map((c) => [c.id, mapEvalCase(c)]));
+    const runById = new Map((runs ?? []).map((r) => [r.id, mapEvalRun(r)]));
+    const reviewByRunCase = new Map((reviews ?? []).map((r) => [`${r.run_id}:${r.case_id}`, mapEvalReview(r)]));
+
+    const bestByCase = new Map();
+    for (const row of results ?? []) {
+      if (row.status !== "ok") continue;
+      const mapped = {
+        ...mapEvalResult(row),
+        review: reviewByRunCase.get(`${row.run_id}:${row.case_id}`) ?? null,
+      };
+      const existing = bestByCase.get(row.case_id);
+      bestByCase.set(row.case_id, existing ? pickBetterCaseResult(existing, mapped) : mapped);
+    }
+
+    const entries = [];
+    for (const [caseId, result] of bestByCase) {
+      const evalCase = caseById.get(caseId);
+      const run = runById.get(result.runId);
+      if (!evalCase || !run) continue;
+      entries.push({
+        case: evalCase,
+        run,
+        result,
+        review: result.review ?? null,
+      });
+    }
+    entries.sort((a, b) => String(a.case.caseKey ?? "").localeCompare(String(b.case.caseKey ?? "")));
+    return entries;
+  }
+
   app.get("/api/admin/crm/eval/export/json", async (req, res) => {
     const ctx = await requireAdmin(req, res);
     if (!ctx) return;
     try {
-      const entries = await loadSubmittedReviewEntries(ctx);
+      const scope = String(req.query.scope ?? "reviewed").trim() === "generated" ? "generated" : "reviewed";
+      const entries =
+        scope === "generated" ? await loadGeneratedReportEntries(ctx) : await loadSubmittedReviewEntries(ctx);
       res.json({
         exportedAt: new Date().toISOString(),
+        exportScope: scope,
+        entryCount: entries.length,
         harnessPurpose: "prompt_rubric_evaluation_and_correction_data",
         versions: {
           promptVersion: REPORT_PROMPT_VERSION,

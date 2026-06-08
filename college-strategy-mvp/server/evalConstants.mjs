@@ -1,6 +1,6 @@
 /** Shared eval harness constants — prompt/rubric versioning, not model fine-tuning. */
 
-export const REPORT_PROMPT_VERSION = String(process.env.REPORT_PROMPT_VERSION ?? "2026.06.2").trim();
+export const REPORT_PROMPT_VERSION = String(process.env.REPORT_PROMPT_VERSION ?? "2026.06.3").trim();
 export const REPORT_RUBRIC_VERSION = "1.0";
 export const REPORT_TEMPLATE_VERSION = "1.0";
 

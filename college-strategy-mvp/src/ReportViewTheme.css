@@ -669,11 +669,39 @@
 }
 
 .report-view .report-study-card {
-  padding: 0.85rem 0.95rem;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.58);
   border: 1px solid rgba(0, 102, 68, 0.12);
   box-shadow: none;
+  overflow: hidden;
+}
+
+.report-view .report-study-card__trigger {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0.85rem 0.95rem;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: background 0.15s ease;
+}
+
+.report-view .report-study-card__trigger:hover {
+  background: rgba(236, 253, 245, 0.45);
+}
+
+.report-view .report-study-card__trigger:focus-visible {
+  outline: 2px solid rgba(0, 102, 68, 0.35);
+  outline-offset: -2px;
+}
+
+.report-view .report-study-card--open {
+  border-color: rgba(0, 102, 68, 0.22);
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .report-view .report-study-card__tags {
@@ -712,6 +740,30 @@
   font-size: 0.8rem;
   line-height: 1.5;
   color: var(--report-muted);
+}
+
+.report-view .report-study-card__cta {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 650;
+  color: #047857;
+}
+
+.report-view .report-study-card__detail {
+  padding: 0 0.95rem 0.85rem;
+}
+
+.report-view .report-study-card__list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--report-text);
+}
+
+.report-view .report-study-card__list li + li {
+  margin-top: 0.35rem;
 }
 
 /* —— School tiers (unchanged colors) —— */

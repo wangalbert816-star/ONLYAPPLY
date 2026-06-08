@@ -32,6 +32,11 @@ import {
 } from "./topReferenceSchools.mjs";
 import { CURATED_OFFICIAL_LINK_SCHOOL_COUNT, formatMajorGuideForPrompt } from "./knowledge/majorActivitySnippets.mjs";
 import { structuredActivityBlob } from "./activityEvidence.mjs";
+import {
+  athleticRecruitmentHint,
+  riskStyleCalibrationHint,
+  statsTierCalibrationHint,
+} from "./reportTierHints.mjs";
 import { registerAdminCrmRoutes, crmAdminConfigured } from "./adminCrm.mjs";
 import { registerAdminEvalRoutes } from "./adminEval.mjs";
 import { registerCounselorCrmRoutes } from "./counselorCrm.mjs";
@@ -603,6 +608,25 @@ const SYSTEM_PROMPT_ZH = `你是一位资深美国本科升学顾问（10年+经
 - 主申为 Entrepreneurship、商科细分、工程、CS 等时，9 校中至少 1–2 所须因「专业/项目/资源匹配」入选，而非仅因综合排名（例：Entrepreneurship 可含 Babson 等创业导向校；Business 可含专精商学院本科路径的校）。
 - 禁止 9 校全是「综合名气型」私校/旗舰；须体现策略多样性（专精项目校 + 公立 flagship + 合理保底）。
 
+【Recruited athlete · D3/NAIA hook 边界】
+- Varsity / D3·NAIA recruitment contact ≠ 把 Reach 晋级到 Top 20–30 私校；hook 应导向 athletic-friendly LAC、D3 项目或与 stats+专业+地理匹配的 realistic stretch。
+- 亦不得因 athlete 标签把所有选校压到 random safety flagship。
+- executive_summary 与至少 2 所学校的 why 字段须引用具体运动项目、级别（D1/D2/D3/NAIA）、角色与 recruitment 事实。
+
+【作品集 / 建筑 / 设计 / studio 专业】
+- 主申 Architecture、Fine Arts、Design、Fashion、Film production 等 studio-heavy 路径：9 校中至少 1–2 所须为作品集/studio 校（如 RISD、Pratt、Syracuse Architecture、Virginia Tech architecture、SCAD 等），不得 9 校全是 US News 综合排名 flagship。
+- 作品集校在 Reach 档须同时说明 portfolio + stats 双重门槛。
+
+【Reach 档内部一致性】
+- Reach 三校应处于相近 selective band（同为高 selective LAC、同为 competitive public flagship 等）；禁止把 USC/Berkeley 级与 regional public 混在同一 Reach 档。
+
+【riskStyle 与 stats】
+- riskStyle=aggressive 仅影响叙事与是否保留 1 所略高 stretch，不得忽视 GPA/标化差距把 moderate stats 的 Reach 写成 Top 15 私校，亦不得把 Berkeley/USC 级标 Match/Safety。
+
+【弱/中等 stats · Reach 上限】
+- GPA≤3.35 或 SAT≤1320（或 test-optional 且活动薄）：Reach 不得默认含 CMU、GT、USC、UMich、NYU 等；表单已填 SAT/ACT 时仍须用于档位校准。
+- GPA/SAT 明显低于目标校典型中位（约 SAT -80 或 GPA -0.3）：该校不得标 Match/Safety；边界模糊时上调一档。
+
 【禁校名单】
 - 若用户消息含【禁止出现的学校】：这些校不得出现在 reach/match/safety/top_reference_schools/uc_analysis 任一区块；亦不得在 strategy_notes 中暗示仍应申请。
 
@@ -703,6 +727,25 @@ const SYSTEM_PROMPT_EN = `You are a senior U.S. undergraduate admissions counsel
 【Major/program fit — over generic prestige】
 - When the primary major is Entrepreneurship, a specialized business track, engineering, CS, etc., at least 1–2 of the 9 schools should be chosen for program/resource fit—not ranking alone (e.g. Entrepreneurship may include Babson; business may include schools with strong dedicated undergrad business paths).
 - Do not fill all 9 slots with generic prestige privates/flagships; show list diversity (specialized program fit + public flagship + realistic floor).
+
+【Recruited athlete · D3/NAIA hook boundaries】
+- Varsity / D3·NAIA recruitment contact does NOT upgrade Reach to Top-20/Top-30 privates; anchor around athletic-friendly LACs, D3 programs, or realistic stretch fits for stats + major + geography.
+- Do not compress the whole list to random safety flagships because of athletics either.
+- executive_summary and at least 2 school why-fields must cite sport, level (D1/D2/D3/NAIA), role, and recruitment facts.
+
+【Portfolio / architecture / design / studio majors】
+- For Architecture, Fine Arts, Design, Fashion, Film production, etc.: at least 1–2 of the 9 schools must be portfolio/studio paths (e.g. RISD, Pratt, Syracuse Architecture, Virginia Tech architecture, SCAD)—not all US News prestige flagships.
+- Portfolio schools in Reach must acknowledge portfolio + stats dual thresholds.
+
+【Reach-tier internal consistency】
+- All 3 Reach schools should sit in a similar selectivity band; do not mix USC/Berkeley-tier with regional publics in the same Reach block.
+
+【riskStyle vs stats】
+- riskStyle=aggressive adjusts tone and may keep ONE defensible high stretch—it does NOT ignore GPA/testing gaps or place moderate stats in Top-15 Reach / Berkeley-USC Match-Safety.
+
+【Weak/moderate stats · Reach ceiling】
+- GPA≤3.35 or SAT≤1320 (or test-optional with thin activities): Reach must not default to CMU, GT, USC, UMich, NYU, etc.; if SAT/ACT is on the form, still use it for tier calibration.
+- If GPA/SAT is clearly below a school's typical middle band (~SAT -80 or GPA -0.3): do not label Match/Safety; when ambiguous, tier up.
 
 【Forbidden schools】
 - If the user message includes [Schools that must NOT appear]: those schools must not appear in reach/match/safety/top_reference_schools/uc_analysis—or be implied as "still apply" in strategy_notes.
@@ -1329,6 +1372,10 @@ function buildUserPayload(body, includeUc = false) {
   const rigorLine = academicRigorAnalysisHint(body, locale);
   const forbiddenLine = formatForbiddenSchoolsLine(body, locale);
   const transcriptBlock = formatTranscriptSheetBlock(body?.transcriptSheet, locale);
+  const tierHintBlock =
+    athleticRecruitmentHint(body, locale) +
+    statsTierCalibrationHint(body, locale) +
+    riskStyleCalibrationHint(body, locale);
   let extra = "";
   if (supplementary.length > 0) {
     if (isEn) {
@@ -1379,7 +1426,7 @@ ${transcriptBlock ? `\n${transcriptBlock}` : ""}
       includeUc
         ? "\n\n[UC intent] User shows interest in the University of California system. Output uc_analysis per system instructions; keep the main 9-school list mostly non-UC."
         : ""
-    }${planPersonalizationHints}${majorGuideBlock}${officialLinksHint}${extra}`;
+    }${planPersonalizationHints}${majorGuideBlock}${tierHintBlock}${officialLinksHint}${extra}`;
   }
 
   return `请基于以下问卷生成 JSON 报告（严格遵守 system 的结构与每档3所的数量）。
@@ -1415,7 +1462,7 @@ ${transcriptBlock ? `\n${transcriptBlock}` : ""}
     includeUc
       ? "\n\n【UC 意向】用户表现出加州大学（UC）申请意向。请按 system 说明输出 uc_analysis；主名单 9 校尽量为非 UC 美国本科院校。"
       : ""
-  }${planPersonalizationHints}${majorGuideBlock}${officialLinksHint}${extra}`;
+  }${planPersonalizationHints}${majorGuideBlock}${tierHintBlock}${officialLinksHint}${extra}`;
 }
 
 /**

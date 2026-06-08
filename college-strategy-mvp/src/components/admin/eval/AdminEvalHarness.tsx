@@ -427,12 +427,12 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
     [],
   );
 
-  const handleExport = async (kind: "json" | "csv" | "summary") => {
+  const handleExport = async (kind: "json" | "csv" | "summary", scope: "reviewed" | "generated" = "reviewed") => {
     if (exporting) return;
-    setExporting(kind);
+    setExporting(kind === "json" ? (scope === "generated" ? "json-generated" : "json-reviewed") : kind);
     setPanelError(null);
     try {
-      const { blob, filename } = await downloadAdminEvalExport(token, kind);
+      const { blob, filename } = await downloadAdminEvalExport(token, kind, kind === "json" ? scope : "reviewed");
       triggerDownload(blob, filename);
     } catch (e) {
       setPanelError(evalErrorMessage((e as Error & { message?: string }).message, t));
@@ -440,6 +440,8 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
       setExporting(null);
     }
   };
+
+  const generatedOkCount = caseStatusResults.filter((r) => r.status === "ok").length;
 
   return (
     <div className="admin-eval admin-eval-harness">
@@ -449,11 +451,33 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
           <p className="admin-eval-harness__subtitle">{t("admin.evalHarness.notFineTuning")}</p>
         </div>
         {dashboard ? (
-          <div className="admin-eval-harness__progress">
-            <span>{t("admin.eval.exportProgress", {
-              saved: String(dashboard.reviewedCount),
-              total: String(dashboard.activeCaseCount || activeCases.length),
-            })}</span>
+          <div className="admin-eval-harness__header-actions">
+            <span className="admin-eval-harness__progress">
+              {t("admin.eval.exportProgress", {
+                saved: String(dashboard.reviewedCount),
+                total: String(dashboard.activeCaseCount || activeCases.length),
+              })}
+            </span>
+            <button
+              type="button"
+              className="admin-portal__btn admin-portal__btn--ghost admin-eval-harness__export-quick"
+              disabled={!!exporting || generatedOkCount === 0}
+              onClick={() => void handleExport("json", "generated")}
+            >
+              {exporting === "json-generated"
+                ? t("admin.eval.exportingFeedback")
+                : t("admin.evalHarness.exportGeneratedJson", { n: String(generatedOkCount) })}
+            </button>
+            <button
+              type="button"
+              className="admin-portal__btn admin-portal__btn--primary admin-eval-harness__export-quick"
+              disabled={!!exporting || dashboard.reviewedCount === 0}
+              onClick={() => void handleExport("json", "reviewed")}
+            >
+              {exporting === "json-reviewed"
+                ? t("admin.eval.exportingFeedback")
+                : t("admin.evalHarness.exportReviewedJson", { n: String(dashboard.reviewedCount) })}
+            </button>
           </div>
         ) : null}
       </header>
@@ -678,9 +702,14 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
           <section className="admin-eval__section">
             <h3 className="admin-eval__heading">{t("admin.evalHarness.steps.export")}</h3>
             <p className="admin-eval__sub">{t("admin.evalHarness.exportLead")}</p>
+            <p className="admin-eval__sub admin-eval-harness__export-note">{t("admin.evalHarness.exportBulkNote")}</p>
             <div className="admin-eval-harness__export-grid">
-              <button type="button" className="admin-eval-harness__export-card" disabled={!!exporting || (dashboard?.reviewedCount ?? 0) === 0} onClick={() => void handleExport("json")}>
-                <strong>{exporting === "json" ? t("admin.eval.exportingFeedback") : t("admin.evalHarness.exportJson")}</strong>
+              <button type="button" className="admin-eval-harness__export-card" disabled={!!exporting || generatedOkCount === 0} onClick={() => void handleExport("json", "generated")}>
+                <strong>{exporting === "json-generated" ? t("admin.eval.exportingFeedback") : t("admin.evalHarness.exportGeneratedJsonTitle")}</strong>
+                <span>{t("admin.evalHarness.exportGeneratedJsonHint", { n: String(generatedOkCount) })}</span>
+              </button>
+              <button type="button" className="admin-eval-harness__export-card" disabled={!!exporting || (dashboard?.reviewedCount ?? 0) === 0} onClick={() => void handleExport("json", "reviewed")}>
+                <strong>{exporting === "json-reviewed" ? t("admin.eval.exportingFeedback") : t("admin.evalHarness.exportJson")}</strong>
                 <span>{t("admin.evalHarness.exportJsonHint")}</span>
               </button>
               <button type="button" className="admin-eval-harness__export-card" disabled={!!exporting || (dashboard?.reviewedCount ?? 0) === 0} onClick={() => void handleExport("csv")}>

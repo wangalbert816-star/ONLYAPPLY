@@ -7,6 +7,7 @@ import { EN_PAYWALL } from "./i18n/paywallEn";
 import { InformationGapsInteractive } from "./components/InformationGapsInteractive";
 import { ExpertConsultSection } from "./components/ExpertConsultSection";
 import { ApplicationProfileRadar } from "./components/ApplicationProfileRadar";
+import { ReportStudyCard } from "./components/ReportStudyCard";
 import { buildFiveDimensionProfile } from "./lib/fiveDimensionProfile";
 import { buildBiggestGapBlock, buildOverallVerdict } from "./lib/decisionReport";
 import { DecisionVerdictCard } from "./components/DecisionVerdictCard";
@@ -522,21 +523,33 @@ export function ReportView({
 
             <ReportPathStep step={7} id="report-appendix-study" title={t("report.studyTitle")} lead={t("report.studyLead")}>
               <div className="report-study-grid">
-                <article className="report-study-card">
-                  <div className="report-study-card__tags">
-                    <span className="report-study-tag">{t("report.study.tagAnalysis")}</span>
-                    <span className="report-study-tag report-study-tag--muted">{t("report.study.tagReadMore")}</span>
-                  </div>
-                  <h3 className="report-study-card__title">{t("report.study.portfolioTitle")}</h3>
-                  <p className="report-study-card__body">{t("report.study.portfolioBody")}</p>
-                </article>
-                <article className="report-study-card">
-                  <div className="report-study-card__tags">
-                    <span className="report-study-tag">{t("report.study.tagChecklist")}</span>
-                  </div>
-                  <h3 className="report-study-card__title">{t("report.study.interviewTitle")}</h3>
-                  <p className="report-study-card__body">{t("report.study.interviewBody")}</p>
-                </article>
+                <ReportStudyCard
+                  tags={[
+                    { label: t("report.study.tagAnalysis") },
+                    { label: t("report.study.tagReadMore"), muted: true },
+                  ]}
+                  title={t("report.study.portfolioTitle")}
+                  body={t("report.study.portfolioBody")}
+                  points={[
+                    t("report.study.portfolioPoint1"),
+                    t("report.study.portfolioPoint2"),
+                    t("report.study.portfolioPoint3"),
+                  ]}
+                  readMoreLabel={t("report.study.expand")}
+                  collapseLabel={t("report.study.collapse")}
+                />
+                <ReportStudyCard
+                  tags={[{ label: t("report.study.tagChecklist") }]}
+                  title={t("report.study.interviewTitle")}
+                  body={t("report.study.interviewBody")}
+                  points={[
+                    t("report.study.interviewPoint1"),
+                    t("report.study.interviewPoint2"),
+                    t("report.study.interviewPoint3"),
+                  ]}
+                  readMoreLabel={t("report.study.expand")}
+                  collapseLabel={t("report.study.collapse")}
+                />
               </div>
             </ReportPathStep>
           </div>

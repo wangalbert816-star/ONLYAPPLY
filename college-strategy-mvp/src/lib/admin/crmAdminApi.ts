@@ -637,9 +637,15 @@ export async function fetchAdminEvalDashboard(accessToken: string): Promise<Admi
 export async function downloadAdminEvalExport(
   accessToken: string,
   kind: "json" | "csv" | "summary",
+  scope: "reviewed" | "generated" = "reviewed",
 ): Promise<{ blob: Blob; filename: string }> {
   const base = "/api/admin/crm/eval/export";
-  const path = kind === "json" ? `${base}/json` : kind === "csv" ? `${base}/csv` : `${base}/summary`;
+  const path =
+    kind === "json"
+      ? `${base}/json${scope === "generated" ? "?scope=generated" : ""}`
+      : kind === "csv"
+        ? `${base}/csv`
+        : `${base}/summary`;
   const res = await fetch(apiUrl(path), {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
@@ -650,9 +656,10 @@ export async function downloadAdminEvalExport(
   const stamp = new Date().toISOString().slice(0, 10);
   if (kind === "json") {
     const data = await res.json();
+    const prefix = scope === "generated" ? "onlyapply-eval-generated" : "onlyapply-eval-reviewed";
     return {
       blob: new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }),
-      filename: `onlyapply-eval-cases-${stamp}.json`,
+      filename: `${prefix}-${stamp}.json`,
     };
   }
   const text = await res.text();
