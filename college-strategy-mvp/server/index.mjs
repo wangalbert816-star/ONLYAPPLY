@@ -1599,6 +1599,29 @@ function llmConfigsToTry() {
   return [primary];
 }
 
+/** OnlyApply 专属 Ollama 模型（如 wangalbert816/OnlyApplyMial）；未设置则走 US_OPENAI_MODEL。 */
+function onlyApplyDedicatedModel() {
+  return (
+    (process.env.ONLYAPPLY_LLM_MODEL || process.env.ONLYAPPLY_OLLAMA_MODEL || "").trim() ||
+    null
+  );
+}
+
+/** 报告 / 文书：优先 OnlyApply 专模，失败可回退通用 Ollama，再回退方舟。 */
+function llmConfigsToTryForOnlyApply() {
+  const base = llmConfigsToTry();
+  if ("error" in base) return base;
+  const dedicated = onlyApplyDedicatedModel();
+  if (!dedicated) return base;
+
+  const primary = base[0];
+  if (primary.model === dedicated) return base;
+
+  const dedicatedCfg = { ...primary, model: dedicated };
+  const fallbacks = [primary, ...base.slice(1)].filter((cfg) => cfg.model !== dedicated);
+  return [dedicatedCfg, ...fallbacks];
+}
+
 function withWallClockTimeout(promise, ms, label) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
@@ -1773,7 +1796,7 @@ function finalizeReportPayload(parsed, body) {
 }
 
 app.post("/api/report", async (req, res) => {
-  const configs = llmConfigsToTry();
+  const configs = llmConfigsToTryForOnlyApply();
   if ("error" in configs) {
     console.error("[api/report] llm_config", configs.error);
     return res.status(500).json({ error: IS_PROD ? "report_service_unavailable" : configs.error });
@@ -1793,6 +1816,7 @@ app.post("/api/report", async (req, res) => {
         .setHeader("X-LLM-Duration-Ms", String(llmMs))
         .setHeader("X-LLM-Region", region)
         .setHeader("X-LLM-Provider", provider)
+        .setHeader("X-LLM-Model", model)
         .json(finalizeReportPayload(parsed, body));
     } catch (e) {
       lastErr = e;
@@ -1832,7 +1856,7 @@ app.post("/api/report", async (req, res) => {
 });
 
 async function generateReportForAdmin(body) {
-  const configs = llmConfigsToTry();
+  const configs = llmConfigsToTryForOnlyApply();
   if ("error" in configs) {
     throw new Error(configs.error);
   }
@@ -2001,7 +2025,7 @@ ${safeDraft}
 }
 
 app.post("/api/essay/analyze", async (req, res) => {
-  const configs = llmConfigsToTry();
+  const configs = llmConfigsToTryForOnlyApply();
   if ("error" in configs) {
     console.error("[api/essay/analyze] llm_config", configs.error);
     return res.status(500).json({ error: IS_PROD ? "essay_service_unavailable" : configs.error });

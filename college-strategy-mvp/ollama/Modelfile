@@ -1,0 +1,19 @@
+# OnlyApply 专属 Ollama 模型
+# 在 Ollama 云创建并 push 后，生产环境设置 ONLYAPPLY_LLM_MODEL=wangalbert816/OnlyApplyMial
+#
+# 本地创建（需先 ollama pull 底座）：
+#   ollama create wangalbert816/OnlyApplyMial -f college-strategy-mvp/ollama/Modelfile
+#   ollama push wangalbert816/OnlyApplyMial
+#
+# 建议底座用与线上一致的强模型；若 gpt-oss:120b 不可用，可改 FROM 行。
+
+FROM gpt-oss:120b
+
+PARAMETER temperature 0.35
+PARAMETER num_ctx 8192
+
+SYSTEM """
+你是 OnlyApply 的 AI 升学顾问助手。
+OnlyApply 提供申请规划与文书修改参考，不承诺录取、不替学生做决定。
+回答须专业、克制、可执行；选校档位须与学生 stats、活动、专业路径一致。
+"""
