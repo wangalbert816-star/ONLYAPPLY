@@ -1,6 +1,6 @@
 /**
- * OnlyApply Decision Engine v1 — match counselor benchmarks → structured 9-school decision.
- * LLM writes prose only; school names/tiers come from engine when a benchmark matches.
+ * OnlyApply Decision Engine — benchmark match (v1) + scored catalog/rules (v2).
+ * LLM writes prose only; school names/tiers come from engine when it runs.
  */
 
 import {
@@ -10,6 +10,7 @@ import {
   normalizeApprovedSchools,
   profileSignatureFromBody,
 } from "./engineStandards.mjs";
+import { BENCHMARK_STRONG_SCORE, runDecisionEngineV2 } from "./decisionEngineV2.mjs";
 
 function decisionEngineEnabled() {
   const raw = (process.env.DECISION_ENGINE_ENABLED ?? "1").trim().toLowerCase();
@@ -18,6 +19,11 @@ function decisionEngineEnabled() {
 
 function useDraftBenchmarks() {
   const raw = (process.env.DECISION_ENGINE_USE_DRAFT ?? "1").trim().toLowerCase();
+  return raw !== "0" && raw !== "false" && raw !== "off";
+}
+
+function scoringEngineEnabled() {
+  const raw = (process.env.DECISION_ENGINE_V2_ENABLED ?? "1").trim().toLowerCase();
   return raw !== "0" && raw !== "false" && raw !== "off";
 }
 
@@ -33,21 +39,7 @@ function similarityScore(query, entry) {
   return score;
 }
 
-function formatTierLine(tier, locale) {
-  return tier
-    .map((r) => (r.note ? `${r.school}（${r.note}）` : r.school))
-    .join(locale === "en" ? ", " : "、");
-}
-
-/**
- * @param {Record<string, unknown>} body
- * @param {string[]} [tags]
- */
-export function runDecisionEngine(body, tags = []) {
-  if (!decisionEngineEnabled()) {
-    return { ok: false, reason: "disabled" };
-  }
-
+function tryBenchmarkMatch(body, tags) {
   const query = profileSignatureFromBody(body, tags);
   const live = listLiveBenchmarks();
   const draft = useDraftBenchmarks() ? listDraftBenchmarks() : [];
@@ -65,6 +57,7 @@ export function runDecisionEngine(body, tags = []) {
 
   return {
     ok: true,
+    mode: score >= BENCHMARK_STRONG_SCORE ? "benchmark" : "benchmark_weak",
     source,
     benchmarkId: hit.sourceCaseKey,
     benchmarkTitle: hit.title,
@@ -75,16 +68,61 @@ export function runDecisionEngine(body, tags = []) {
   };
 }
 
+function formatTierLine(tier, locale) {
+  return tier
+    .map((r) => (r.note ? `${r.school}（${r.note}）` : r.school))
+    .join(locale === "en" ? ", " : "、");
+}
+
+/**
+ * @param {Record<string, unknown>} body
+ * @param {string[]} [tags]
+ */
+export function runDecisionEngine(body, tags = []) {
+  if (!decisionEngineEnabled()) {
+    return { ok: false, reason: "disabled" };
+  }
+
+  const benchmark = tryBenchmarkMatch(body, tags);
+  if (benchmark.ok && benchmark.mode === "benchmark") {
+    return benchmark;
+  }
+
+  if (scoringEngineEnabled()) {
+    const scored = runDecisionEngineV2(body, tags);
+    if (scored.ok) {
+      return {
+        ...scored,
+        benchmarkFallback: benchmark.ok ? benchmark : null,
+      };
+    }
+  }
+
+  if (benchmark.ok) {
+    return benchmark;
+  }
+
+  return { ok: false, reason: "no_engine_match", benchmarkAttempt: benchmark };
+}
+
 export function buildDecisionEnginePromptBlock(decision, locale = "zh") {
   if (!decision?.ok) return "";
   const s = decision.schools;
+  const modeLine =
+    decision.mode === "scored"
+      ? locale === "en"
+        ? "Source: five-dimension scoring + school×major catalog + tier rules (no exact counselor case match)."
+        : "来源：五维算分 + 校专业表 + 档位规则（无完全一致的顾问 benchmark）。"
+      : locale === "en"
+        ? `Reference benchmark: ${decision.benchmarkTitle || decision.benchmarkId}`
+        : `参考 benchmark：${decision.benchmarkTitle || decision.benchmarkId}`;
 
   if (locale === "en") {
     return `
 
 [OnlyApply Decision Engine — MANDATORY school skeleton]
 The following 9 schools are engine-approved. Do NOT rename, remove, swap tiers, or add different schools in reach/match/safety.
-Reference benchmark: ${decision.benchmarkTitle || decision.benchmarkId}
+${modeLine}
 - Reach: ${formatTierLine(s.reach, "en")}
 - Match: ${formatTierLine(s.match, "en")}
 - Safety: ${formatTierLine(s.safety, "en")}
@@ -96,7 +134,7 @@ ${decision.notes ? `- Engine note: ${decision.notes}\n` : ""}Write why_reach_for
 
 【OnlyApply Decision Engine — 以下 9 校为引擎判定，禁止更改】
 reach / match / safety 必须使用下列校名与档位，不得替换、删除或新增其它学校。
-参考 benchmark：${decision.benchmarkTitle || decision.benchmarkId}
+${modeLine}
 - 冲：${formatTierLine(s.reach, "zh")}
 - 稳：${formatTierLine(s.match, "zh")}
 - 保：${formatTierLine(s.safety, "zh")}
@@ -126,12 +164,17 @@ export function mergeDecisionSchoolsIntoReport(parsed, decision, locale = "zh") 
   }
 
   parsed.decision_engine = {
-    version: "1",
+    version: decision.mode === "scored" ? "2" : "1",
+    mode: decision.mode ?? "benchmark",
     source: decision.source,
     benchmark_id: decision.benchmarkId,
     benchmark_title: decision.benchmarkTitle,
     match_score: decision.matchScore,
+    profile_composite: decision.profile?.composite ?? null,
+    major_bucket: decision.profile?.majorBucket ?? null,
   };
 
   return parsed;
 }
+
+export { runDecisionEngineV2 };

@@ -655,6 +655,8 @@ export async function downloadTrainingSftExport(accessToken: string): Promise<{ 
 export type EngineStandardsStats = {
   draftCount: number;
   liveCount: number;
+  catalogSchoolCount?: number;
+  v2Enabled?: boolean;
   lastPublishedAt: string | null;
   draftEntries: Array<{
     sourceCaseKey: string;
@@ -668,9 +670,13 @@ export type EngineStandardsStats = {
 export type EngineTrialRunReport = {
   draftCount: number;
   liveCount: number;
+  catalogSchoolCount?: number;
   evaluatedCaseCount: number;
   draftSchoolMatchRate: number | null;
   liveSchoolMatchRate: number | null;
+  engineSchoolMatchRate?: number | null;
+  engineScoredCaseCount?: number;
+  engineBenchmarkCaseCount?: number;
   caseResults: Array<{
     caseKey: string;
     title: string;
@@ -678,6 +684,8 @@ export type EngineTrialRunReport = {
     liveBenchmarkId: string | null;
     draftMatchRate: number | null;
     liveMatchRate: number | null;
+    engineMode?: string | null;
+    engineMatchRate?: number | null;
   }>;
 };
 

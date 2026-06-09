@@ -599,6 +599,18 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
               {t("admin.evalHarness.engineDraft", { n: String(engineStandards.draftCount) })}
               {" · "}
               {t("admin.evalHarness.engineLive", { n: String(engineStandards.liveCount) })}
+              {engineStandards.catalogSchoolCount != null ? (
+                <>
+                  {" · "}
+                  {t("admin.evalHarness.engineCatalog", { n: String(engineStandards.catalogSchoolCount) })}
+                </>
+              ) : null}
+              {engineStandards.v2Enabled ? (
+                <>
+                  {" · "}
+                  {t("admin.evalHarness.engineV2On")}
+                </>
+              ) : null}
             </p>
           ) : null}
         </div>
@@ -714,6 +726,11 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
             live: engineTrialReport.liveSchoolMatchRate != null
               ? Math.round(engineTrialReport.liveSchoolMatchRate * 100).toString()
               : "—",
+            engine: engineTrialReport.engineSchoolMatchRate != null
+              ? Math.round(engineTrialReport.engineSchoolMatchRate * 100).toString()
+              : "—",
+            scored: String(engineTrialReport.engineScoredCaseCount ?? 0),
+            bench: String(engineTrialReport.engineBenchmarkCaseCount ?? 0),
           })}
         </p>
       ) : null}

@@ -6,6 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { runDecisionEngine } from "./decisionEngine.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ENGINE_DIR = path.join(__dirname, "..", "data", "engine");
@@ -146,6 +147,17 @@ function compareSchoolLists(expected, actual) {
   return { matches, total, rate: total ? matches / total : null };
 }
 
+function readCatalogCount() {
+  const catalogFile = path.join(ENGINE_DIR, "school-major-catalog.json");
+  if (!fs.existsSync(catalogFile)) return 0;
+  try {
+    const raw = JSON.parse(fs.readFileSync(catalogFile, "utf8"));
+    return Array.isArray(raw) ? raw.length : 0;
+  } catch {
+    return 0;
+  }
+}
+
 export function getEngineStandardsStats() {
   const draft = readJsonArray(DRAFT_FILE);
   const live = readJsonArray(LIVE_FILE);
@@ -153,6 +165,8 @@ export function getEngineStandardsStats() {
   return {
     draftCount: draft.length,
     liveCount: live.length,
+    catalogSchoolCount: readCatalogCount(),
+    v2Enabled: (process.env.DECISION_ENGINE_V2_ENABLED ?? "1").trim().toLowerCase() !== "0",
     lastPublishedAt: log[0]?.publishedAt ?? null,
     draftFile: DRAFT_FILE,
     liveFile: LIVE_FILE,
@@ -241,6 +255,10 @@ export function trialRunEngineStandards(evalEntries = []) {
   let draftMatchTotal = 0;
   let liveMatchSum = 0;
   let liveMatchTotal = 0;
+  let engineMatchSum = 0;
+  let engineMatchTotal = 0;
+  let engineScoredCount = 0;
+  let engineBenchmarkCount = 0;
 
   for (const row of evalEntries) {
     const evalCase = row.case ?? row.evalCase;
@@ -276,6 +294,15 @@ export function trialRunEngineStandards(evalEntries = []) {
     liveMatchSum += liveCmp.matches;
     liveMatchTotal += liveCmp.total;
 
+    const engineDecision = runDecisionEngine(evalCase.reportBody, evalCase.tags);
+    const engineCmp = engineDecision.ok
+      ? compareSchoolLists(counselor, engineDecision.schools)
+      : { matches: 0, total: 9, rate: 0 };
+    engineMatchSum += engineCmp.matches;
+    engineMatchTotal += engineCmp.total;
+    if (engineDecision.ok && engineDecision.mode === "scored") engineScoredCount += 1;
+    if (engineDecision.ok && engineDecision.mode?.startsWith("benchmark")) engineBenchmarkCount += 1;
+
     caseResults.push({
       caseKey: evalCase.caseKey,
       title: evalCase.title,
@@ -283,15 +310,21 @@ export function trialRunEngineStandards(evalEntries = []) {
       liveBenchmarkId: liveHit?.sourceCaseKey ?? null,
       draftMatchRate: draftCmp.rate,
       liveMatchRate: liveCmp.rate,
+      engineMode: engineDecision.ok ? engineDecision.mode : null,
+      engineMatchRate: engineCmp.rate,
     });
   }
 
   return {
     draftCount: draft.length,
     liveCount: live.length,
+    catalogSchoolCount: readCatalogCount(),
     evaluatedCaseCount: caseResults.length,
     draftSchoolMatchRate: draftMatchTotal ? draftMatchSum / draftMatchTotal : null,
     liveSchoolMatchRate: liveMatchTotal ? liveMatchSum / liveMatchTotal : null,
+    engineSchoolMatchRate: engineMatchTotal ? engineMatchSum / engineMatchTotal : null,
+    engineScoredCaseCount: engineScoredCount,
+    engineBenchmarkCaseCount: engineBenchmarkCount,
     caseResults,
   };
 }
