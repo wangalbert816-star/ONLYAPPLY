@@ -6,7 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildEngineIntakeProfile, isUcSchoolName, schoolRegionMatchesPrefs } from "./engineIntakeProfile.mjs";
-import { forbiddenSchoolsFromBody, isUltraSelectiveSchoolName, schoolMatchesForbidden } from "./topReferenceSchools.mjs";
+import { forbiddenSchoolsFromBody, schoolMatchesForbidden } from "./topReferenceSchools.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CATALOG_FILE = path.join(__dirname, "..", "data", "engine", "school-major-catalog.json");
@@ -213,10 +213,6 @@ export function isSchoolEligible(entry, context) {
   }
 
   if (!context.ucIntent && isUcSchoolName(entry.school)) {
-    return false;
-  }
-
-  if (isUltraSelectiveSchoolName(entry.school) && context.composite < 78 && !context.strongStats) {
     return false;
   }
 

@@ -17,7 +17,6 @@ const ULTRA_SELECTIVE_PATTERNS = [
   "columbia university",
   "university of pennsylvania",
   "upenn",
-  "penn",
   "duke",
   "duke university",
   "brown",
@@ -43,9 +42,16 @@ function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+/** Penn State / Pennsylvania State ≠ University of Pennsylvania (UPenn). */
+function isPennStateUniversityName(normalized: string): boolean {
+  if (!normalized) return false;
+  return /^penn state\b/.test(normalized) || /^pennsylvania state\b/.test(normalized);
+}
+
 export function isUltraSelectiveSchool(name: string): boolean {
   const normalized = normalizeSchoolName(name);
   if (!normalized) return false;
+  if (isPennStateUniversityName(normalized)) return false;
   return ULTRA_SELECTIVE_PATTERNS.some((pattern) => {
     const p = normalizeSchoolName(pattern);
     if (normalized === p) return true;
@@ -59,23 +65,14 @@ export type TopReferenceSchool = {
   row: SchoolRow;
 };
 
-export function splitTopReferenceSchools(report: ReportPayload, includeLockedRows: boolean) {
-  const tiers: SchoolTier[] = ["reach", "match", "safety"];
-  const topReference: TopReferenceSchool[] = [];
-  const regular: Record<SchoolTier, SchoolRow[]> = {
-    reach: [],
-    match: [],
-    safety: [],
+/** Legacy helper: main tiers are shown in full; structured top_reference is separate. */
+export function splitTopReferenceSchools(report: ReportPayload, _includeLockedRows: boolean) {
+  return {
+    regular: {
+      reach: [...(report.reach ?? [])],
+      match: [...(report.match ?? [])],
+      safety: [...(report.safety ?? [])],
+    },
+    topReference: [] as TopReferenceSchool[],
   };
-
-  for (const tier of tiers) {
-    const rows = report[tier] ?? [];
-    const visibleRows = includeLockedRows ? rows : rows.slice(0, 1);
-    regular[tier] = rows.filter((row) => !isUltraSelectiveSchool(row.school));
-    for (const row of visibleRows) {
-      if (isUltraSelectiveSchool(row.school)) topReference.push({ tier, row });
-    }
-  }
-
-  return { regular, topReference };
 }

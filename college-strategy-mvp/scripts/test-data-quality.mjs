@@ -28,6 +28,7 @@ import {
   buildValidationRepairMessage,
   isUltraSelectiveSchoolName,
   normalizeTopReferenceSchoolRows,
+  schoolMatchesForbidden,
   validateMainSchoolReport,
 } from "../server/topReferenceSchools.mjs";
 
@@ -260,7 +261,7 @@ const weakBody = {
   structuredActivities: [],
 };
 
-check("plan B: ultra in reach fails validation (repairable)", () => {
+check("plan B: ultra in reach passes validation for strong profile", () => {
   const report = baseNineSchoolReport({
     reach: [
       { school: "Stanford University" },
@@ -269,9 +270,19 @@ check("plan B: ultra in reach fails validation (repairable)", () => {
     ],
   });
   const v = validateMainSchoolReport(report, strongBody);
-  if (v.ok) throw new Error("expected failure");
-  if (!v.repairable) throw new Error("expected repairable");
-  if (!/Stanford/i.test(v.reason)) throw new Error(v.reason);
+  if (!v.ok) throw new Error(v.reason);
+});
+
+check("plan B: Penn State in match is not treated as UPenn ultra", () => {
+  const report = baseNineSchoolReport({
+    match: [
+      { school: "University of Texas at Austin" },
+      { school: "Penn State University" },
+      { school: "Purdue University" },
+    ],
+  });
+  const v = validateMainSchoolReport(report, strongBody);
+  if (!v.ok) throw new Error(v.reason);
 });
 
 check("plan B: valid main nine + top_reference for strong profile", () => {
@@ -360,6 +371,13 @@ check("plan B: isUltraSelectiveSchoolName recognizes MIT", () => {
   if (!isUltraSelectiveSchoolName("Massachusetts Institute of Technology")) throw new Error("MIT not ultra");
   if (isUltraSelectiveSchoolName("Purdue University")) throw new Error("Purdue should not be ultra");
   if (isUltraSelectiveSchoolName("Pennsylvania State University")) throw new Error("Penn State should not be ultra");
+  if (isUltraSelectiveSchoolName("Penn State University")) throw new Error("Penn State University should not be ultra");
+  if (!isUltraSelectiveSchoolName("University of Pennsylvania")) throw new Error("UPenn should be ultra");
+});
+
+check("plan B: forbidden Penn does not block Penn State", () => {
+  if (schoolMatchesForbidden("Penn State University", ["Penn"])) throw new Error("Penn State should not match forbidden Penn");
+  if (!schoolMatchesForbidden("University of Pennsylvania", ["Penn"])) throw new Error("UPenn should match forbidden Penn");
 });
 
 check("plan B: allowsTopReferenceSchools strong vs weak", () => {

@@ -18,7 +18,6 @@ const ULTRA_SELECTIVE_SCHOOLS = [
   "columbia university",
   "university of pennsylvania",
   "upenn",
-  "penn",
   "duke",
   "duke university",
   "brown",
@@ -55,6 +54,12 @@ export function schoolMatchesForbidden(name, forbiddenList) {
   return forbiddenList.some((entry) => {
     const needle = normalizeSchoolName(entry);
     if (!needle) return false;
+    if (
+      isPennStateUniversityName(normalized) &&
+      (needle === "penn" || needle === "upenn" || needle === "university of pennsylvania")
+    ) {
+      return false;
+    }
     if (normalized === needle) return true;
     if (needle.length >= 4 && normalized.includes(needle)) return true;
     if (normalized.length >= 4 && needle.includes(normalized)) return true;
@@ -79,9 +84,16 @@ function escapeRegExp(text) {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+/** Penn State / Pennsylvania State ≠ University of Pennsylvania (UPenn). */
+function isPennStateUniversityName(normalized) {
+  if (!normalized) return false;
+  return /^penn state\b/.test(normalized) || /^pennsylvania state\b/.test(normalized);
+}
+
 export function isUltraSelectiveSchoolName(name) {
   const normalized = normalizeSchoolName(name);
   if (!normalized) return false;
+  if (isPennStateUniversityName(normalized)) return false;
   return ULTRA_SELECTIVE_SCHOOLS.some((pattern) => {
     const p = normalizeSchoolName(pattern);
     if (normalized === p) return true;
@@ -170,17 +182,6 @@ function validateMainNineSchools(o) {
     }
   }
   return { ok: true, seen };
-}
-
-function findUltraInMainTiers(o) {
-  const found = [];
-  for (const tier of ["reach", "match", "safety"]) {
-    for (const row of o[tier] || []) {
-      const name = String(row?.school || "").trim();
-      if (name && isUltraSelectiveSchoolName(name)) found.push(name);
-    }
-  }
-  return found;
 }
 
 function validateTopReferenceBlock(o, body) {
@@ -327,15 +328,6 @@ export function validateMainSchoolReport(parsed, body) {
   const nine = validateMainNineSchools(o);
   if (!nine.ok) return nine;
 
-  const ultraInMain = findUltraInMainTiers(o);
-  if (ultraInMain.length > 0) {
-    return {
-      ok: false,
-      repairable: true,
-      reason: `主名单 9 校不得含顶级彩票校：${ultraInMain.join("、")}。请移入 top_reference_schools（0–2 所）并在 reach 保留 3 所现实可冲学校。`,
-    };
-  }
-
   const topRef = validateTopReferenceBlock(o, body);
   if (!topRef.ok) return topRef;
 
@@ -361,8 +353,8 @@ export function buildValidationRepairMessage(reason, locale = "zh") {
 
 Return ONLY one corrected JSON object. Rules:
 - reach, match, safety: exactly 3 distinct U.S. bachelor's schools each (9 total).
-- MIT/Stanford/Harvard/Princeton/Yale/Caltech/Columbia/UPenn/Duke/Brown/Dartmouth/Cornell/UChicago must NOT appear in reach/match/safety.
-- Put those ultra-selective schools in top_reference_schools (0–2 items) only when the profile supports it; never duplicate a main-list school.
+- Ultra-selective schools (MIT/Stanford/Harvard/UPenn/etc.) may appear in reach when the profile supports a defensible stretch case; do not duplicate the same school in top_reference_schools.
+- top_reference_schools is optional (0–2 items) for extra reference-only schools not already in the main 9.
 - If validation mentions forbidden schools, remove them everywhere and replace with different institutions not on the forbidden list.
 - Each top_reference_schools row uses why_reference_for_you (not why_reach_for_you).`;
   }
@@ -370,8 +362,8 @@ Return ONLY one corrected JSON object. Rules:
 
 请只输出一份修正后的完整 JSON。规则：
 - reach、match、safety 各恰好 3 所、9 校互不重复；
-- MIT/Stanford/Harvard/Princeton/Yale/Caltech/Columbia/UPenn/Duke/Brown/Dartmouth/Cornell/UChicago 不得出现在主名单三档；
-- 上述顶校如需提及，仅可放入 top_reference_schools（0–2 所），且不得与主名单重复；
+- 顶级彩票校（MIT/Stanford/Harvard/UPenn 等）可在 reach 中出现（背景有充分理由时）；不得与 top_reference_schools 重复；
+- top_reference_schools 为可选补充（0–2 所），用于主名单未覆盖的额外顶校参考；
 - 若校验提示禁校名单，须从全报告移除并在主名单替换为禁校名单外的其它美国本科院校；
 - top_reference_schools 每行使用 why_reference_for_you 字段。`;
 }
