@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import type { ActivityItem, FormState } from "../types";
 import type { Translate } from "../i18n/LanguageContext";
 import { ExportActivitiesCsvButton } from "./ExportActivitiesCsvButton";
+import { mergeImportedActivities, activityHasDraftContent } from "../lib/activitiesMerge";
 import { ActivitiesImportPanel } from "./ActivitiesImportPanel";
 import { ActivityCard } from "./ActivityCard";
 import type { GuideTouch } from "./GuidedQuestionnaire";
@@ -101,9 +102,16 @@ export function GuidedStep3Flow({
           <ActivitiesImportPanel
             t={t}
             activityCount={structuredActivities.filter(activityItemMeetsWizardRequirement).length}
-            onImport={(items) => {
-              update("structuredActivities", items);
+            hasExistingActivities={structuredActivities.some(activityHasDraftContent)}
+            onImport={(items, meta) => {
+              const merged = mergeImportedActivities(structuredActivities, items, createActivityItem);
+              update("structuredActivities", merged);
               markTouch("s3_actv");
+              return {
+                addedCount: items.length,
+                totalCount: merged.length,
+                appended: meta.hadExistingContent,
+              };
             }}
           />
           <div className="activity-builder activity-builder--guided activity-builder--open">

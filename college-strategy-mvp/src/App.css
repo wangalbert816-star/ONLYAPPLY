@@ -519,6 +519,16 @@
   letter-spacing: 0.01em;
 }
 
+.form-draft-restored {
+  margin: -0.5rem 0 1rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-accent, #c45c26) 10%, transparent);
+  color: var(--color-text, #1a1a1a);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
 .steps {
   display: flex;
   gap: 0.4rem;

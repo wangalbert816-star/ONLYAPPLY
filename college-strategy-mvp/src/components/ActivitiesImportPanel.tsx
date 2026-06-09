@@ -9,13 +9,24 @@ import {
 } from "../lib/activitiesParseClient";
 import "./TranscriptGradeSheet.css";
 
+export type ActivitiesImportMeta = {
+  hadExistingContent: boolean;
+};
+
+export type ActivitiesImportResult = {
+  addedCount: number;
+  totalCount: number;
+  appended: boolean;
+};
+
 type Props = {
   t: Translate;
   activityCount: number;
-  onImport: (items: ActivityItem[]) => void;
+  hasExistingActivities: boolean;
+  onImport: (items: ActivityItem[], meta: ActivitiesImportMeta) => ActivitiesImportResult;
 };
 
-export function ActivitiesImportPanel({ t, activityCount, onImport }: Props) {
+export function ActivitiesImportPanel({ t, activityCount, hasExistingActivities, onImport }: Props) {
   const { locale } = useLanguage();
   const [pasteText, setPasteText] = useState("");
   const [pasteOpen, setPasteOpen] = useState(false);
@@ -23,6 +34,8 @@ export function ActivitiesImportPanel({ t, activityCount, onImport }: Props) {
   const [fileName, setFileName] = useState("");
   const [parseError, setParseError] = useState("");
   const [importedCount, setImportedCount] = useState<number | null>(null);
+  const [importTotalCount, setImportTotalCount] = useState<number | null>(null);
+  const [importAppended, setImportAppended] = useState(false);
 
   const flowStep = useMemo(() => {
     if (activityCount > 0 && importedCount !== null) return 2;
@@ -35,12 +48,16 @@ export function ActivitiesImportPanel({ t, activityCount, onImport }: Props) {
     setBusy(true);
     setParseError("");
     setImportedCount(null);
+    setImportTotalCount(null);
+    setImportAppended(false);
     setFileName(file.name);
     try {
       const parsed = await parseActivitiesFile(file, locale);
       if (activitiesParseSucceeded(parsed)) {
-        onImport(parsed.activities);
-        setImportedCount(parsed.activities.length);
+        const result = onImport(parsed.activities, { hadExistingContent: hasExistingActivities });
+        setImportedCount(result.addedCount);
+        setImportTotalCount(result.totalCount);
+        setImportAppended(result.appended);
       } else {
         setParseError(parsed.parseError || "no_activities_detected");
       }
@@ -53,11 +70,15 @@ export function ActivitiesImportPanel({ t, activityCount, onImport }: Props) {
     if (!pasteText.trim()) return;
     setParseError("");
     setImportedCount(null);
+    setImportTotalCount(null);
+    setImportAppended(false);
     setFileName("");
     const parsed = parseActivitiesPaste(pasteText);
     if (activitiesParseSucceeded(parsed)) {
-      onImport(parsed.activities);
-      setImportedCount(parsed.activities.length);
+      const result = onImport(parsed.activities, { hadExistingContent: hasExistingActivities });
+      setImportedCount(result.addedCount);
+      setImportTotalCount(result.totalCount);
+      setImportAppended(result.appended);
     } else {
       setParseError(parsed.parseError || "no_activities_detected");
     }
@@ -76,7 +97,11 @@ export function ActivitiesImportPanel({ t, activityCount, onImport }: Props) {
 
       {importedCount !== null ? (
         <p className="transcript-sheet__banner transcript-sheet__banner--ok">
-          {t("form.activitiesImport.imported").replace("{n}", String(importedCount))}
+          {importAppended
+            ? t("form.activitiesImport.appended")
+                .replace("{n}", String(importedCount))
+                .replace("{total}", String(importTotalCount ?? importedCount))
+            : t("form.activitiesImport.imported").replace("{n}", String(importedCount))}
         </p>
       ) : null}
 

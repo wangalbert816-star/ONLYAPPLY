@@ -61,6 +61,7 @@ merge(zhFlat, {
       caption: "第 {step} / 3 步",
       captionMid: " · 完成后继续",
       captionFinal: " · 填完即可生成草稿",
+      draftRestored: "已恢复上次填写进度，修改会自动保存。",
     },
     loading: {
       title: "正在为你生成选校策略草案",
@@ -322,6 +323,7 @@ merge(zhFlat, {
       pastePlaceholder:
         "每行一条活动，例如：\n辩论社 | 社长 | 10,11 | 5 hrs/week | 组织校际赛并培训新成员\n或粘贴 OnlyApply 导出的 CSV",
       imported: "已导入 {n} 条活动 — 请核对下方卡片并补充细节",
+      appended: "已追加 {n} 条活动（共 {total} 条）— 请核对下方卡片并补充细节",
       hint: "导入后请核对名称与行动说明；不完整条目可继续手动编辑。",
       errors: {
         vision_not_configured: "图片/扫描版 PDF 需要配置视觉 LLM（见服务端说明）。",
@@ -2354,6 +2356,7 @@ merge(enFlat, {
       caption: "Step {step} / 3",
       captionMid: " · Continue when ready",
       captionFinal: " · Finish to generate your draft",
+      draftRestored: "Your last session was restored. Changes save automatically.",
     },
     loading: {
       title: "Generating your strategy draft",
@@ -2615,6 +2618,7 @@ merge(enFlat, {
       pastePlaceholder:
         "One activity per line, e.g.:\nDebate Club | President | 10,11 | 5 hrs/week | Ran weekly practice and regional tournaments\nOr paste an OnlyApply-exported CSV",
       imported: "Imported {n} activities — review the cards below and add detail",
+      appended: "Added {n} activities ({total} total) — review the cards below and add detail",
       hint: "After import, check names and action descriptions; edit any incomplete rows manually.",
       errors: {
         vision_not_configured: "Images / scanned PDFs need a vision LLM configured on the server.",

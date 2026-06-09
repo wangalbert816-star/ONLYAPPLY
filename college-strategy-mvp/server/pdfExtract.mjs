@@ -29,6 +29,30 @@ class NodeCanvasFactory {
  * @param {Buffer | Uint8Array} buffer
  * @returns {Promise<string>}
  */
+function appendTextLine(lines, parts) {
+  const line = parts.join(" ").replace(/\s+/g, " ").trim();
+  if (line) lines.push(line);
+}
+
+/** Group PDF text items by Y position so table rows survive as separate lines. */
+function textItemsToLines(items) {
+  const lines = [];
+  let currentParts = [];
+  let lastY = null;
+  for (const item of items) {
+    if (!("str" in item) || !item.str) continue;
+    const y = Array.isArray(item.transform) ? item.transform[5] : null;
+    if (lastY !== null && y !== null && Math.abs(y - lastY) > 2.5) {
+      appendTextLine(lines, currentParts);
+      currentParts = [];
+    }
+    currentParts.push(item.str);
+    if (y !== null) lastY = y;
+  }
+  appendTextLine(lines, currentParts);
+  return lines;
+}
+
 export async function extractPdfText(buffer) {
   const data = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
   const doc = await getDocument({ data, useSystemFonts: true, disableFontFace: true }).promise;
@@ -36,8 +60,7 @@ export async function extractPdfText(buffer) {
   for (let pageNum = 1; pageNum <= doc.numPages; pageNum += 1) {
     const page = await doc.getPage(pageNum);
     const textContent = await page.getTextContent();
-    const line = textContent.items.map((item) => ("str" in item ? item.str : "")).join(" ");
-    if (line.trim()) chunks.push(line);
+    chunks.push(...textItemsToLines(textContent.items));
   }
   return chunks.join("\n").trim();
 }

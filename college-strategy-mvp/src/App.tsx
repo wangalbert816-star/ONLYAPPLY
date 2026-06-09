@@ -52,7 +52,7 @@ import { getCounselor, getEngagementForApplication, isSignedServiceEnabled } fro
 import type { CrmEngagement } from "./lib/crm/types";
 import { getSupabase } from "./lib/supabase/client";
 import { formatSupabaseError } from "./lib/supabase/errors";
-import { clearFormDraft, readFormDraft, writeFormDraft } from "./lib/formDraft";
+import { clearFormDraft, formDraftHasProgress, restoreWizardDraft, writeFormDraft } from "./lib/formDraft";
 import { emptyFormState } from "./lib/formDefaults";
 import { clearPendingSave, readPendingSave, writePendingSave } from "./lib/pendingSave";
 import { isStripeCheckoutEnabled } from "./lib/stripeCheckout";
@@ -60,6 +60,18 @@ import { isInviteCodesEnabled } from "./lib/inviteCodes";
 import "./App.css";
 
 const initialForm: FormState = emptyFormState();
+
+const wizardDraftBootstrap = readPendingSave()
+  ? {
+      form: initialForm,
+      step: 1,
+      step1Screen: 0,
+      step2Screen: 0,
+      step3Screen: 0,
+      flowStarted: false,
+      restored: false,
+    }
+  : restoreWizardDraft(initialForm);
 
 const LOADING_TIP_KEYS = ["app.loading.tip0", "app.loading.tip1", "app.loading.tip2", "app.loading.tip3"] as const;
 
@@ -209,12 +221,13 @@ export default function App() {
   const inviteCodesEnabled = isInviteCodesEnabled();
   const cloudEntitlementsEnabled = stripeCheckoutEnabled || inviteCodesEnabled;
   const demoUnlockEnabled = !cloudEntitlementsEnabled && import.meta.env.DEV;
-  const [flowStarted, setFlowStarted] = useState(false);
-  const [step, setStep] = useState(1);
-  const [step1Screen, setStep1Screen] = useState(0);
-  const [step2Screen, setStep2Screen] = useState(0);
-  const [step3Screen, setStep3Screen] = useState(0);
-  const [form, setForm] = useState<FormState>(initialForm);
+  const [flowStarted, setFlowStarted] = useState(wizardDraftBootstrap.flowStarted);
+  const [step, setStep] = useState(wizardDraftBootstrap.step);
+  const [step1Screen, setStep1Screen] = useState(wizardDraftBootstrap.step1Screen);
+  const [step2Screen, setStep2Screen] = useState(wizardDraftBootstrap.step2Screen);
+  const [step3Screen, setStep3Screen] = useState(wizardDraftBootstrap.step3Screen);
+  const [form, setForm] = useState<FormState>(wizardDraftBootstrap.form);
+  const [draftRestored] = useState(wizardDraftBootstrap.restored && wizardDraftBootstrap.flowStarted);
   const [guideTouch, setGuideTouch] = useState<GuideTouch>({});
   const [view, setView] = useState<"form" | "report" | "account" | "intro" | "counselor" | "signed-service" | "admin">("form");
   const [signedServiceContext, setSignedServiceContext] = useState<{ form: FormState; applicationId: string } | null>(
@@ -659,26 +672,19 @@ export default function App() {
     refreshEntitlements,
   ]);
 
-  /** 刷新后始终回到落地页；仅预填问卷字段，等用户点「开始」再进入流程 */
-  useEffect(() => {
-    if (readPendingSave()) return;
-    const draft = readFormDraft();
-    if (!draft) return;
-    setForm({
-      ...initialForm,
-      ...draft.form,
-      geoPrefs: draft.form.geoPrefs ?? [],
-      academicSpecialFlags: draft.form.academicSpecialFlags ?? [],
-      structuredActivities: draft.form.structuredActivities ?? [],
-    });
-    setStep(draft.step);
-  }, []);
-
-  /** 问卷进行中写入草稿；回到落地页时标记 flowStarted=false，避免下次刷新误进问卷 */
+  /** 问卷进行中自动保存草稿（localStorage + sessionStorage，保留 7 天） */
   useEffect(() => {
     if (view !== "form") return;
-    writeFormDraft({ form, step, flowStarted });
-  }, [form, step, flowStarted, view]);
+    if (!flowStarted && !formDraftHasProgress(form)) return;
+    writeFormDraft({
+      form,
+      step,
+      step1Screen,
+      step2Screen,
+      step3Screen,
+      flowStarted,
+    });
+  }, [form, step, step1Screen, step2Screen, step3Screen, flowStarted, view]);
 
   /** 刷新页面或邮件 Magic Link 回到本站后，恢复未登录前生成的报告 */
   useEffect(() => {
@@ -1446,6 +1452,12 @@ export default function App() {
         {t("app.steps.caption", { step })}
         {step === 3 ? t("app.steps.captionFinal") : t("app.steps.captionMid")}
       </p>
+
+      {draftRestored ? (
+        <p className="form-draft-restored" role="status">
+          {t("app.steps.draftRestored")}
+        </p>
+      ) : null}
 
       <div className="steps" aria-hidden>
         {[1, 2, 3].map((n) => (

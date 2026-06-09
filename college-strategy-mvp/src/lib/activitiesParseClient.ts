@@ -89,7 +89,9 @@ async function prepareUploadPayload(file: File): Promise<{ dataBase64: string; m
   }
 
   let mimeType = file.type || "application/octet-stream";
-  if (mimeType === "application/octet-stream" && file.name.toLowerCase().endsWith(".pdf")) {
+  if (/\.pdf$/i.test(file.name)) {
+    mimeType = "application/pdf";
+  } else if (mimeType === "application/octet-stream" && file.name.toLowerCase().endsWith(".pdf")) {
     mimeType = "application/pdf";
   }
   return { dataBase64: await readFileAsBase64(file), mimeType };

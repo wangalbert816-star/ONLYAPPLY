@@ -190,6 +190,133 @@ function parseActivitiesCsv(text) {
     .slice(0, 20);
 }
 
+const CA_ACTIVITY_ROW_TYPE_RE =
+  /^(Extracurricular Activity|Community Service|Academic \/ Competition|Research|Internship \/ Work|School Club \/ Organization|Art \/ Performance|Athletics|Other Club \/ Activity)\b/i;
+
+function isLikelyGarbageActivity(item) {
+  const name = String(item?.name || "").trim();
+  if (!name) return true;
+  if (/^(activities|activity type|organization name|position)/i.test(name)) return true;
+  if (/activity type.*organization name/i.test(name)) return true;
+  if (name.length > 140 && !String(item.description || "").trim()) return true;
+  return false;
+}
+
+function filterQualityActivities(activities) {
+  return (activities || []).filter((item) => item && !isLikelyGarbageActivity(item));
+}
+
+function listHasQualityActivities(result) {
+  return filterQualityActivities(result?.activities).some(
+    (a) => String(a?.name || "").trim() || String(a?.description || "").trim(),
+  );
+}
+
+function parseCommonAppActivityLine(line) {
+  const raw = String(line || "").trim();
+  const typeMatch = raw.match(CA_ACTIVITY_ROW_TYPE_RE);
+  if (!typeMatch) return null;
+
+  const kind = normalizeKind(typeMatch[1]);
+  let rest = raw.slice(typeMatch[0].length).trim();
+  let grades = "";
+  let hours = "";
+
+  const tailMatch = rest.match(/(\d{1,2}(?:\s*,\s*\d{1,2})+)(?:\s+(\d{1,2}))?\s*$/);
+  if (tailMatch) {
+    grades = tailMatch[1].replace(/\s+/g, "");
+    hours = tailMatch[2] || "";
+    rest = rest.slice(0, tailMatch.index).trim();
+  }
+
+  if (rest.includes(",")) {
+    const parts = rest.split(",").map((p) => p.trim()).filter(Boolean);
+    const [first, second, ...descParts] = parts;
+    return emptyActivityItem({
+      kind,
+      name: first || "",
+      role: second || "",
+      description: descParts.join(", "),
+      grades,
+      hours,
+    });
+  }
+
+  if (!rest) return emptyActivityItem({ kind, grades, hours });
+
+  const tokens = rest.split(/\s{2,}|\t+/).map((p) => p.trim()).filter(Boolean);
+  if (tokens.length >= 3) {
+    return emptyActivityItem({
+      kind,
+      name: tokens[0],
+      role: tokens[1],
+      description: tokens.slice(2).join(" "),
+      grades,
+      hours,
+    });
+  }
+
+  return emptyActivityItem({
+    kind,
+    name: rest.slice(0, 80).trim(),
+    description: rest.length > 80 ? rest.slice(80).trim() : "",
+    grades,
+    hours,
+  });
+}
+
+function parseCommonAppActivityBlocks(text) {
+  const lines = String(text || "")
+    .replace(/\r/g, "\n")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  const headerIdx = lines.findIndex(
+    (line) => /activity type/i.test(line) && /organization name/i.test(line),
+  );
+  if (headerIdx >= 0) {
+    const headerLine = lines[headerIdx];
+    const delimiter = headerLine.includes("\t") ? "\t" : headerLine.includes(",") ? "," : null;
+    if (delimiter) {
+      const headers = headerLine.split(delimiter).map((h) => h.trim());
+      const activities = [];
+      for (let i = headerIdx + 1; i < lines.length; i += 1) {
+        const row = lines[i].split(delimiter).map((c) => c.trim());
+        if (row.length < 2) continue;
+        const item = activityFromCsvRow(headers, row);
+        if (item && !isRowEmpty(item) && !isLikelyGarbageActivity(item)) activities.push(item);
+      }
+      if (activities.length > 0) return activities.slice(0, 20);
+    }
+  }
+
+  const blocks = [];
+  let current = "";
+  for (const line of lines) {
+    if (CA_ACTIVITY_ROW_TYPE_RE.test(line)) {
+      if (current) blocks.push(current);
+      current = line;
+    } else if (current) {
+      current = `${current} ${line}`;
+    }
+  }
+  if (current) blocks.push(current);
+
+  return blocks
+    .map(parseCommonAppActivityLine)
+    .filter((item) => item && !isRowEmpty(item) && !isLikelyGarbageActivity(item))
+    .slice(0, 20);
+}
+
+function finalizeActivitiesParseResult(activities) {
+  const cleaned = filterQualityActivities(activities);
+  if (cleaned.length === 0) {
+    return { activities: [], parseStatus: "failed", parseError: "no_activities_detected" };
+  }
+  return { activities: cleaned, parseStatus: "ready", parseError: "" };
+}
+
 function parseFreeformLine(line) {
   let raw = line.replace(/^[\s\-–—•*·\d.)]+/, "").trim();
   if (raw.length < 3) return null;
@@ -236,7 +363,12 @@ export function heuristicParseActivitiesText(raw) {
 
   const fromCsv = parseActivitiesCsv(text);
   if (fromCsv.length > 0) {
-    return { activities: fromCsv, parseStatus: "ready", parseError: "" };
+    return finalizeActivitiesParseResult(fromCsv);
+  }
+
+  const fromCommonApp = parseCommonAppActivityBlocks(text);
+  if (fromCommonApp.length > 0) {
+    return finalizeActivitiesParseResult(fromCommonApp);
   }
 
   const lines = text
@@ -247,13 +379,10 @@ export function heuristicParseActivitiesText(raw) {
 
   const activities = lines
     .map(parseFreeformLine)
-    .filter((item) => item && !isRowEmpty(item))
+    .filter((item) => item && !isRowEmpty(item) && !isLikelyGarbageActivity(item))
     .slice(0, 20);
 
-  if (activities.length === 0) {
-    return { activities: [], parseStatus: "failed", parseError: "no_activities_detected" };
-  }
-  return { activities, parseStatus: "ready", parseError: "" };
+  return finalizeActivitiesParseResult(activities);
 }
 
 export function normalizeParsedActivities(raw) {
@@ -281,7 +410,7 @@ export function normalizeParsedActivities(raw) {
 }
 
 function listHasUsableActivities(result) {
-  return Array.isArray(result?.activities) && result.activities.some((a) => a?.name?.trim() || a?.description?.trim());
+  return listHasQualityActivities(result);
 }
 
 const VISION_PROMPT = `Extract extracurricular activities from a student activity list into JSON only. Schema:
