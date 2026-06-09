@@ -278,6 +278,54 @@ export function buildEvalCasePayload(draft: EvalCaseDraft, existingCaseKeys: str
   };
 }
 
+/** Load an existing eval case into the admin questionnaire editor. */
+export function evalCaseToDraft(caseRow: {
+  title: string;
+  locale: Locale;
+  reportBody: Record<string, unknown>;
+  expectedReach: { school: string; note?: string }[];
+  expectedMatch: { school: string; note?: string }[];
+  expectedSafety: { school: string; note?: string }[];
+  forbiddenSchools: string[];
+  notes: string | null;
+}): EvalCaseDraft {
+  return {
+    title: caseRow.title,
+    locale: caseRow.locale ?? "zh",
+    ...evalCaseToExpectedDraft(caseRow),
+    notes: caseRow.notes ?? "",
+    form: reportBodyToFormState(caseRow.reportBody ?? {}),
+  };
+}
+
+export function buildEvalCaseUpdatePayload(draft: EvalCaseDraft) {
+  const title = draft.title.trim();
+  if (!title) return { error: "eval_title_required" as const };
+
+  const reportBody = buildReportApiBody(draft.form, undefined, draft.locale);
+  const expected = buildEvalCaseExpectedPatch(
+    {
+      reachSchools: draft.reachSchools,
+      matchSchools: draft.matchSchools,
+      safetySchools: draft.safetySchools,
+      forbiddenSchools: draft.forbiddenSchools,
+      notes: draft.notes,
+    },
+    draft.locale,
+  );
+
+  const payload: Record<string, unknown> = {
+    title,
+    reportBody,
+    ...expected,
+  };
+  if (draft.locale === "en") {
+    payload.titleEn = title;
+  }
+
+  return { payload };
+}
+
 export type EvalSchoolPreviewRow = {
   school: string;
   why: string;

@@ -956,6 +956,11 @@ merge(zhFlat, {
       optional: "可不填",
       saveCase: "保存这个学生",
       savingCase: "保存中…",
+      editCase: "编辑案例",
+      editCaseLead: "编辑「{name}」的问卷、顾问标准答案与备注。",
+      updateCase: "保存修改",
+      savingCaseUpdate: "保存中…",
+      cancelEditCase: "取消编辑",
       caseSelectLabel: "已保存的测试学生",
       addAnotherCase: "添加新学生",
       cancelAddCase: "取消",
@@ -1079,7 +1084,7 @@ merge(zhFlat, {
         export: "导出",
       },
       stepsLead: {
-        library: "点击案例「进入」查看问卷与顾问标准答案；冲/稳/保可直接编辑保存。",
+        library: "点击案例查看详情；可编辑完整问卷与顾问标准答案，或快速修改冲/稳/保。",
       },
       tabs: {
         report: "看报告",
@@ -3252,6 +3257,11 @@ merge(enFlat, {
       optional: "Optional",
       saveCase: "Save this student",
       savingCase: "Saving…",
+      editCase: "Edit case",
+      editCaseLead: "Edit questionnaire, counselor reference schools, and notes for “{name}”.",
+      updateCase: "Save changes",
+      savingCaseUpdate: "Saving…",
+      cancelEditCase: "Cancel edit",
       caseSelectLabel: "Saved test students",
       addAnotherCase: "Add another student",
       cancelAddCase: "Cancel",
@@ -3375,7 +3385,7 @@ merge(enFlat, {
         export: "Export",
       },
       stepsLead: {
-        library: "Open a case to view the questionnaire and counselor standard answer; edit reach/match/safety and save.",
+        library: "Open a case to view details; edit the full questionnaire and counselor answer, or quick-edit reach/match/safety.",
       },
       tabs: {
         report: "Report",

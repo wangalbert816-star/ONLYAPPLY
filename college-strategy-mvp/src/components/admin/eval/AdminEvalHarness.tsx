@@ -4,7 +4,9 @@ import type { Locale } from "../../../i18n/strings";
 import type { ProfileDimensionKey } from "../../../lib/fiveDimensionProfile";
 import {
   buildEvalCasePayload,
+  buildEvalCaseUpdatePayload,
   emptyEvalCaseDraft,
+  evalCaseToDraft,
   type buildEvalCaseExpectedPatch,
 } from "../../../lib/admin/evalCaseForm";
 import { getEvalCaseTitle } from "../../../lib/admin/evalCaseDisplay";
@@ -136,7 +138,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
   const [engineTrialReport, setEngineTrialReport] = useState<EngineTrialRunReport | null>(null);
   const [exporting, setExporting] = useState<string | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
-  const [libraryPanel, setLibraryPanel] = useState<"list" | "detail" | "add">("list");
+  const [libraryPanel, setLibraryPanel] = useState<"list" | "detail" | "add" | "edit">("list");
   const [generatePanel, setGeneratePanel] = useState<"list" | "detail">("list");
   const [reviewPanel, setReviewPanel] = useState<"list" | "detail">("list");
   const prevStepRef = useRef<EvalStep>(step);
@@ -326,6 +328,36 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
       setSavingCase(false);
     }
   };
+
+  const handleUpdateCase = async () => {
+    if (savingCase || busy || !selectedCaseId) return;
+    setPanelError(null);
+    const built = buildEvalCaseUpdatePayload(caseDraft);
+    if ("error" in built) {
+      setPanelError(evalErrorMessage(built.error, t));
+      return;
+    }
+    setSavingCase(true);
+    try {
+      await patchAdminEvalCase(token, selectedCaseId, built.payload);
+      setLibraryPanel("detail");
+      await refreshCases();
+    } catch (e) {
+      setPanelError(evalErrorMessage((e as Error & { code?: string }).code, t));
+    } finally {
+      setSavingCase(false);
+    }
+  };
+
+  const openCaseEditor = useCallback(
+    (caseRow: NonNullable<typeof selectedCase>) => {
+      setCaseDraft(evalCaseToDraft(caseRow));
+      setSelectedCaseId(caseRow.id);
+      setAddingCase(false);
+      setLibraryPanel("edit");
+    },
+    [],
+  );
 
   const handleSaveExpected = useCallback(
     async (caseId: string, patch: ReturnType<typeof buildEvalCaseExpectedPatch>) => {
@@ -749,12 +781,32 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
                   </button>
                 ) : null}
               </>
+            ) : libraryPanel === "edit" && selectedCase ? (
+              <>
+                <p className="admin-eval__sub">{t("admin.eval.editCaseLead", { name: getEvalCaseTitle(selectedCase, locale) })}</p>
+                <AdminEvalQuestionnaireForm
+                  draft={caseDraft}
+                  onChange={setCaseDraft}
+                  onSave={() => void handleUpdateCase()}
+                  saving={savingCase}
+                  mode="edit"
+                />
+                <button
+                  type="button"
+                  className="admin-portal__btn admin-portal__btn--ghost admin-eval__cancel-add"
+                  disabled={savingCase}
+                  onClick={() => setLibraryPanel("detail")}
+                >
+                  {t("admin.eval.cancelEditCase")}
+                </button>
+              </>
             ) : libraryPanel === "detail" && selectedCase ? (
               <EvalCaseDetail
                 evalCase={selectedCase}
                 results={caseStatusResults}
                 t={t}
                 onBack={() => setLibraryPanel("list")}
+                onEdit={() => openCaseEditor(selectedCase)}
                 onSaveExpected={(patch) => handleSaveExpected(selectedCase.id, patch)}
                 savingExpected={savingExpected}
                 onDelete={() => void onRun(async () => { await deleteAdminEvalCase(token, selectedCase.id); setLibraryPanel("list"); await refreshCases(); })}

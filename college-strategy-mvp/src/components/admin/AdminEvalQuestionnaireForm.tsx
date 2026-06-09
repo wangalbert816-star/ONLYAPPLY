@@ -33,9 +33,10 @@ type Props = {
   onChange: Dispatch<SetStateAction<EvalCaseDraft>>;
   onSave: () => void;
   saving: boolean;
+  mode?: "create" | "edit";
 };
 
-export function AdminEvalQuestionnaireForm({ draft, onChange, onSave, saving }: Props) {
+export function AdminEvalQuestionnaireForm({ draft, onChange, onSave, saving, mode = "create" }: Props) {
   const { t } = useLanguage();
   const [step, setStep] = useState(1);
   const [step1Screen, setStep1Screen] = useState(0);
@@ -400,7 +401,13 @@ export function AdminEvalQuestionnaireForm({ draft, onChange, onSave, saving }: 
                 onSave();
               }}
             >
-              {saving ? t("admin.eval.savingCase") : t("admin.eval.saveCase")}
+              {saving
+                ? mode === "edit"
+                  ? t("admin.eval.savingCaseUpdate")
+                  : t("admin.eval.savingCase")
+                : mode === "edit"
+                  ? t("admin.eval.updateCase")
+                  : t("admin.eval.saveCase")}
             </button>
           </div>
         </div>

@@ -18,6 +18,7 @@ type Props = {
   onSaveExpected?: (patch: ReturnType<typeof buildEvalCaseExpectedPatch>) => Promise<void>;
   savingExpected?: boolean;
   deleting?: boolean;
+  onEdit?: () => void;
 };
 
 function statusLabel(status: CaseListStatus, t: Translate) {
@@ -40,6 +41,7 @@ export function EvalCaseDetail({
   onSaveExpected,
   savingExpected,
   deleting,
+  onEdit,
 }: Props) {
   const { locale } = useLanguage();
   const status = resultStatusForCase(evalCase.id, results);
@@ -77,6 +79,11 @@ export function EvalCaseDetail({
       )}
       <EvalCaseFormSummary evalCase={evalCase} />
       <div className="admin-eval-case-detail__actions">
+        {onEdit ? (
+          <button type="button" className="admin-portal__btn admin-portal__btn--primary admin-portal__btn--lg" onClick={onEdit}>
+            {t("admin.eval.editCase")}
+          </button>
+        ) : null}
         {onGenerate ? (
           <button type="button" className="admin-portal__btn admin-portal__btn--primary admin-portal__btn--lg" onClick={onGenerate}>
             {t("admin.evalHarness.generateForCase")}
