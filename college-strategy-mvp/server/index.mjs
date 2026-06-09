@@ -43,7 +43,7 @@ import { buildFewShotPromptBlock } from "./trainingCorpus.mjs";
 import {
   buildDecisionEnginePromptBlock,
   mergeDecisionSchoolsIntoReport,
-  runDecisionEngine,
+  runDecisionEngineAsync,
 } from "./decisionEngine.mjs";
 import { registerTrainingCorpusRoutes } from "./trainingCorpusAdmin.mjs";
 import { registerEngineStandardsRoutes } from "./engineStandardsAdmin.mjs";
@@ -1485,12 +1485,20 @@ async function generateReportWithConfig(cfg, body) {
   const locale = resolveReportLocale(body);
   const planHorizon = getIntakeHorizon(String(body?.intakeTerm || ""));
   const includeUc = wantsUcFromBody(body);
-  const decision = runDecisionEngine(body, body?.tags ?? []);
+  const decision = await runDecisionEngineAsync(body, body?.tags ?? [], {
+    locale,
+    generateJson: async (messages) =>
+      generateLlmJsonWithConfig(cfg, {
+        logTag: "api/report/decision-fill",
+        maxTokens: 1200,
+        messages,
+      }),
+  });
   let userContent = buildUserPayload(body, includeUc);
   const fewShotBlock = buildFewShotPromptBlock(body, body?.tags ?? [], locale);
   if (fewShotBlock) userContent += fewShotBlock;
   if (decision.ok) {
-    userContent += buildDecisionEnginePromptBlock(decision, locale);
+    userContent += buildDecisionEnginePromptBlock(decision, locale, body, body?.tags ?? []);
   }
   const maxTokens = reportCompletionMaxTokens();
   const baseMessages = [

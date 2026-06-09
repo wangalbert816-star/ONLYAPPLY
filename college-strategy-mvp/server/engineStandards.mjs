@@ -7,6 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { runDecisionEngine } from "./decisionEngine.mjs";
+import { benchmarkSimilarityScore, profileSignatureFromBody } from "./engineIntakeProfile.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ENGINE_DIR = path.join(__dirname, "..", "data", "engine");
@@ -87,47 +88,16 @@ function tierSchoolSet(tier) {
   return new Set((tier ?? []).map((r) => normalizeSchoolKey(r.school)).filter(Boolean));
 }
 
-function parseGpaBand(gpaRaw) {
-  const text = String(gpaRaw ?? "").toLowerCase();
-  const m = text.match(/(?:unweighted|uw|未加权)[^\d]*(\d\.\d{1,2})|(\d\.\d{1,2})/);
-  const n = m ? Number(m[1] || m[2]) : null;
-  if (n == null || !Number.isFinite(n)) return "unknown";
-  if (n <= 3.35) return "weak";
-  if (n <= 3.55) return "moderate";
-  return "strong";
-}
-
-export function profileSignatureFromBody(reportBody, tags = []) {
-  const body = reportBody && typeof reportBody === "object" ? reportBody : {};
-  return {
-    tags: [...new Set((tags ?? []).map((t) => String(t).trim().toLowerCase()).filter(Boolean))].sort(),
-    major: String(body.majorPrimary ?? "").trim().toLowerCase(),
-    applicantIdentity: String(body.applicantIdentity ?? "unknown").trim().toLowerCase(),
-    testing: String(body.testing ?? "unknown").trim().toLowerCase(),
-    gpaBand: parseGpaBand(body.gpa),
-  };
-}
+export { profileSignatureFromBody };
 
 function signatureKey(sig) {
   return JSON.stringify(sig);
 }
 
-function similarityScore(query, entry) {
-  let score = 0;
-  for (const tag of query.tags) {
-    if ((entry.profile?.tags ?? []).includes(tag)) score += 4;
-  }
-  if (query.major && query.major === entry.profile?.major) score += 6;
-  if (query.applicantIdentity && query.applicantIdentity === entry.profile?.applicantIdentity) score += 3;
-  if (query.testing && query.testing === entry.profile?.testing) score += 2;
-  if (query.gpaBand !== "unknown" && query.gpaBand === entry.profile?.gpaBand) score += 4;
-  return score;
-}
-
 export function findBestBenchmark(entries, reportBody, tags = []) {
   const query = profileSignatureFromBody(reportBody, tags);
   const ranked = entries
-    .map((e) => ({ entry: e, score: similarityScore(query, e) }))
+    .map((e) => ({ entry: e, score: benchmarkSimilarityScore(query, e) }))
     .filter((r) => r.score > 0)
     .sort((a, b) => b.score - a.score);
   return ranked[0]?.entry ?? null;

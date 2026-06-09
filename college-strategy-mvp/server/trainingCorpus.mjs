@@ -8,6 +8,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { REPORT_PROMPT_VERSION } from "./evalConstants.mjs";
 import { getIntakeHorizon } from "./intakeHorizon.mjs";
+import { linearReferenceWeight } from "./engineIntakeProfile.mjs";
+
+/** Gold-case similarity uses more tags + athlete/arch flags; practical ceiling ~40. */
+export const GOLD_CASE_REFERENCE_SCORE_CEILING = 40;
+
+export function goldCaseReferenceWeight(matchScore) {
+  return linearReferenceWeight(matchScore, GOLD_CASE_REFERENCE_SCORE_CEILING);
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_CORPUS_PATH = path.join(__dirname, "..", "data", "training-corpus", "gold-cases.jsonl");
@@ -205,7 +213,7 @@ function structuredActivityText(body) {
     .join(" ");
 }
 
-function similarityScore(queryFeatures, goldCase) {
+export function goldCaseSimilarityScore(queryFeatures, goldCase) {
   const f = extractFeatures(goldCase.reportBody, goldCase.tags);
   let score = 0;
 
@@ -234,66 +242,114 @@ function similarityScore(queryFeatures, goldCase) {
   return score;
 }
 
-export function findSimilarGoldCases(reportBody, tags = [], limit = fewShotCount()) {
+/** @typedef {{ gold: object, score: number, referenceWeight: number }} RankedGoldCase */
+
+/** @returns {RankedGoldCase[]} */
+export function findSimilarGoldCasesRanked(reportBody, tags = [], limit = fewShotCount()) {
   if (!corpusEnabled() || limit <= 0) return [];
   const queryFeatures = extractFeatures(reportBody, tags);
-  const ranked = loadGoldCases()
-    .map((gold) => ({ gold, score: similarityScore(queryFeatures, gold) }))
-    .filter((r) => r.score > 0)
-    .sort((a, b) => b.score - a.score);
-
-  if (ranked.length === 0) {
-    return loadGoldCases().slice(0, limit);
-  }
-  return ranked.slice(0, limit).map((r) => r.gold);
+  return loadGoldCases()
+    .map((gold) => {
+      const score = goldCaseSimilarityScore(queryFeatures, gold);
+      return { gold, score, referenceWeight: goldCaseReferenceWeight(score) };
+    })
+    .filter((r) => r.score > 0 && r.referenceWeight > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
 }
 
-function formatTierLine(tier, locale) {
-  return tier
-    .map((r) => (r.note ? `${r.school}（${r.note}）` : r.school))
-    .join(locale === "en" ? ", " : "、");
+export function findSimilarGoldCases(reportBody, tags = [], limit = fewShotCount()) {
+  return findSimilarGoldCasesRanked(reportBody, tags, limit).map((r) => r.gold);
+}
+
+function tierNames(tier) {
+  return (tier ?? []).map((r) => String(r?.school ?? "").trim()).filter(Boolean);
+}
+
+function buildOneGoldCaseReferenceBlock(ranked, index, locale) {
+  const { gold: c, score, referenceWeight: w } = ranked;
+  const pct = Math.round(w * 100);
+  const s = c.approvedSchools ?? {};
+  const title = c.title || c.caseKey || `case-${index + 1}`;
+  const join = locale === "en" ? ", " : "、";
+
+  const guidance =
+    w >= 0.66
+      ? locale === "en"
+        ? "Strong reference — borrow tiering logic and tone only; do not copy school names into the final list."
+        : "参考强度较高——可借鉴分档逻辑与语气，勿将下列校名写入最终名单。"
+      : w >= 0.33
+        ? locale === "en"
+          ? "Moderate reference — calibrate tier tone only; do not reuse school names."
+          : "参考强度中等——仅校准档位语气，勿照搬校名。"
+        : locale === "en"
+          ? "Light reference — background context only."
+          : "参考强度较低——仅作背景提示。";
+
+  const lines =
+    locale === "en"
+      ? [`Example ${index + 1} "${title}" (linear ref ${pct}%, similarity ${score}/~${GOLD_CASE_REFERENCE_SCORE_CEILING}).`, guidance]
+      : [`案例 ${index + 1}「${title}」（线性参考 ${pct}%，相似度 ${score}/约 ${GOLD_CASE_REFERENCE_SCORE_CEILING}）。`, guidance];
+
+  const reach = tierNames(s.reach);
+  const match = tierNames(s.match);
+  const safety = tierNames(s.safety);
+
+  if (w >= 0.35 && reach.length) {
+    lines.push(
+      locale === "en"
+        ? `- Past Reach (${pct}% ref): ${reach.join(join)}`
+        : `- 冲（参考 ${pct}%）：${reach.join(join)}`,
+    );
+  }
+  if (w >= 0.5 && match.length) {
+    lines.push(
+      locale === "en"
+        ? `- Past Match (${pct}% ref): ${match.join(join)}`
+        : `- 稳（参考 ${pct}%）：${match.join(join)}`,
+    );
+  }
+  if (w >= 0.65 && safety.length) {
+    lines.push(
+      locale === "en"
+        ? `- Past Safety (${pct}% ref): ${safety.join(join)}`
+        : `- 保（参考 ${pct}%）：${safety.join(join)}`,
+    );
+  }
+  if (w >= 0.75 && s.notes) {
+    lines.push(
+      locale === "en" ? `- Counselor note (${pct}% ref): ${s.notes}` : `- 选校要点（参考 ${pct}%）：${s.notes}`,
+    );
+  }
+  if (w >= 0.75 && c.overallNotes) {
+    lines.push(
+      locale === "en"
+        ? `- Review notes (${pct}% ref): ${c.overallNotes}`
+        : `- 审阅备注（参考 ${pct}%）：${c.overallNotes}`,
+    );
+  }
+
+  return lines.join("\n");
 }
 
 export function buildFewShotPromptBlock(reportBody, tags = [], locale = "zh") {
-  const matches = findSimilarGoldCases(reportBody, tags, fewShotCount());
-  if (!matches.length) return "";
+  const ranked = findSimilarGoldCasesRanked(reportBody, tags, fewShotCount());
+  if (!ranked.length) return "";
+
+  const blocks = ranked.map((r, i) => buildOneGoldCaseReferenceBlock(r, i, locale));
 
   if (locale === "en") {
-    const blocks = matches.map((c, i) => {
-      const s = c.approvedSchools;
-      const lines = [
-        `Example ${i + 1} (${c.title || c.caseKey}):`,
-        `- Reach: ${formatTierLine(s.reach, "en")}`,
-        `- Match: ${formatTierLine(s.match, "en")}`,
-        `- Safety: ${formatTierLine(s.safety, "en")}`,
-      ];
-      if (s.notes) lines.push(`- Counselor note: ${s.notes}`);
-      if (c.overallNotes) lines.push(`- Review notes: ${c.overallNotes}`);
-      return lines.join("\n");
-    });
     return `
 
-[OnlyApply gold-case references — calibrate tier placement and tone only; do NOT copy school names unless the student profile is highly similar]
+[OnlyApply gold-case references — linear by similarity; calibrate tier/tone only; NEVER copy school names into reach/match/safety when the Decision Engine list is present]
 
 ${blocks.join("\n\n")}
 `;
   }
 
-  const blocks = matches.map((c, i) => {
-    const s = c.approvedSchools;
-    const lines = [
-      `案例 ${i + 1}（${c.title || c.caseKey}）：`,
-      `- 冲：${formatTierLine(s.reach, "zh")}`,
-      `- 稳：${formatTierLine(s.match, "zh")}`,
-      `- 保：${formatTierLine(s.safety, "zh")}`,
-    ];
-    if (s.notes) lines.push(`- 选校要点：${s.notes}`);
-    if (c.overallNotes) lines.push(`- 审阅备注：${c.overallNotes}`);
-    return lines.join("\n");
-  });
   return `
 
-【OnlyApply 金牌案例参考 — 仅供档位与风格校准；学生情况不高度相似时不要照搬校名】
+【OnlyApply 金牌案例参考 — 按相似度线性展示；仅供档位与风格校准；有引擎名单时不得将下列校名写入 reach/match/safety】
 
 ${blocks.join("\n\n")}
 `;

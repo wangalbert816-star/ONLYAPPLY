@@ -5,6 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { buildEngineIntakeProfile, isUcSchoolName, schoolRegionMatchesPrefs } from "./engineIntakeProfile.mjs";
 import { forbiddenSchoolsFromBody, isUltraSelectiveSchoolName, schoolMatchesForbidden } from "./topReferenceSchools.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -80,7 +81,54 @@ export function majorFitForSchool(entry, bucket) {
   return Number(row.fit ?? 55);
 }
 
-export function buildEngineContext(body, tags = [], profileScores) {
+const KNOWN_SCHOOL_TRAITS = [
+  { re: /notre dame|byu|brigham|liberty university|pepperdine|baylor|wheaton|calvin|gordon college/i, religious: true },
+  { re: /usc|ucla|nyu|boston university|northeastern|george washington|american university/i, urban: true },
+  { re: /dartmouth|williams|amherst|middlebury|bowdoin|colby|bates|hamilton|grinnell|carleton|davidson|colgate/i, size: "small" },
+  { re: /ohio state|penn state|michigan state|arizona state|texas a&m|purdue|wisconsin|illinois|maryland|washington/i, size: "large" },
+  { re: /usc|ucla|michigan|penn state|ohio state|texas at austin|florida|wisconsin|illinois|arizona state/i, party: true },
+];
+
+function inferSchoolTraits(entry) {
+  const name = String(entry.school ?? "");
+  const traits = {
+    size: entry.size ?? "medium",
+    culture: entry.culture ?? "balanced",
+    religious: Boolean(entry.religious),
+    urban: Boolean(entry.urban),
+    party: Boolean(entry.party),
+  };
+  for (const row of KNOWN_SCHOOL_TRAITS) {
+    if (!row.re.test(name)) continue;
+    if (row.religious) traits.religious = true;
+    if (row.urban) traits.urban = true;
+    if (row.size) traits.size = row.size;
+    if (row.party) traits.party = true;
+  }
+  if (entry.type === "private" && Number(entry.selectivity) >= 90 && traits.size === "medium") {
+    traits.size = "medium";
+  }
+  return traits;
+}
+
+function schoolMatchesSizePref(traits, pref) {
+  if (!pref || pref === "any") return true;
+  if (pref === traits.size) return true;
+  if (pref === "small" && traits.size === "medium") return true;
+  if (pref === "large" && traits.size === "medium") return true;
+  return false;
+}
+
+function schoolMatchesCulturePref(traits, pref) {
+  if (!pref || pref === "any") return true;
+  if (pref === traits.culture) return true;
+  if (pref === "collaborative" && traits.culture === "balanced") return true;
+  if (pref === "competitive" && traits.culture === "balanced") return true;
+  return false;
+}
+
+export function buildEngineContext(body, tags = [], profileScores, intakeOverride = null) {
+  const intake = intakeOverride ?? buildEngineIntakeProfile(body, tags);
   const composite =
     profileScores?.composite ??
     profileScores?.academic * 0.26 +
@@ -89,26 +137,42 @@ export function buildEngineContext(body, tags = [], profileScores) {
       profileScores?.rigor * 0.18 +
       profileScores?.strategy * 0.14;
 
-  const budget = String(body?.budget ?? "").trim().toLowerCase();
-  const applicantIdentity = String(body?.applicantIdentity ?? "").trim().toLowerCase();
-  const testing = String(body?.testing ?? "").trim().toLowerCase();
-  const geoPrefs = Array.isArray(body?.geoPrefs) ? body.geoPrefs.map((g) => String(g).toLowerCase()) : [];
-  const dealbreakers = String(body?.dealbreakers ?? "").trim().toLowerCase();
-  const tagSet = new Set((tags ?? []).map((t) => String(t).toLowerCase()));
+  const tagSet = new Set(intake.tags);
 
   return {
     composite,
     profileScores,
+    intake,
+    prefs: {
+      geo: intake.geo,
+      budget: intake.budget,
+      dealbreakers: intake.dealbreakers,
+      forbidden: intake.forbidden,
+      schoolSize: intake.schoolSize,
+      campusCulture: intake.campusCulture,
+      riskStyle: intake.riskStyle,
+    },
     majorBucket: resolveMajorBucket(body),
-    budgetSensitive: /budget|cap|limited|有限|预算|费用|afford|need_aid|financial/i.test(`${budget} ${dealbreakers}`),
-    intl: applicantIdentity === "intl" || tagSet.has("intl"),
-    testOptional: testing === "test_optional" || tagSet.has("test-optional"),
-    weakGpa: composite < 62 || tagSet.has("weak-gpa"),
-    strongStats: composite >= 78 || tagSet.has("strong-stats"),
-    forbidden: forbiddenSchoolsFromBody(body),
-    geoPrefs,
-    riskStyle: String(body?.riskStyle ?? "").trim().toLowerCase(),
+    budgetSensitive: intake.budgetSensitive,
+    budget: intake.budget,
+    geo: intake.geo,
+    dealbreakers: intake.dealbreakers,
+    forbidden: intake.forbidden.length ? intake.forbidden : forbiddenSchoolsFromBody(body),
+    schoolSize: intake.schoolSize,
+    campusCulture: intake.campusCulture,
+    intl: intake.intl,
+    testOptional: intake.testOptional,
+    testBand: intake.testBand,
+    gpaTrend: intake.gpaTrend,
+    competitionDensity: intake.competitionDensity,
+    athlete: intake.athlete,
+    ucIntent: intake.ucIntent,
+    weakGpa: composite < 62 || tagSet.has("weak-gpa") || intake.gpaBand === "weak",
+    strongStats: composite >= 78 || tagSet.has("strong-stats") || intake.gpaBand === "strong",
+    geoPrefs: intake.geo.normalized,
+    riskStyle: intake.riskStyle,
     tags: tagSet,
+    geoStrict: intake.geoStrict,
   };
 }
 
@@ -118,9 +182,17 @@ export function tierGap(profileComposite, schoolSelectivity, context, entry) {
 
   if (context.intl && entry.intlPenalty) gap += Number(entry.intlPenalty);
   if (context.testOptional && entry.testOptionalPenalty) gap += Number(entry.testOptionalPenalty);
+  if (!context.testOptional && context.testBand === "weak") gap += 4;
+  if (context.gpaTrend === "upward") gap -= 2;
+  if (context.gpaTrend === "downward") gap += 3;
+  if (context.competitionDensity === "high" && Number(entry.selectivity) >= 85) gap += 2;
   if (context.weakGpa && /uc (irvine|san diego|los angeles|berkeley)/i.test(entry.school)) gap += 6;
   if (context.budgetSensitive && entry.budgetTier === "high" && entry.type === "private") gap += 8;
+  if (context.budget?.preferPublic && entry.type === "public" && entry.budgetTier !== "high") gap -= 2;
   if (context.strongStats && entry.type === "public" && Number(entry.selectivity) >= 88) gap -= 2;
+  if (context.athlete?.isAthlete && context.athlete.level === "d3" && /liberal arts|college\b/i.test(entry.school)) {
+    gap -= 3;
+  }
 
   return gap;
 }
@@ -128,12 +200,32 @@ export function tierGap(profileComposite, schoolSelectivity, context, entry) {
 export function isSchoolEligible(entry, context) {
   if (schoolMatchesForbidden(entry.school, context.forbidden)) return false;
 
+  if (context.geoStrict && !schoolRegionMatchesPrefs(entry.region, context.geo)) {
+    return false;
+  }
+
+  const traits = inferSchoolTraits(entry);
+
+  if (context.dealbreakers?.themes.includes("no_religious") && traits.religious) return false;
+  if (context.dealbreakers?.themes.includes("avoid_major_city") && traits.urban) return false;
+  if (context.dealbreakers?.themes.includes("avoid_rural") && traits.size === "small" && !traits.urban) {
+    return false;
+  }
+
+  if (!context.ucIntent && isUcSchoolName(entry.school)) {
+    return false;
+  }
+
   if (isUltraSelectiveSchoolName(entry.school) && context.composite < 78 && !context.strongStats) {
     return false;
   }
 
-  if (context.budgetSensitive) {
-    if (entry.budgetTier === "high" && entry.type === "private") return false;
+  const budget = context.budget ?? {};
+  if (!budget.allowHighPrivate && entry.budgetTier === "high" && entry.type === "private") {
+    return false;
+  }
+  if (budget.tier === "strict" && entry.budgetTier === "high" && entry.type === "private") {
+    return false;
   }
 
   const fit = majorFitForSchool(entry, context.majorBucket);
@@ -163,7 +255,6 @@ export function classifySchoolTier(entry, context, gap) {
     return null;
   }
 
-  // balanced default
   if (gap >= 7 && gap <= 28) return "reach";
   if (gap >= -7 && gap <= 10) return "match";
   if (gap <= -3 && selectivity <= 78) return "safety";
@@ -172,7 +263,10 @@ export function classifySchoolTier(entry, context, gap) {
 
 export function geoBoost(entry, context) {
   const region = String(entry.region ?? "any").toLowerCase();
-  if (!context.geoPrefs.length || context.geoPrefs.includes("any")) return 0;
+  if (context.geoStrict) {
+    return schoolRegionMatchesPrefs(region, context.geo) ? 0.25 : -0.2;
+  }
+  if (!context.geoPrefs.length || context.geo.includesAny) return 0;
   if (region === "any") return 0.05;
   if (context.geoPrefs.includes(region)) return 0.18;
   return -0.06;
@@ -180,6 +274,7 @@ export function geoBoost(entry, context) {
 
 export function rankCandidate(entry, context, gap, tier) {
   const fit = majorFitForSchool(entry, context.majorBucket);
+  const traits = inferSchoolTraits(entry);
   const tierFit =
     tier === "reach"
       ? clamp01(1 - Math.abs(gap - 16) / 18)
@@ -187,24 +282,38 @@ export function rankCandidate(entry, context, gap, tier) {
         ? clamp01(1 - Math.abs(gap - 2) / 12)
         : clamp01(1 - Math.abs(gap + 8) / 14);
 
-  return fit * 0.42 + tierFit * 100 * 0.35 + geoBoost(entry, context) * 100 + (entry.engineBoost ?? 0);
+  let budgetBoost = 0;
+  if (context.budget?.preferPublic && entry.type === "public") budgetBoost = 0.08;
+  if (context.budget?.tier === "strict" && entry.budgetTier === "low") budgetBoost += 0.06;
+
+  let prefBoost = 0;
+  if (schoolMatchesSizePref(traits, context.schoolSize)) prefBoost += 0.06;
+  if (schoolMatchesCulturePref(traits, context.campusCulture)) prefBoost += 0.05;
+  if (context.dealbreakers?.themes.includes("no_party") && traits.party) prefBoost -= 0.12;
+  if (context.dealbreakers?.themes.includes("avoid_cold") && /midwest|northeast|new england|wisconsin|michigan|minnesota/i.test(entry.school)) {
+    prefBoost -= 0.08;
+  }
+
+  return fit * 0.4 + tierFit * 100 * 0.32 + geoBoost(entry, context) * 100 + budgetBoost * 100 + prefBoost * 100 + (entry.engineBoost ?? 0);
 }
 
 function clamp01(n) {
   return Math.min(1, Math.max(0, n));
 }
 
-export function pickTopPerTier(candidates, tier, count = 3) {
+export function pickTopPerTier(candidates, tier, count = 3, context = null) {
   const rows = candidates
     .filter((c) => c.tier === tier)
     .sort((a, b) => b.rank - a.rank || b.fit - a.fit || a.entry.school.localeCompare(b.entry.school));
 
   const picked = [];
   const seenRegions = new Set();
+  const diversify = !context?.geoStrict;
+
   for (const row of rows) {
     if (picked.length >= count) break;
     const region = String(row.entry.region ?? "any");
-    if (picked.length < count - 1 && seenRegions.has(region) && rows.length > count) continue;
+    if (diversify && picked.length < count - 1 && seenRegions.has(region) && rows.length > count) continue;
     picked.push(row);
     seenRegions.add(region);
   }
@@ -222,7 +331,37 @@ export function formatSchoolNote(entry, context, tier, gap) {
   if (entry.notes) bits.push(entry.notes);
   if (fit >= 85) bits.push(`${context.majorBucket} 专业匹配`);
   if (context.budgetSensitive && entry.type === "public") bits.push("预算友好公立");
+  if (context.geoStrict && schoolRegionMatchesPrefs(entry.region, context.geo)) bits.push("符合地理偏好");
   if (context.intl && entry.intlFriendly) bits.push("国际生路径较常见");
   if (tier === "reach" && gap >= 18) bits.push("现实可冲");
   return bits.filter(Boolean).slice(0, 2).join("；") || null;
+}
+
+/**
+ * Build ranked candidates from catalog under current context (geoStrict from context).
+ */
+export function buildCatalogCandidates(catalog, composite, context) {
+  const candidates = [];
+  for (const entry of catalog) {
+    if (!isSchoolEligible(entry, context)) continue;
+    const gap = tierGap(composite, entry.selectivity, context, entry);
+    const tier = classifySchoolTier(entry, context, gap);
+    if (!tier) continue;
+    const fit = majorFitForSchool(entry, context.majorBucket);
+    candidates.push({
+      entry,
+      gap,
+      tier,
+      fit,
+      rank: rankCandidate(entry, context, gap, tier),
+    });
+  }
+  return candidates;
+}
+
+export function pickSchoolsFromCandidates(candidates, context) {
+  const reachRows = pickTopPerTier(candidates, "reach", 3, context);
+  const matchRows = pickTopPerTier(candidates, "match", 3, context);
+  const safetyRows = pickTopPerTier(candidates, "safety", 3, context);
+  return { reachRows, matchRows, safetyRows };
 }
