@@ -811,7 +811,13 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
                       model: "—",
                     })}
                   </p>
-                  <button type="button" className="admin-portal__btn admin-portal__btn--primary" disabled={testing || busy} onClick={() => void handleGenerate()}>
+                  <p className="admin-eval-harness__generate-lead">{t("admin.evalHarness.generateCtaLead")}</p>
+                  <button
+                    type="button"
+                    className="admin-portal__btn admin-portal__btn--primary admin-portal__btn--xl admin-eval-harness__generate-cta"
+                    disabled={testing || busy}
+                    onClick={() => void handleGenerate()}
+                  >
                     {testing ? t("admin.eval.generatingLabel") : t("admin.eval.startTest")}
                   </button>
                 </div>

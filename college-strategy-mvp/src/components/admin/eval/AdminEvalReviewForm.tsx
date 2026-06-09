@@ -41,6 +41,52 @@ function tierLabel(t: Translate, tier: "reach" | "match" | "safety" | null) {
   return "—";
 }
 
+function canSubmitNineSchools(draft: EvalReviewDraft) {
+  const f = draft.finalApprovedRecommendation;
+  return (
+    f.reach.filter((s) => s.trim()).length >= 3 &&
+    f.match.filter((s) => s.trim()).length >= 3 &&
+    f.safety.filter((s) => s.trim()).length >= 3
+  );
+}
+
+function ReviewActionButtons({
+  saving,
+  canSubmit,
+  onSave,
+  t,
+  size = "md",
+}: {
+  saving: boolean;
+  canSubmit: boolean;
+  onSave: (status: EvalReviewDraft["status"]) => void;
+  t: Translate;
+  size?: "md" | "lg";
+}) {
+  const sizeClass = size === "lg" ? " admin-portal__btn--lg" : "";
+  return (
+    <>
+      <button
+        type="button"
+        className={`admin-portal__btn admin-portal__btn--secondary${sizeClass}`}
+        disabled={saving}
+        onClick={() => onSave("draft")}
+      >
+        {t("admin.evalHarness.saveDraft")}
+      </button>
+      <button
+        type="button"
+        className={`admin-portal__btn admin-portal__btn--submit${sizeClass}`}
+        disabled={saving || !canSubmit}
+        title={!canSubmit ? t("admin.evalHarness.submitReviewNeedSchools") : undefined}
+        onClick={() => onSave("submitted")}
+      >
+        {saving ? t("admin.eval.savingScore") : t("admin.evalHarness.submitReview")}
+      </button>
+    </>
+  );
+}
+
 export function AdminEvalReviewForm({
   evalCase,
   run,
@@ -62,6 +108,7 @@ export function AdminEvalReviewForm({
   const avg = rubricAverage(draft.rubricScores);
   const schoolCorrections = countSchoolCorrections(draft);
   const profileAdjustments = countProfileAdjustments(draft);
+  const canSubmit = canSubmitNineSchools(draft);
 
   const saveItem = useCallback(
     (mode: "immediate" | "debounced" = "immediate", draftOverride?: EvalReviewDraft) => {
@@ -101,6 +148,9 @@ export function AdminEvalReviewForm({
               </span>
             ) : null}
           </span>
+          <div className="admin-eval-review__toolbar-actions">
+            <ReviewActionButtons saving={saving} canSubmit={canSubmit} onSave={onSave} t={t} />
+          </div>
         </div>
         <div className="admin-eval-review__tabs" role="tablist" aria-label={t("admin.evalHarness.reviewTabsLabel")}>
           {REVIEW_TABS.map((id) => {
@@ -439,21 +489,18 @@ export function AdminEvalReviewForm({
         </section>
       ) : null}
 
-      <div className="admin-eval-review__footer">
-        <p className="admin-eval-review__footer-meta">
-          {t("admin.evalHarness.reviewStats", {
-            schools: String(schoolCorrections),
-            profile: String(profileAdjustments),
-          })}
-          {saveState === "saving" ? ` · ${t("admin.evalHarness.reviewAutoSaving")}` : null}
-          {saveState === "saved" ? ` · ${t("admin.evalHarness.reviewAutoSaved")}` : null}
-          {saveState === "error" ? ` · ${t("admin.evalHarness.reviewAutoSaveErr")}` : null}
-        </p>
-        <div className="admin-eval-review__footer-actions">
+      <div className="admin-eval-review__action-bar">
+        <div className="admin-eval-review__action-bar-copy">
+          <strong>{t("admin.evalHarness.submitReviewTitle")}</strong>
+          <p className={canSubmit ? undefined : "admin-eval-review__action-bar-warn"}>
+            {canSubmit ? t("admin.evalHarness.submitReviewHint") : t("admin.evalHarness.submitReviewNeedSchools")}
+          </p>
+        </div>
+        <div className="admin-eval-review__action-bar-btns">
           {onWriteEngineStandard ? (
             <button
               type="button"
-              className="admin-portal__btn admin-portal__btn--ghost"
+              className="admin-portal__btn admin-portal__btn--ghost admin-portal__btn--lg"
               disabled={saving || engineWriteBusy || !canWriteEngineStandard}
               title={!canWriteEngineStandard ? t("admin.evalHarness.engineWriteNeedSubmit") : undefined}
               onClick={() => onWriteEngineStandard()}
@@ -465,13 +512,17 @@ export function AdminEvalReviewForm({
                   : t("admin.evalHarness.engineWriteStandard")}
             </button>
           ) : null}
-          <button type="button" className="admin-portal__btn admin-portal__btn--ghost" disabled={saving} onClick={() => onSave("draft")}>
-            {t("admin.evalHarness.saveDraft")}
-          </button>
-          <button type="button" className="admin-portal__btn admin-portal__btn--primary" disabled={saving} onClick={() => onSave("submitted")}>
-            {saving ? t("admin.eval.savingScore") : t("admin.evalHarness.submitReview")}
-          </button>
+          <ReviewActionButtons saving={saving} canSubmit={canSubmit} onSave={onSave} t={t} size="lg" />
         </div>
+        <p className="admin-eval-review__footer-meta">
+          {t("admin.evalHarness.reviewStats", {
+            schools: String(schoolCorrections),
+            profile: String(profileAdjustments),
+          })}
+          {saveState === "saving" ? ` · ${t("admin.evalHarness.reviewAutoSaving")}` : null}
+          {saveState === "saved" ? ` · ${t("admin.evalHarness.reviewAutoSaved")}` : null}
+          {saveState === "error" ? ` · ${t("admin.evalHarness.reviewAutoSaveErr")}` : null}
+        </p>
       </div>
     </div>
   );

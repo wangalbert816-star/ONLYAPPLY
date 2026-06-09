@@ -78,12 +78,12 @@ export function EvalCaseDetail({
       <EvalCaseFormSummary evalCase={evalCase} />
       <div className="admin-eval-case-detail__actions">
         {onGenerate ? (
-          <button type="button" className="admin-portal__btn admin-portal__btn--primary" onClick={onGenerate}>
+          <button type="button" className="admin-portal__btn admin-portal__btn--primary admin-portal__btn--lg" onClick={onGenerate}>
             {t("admin.evalHarness.generateForCase")}
           </button>
         ) : null}
         {canReview && onReview ? (
-          <button type="button" className="admin-portal__btn admin-portal__btn--ghost" onClick={onReview}>
+          <button type="button" className="admin-portal__btn admin-portal__btn--submit admin-portal__btn--lg" onClick={onReview}>
             {t("admin.evalHarness.reviewForCase")}
           </button>
         ) : null}
