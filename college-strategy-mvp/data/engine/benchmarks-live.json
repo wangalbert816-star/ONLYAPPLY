@@ -1,0 +1,239 @@
+[
+  {
+    "id": "CASE-001",
+    "sourceCaseKey": "CASE-001",
+    "title": "弱GPA · 国际生 · CS · Test-Optional",
+    "profile": {
+      "tags": [
+        "cs",
+        "intl",
+        "test-optional",
+        "weak-gpa"
+      ],
+      "major": "computer science",
+      "applicantIdentity": "intl",
+      "testing": "test_optional",
+      "gpaBand": "weak"
+    },
+    "approvedSchools": {
+      "reach": [
+        {
+          "school": "UC Irvine",
+          "note": "CS 竞争大但活动有技术深度"
+        },
+        {
+          "school": "UC San Diego",
+          "note": "对国际生应为 Reach"
+        },
+        {
+          "school": "Northeastern University",
+          "note": "Co-op 路径匹配 CS"
+        }
+      ],
+      "match": [
+        {
+          "school": "UC Santa Cruz"
+        },
+        {
+          "school": "San Jose State University"
+        },
+        {
+          "school": "Cal Poly Pomona",
+          "note": "CS-adjacent Cal State; more realistic Match than U of A"
+        }
+      ],
+      "safety": [
+        {
+          "school": "Arizona State University"
+        },
+        {
+          "school": "University of Oregon"
+        },
+        {
+          "school": "Washington State University"
+        }
+      ],
+      "notes": "测试弱GPA + test-optional 时档位是否偏乐观；UC 高选择性校区应偏 Reach。"
+    },
+    "notes": "测试弱GPA + test-optional 时档位是否偏乐观；UC 高选择性校区应偏 Reach。",
+    "updatedAt": "2026-06-09T00:13:06.821Z",
+    "updatedBy": "seed-script"
+  },
+  {
+    "id": "CASE-002",
+    "sourceCaseKey": "CASE-002",
+    "title": "Entrepreneurship · SAT 1440 · 禁 MIT/Stanford",
+    "profile": {
+      "tags": [
+        "business",
+        "entrepreneurship",
+        "forbidden-schools",
+        "sat-1440"
+      ],
+      "major": "entrepreneurship",
+      "applicantIdentity": "intl",
+      "testing": "will_submit",
+      "gpaBand": "strong"
+    },
+    "approvedSchools": {
+      "reach": [
+        {
+          "school": "Babson College",
+          "note": "Entrepreneurship program fit"
+        },
+        {
+          "school": "NYU Stern",
+          "note": "Business depth + NYC ecosystem"
+        },
+        {
+          "school": "Boston College",
+          "note": "Strong undergrad business path"
+        }
+      ],
+      "match": [
+        {
+          "school": "Rutgers University–New Brunswick"
+        },
+        {
+          "school": "Indiana University Bloomington"
+        },
+        {
+          "school": "University of Washington"
+        }
+      ],
+      "safety": [
+        {
+          "school": "Stony Brook University"
+        },
+        {
+          "school": "University at Buffalo"
+        },
+        {
+          "school": "University of Connecticut"
+        }
+      ],
+      "notes": "顾问曾指出 UCSD 应为 Reach；名单应含 Babson 等专业匹配校，禁校不得出现在任何区块。"
+    },
+    "notes": "顾问曾指出 UCSD 应为 Reach；名单应含 Babson 等专业匹配校，禁校不得出现在任何区块。",
+    "updatedAt": "2026-06-09T00:13:06.860Z",
+    "updatedBy": "seed-script"
+  },
+  {
+    "id": "CASE-003",
+    "sourceCaseKey": "CASE-003",
+    "title": "强STEM · SAT 1520 · CS/AI · 美籍",
+    "profile": {
+      "tags": [
+        "ai",
+        "cs",
+        "strong-stats",
+        "us-citizen"
+      ],
+      "major": "computer science",
+      "applicantIdentity": "us_citizen",
+      "testing": "will_submit",
+      "gpaBand": "strong"
+    },
+    "approvedSchools": {
+      "reach": [
+        {
+          "school": "Carnegie Mellon University",
+          "note": "SCS fit"
+        },
+        {
+          "school": "Georgia Institute of Technology",
+          "note": "CS flagship"
+        },
+        {
+          "school": "University of Illinois Urbana-Champaign",
+          "note": "Strong CS"
+        }
+      ],
+      "match": [
+        {
+          "school": "University of Washington"
+        },
+        {
+          "school": "Purdue University"
+        },
+        {
+          "school": "University of Wisconsin–Madison"
+        }
+      ],
+      "safety": [
+        {
+          "school": "University of California, Santa Cruz"
+        },
+        {
+          "school": "University of Maryland"
+        },
+        {
+          "school": "Virginia Tech"
+        }
+      ],
+      "notes": "强背景案例：Reach 可以更高但不应全是彩票校；理由须引用 USACO/科研。"
+    },
+    "notes": "强背景案例：Reach 可以更高但不应全是彩票校；理由须引用 USACO/科研。",
+    "updatedAt": "2026-06-09T00:13:06.861Z",
+    "updatedBy": "seed-script"
+  },
+  {
+    "id": "CASE-004",
+    "sourceCaseKey": "CASE-004",
+    "title": "Pre-med · 国际生 · 中等标化 · 中文",
+    "profile": {
+      "tags": [
+        "bio",
+        "intl",
+        "moderate-stats",
+        "pre-med"
+      ],
+      "major": "biology",
+      "applicantIdentity": "intl",
+      "testing": "will_submit",
+      "gpaBand": "strong"
+    },
+    "approvedSchools": {
+      "reach": [
+        {
+          "school": "Rutgers University",
+          "note": "预算友好公立 + 生物/pre-med"
+        },
+        {
+          "school": "Ohio State University",
+          "note": "Pre-med 路径清晰"
+        },
+        {
+          "school": "Penn State University",
+          "note": "大型公立旗舰，费用可控"
+        }
+      ],
+      "match": [
+        {
+          "school": "University of Iowa"
+        },
+        {
+          "school": "University of Kansas"
+        },
+        {
+          "school": "University of Alabama"
+        }
+      ],
+      "safety": [
+        {
+          "school": "University of Mississippi"
+        },
+        {
+          "school": "Kent State University"
+        },
+        {
+          "school": "University of Arkansas"
+        }
+      ],
+      "notes": "预算敏感 + pre-med：不应推荐明显超预算的私立；Safety 须真实可录。"
+    },
+    "notes": "预算敏感 + pre-med：不应推荐明显超预算的私立；Safety 须真实可录。",
+    "updatedAt": "2026-06-09T00:13:06.862Z",
+    "updatedBy": "seed-script"
+  }
+]

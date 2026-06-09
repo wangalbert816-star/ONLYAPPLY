@@ -1,4 +1,5 @@
 import { apiUrl } from "../apiBase";
+import type { EvalReviewDraft } from "./evalRubric";
 import type { ApplicationLinkCategoryId, ApplicationLinkBadge } from "../../components/applicationLinks";
 
 export type AdminCounselor = {
@@ -604,6 +605,7 @@ export async function saveAdminEvalReview(
 ): Promise<{
   review: AdminEvalReview;
   trainingCorpus?: { ok: boolean; caseKey?: string; goldCaseCount?: number; reason?: string } | null;
+  decisionEngine?: { ok: boolean; caseKey?: string; liveCount?: number; syncedToLive?: boolean; reason?: string } | null;
 }> {
   return adminFetch(`/api/admin/crm/eval/runs/${runId}/reviews/${caseId}`, accessToken, {
     method: "PUT",
@@ -648,6 +650,82 @@ export async function downloadTrainingSftExport(accessToken: string): Promise<{ 
     blob: new Blob([text], { type: "application/x-ndjson" }),
     filename: `onlyapply-sft-${stamp}.jsonl`,
   };
+}
+
+export type EngineStandardsStats = {
+  draftCount: number;
+  liveCount: number;
+  lastPublishedAt: string | null;
+  draftEntries: Array<{
+    sourceCaseKey: string;
+    title: string;
+    updatedAt: string;
+    tags: string[];
+    major: string;
+  }>;
+};
+
+export type EngineTrialRunReport = {
+  draftCount: number;
+  liveCount: number;
+  evaluatedCaseCount: number;
+  draftSchoolMatchRate: number | null;
+  liveSchoolMatchRate: number | null;
+  caseResults: Array<{
+    caseKey: string;
+    title: string;
+    draftBenchmarkId: string | null;
+    liveBenchmarkId: string | null;
+    draftMatchRate: number | null;
+    liveMatchRate: number | null;
+  }>;
+};
+
+export async function fetchEngineStandardsStats(accessToken: string): Promise<EngineStandardsStats> {
+  return adminFetch("/api/admin/crm/engine/standards", accessToken);
+}
+
+export async function writeEngineStandardFromReview(
+  accessToken: string,
+  runId: string,
+  caseId: string,
+): Promise<{ ok: boolean; draftCount?: number; reason?: string }> {
+  return adminFetch("/api/admin/crm/engine/standards/from-review", accessToken, {
+    method: "POST",
+    body: JSON.stringify({ runId, caseId }),
+  });
+}
+
+export async function writeEngineStandardFromDraft(
+  accessToken: string,
+  evalCase: AdminEvalCase,
+  draft: Pick<EvalReviewDraft, "status" | "finalApprovedRecommendation" | "overallNotes">,
+): Promise<{ ok: boolean; draftCount?: number; reason?: string }> {
+  return adminFetch("/api/admin/crm/engine/standards/from-draft", accessToken, {
+    method: "POST",
+    body: JSON.stringify({
+      evalCase,
+      review: {
+        status: draft.status === "submitted" ? "submitted" : "submitted",
+        finalApprovedRecommendation: draft.finalApprovedRecommendation,
+        overallNotes: draft.overallNotes,
+      },
+    }),
+  });
+}
+
+export async function trialRunEngineStandards(accessToken: string): Promise<EngineTrialRunReport> {
+  return adminFetch("/api/admin/crm/engine/standards/trial-run", accessToken, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+export async function publishEngineStandards(accessToken: string): Promise<{ ok: boolean; liveCount?: number; reason?: string }> {
+  return adminFetch("/api/admin/crm/engine/standards/publish", accessToken, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
 }
 
 export type AdminEvalDashboard = {

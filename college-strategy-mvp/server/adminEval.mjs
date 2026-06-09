@@ -14,6 +14,7 @@ import {
   normalizeReviewInput,
 } from "./adminEvalReview.mjs";
 import { upsertGoldCaseFromEval } from "./trainingCorpus.mjs";
+import { upsertBenchmarkToLiveFromReview } from "./engineStandards.mjs";
 
 function mapEvalCase(row) {
   return {
@@ -677,6 +678,7 @@ export function registerAdminEvalRoutes(app, { requireAdmin, generateReportForAd
       const review = mapEvalReview(data);
 
       let trainingCorpus = null;
+      let decisionEngine = null;
       if (normalized.payload.status === "submitted" || normalized.payload.status === "approved") {
         try {
           const [{ data: caseRow }, { data: resultRow }, { data: runRow }] = await Promise.all([
@@ -690,8 +692,9 @@ export function registerAdminEvalRoutes(app, { requireAdmin, generateReportForAd
             ctx.admin.from("report_eval_runs").select("*").eq("id", runId).single(),
           ]);
           if (caseRow) {
+            const evalCase = mapEvalCase(caseRow);
             trainingCorpus = upsertGoldCaseFromEval({
-              evalCase: mapEvalCase(caseRow),
+              evalCase,
               review,
               result: resultRow
                 ? { reportPayload: resultRow.report_payload ?? null }
@@ -700,14 +703,20 @@ export function registerAdminEvalRoutes(app, { requireAdmin, generateReportForAd
                 ? { id: runRow.id, promptVersion: runRow.prompt_version }
                 : null,
             });
+            decisionEngine = upsertBenchmarkToLiveFromReview({
+              evalCase,
+              review,
+              reviewerEmail: ctx.user.email,
+            });
           }
         } catch (syncErr) {
           console.warn("[training-corpus] review_sync_failed", syncErr);
           trainingCorpus = { ok: false, reason: "sync_failed" };
+          decisionEngine = { ok: false, reason: "sync_failed" };
         }
       }
 
-      res.json({ review, trainingCorpus });
+      res.json({ review, trainingCorpus, decisionEngine });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       if (/report_eval_reviews|relation.*does not exist/i.test(msg)) {

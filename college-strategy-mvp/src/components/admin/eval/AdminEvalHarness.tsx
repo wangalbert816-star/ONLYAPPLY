@@ -38,6 +38,10 @@ import {
   fetchAdminEvalCaseStatus,
   fetchAdminEvalDashboard,
   fetchTrainingCorpusStats,
+  fetchEngineStandardsStats,
+  writeEngineStandardFromDraft,
+  trialRunEngineStandards,
+  publishEngineStandards,
   fetchAdminEvalRun,
   generateAdminEvalRunCase,
   listAdminEvalCases,
@@ -48,6 +52,8 @@ import {
   type AdminEvalRun,
   type AdminEvalRunResult,
   type TrainingCorpusStats,
+  type EngineStandardsStats,
+  type EngineTrialRunReport,
 } from "../../../lib/admin/crmAdminApi";
 import type { EvalReviewDraft } from "../../../lib/admin/evalRubric";
 
@@ -66,6 +72,9 @@ function evalErrorMessage(code: string | undefined, t: (key: string) => string) 
   if (code === "api_route_missing") return t("admin.errors.eval_api_missing");
   if (/report_eval|relation.*does not exist/i.test(code)) return t("admin.errors.eval_table_missing");
   if (/eval_review_table_missing/i.test(code)) return t("admin.errors.eval_review_table_missing");
+  if (/incomplete_schools/i.test(code)) return t("admin.evalHarness.engineWriteNeedSubmit");
+  if (/review_not_submitted/i.test(code)) return t("admin.evalHarness.engineWriteNeedSubmit");
+  if (/draft_empty/i.test(code)) return t("admin.evalHarness.enginePublishEmpty");
   const key = `admin.errors.${code}`;
   const msg = t(key);
   return msg === key ? t("admin.errors.generic") : msg;
@@ -83,6 +92,14 @@ function triggerDownload(blob: Blob, filename: string) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function draftHasNineSchools(draft: EvalReviewDraft | null) {
+  if (!draft) return false;
+  const f = draft.finalApprovedRecommendation;
+  return f.reach.filter((s) => s.trim()).length >= 3 &&
+    f.match.filter((s) => s.trim()).length >= 3 &&
+    f.safety.filter((s) => s.trim()).length >= 3;
 }
 
 export function AdminEvalHarness({ token, busy, onRun }: Props) {
@@ -112,6 +129,11 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
 
   const [dashboard, setDashboard] = useState<AdminEvalDashboard | null>(null);
   const [trainingCorpus, setTrainingCorpus] = useState<TrainingCorpusStats | null>(null);
+  const [engineStandards, setEngineStandards] = useState<EngineStandardsStats | null>(null);
+  const [engineWriteBusy, setEngineWriteBusy] = useState(false);
+  const [engineWriteOk, setEngineWriteOk] = useState(false);
+  const [engineActionBusy, setEngineActionBusy] = useState<"trial" | "publish" | null>(null);
+  const [engineTrialReport, setEngineTrialReport] = useState<EngineTrialRunReport | null>(null);
   const [exporting, setExporting] = useState<string | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [libraryPanel, setLibraryPanel] = useState<"list" | "detail" | "add">("list");
@@ -157,6 +179,15 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
     }
   }, [token]);
 
+  const refreshEngineStandards = useCallback(async () => {
+    try {
+      const data = await fetchEngineStandardsStats(token);
+      setEngineStandards(data);
+    } catch {
+      setEngineStandards(null);
+    }
+  }, [token]);
+
   const refreshCaseStatus = useCallback(async () => {
     const { results } = await fetchAdminEvalCaseStatus(token);
     setCaseStatusResults(results);
@@ -175,13 +206,13 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
           : nextRuns[0]?.id || "";
       if (runId !== selectedRunIdRef.current) setSelectedRunId(runId);
       if (runId) await loadRunDetail(runId);
-      await Promise.all([refreshDashboard(), refreshCaseStatus(), refreshTrainingCorpus()]);
+      await Promise.all([refreshDashboard(), refreshCaseStatus(), refreshTrainingCorpus(), refreshEngineStandards()]);
     } catch (e) {
       setPanelError(evalErrorMessage((e as Error & { code?: string }).code, t));
     } finally {
       setLoading(false);
     }
-  }, [loadRunDetail, refreshCaseStatus, refreshCases, refreshDashboard, refreshTrainingCorpus, t, token]);
+  }, [loadRunDetail, refreshCaseStatus, refreshCases, refreshDashboard, refreshEngineStandards, refreshTrainingCorpus, t, token]);
 
   useEffect(() => {
     void refreshAll();
@@ -379,9 +410,12 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
         const payload = draftToReviewPayload({ ...draft, status: status === "submitted" ? status : "draft" });
         const runId = runDetail.run.id;
         const caseId = selectedReviewRow.caseId;
-        const { review, trainingCorpus: corpusSync } = await saveAdminEvalReview(token, runId, caseId, payload);
+        const { review, trainingCorpus: corpusSync, decisionEngine: engineSync } = await saveAdminEvalReview(token, runId, caseId, payload);
         if (corpusSync?.ok) {
           await refreshTrainingCorpus();
+        }
+        if (engineSync?.ok) {
+          await refreshEngineStandards();
         }
         if (options?.silent) {
           setRunDetail((prev) =>
@@ -402,7 +436,12 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
         if (corpusSync?.ok && !options?.silent) {
           setPanelError(null);
         }
-        if (status === "submitted" && !options?.silent) setStep("summary");
+        if (status === "submitted" && !options?.silent) {
+          if (engineSync?.ok) {
+            setPanelError(t("admin.evalHarness.engineAutoSynced"));
+          }
+          setStep("summary");
+        }
         return true;
       } catch (e) {
         setReviewSaveState("error");
@@ -414,7 +453,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
         setSavingReview(false);
       }
     },
-    [loadRunDetail, refreshCaseStatus, refreshDashboard, reviewDraft, runDetail, savingReview, selectedReviewRow, t, token],
+    [loadRunDetail, refreshCaseStatus, refreshDashboard, refreshEngineStandards, refreshTrainingCorpus, reviewDraft, runDetail, savingReview, selectedReviewRow, t, token],
   );
 
   const autoSaveTimerRef = useRef<number | null>(null);
@@ -460,6 +499,72 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
     }
   };
 
+  const handleWriteEngineStandard = useCallback(async () => {
+    if (!selectedReviewRow?.case || !reviewDraft || engineWriteBusy) return;
+    if (!draftHasNineSchools(reviewDraft)) {
+      setPanelError(t("admin.evalHarness.engineWriteNeedSubmit"));
+      return;
+    }
+    setEngineWriteBusy(true);
+    setEngineWriteOk(false);
+    setPanelError(null);
+    try {
+      const out = await writeEngineStandardFromDraft(token, selectedReviewRow.case, reviewDraft);
+      if (!out.ok) {
+        setPanelError(evalErrorMessage(out.reason, t));
+        return;
+      }
+      setEngineWriteOk(true);
+      await refreshEngineStandards();
+      window.setTimeout(() => setEngineWriteOk(false), 2500);
+    } catch (e) {
+      setPanelError(evalErrorMessage((e as Error & { message?: string }).message, t));
+    } finally {
+      setEngineWriteBusy(false);
+    }
+  }, [engineWriteBusy, refreshEngineStandards, reviewDraft, selectedReviewRow?.case, t, token]);
+
+  const handleEngineTrialRun = async () => {
+    if (engineActionBusy) return;
+    setEngineActionBusy("trial");
+    setPanelError(null);
+    try {
+      const report = await trialRunEngineStandards(token);
+      setEngineTrialReport(report);
+      if (report.draftCount === 0) {
+        setPanelError(t("admin.evalHarness.engineTrialEmpty"));
+      }
+    } catch (e) {
+      setPanelError(evalErrorMessage((e as Error & { message?: string }).message, t));
+    } finally {
+      setEngineActionBusy(null);
+    }
+  };
+
+  const handleEnginePublish = async () => {
+    if (engineActionBusy) return;
+    if (!engineStandards?.draftCount) {
+      setPanelError(t("admin.evalHarness.enginePublishEmpty"));
+      return;
+    }
+    if (!window.confirm(t("admin.evalHarness.enginePublishConfirm"))) return;
+    setEngineActionBusy("publish");
+    setPanelError(null);
+    try {
+      const out = await publishEngineStandards(token);
+      if (!out.ok) {
+        setPanelError(evalErrorMessage(out.reason, t));
+        return;
+      }
+      setPanelError(t("admin.evalHarness.enginePublished"));
+      await refreshEngineStandards();
+    } catch (e) {
+      setPanelError(evalErrorMessage((e as Error & { message?: string }).message, t));
+    } finally {
+      setEngineActionBusy(null);
+    }
+  };
+
   const handleExport = async (kind: "json" | "csv" | "summary", scope: "reviewed" | "generated" = "reviewed") => {
     if (exporting) return;
     setExporting(kind === "json" ? (scope === "generated" ? "json-generated" : "json-reviewed") : kind);
@@ -489,9 +594,32 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
               {t("admin.evalHarness.brainCorpusHint")}
             </p>
           ) : null}
+          {engineStandards ? (
+            <p className="admin-eval-harness__subtitle admin-eval-harness__subtitle--muted">
+              {t("admin.evalHarness.engineDraft", { n: String(engineStandards.draftCount) })}
+              {" · "}
+              {t("admin.evalHarness.engineLive", { n: String(engineStandards.liveCount) })}
+            </p>
+          ) : null}
         </div>
         {dashboard ? (
           <div className="admin-eval-harness__header-actions">
+            <button
+              type="button"
+              className="admin-portal__btn admin-portal__btn--ghost admin-eval-harness__export-quick"
+              disabled={!!engineActionBusy || !engineStandards?.draftCount}
+              onClick={() => void handleEngineTrialRun()}
+            >
+              {engineActionBusy === "trial" ? t("admin.evalHarness.engineTrialing") : t("admin.evalHarness.engineTrialRun")}
+            </button>
+            <button
+              type="button"
+              className="admin-portal__btn admin-portal__btn--primary admin-eval-harness__export-quick"
+              disabled={!!engineActionBusy || !engineStandards?.draftCount}
+              onClick={() => void handleEnginePublish()}
+            >
+              {engineActionBusy === "publish" ? t("admin.evalHarness.enginePublishing") : t("admin.evalHarness.enginePublish")}
+            </button>
             {trainingCorpus && trainingCorpus.goldCaseCount > 0 ? (
               <button
                 type="button"
@@ -574,6 +702,21 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
       ) : null}
 
       {panelError ? <p className="admin-portal__notice admin-eval-harness__error">{panelError}</p> : null}
+      {engineTrialReport && engineTrialReport.draftCount > 0 ? (
+        <p className="admin-portal__notice admin-eval-harness__engine-trial">
+          {t("admin.evalHarness.engineTrialTitle")}
+          {" — "}
+          {t("admin.evalHarness.engineTrialSummary", {
+            n: String(engineTrialReport.evaluatedCaseCount),
+            draft: engineTrialReport.draftSchoolMatchRate != null
+              ? Math.round(engineTrialReport.draftSchoolMatchRate * 100).toString()
+              : "—",
+            live: engineTrialReport.liveSchoolMatchRate != null
+              ? Math.round(engineTrialReport.liveSchoolMatchRate * 100).toString()
+              : "—",
+          })}
+        </p>
+      ) : null}
 
       <div className="admin-eval-harness__panel">
         {step === "library" ? (
@@ -694,6 +837,10 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
                   onAutoSave={triggerAutoSave}
                   saving={savingReview}
                   saveState={reviewSaveState}
+                  onWriteEngineStandard={() => void handleWriteEngineStandard()}
+                  engineWriteBusy={engineWriteBusy}
+                  engineWriteOk={engineWriteOk}
+                  canWriteEngineStandard={draftHasNineSchools(reviewDraft)}
                   t={t}
                 />
               </>

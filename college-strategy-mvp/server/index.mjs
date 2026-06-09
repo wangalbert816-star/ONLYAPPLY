@@ -40,7 +40,13 @@ import {
 import { registerAdminCrmRoutes, crmAdminConfigured } from "./adminCrm.mjs";
 import { registerAdminEvalRoutes } from "./adminEval.mjs";
 import { buildFewShotPromptBlock } from "./trainingCorpus.mjs";
+import {
+  buildDecisionEnginePromptBlock,
+  mergeDecisionSchoolsIntoReport,
+  runDecisionEngine,
+} from "./decisionEngine.mjs";
 import { registerTrainingCorpusRoutes } from "./trainingCorpusAdmin.mjs";
+import { registerEngineStandardsRoutes } from "./engineStandardsAdmin.mjs";
 import { registerCounselorCrmRoutes } from "./counselorCrm.mjs";
 import { registerUsHighSchoolRoutes } from "./usHighSchools.mjs";
 import { registerTranscriptParseRoutes, formatTranscriptSheetBlock } from "./transcriptParse.mjs";
@@ -1479,9 +1485,13 @@ async function generateReportWithConfig(cfg, body) {
   const locale = resolveReportLocale(body);
   const planHorizon = getIntakeHorizon(String(body?.intakeTerm || ""));
   const includeUc = wantsUcFromBody(body);
+  const decision = runDecisionEngine(body, body?.tags ?? []);
   let userContent = buildUserPayload(body, includeUc);
   const fewShotBlock = buildFewShotPromptBlock(body, body?.tags ?? [], locale);
   if (fewShotBlock) userContent += fewShotBlock;
+  if (decision.ok) {
+    userContent += buildDecisionEnginePromptBlock(decision, locale);
+  }
   const maxTokens = reportCompletionMaxTokens();
   const baseMessages = [
     { role: "system", content: systemPromptForLocale(locale, includeUc, planHorizon) },
@@ -1497,9 +1507,10 @@ async function generateReportWithConfig(cfg, body) {
       messages,
     });
     totalMs += llmMs;
+    if (decision.ok) mergeDecisionSchoolsIntoReport(parsed, decision, locale);
     autoRepairTopReferenceSchools(parsed, body, locale);
     const validation = validateMainSchoolReport(parsed, body);
-    if (validation.ok) return { parsed, llmMs: totalMs };
+    if (validation.ok) return { parsed, llmMs: totalMs, decisionEngine: decision };
     if (attempt >= 1 || validation.repairable === false) {
       const err = new Error(validation.reason);
       err.code = "school_list_invalid";
@@ -1811,6 +1822,12 @@ app.post("/api/report", async (req, res) => {
     try {
       const { parsed, llmMs } = await generateReportWithConfig(cfg, body);
       console.log(`[api/report] llm_ms=${llmMs} model=${model} provider=${provider}`);
+
+      const de = parsed.decision_engine;
+      if (de?.benchmark_id) {
+        res.setHeader("X-Decision-Engine", String(de.source || "live"));
+        res.setHeader("X-Decision-Benchmark", String(de.benchmark_id));
+      }
 
       return res
         .setHeader("X-LLM-Duration-Ms", String(llmMs))
@@ -2307,6 +2324,9 @@ registerTrainingCorpusRoutes(app, {
   requireAdmin: requireCrmAdmin,
   buildUserPayload,
   systemPromptForLocale,
+});
+registerEngineStandardsRoutes(app, {
+  requireAdmin: requireCrmAdmin,
 });
 registerCounselorCrmRoutes(app, { supabaseAdmin });
 registerUsHighSchoolRoutes(app);

@@ -22,6 +22,10 @@ type Props = {
   onAutoSave?: (mode?: "immediate" | "debounced", draftOverride?: EvalReviewDraft) => void;
   saving: boolean;
   saveState?: "idle" | "saving" | "saved" | "error";
+  onWriteEngineStandard?: () => void;
+  engineWriteBusy?: boolean;
+  engineWriteOk?: boolean;
+  canWriteEngineStandard?: boolean;
   t: Translate;
 };
 
@@ -47,6 +51,10 @@ export function AdminEvalReviewForm({
   onAutoSave,
   saving,
   saveState = "idle",
+  onWriteEngineStandard,
+  engineWriteBusy = false,
+  engineWriteOk = false,
+  canWriteEngineStandard = false,
   t,
 }: Props) {
   const [tab, setTab] = useState<ReviewTab>("report");
@@ -442,6 +450,21 @@ export function AdminEvalReviewForm({
           {saveState === "error" ? ` · ${t("admin.evalHarness.reviewAutoSaveErr")}` : null}
         </p>
         <div className="admin-eval-review__footer-actions">
+          {onWriteEngineStandard ? (
+            <button
+              type="button"
+              className="admin-portal__btn admin-portal__btn--ghost"
+              disabled={saving || engineWriteBusy || !canWriteEngineStandard}
+              title={!canWriteEngineStandard ? t("admin.evalHarness.engineWriteNeedSubmit") : undefined}
+              onClick={() => onWriteEngineStandard()}
+            >
+              {engineWriteBusy
+                ? t("admin.evalHarness.engineWritingStandard")
+                : engineWriteOk
+                  ? t("admin.evalHarness.engineWroteStandard")
+                  : t("admin.evalHarness.engineWriteStandard")}
+            </button>
+          ) : null}
           <button type="button" className="admin-portal__btn admin-portal__btn--ghost" disabled={saving} onClick={() => onSave("draft")}>
             {t("admin.evalHarness.saveDraft")}
           </button>

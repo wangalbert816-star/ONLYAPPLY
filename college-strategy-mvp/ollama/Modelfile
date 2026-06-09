@@ -7,7 +7,8 @@
 #
 # 建议底座用与线上一致的强模型；若 gpt-oss:120b 不可用，可改 FROM 行。
 
-FROM gpt-oss:120b
+# 本地 create 必须用 *-cloud 底座（不下载 65GB）。create 成功后再 push。
+FROM gpt-oss:120b-cloud
 
 PARAMETER temperature 0.35
 PARAMETER num_ctx 8192
