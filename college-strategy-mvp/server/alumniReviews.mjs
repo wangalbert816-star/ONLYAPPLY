@@ -2,7 +2,7 @@
 
 import { REPORT_RUBRIC_VERSION } from "./evalConstants.mjs";
 import { mapEvalReview, normalizeReviewInput } from "./adminEvalReview.mjs";
-import { listAlumniReviews, upsertAlumniReview } from "./alumniReviewsStore.mjs";
+import { listAlumniReviews, upsertAlumniReview, getAlumniReviewForUser } from "./alumniReviewsStore.mjs";
 import { extractErrorMessage } from "./apiError.mjs";
 
 function mapAlumniReviewRow(row) {
@@ -54,9 +54,6 @@ export function registerAlumniReviewRoutes(app, { supabaseAdmin, express }) {
       const ctx = await requireAuthedUser(req, res, supabaseAdmin);
       if (!ctx) return;
 
-      const normalized = normalizeReviewInput(req.body ?? {}, ctx.user.email ?? ctx.user.id);
-      if (normalized.error) return res.status(400).json({ error: normalized.error });
-
       const reportId = String(req.body?.reportId ?? "").trim() || null;
       const applicationId = String(req.body?.applicationId ?? "").trim() || null;
       let reportSnapshot = req.body?.reportSnapshot;
@@ -64,11 +61,14 @@ export function registerAlumniReviewRoutes(app, { supabaseAdmin, express }) {
       const intakeTerm = String(req.body?.intakeTerm ?? "").trim() || null;
       const locale = req.body?.locale === "en" ? "en" : "zh";
       const reviewId = String(req.body?.id ?? "").trim() || null;
+      const expectedUpdatedAt = String(req.body?.expectedUpdatedAt ?? "").trim() || null;
 
       if (reviewId) {
-        const { rows } = await listAlumniReviews(ctx.admin, ctx.user.id);
-        const existing = rows.find((r) => r.id === reviewId && r.user_id === ctx.user.id);
+        const existing = await getAlumniReviewForUser(ctx.admin, ctx.user.id, reviewId);
         if (!existing) return res.status(404).json({ error: "alumni_review_not_found" });
+        if (existing.status === "submitted" || existing.status === "approved") {
+          return res.status(400).json({ error: "alumni_review_locked" });
+        }
         if (!reportSnapshot || typeof reportSnapshot !== "object") {
           reportSnapshot = existing.report_snapshot ?? {};
         }
@@ -77,6 +77,12 @@ export function registerAlumniReviewRoutes(app, { supabaseAdmin, express }) {
         }
       } else if (!reportSnapshot || typeof reportSnapshot !== "object") {
         return res.status(400).json({ error: "alumni_report_snapshot_required" });
+      }
+
+      const normalized = normalizeReviewInput(req.body ?? {}, ctx.user.email ?? ctx.user.id);
+      if (normalized.error) return res.status(400).json({ error: normalized.error });
+      if (normalized.payload.status === "approved") {
+        return res.status(400).json({ error: "alumni_review_status_invalid" });
       }
 
       const { row, source } = await upsertAlumniReview(ctx.admin, ctx.user.id, {
@@ -88,6 +94,7 @@ export function registerAlumniReviewRoutes(app, { supabaseAdmin, express }) {
         reportSnapshot,
         formSnapshot,
         rubricVersion: REPORT_RUBRIC_VERSION,
+        expectedUpdatedAt: expectedUpdatedAt || null,
         payload: normalized.payload,
       });
 
@@ -96,7 +103,11 @@ export function registerAlumniReviewRoutes(app, { supabaseAdmin, express }) {
       }
       res.json({ review: mapAlumniReviewRow(row) });
     } catch (e) {
-      res.status(500).json({ error: extractErrorMessage(e) });
+      const msg = extractErrorMessage(e);
+      if (msg === "alumni_review_conflict") {
+        return res.status(409).json({ error: "alumni_review_conflict" });
+      }
+      res.status(500).json({ error: msg });
     }
   };
 

@@ -2638,3 +2638,71 @@
     font-size: 0.65rem;
   }
 }
+
+.admin-eval-review__body {
+  border: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.admin-alumni-reviews__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+}
+
+.admin-alumni-reviews__filters .is-active {
+  background: var(--admin-accent, #2563eb);
+  color: #fff;
+  border-color: var(--admin-accent, #2563eb);
+}
+
+.admin-alumni-reviews__table-wrap {
+  overflow-x: auto;
+}
+
+.admin-alumni-reviews__link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--admin-accent, #2563eb);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+}
+
+.admin-alumni-reviews__detail-meta h2 {
+  margin: 0;
+}
+
+.admin-alumni-reviews__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.admin-alumni-reviews__status {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.admin-alumni-reviews__status--submitted {
+  background: rgba(245, 158, 11, 0.15);
+  color: #b45309;
+}
+
+.admin-alumni-reviews__status--approved {
+  background: rgba(34, 197, 94, 0.15);
+  color: #15803d;
+}
+
+.admin-alumni-reviews__status--draft {
+  background: rgba(100, 116, 139, 0.15);
+  color: #475569;
+}

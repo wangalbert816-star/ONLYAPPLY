@@ -817,6 +817,62 @@ export async function saveAdminEvalScore(
   });
 }
 
+export type AdminAlumniReview = AdminEvalReview & {
+  userId: string;
+  userEmail: string | null;
+  applicationId: string | null;
+  reportId: string | null;
+  intakeTerm: string | null;
+  locale: "zh" | "en";
+  reportSnapshot: Record<string, unknown>;
+  formSnapshot: Record<string, unknown>;
+  approvedBy: string | null;
+};
+
+export async function listAdminAlumniReviews(
+  accessToken: string,
+  status?: string,
+): Promise<{ reviews: AdminAlumniReview[] }> {
+  const q = status ? `?status=${encodeURIComponent(status)}` : "";
+  return adminFetch(`/api/admin/crm/alumni/reviews${q}`, accessToken);
+}
+
+export async function fetchAdminAlumniReview(
+  accessToken: string,
+  reviewId: string,
+): Promise<{ review: AdminAlumniReview }> {
+  return adminFetch(`/api/admin/crm/alumni/reviews/${encodeURIComponent(reviewId)}`, accessToken);
+}
+
+export async function approveAdminAlumniReview(
+  accessToken: string,
+  reviewId: string,
+): Promise<{ review: AdminAlumniReview; sync: Record<string, unknown> }> {
+  return adminFetch(`/api/admin/crm/alumni/reviews/${encodeURIComponent(reviewId)}/approve`, accessToken, {
+    method: "POST",
+  });
+}
+
+export async function rejectAdminAlumniReview(
+  accessToken: string,
+  reviewId: string,
+): Promise<{ review: AdminAlumniReview }> {
+  return adminFetch(`/api/admin/crm/alumni/reviews/${encodeURIComponent(reviewId)}/reject`, accessToken, {
+    method: "POST",
+  });
+}
+
+export async function saveAdminAlumniReview(
+  accessToken: string,
+  reviewId: string,
+  input: Record<string, unknown>,
+): Promise<{ review: AdminAlumniReview }> {
+  return adminFetch(`/api/admin/crm/alumni/reviews/${encodeURIComponent(reviewId)}`, accessToken, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+}
+
 export function adminErrorMessage(code: string | undefined, t: (key: string) => string): string {
   if (!code) return t("admin.errors.generic");
   const key = `admin.errors.${code}`;

@@ -18,6 +18,8 @@ create table if not exists public.alumni_report_reviews (
   final_approved_recommendation jsonb not null default '{}'::jsonb,
   overall_notes text,
   submitted_at timestamptz,
+  approved_at timestamptz,
+  approved_by text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

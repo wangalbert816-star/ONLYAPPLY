@@ -64,6 +64,15 @@ async function upsertAlumniReviewSupabase(admin, userId, input) {
   const reviewId = String(input.reviewId ?? "").trim() || null;
   const reportId = isUuid(input.reportId) ? input.reportId : null;
   const applicationId = isUuid(input.applicationId) ? input.applicationId : null;
+  const expectedUpdatedAt = input.expectedUpdatedAt ?? null;
+
+  if (reviewId && expectedUpdatedAt) {
+    const current = await getAlumniReviewForUser(admin, userId, reviewId);
+    if (!current) throw new Error("alumni_review_not_found");
+    if (String(current.updated_at) !== String(expectedUpdatedAt)) {
+      throw new Error("alumni_review_conflict");
+    }
+  }
 
   const row = {
     user_id: userId,
@@ -170,6 +179,12 @@ export async function upsertAlumniReview(admin, userId, input) {
     existingIdx = rows.findIndex((r) => r.report_id === reportId && r.user_id === userId);
   }
 
+  if (reviewId && input.expectedUpdatedAt && existingIdx >= 0) {
+    if (String(rows[existingIdx].updated_at) !== String(input.expectedUpdatedAt)) {
+      throw new Error("alumni_review_conflict");
+    }
+  }
+
   const nextRow = {
     id: existingIdx >= 0 ? rows[existingIdx].id : randomUUID(),
     user_id: userId,
@@ -189,4 +204,92 @@ export async function upsertAlumniReview(admin, userId, input) {
   else rows.push(nextRow);
   writeAll(rows);
   return { row: nextRow, source: "file" };
+}
+
+export async function listAlumniReviewsAdmin(admin, { status, limit = 50 } = {}) {
+  if (!admin) return { rows: [], source: "none" };
+  let query = admin
+    .from("alumni_report_reviews")
+    .select("*")
+    .order("updated_at", { ascending: false })
+    .limit(Math.min(Math.max(limit, 1), 100));
+  if (status) query = query.eq("status", status);
+  const { data, error } = await query;
+  if (error) throw error;
+  return { rows: data ?? [], source: "supabase" };
+}
+
+export async function getAlumniReviewById(admin, reviewId) {
+  if (!admin) return null;
+  const { data, error } = await admin
+    .from("alumni_report_reviews")
+    .select("*")
+    .eq("id", reviewId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ?? null;
+}
+
+export async function getAlumniReviewForUser(admin, userId, reviewId) {
+  if (admin) {
+    try {
+      const { data, error } = await admin
+        .from("alumni_report_reviews")
+        .select("*")
+        .eq("id", reviewId)
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (error) throw error;
+      return data ?? null;
+    } catch (e) {
+      if (!isTableMissingError(e)) throw e;
+    }
+  }
+  return readAll().find((r) => r.id === reviewId && r.user_id === userId) ?? null;
+}
+
+export async function updateAlumniReviewById(admin, reviewId, payload, { expectedUpdatedAt } = {}) {
+  if (!admin) throw new Error("supabase_admin_missing");
+  if (expectedUpdatedAt) {
+    const current = await getAlumniReviewById(admin, reviewId);
+    if (!current) throw new Error("alumni_review_not_found");
+    if (String(current.updated_at) !== String(expectedUpdatedAt)) {
+      throw new Error("alumni_review_conflict");
+    }
+  }
+  const now = new Date().toISOString();
+  const patch = {
+    ...pickAlumniReviewPayload(payload),
+    updated_at: now,
+  };
+  const { data, error } = await admin
+    .from("alumni_report_reviews")
+    .update(patch)
+    .eq("id", reviewId)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function setAlumniReviewStatus(admin, reviewId, { status, approvedBy }) {
+  if (!admin) throw new Error("supabase_admin_missing");
+  const now = new Date().toISOString();
+  const patch = { status, updated_at: now };
+  if (status === "approved") {
+    patch.approved_at = now;
+    patch.approved_by = approvedBy ?? null;
+  } else if (status === "draft") {
+    patch.approved_at = null;
+    patch.approved_by = null;
+    patch.submitted_at = null;
+  }
+  const { data, error } = await admin
+    .from("alumni_report_reviews")
+    .update(patch)
+    .eq("id", reviewId)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data;
 }

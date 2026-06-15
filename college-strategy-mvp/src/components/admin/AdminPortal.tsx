@@ -24,13 +24,14 @@ import { BrandLogo } from "../BrandLogo";
 import { AdminLibraryPanel } from "./AdminLibraryPanel";
 import { AdminRoadmapPanel } from "./AdminRoadmapPanel";
 import { AdminEvalPanel } from "./AdminEvalPanel";
+import { AdminAlumniReviewsPanel } from "./alumni/AdminAlumniReviewsPanel";
 import "./AdminPortal.css";
 
 type Props = {
   onBack: () => void;
 };
 
-type TabId = "counselors" | "engagements" | "groupChat" | "library" | "roadmap" | "eval";
+type TabId = "counselors" | "engagements" | "groupChat" | "library" | "roadmap" | "eval" | "alumniReviews";
 
 const PHASES = ["onboarding", "planning", "essays", "applications", "done"] as const;
 const STATUSES = ["active", "paused", "completed"] as const;
@@ -250,6 +251,13 @@ export function AdminPortal({ onBack }: Props) {
         <button type="button" className={tab === "eval" ? "is-active" : undefined} onClick={() => setTab("eval")}>
           {t("admin.tabs.eval")}
         </button>
+        <button
+          type="button"
+          className={tab === "alumniReviews" ? "is-active" : undefined}
+          onClick={() => setTab("alumniReviews")}
+        >
+          {t("admin.tabs.alumniReviews")}
+        </button>
       </nav>
 
       {tab === "engagements" ? (
@@ -281,6 +289,13 @@ export function AdminPortal({ onBack }: Props) {
         <AdminRoadmapPanel token={token} busy={busy} onRun={runAction} />
       ) : tab === "eval" ? (
         <AdminEvalPanel token={token} busy={busy} onRun={runAction} />
+      ) : tab === "alumniReviews" ? (
+        <AdminAlumniReviewsPanel
+          token={token}
+          busy={busy}
+          onRun={runAction}
+          onNotice={setNotice}
+        />
       ) : (
         <AdminCounselorsPanel t={t} locale={locale} busy={busy} counselors={counselors} token={token} onRun={runAction} />
       )}

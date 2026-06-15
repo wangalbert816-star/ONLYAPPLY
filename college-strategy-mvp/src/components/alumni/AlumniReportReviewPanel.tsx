@@ -102,6 +102,8 @@ export function AlumniReportReviewPanel({
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [panelError, setPanelError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [reviewUpdatedAt, setReviewUpdatedAt] = useState<string | null>(null);
+  const reviewLocked = draft?.status === "submitted" || draft?.status === "approved";
   const autoSaveTimerRef = useRef<number | null>(null);
   const lastSavedKeyRef = useRef("");
 
@@ -117,6 +119,9 @@ export function AlumniReportReviewPanel({
     (e: unknown) => {
       const code = (e as Error & { code?: string | null }).code ?? null;
       const message = e instanceof Error ? e.message : "";
+      if (code === "alumni_review_conflict") return t("alumni.review.errConflict");
+      if (code === "alumni_review_locked") return t("alumni.review.errLocked");
+      if (code === "alumni_review_status_invalid") return t("alumni.review.errStatusInvalid");
       if (code === "alumni_review_table_missing") return t("alumni.review.errTableMissing");
       if (code === "auth_required" || code === "invalid_session") return t("alumni.review.errAuthRequired");
       if (code === "alumni_report_snapshot_required") return t("alumni.review.errSnapshotRequired");
@@ -127,10 +132,23 @@ export function AlumniReportReviewPanel({
     [t],
   );
 
+  const hydrateFromRow = useCallback(
+    (row: AlumniReportReview, fallback: EvalReviewDraft) => {
+      setReviewId(row.id);
+      setReviewUpdatedAt(row.updatedAt);
+      const hydrated = alumniReviewToDraft(row as Parameters<typeof alumniReviewToDraft>[0], fallback);
+      setDraft(hydrated);
+      lastSavedKeyRef.current = JSON.stringify(draftToReviewPayload(hydrated));
+      setSubmitSuccess(row.status === "submitted" || row.status === "approved");
+    },
+    [],
+  );
+
   useEffect(() => {
     const initial = buildInitialAlumniReviewDraft(form, report, locale, profileLabel);
     setDraft(initial);
     setReviewId(null);
+    setReviewUpdatedAt(null);
     setSubmitSuccess(false);
     lastSavedKeyRef.current = JSON.stringify(initial);
 
@@ -141,11 +159,7 @@ export function AlumniReportReviewPanel({
         const { reviews } = await fetchAlumniReportReview(reportId);
         const row = reviews[0] as AlumniReportReview | undefined;
         if (cancelled || !row) return;
-        setReviewId(row.id);
-        const hydrated = alumniReviewToDraft(row as Parameters<typeof alumniReviewToDraft>[0], initial);
-        setDraft(hydrated);
-        lastSavedKeyRef.current = JSON.stringify(hydrated);
-        if (row.status === "submitted") setSubmitSuccess(true);
+        hydrateFromRow(row, initial);
       } catch {
         /* first visit — no saved review */
       }
@@ -153,11 +167,33 @@ export function AlumniReportReviewPanel({
     return () => {
       cancelled = true;
     };
-  }, [form, isAuthenticated, locale, profileLabel, report, reportId]);
+  }, [form, hydrateFromRow, isAuthenticated, locale, profileLabel, report, reportId]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !reportId) return;
+    const syncFromServer = () => {
+      void (async () => {
+        try {
+          const { reviews } = await fetchAlumniReportReview(reportId);
+          const row = reviews[0] as AlumniReportReview | undefined;
+          if (!row) return;
+          const fallback = buildInitialAlumniReviewDraft(form, report, locale, profileLabel);
+          if (reviewUpdatedAt && row.updatedAt === reviewUpdatedAt) return;
+          hydrateFromRow(row, fallback);
+        } catch {
+          /* ignore background sync errors */
+        }
+      })();
+    };
+    const onFocus = () => syncFromServer();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [form, hydrateFromRow, isAuthenticated, locale, profileLabel, report, reportId, reviewUpdatedAt]);
 
   const persistReview = useCallback(
     async (status: EvalReviewDraft["status"], options?: { silent?: boolean }) => {
       if (!draft) return false;
+      if (draft.status === "submitted" || draft.status === "approved") return false;
       if (!isAuthenticated) {
         onRequestSignIn();
         return false;
@@ -175,8 +211,10 @@ export function AlumniReportReviewPanel({
           formSnapshot: form,
           intakeTerm: getEffectiveIntake(form) || null,
           locale,
+          expectedUpdatedAt: reviewUpdatedAt,
         });
         setReviewId(review.id);
+        setReviewUpdatedAt(review.updatedAt);
         const nextDraft = alumniReviewToDraft(review as Parameters<typeof alumniReviewToDraft>[0], draft);
         setDraft(nextDraft);
         lastSavedKeyRef.current = JSON.stringify(draftToReviewPayload(nextDraft));
@@ -186,6 +224,19 @@ export function AlumniReportReviewPanel({
         return true;
       } catch (e) {
         setSaveState("error");
+        const code = (e as Error & { code?: string | null }).code ?? null;
+        if (code === "alumni_review_conflict" && reportId) {
+          try {
+            const { reviews } = await fetchAlumniReportReview(reportId);
+            const row = reviews[0] as AlumniReportReview | undefined;
+            if (row) {
+              const fallback = buildInitialAlumniReviewDraft(form, report, locale, profileLabel);
+              hydrateFromRow(row, fallback);
+            }
+          } catch {
+            /* ignore refetch failure */
+          }
+        }
         if (!options?.silent) {
           setPanelError(formatSaveError(e));
         }
@@ -194,12 +245,12 @@ export function AlumniReportReviewPanel({
         setSaving(false);
       }
     },
-    [applicationId, draft, form, formatSaveError, isAuthenticated, locale, onRequestSignIn, report, reportId, reviewId],
+    [applicationId, draft, form, formatSaveError, hydrateFromRow, isAuthenticated, locale, onRequestSignIn, profileLabel, report, reportId, reviewId, reviewUpdatedAt],
   );
 
   const triggerAutoSave = useCallback(
     (mode: "immediate" | "debounced" = "immediate") => {
-      if (!isAuthenticated) return;
+      if (!isAuthenticated || reviewLocked) return;
       const run = () => void persistReview("draft", { silent: true });
       if (mode === "immediate") {
         if (autoSaveTimerRef.current != null) {
@@ -215,7 +266,7 @@ export function AlumniReportReviewPanel({
         run();
       }, 400);
     },
-    [isAuthenticated, persistReview],
+    [isAuthenticated, persistReview, reviewLocked],
   );
 
   useEffect(
@@ -257,6 +308,7 @@ export function AlumniReportReviewPanel({
       <div className="alumni-review-panel__form admin-portal">
         <AdminEvalReviewForm
           variant="alumni"
+          readOnly={reviewLocked}
           evalCase={evalCase}
           run={run}
           result={result}

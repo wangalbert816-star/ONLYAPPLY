@@ -83,6 +83,7 @@ export async function saveAlumniReportReview(input: {
   formSnapshot?: FormState;
   intakeTerm?: string | null;
   locale: "zh" | "en";
+  expectedUpdatedAt?: string | null;
 }): Promise<{ review: AlumniReportReview }> {
   const includeSnapshots = !input.id;
   return authFetch("/api/alumni/report-reviews", {
@@ -96,6 +97,7 @@ export async function saveAlumniReportReview(input: {
         : {}),
       intakeTerm: input.intakeTerm ?? undefined,
       locale: input.locale,
+      expectedUpdatedAt: input.expectedUpdatedAt ?? undefined,
       ...draftToReviewPayload(input.draft),
     }),
   });

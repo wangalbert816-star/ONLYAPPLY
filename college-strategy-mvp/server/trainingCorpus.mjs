@@ -414,7 +414,7 @@ export function upsertGoldCaseFromEval(input) {
     overallNotes: review.overallNotes ?? null,
     reviewedAt: review.approvedAt ?? review.submittedAt ?? new Date().toISOString(),
     reviewedBy: review.reviewedBy ?? null,
-    source: "eval_harness",
+    source: evalCase.source ?? (evalCase.tags?.includes("alumni") ? "alumni_feedback" : "eval_harness"),
     promptVersion: run?.promptVersion ?? REPORT_PROMPT_VERSION,
     runId: run?.id ?? review.runId ?? null,
   };

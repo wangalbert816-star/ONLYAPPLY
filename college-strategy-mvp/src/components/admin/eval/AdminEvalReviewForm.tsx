@@ -27,6 +27,7 @@ type Props = {
   engineWriteBusy?: boolean;
   engineWriteOk?: boolean;
   canWriteEngineStandard?: boolean;
+  readOnly?: boolean;
   t: Translate;
 };
 
@@ -115,6 +116,7 @@ export function AdminEvalReviewForm({
   engineWriteBusy = false,
   engineWriteOk = false,
   canWriteEngineStandard = false,
+  readOnly = false,
   t,
 }: Props) {
   const [tab, setTab] = useState<ReviewTab>("report");
@@ -169,13 +171,15 @@ export function AdminEvalReviewForm({
             ) : null}
           </span>
           <div className="admin-eval-review__toolbar-actions">
-            <ReviewActionButtons
-              saving={saving}
-              canSubmit={canSubmit}
-              onSave={onSave}
-              t={t}
-              variant={variant}
-            />
+            {!readOnly ? (
+              <ReviewActionButtons
+                saving={saving}
+                canSubmit={canSubmit}
+                onSave={onSave}
+                t={t}
+                variant={variant}
+              />
+            ) : null}
           </div>
         </div>
         <div className="admin-eval-review__tabs" role="tablist" aria-label={t("admin.evalHarness.reviewTabsLabel")}>
@@ -198,6 +202,7 @@ export function AdminEvalReviewForm({
         </div>
       </div>
 
+      <fieldset className="admin-eval-review__body" disabled={readOnly}>
       {tab === "report" ? (
         <section className="admin-eval-review__pane">
           <p className="admin-eval__sub">{t("admin.evalHarness.tabs.reportLead")}</p>
@@ -515,6 +520,9 @@ export function AdminEvalReviewForm({
         </section>
       ) : null}
 
+      </fieldset>
+
+      {!readOnly ? (
       <div className="admin-eval-review__action-bar">
         <div className="admin-eval-review__action-bar-copy">
           <strong>
@@ -565,6 +573,7 @@ export function AdminEvalReviewForm({
           {saveState === "error" ? ` · ${t("admin.evalHarness.reviewAutoSaveErr")}` : null}
         </p>
       </div>
+      ) : null}
     </div>
   );
 }
