@@ -97,7 +97,11 @@ async function seedJsonToSupabaseIfEmpty(sb) {
     ...draft.map((e) => entryToRow(e, "draft")),
     ...live.map((e) => entryToRow(e, "live")),
   ];
-  const { error } = await sb.from("engine_benchmarks").upsert(rows, { onConflict: "tier,source_case_key" });
+  let { error } = await sb.from("engine_benchmarks").upsert(rows, { onConflict: "tier,source_case_key" });
+  if (error && isSchemaColumnMissingError(error, "review_feedback")) {
+    const legacyRows = rows.map(({ review_feedback: _rf, ...rest }) => rest);
+    ({ error } = await sb.from("engine_benchmarks").upsert(legacyRows, { onConflict: "tier,source_case_key" }));
+  }
   if (error) throw error;
 
   const log = readJsonArray(LOG_FILE);
@@ -112,12 +116,26 @@ async function seedJsonToSupabaseIfEmpty(sb) {
   return true;
 }
 
+function isSchemaColumnMissingError(err, column = "") {
+  const msg = err?.message ?? String(err ?? "");
+  if (!/PGRST204|Could not find the .* column/i.test(msg)) return false;
+  if (column && !msg.includes(column)) return false;
+  return true;
+}
+
 async function loadFromSupabase(sb, forceReseed = false) {
   if (!forceReseed) {
     const { count, error: countErr } = await sb
       .from("engine_benchmarks")
       .select("*", { count: "exact", head: true });
-    if (countErr) throw countErr;
+    if (countErr) {
+      if (/does not exist|relation|engine_benchmarks/i.test(countErr.message)) {
+        loadFromJsonFiles();
+        storageSource = "file_fallback";
+        return;
+      }
+      throw countErr;
+    }
     if ((count ?? 0) === 0) {
       const seeded = await seedJsonToSupabaseIfEmpty(sb);
       if (seeded) return loadFromSupabase(sb, true);
@@ -128,7 +146,14 @@ async function loadFromSupabase(sb, forceReseed = false) {
     .from("engine_benchmarks")
     .select("*")
     .order("source_case_key", { ascending: true });
-  if (error) throw error;
+  if (error) {
+    if (isSchemaColumnMissingError(error, "review_feedback")) {
+      loadFromJsonFiles();
+      storageSource = "file_fallback";
+      return;
+    }
+    throw error;
+  }
 
   draftCache = sortEntries((data ?? []).filter((r) => r.tier === "draft").map(rowToEntry));
   liveCache = sortEntries((data ?? []).filter((r) => r.tier === "live").map(rowToEntry));
@@ -206,9 +231,15 @@ function setLiveCache(entries) {
 async function upsertTierEntry(entry, tier) {
   const sb = supabaseAdmin();
   if (sb) {
-    const { error } = await sb
+    let { error } = await sb
       .from("engine_benchmarks")
       .upsert(entryToRow(entry, tier), { onConflict: "tier,source_case_key" });
+    if (error && isSchemaColumnMissingError(error, "review_feedback")) {
+      const { review_feedback: _rf, ...legacyRow } = entryToRow(entry, tier);
+      ({ error } = await sb
+        .from("engine_benchmarks")
+        .upsert(legacyRow, { onConflict: "tier,source_case_key" }));
+    }
     if (error) throw error;
     return;
   }

@@ -1598,8 +1598,12 @@ function isLlmTimeoutError(e) {
 function isLlmRetryableError(e) {
   const code = e && typeof e === "object" && "code" in e ? String(e.code) : "";
   const msg = e instanceof Error ? e.message : String(e);
+  const status = e && typeof e === "object" && "status" in e ? Number(e.status) : 0;
   if (code === "invalid_json" || code === "empty_content") return true;
-  return /timeout|timed out|ETIMEDOUT|ECONNRESET|ECONNREFUSED|503|502|socket|fetch failed|aborted/i.test(msg);
+  if (status === 401 || status === 403 || status === 404 || status === 503 || status === 502) return true;
+  return /timeout|timed out|ETIMEDOUT|ECONNRESET|ECONNREFUSED|503|502|401|403|404|unauthorized|invalid_api_key|incorrect api key|not found|model.*not found|does not exist|unknown model/i.test(
+    msg,
+  );
 }
 
 /** 是否可切换到下一 LLM：Ollama 优先；Vercel 上超时不再串联方舟，避免平台 maxDuration 杀进程 */
@@ -1899,7 +1903,13 @@ async function generateReportForAdmin(body) {
       };
     } catch (e) {
       lastErr = e;
-      if (canFallbackToNextLlm(e, i, configs)) continue;
+      if (canFallbackToNextLlm(e, i, configs)) {
+        console.warn(
+          `[generateReportForAdmin] fallback provider=${configs[i + 1]?.provider} model=${configs[i + 1]?.model} after ${cfg.provider}/${cfg.model} failed:`,
+          e instanceof Error ? e.message : e,
+        );
+        continue;
+      }
       throw e;
     }
   }

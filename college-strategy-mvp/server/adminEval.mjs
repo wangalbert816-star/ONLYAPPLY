@@ -558,6 +558,7 @@ export function registerAdminEvalRoutes(app, { requireAdmin, generateReportForAd
       try {
         const generated = await generateReportForAdmin({
           ...(evalCase.report_body ?? {}),
+          tags: Array.isArray(evalCase.tags) ? evalCase.tags : [],
           forbiddenSchools: evalCase.forbidden_schools ?? [],
         });
         resultPayload = {
@@ -571,6 +572,7 @@ export function registerAdminEvalRoutes(app, { requireAdmin, generateReportForAd
         };
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
+        console.error("[eval/generate] failed", evalCase.case_key ?? caseId, msg);
         resultPayload = {
           status: "error",
           report_payload: null,

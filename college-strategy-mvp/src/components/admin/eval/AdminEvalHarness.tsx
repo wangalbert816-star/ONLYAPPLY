@@ -67,6 +67,12 @@ type Props = {
 
 type EvalStep = "library" | "generate" | "review" | "history" | "summary" | "dashboard" | "export";
 
+type SubmitSuccessModal = {
+  caseTitle: string;
+  engineOk: boolean;
+  corpusOk: boolean;
+};
+
 const STEPS: EvalStep[] = ["library", "generate", "review", "history", "summary", "dashboard", "export"];
 
 function evalErrorMessage(code: string | undefined, t: (key: string) => string) {
@@ -122,6 +128,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
   const [runDetail, setRunDetail] = useState<Awaited<ReturnType<typeof fetchAdminEvalRun>> | null>(null);
   const [caseStatusResults, setCaseStatusResults] = useState<AdminEvalRunResult[]>([]);
   const [testing, setTesting] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
   const [reviewCaseId, setReviewCaseId] = useState("");
   const [reviewDraft, setReviewDraft] = useState<EvalReviewDraft | null>(null);
   const [savingReview, setSavingReview] = useState(false);
@@ -137,6 +144,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
   const [engineActionBusy, setEngineActionBusy] = useState<"trial" | "publish" | null>(null);
   const [engineTrialReport, setEngineTrialReport] = useState<EngineTrialRunReport | null>(null);
   const [exporting, setExporting] = useState<string | null>(null);
+  const [submitSuccessModal, setSubmitSuccessModal] = useState<SubmitSuccessModal | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [libraryPanel, setLibraryPanel] = useState<"list" | "detail" | "add" | "edit">("list");
   const [generatePanel, setGeneratePanel] = useState<"list" | "detail">("list");
@@ -406,6 +414,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
     refreshAllGenRef.current += 1;
     setTesting(true);
     setPanelError(null);
+    setGenerateError(null);
     const caseId = selectedCaseId;
     try {
       const { run } = await createAdminEvalRun(token, {
@@ -418,13 +427,15 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
       setSelectedRunId(run.id);
       selectedRunIdRef.current = run.id;
       setRuns((prev) => [run, ...prev.filter((r) => r.id !== run.id)]);
-      await generateAdminEvalRunCase(token, run.id, caseId);
+      const { result: generatedResult } = await generateAdminEvalRunCase(token, run.id, caseId);
       const detail = await fetchAdminEvalRun(token, run.id);
       if (selectedRunIdRef.current !== run.id) return;
       setRunDetail(detail);
       await refreshCaseStatus();
-      const resultRow = detail.results.find((r) => r.caseId === caseId);
-      if (resultRow?.case && resultRow.status === "ok") {
+      const resultRow =
+        detail.results.find((r) => r.caseId === caseId) ??
+        (generatedResult?.caseId === caseId ? { ...generatedResult, case: selectedCase } : null);
+      if (resultRow?.case && resultRow.status === "ok" && resultRow.reportPayload) {
         const initialDraft = buildInitialReviewDraft(resultRow.case, resultRow, profileLabel);
         try {
           await saveAdminEvalReview(token, run.id, caseId, draftToReviewPayload(initialDraft));
@@ -437,12 +448,18 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
         setStep("review");
         return;
       }
-      const failMsg = resultRow?.error?.trim() || t("admin.eval.generateFailed");
+      const failMsg =
+        resultRow?.error?.trim() ||
+        generatedResult?.error?.trim() ||
+        t("admin.eval.generateFailed");
+      setGenerateError(failMsg);
       setPanelError(failMsg);
       setGeneratePanel("detail");
       setStep("generate");
     } catch (e) {
-      setPanelError(evalErrorMessage((e as Error & { code?: string }).code, t));
+      const failMsg = evalErrorMessage((e as Error & { code?: string }).code, t);
+      setGenerateError(failMsg);
+      setPanelError(failMsg);
       setGeneratePanel("detail");
       setStep("generate");
     } finally {
@@ -491,10 +508,14 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
           setPanelError(null);
         }
         if (status === "submitted" && !options?.silent) {
-          if (engineSync?.ok) {
-            setPanelError(t("admin.evalHarness.engineAutoSynced"));
-          }
-          setStep("summary");
+          setPanelError(null);
+          setSubmitSuccessModal({
+            caseTitle: selectedReviewRow.case
+              ? getEvalCaseTitle(selectedReviewRow.case, locale)
+              : selectedReviewRow.caseId,
+            engineOk: Boolean(engineSync?.ok),
+            corpusOk: Boolean(corpusSync?.ok),
+          });
         }
         return true;
       } catch (e) {
@@ -507,8 +528,22 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
         setSavingReview(false);
       }
     },
-    [loadRunDetail, refreshCaseStatus, refreshDashboard, refreshEngineStandards, refreshTrainingCorpus, reviewDraft, runDetail, savingReview, selectedReviewRow, t, token],
+    [loadRunDetail, locale, refreshCaseStatus, refreshDashboard, refreshEngineStandards, refreshTrainingCorpus, reviewDraft, runDetail, savingReview, selectedReviewRow, t, token],
   );
+
+  const dismissSubmitSuccessModal = useCallback(() => {
+    setSubmitSuccessModal(null);
+    setStep("summary");
+  }, []);
+
+  useEffect(() => {
+    if (!submitSuccessModal) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") dismissSubmitSuccessModal();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [dismissSubmitSuccessModal, submitSuccessModal]);
 
   const autoSaveTimerRef = useRef<number | null>(null);
 
@@ -886,6 +921,12 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
                     })}
                   </p>
                   <p className="admin-eval-harness__generate-lead">{t("admin.evalHarness.generateCtaLead")}</p>
+                  {generateError ? (
+                    <div className="admin-portal__notice admin-eval-harness__error" role="alert">
+                      <strong>{t("admin.eval.generateFailed")}</strong>
+                      <p>{generateError}</p>
+                    </div>
+                  ) : null}
                   <button
                     type="button"
                     className="admin-portal__btn admin-portal__btn--primary admin-portal__btn--xl admin-eval-harness__generate-cta"
@@ -1089,6 +1130,58 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
           );
         })()}
       </footer>
+
+      {submitSuccessModal ? (
+        <div
+          className="admin-eval-submit-modal"
+          role="presentation"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) dismissSubmitSuccessModal();
+          }}
+        >
+          <div
+            className="admin-eval-submit-modal__card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-eval-submit-modal-title"
+          >
+            <h3 id="admin-eval-submit-modal-title" className="admin-eval-submit-modal__title">
+              {t("admin.evalHarness.submitSuccessTitle")}
+            </h3>
+            <p className="admin-eval-submit-modal__lead">
+              {t("admin.evalHarness.submitSuccessLead", { case: submitSuccessModal.caseTitle })}
+            </p>
+            <ul className="admin-eval-submit-modal__list">
+              <li className="admin-eval-submit-modal__item admin-eval-submit-modal__item--ok">
+                {t("admin.evalHarness.submitSuccessSaved")}
+              </li>
+              <li
+                className={`admin-eval-submit-modal__item${submitSuccessModal.engineOk ? " admin-eval-submit-modal__item--ok" : " admin-eval-submit-modal__item--warn"}`}
+              >
+                {submitSuccessModal.engineOk
+                  ? t("admin.evalHarness.submitSuccessEngineOk")
+                  : t("admin.evalHarness.submitSuccessEngineFailed")}
+              </li>
+              <li
+                className={`admin-eval-submit-modal__item${submitSuccessModal.corpusOk ? " admin-eval-submit-modal__item--ok" : " admin-eval-submit-modal__item--warn"}`}
+              >
+                {submitSuccessModal.corpusOk
+                  ? t("admin.evalHarness.submitSuccessCorpusOk")
+                  : t("admin.evalHarness.submitSuccessCorpusFailed")}
+              </li>
+            </ul>
+            <div className="admin-eval-submit-modal__actions">
+              <button
+                type="button"
+                className="admin-portal__btn admin-portal__btn--primary admin-portal__btn--lg"
+                onClick={dismissSubmitSuccessModal}
+              >
+                {t("admin.evalHarness.submitSuccessOk")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
