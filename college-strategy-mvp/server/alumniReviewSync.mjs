@@ -37,17 +37,33 @@ export async function syncApprovedAlumniReview(row, reviewerEmail) {
   const evalCase = evalCaseFromAlumniRow(row);
   const result = { reportPayload: row.report_snapshot ?? {} };
 
-  const trainingCorpus = upsertGoldCaseFromEval({
-    evalCase,
-    review,
-    result,
-    run: null,
-  });
-  const decisionEngine = await upsertBenchmarkToLiveFromReview({
-    evalCase,
-    review,
-    reviewerEmail,
-  });
+  let trainingCorpus = { ok: false, reason: "sync_failed" };
+  let decisionEngine = { ok: false, reason: "sync_failed" };
+
+  try {
+    trainingCorpus = upsertGoldCaseFromEval({
+      evalCase,
+      review,
+      result,
+      run: null,
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn("[alumni-review] training_corpus_sync_failed", msg);
+    trainingCorpus = { ok: false, reason: "corpus_write_failed", message: msg };
+  }
+
+  try {
+    decisionEngine = await upsertBenchmarkToLiveFromReview({
+      evalCase,
+      review,
+      reviewerEmail,
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn("[alumni-review] decision_engine_sync_failed", msg);
+    decisionEngine = { ok: false, reason: "benchmark_persist_failed", message: msg };
+  }
 
   return { trainingCorpus, decisionEngine };
 }

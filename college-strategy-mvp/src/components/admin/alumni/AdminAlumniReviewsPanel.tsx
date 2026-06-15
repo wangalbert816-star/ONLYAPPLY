@@ -121,6 +121,15 @@ function draftFromReview(detail: AdminAlumniReview, profileLabel: (key: ProfileD
   return alumniReviewToDraft(detail as Parameters<typeof alumniReviewToDraft>[0], fallback);
 }
 
+function canApproveReview(draft: EvalReviewDraft) {
+  const f = draft.finalApprovedRecommendation;
+  return (
+    f.reach.filter((s) => s.trim()).length >= 3 &&
+    f.match.filter((s) => s.trim()).length >= 3 &&
+    f.safety.filter((s) => s.trim()).length >= 3
+  );
+}
+
 export function AdminAlumniReviewsPanel({ token, busy, onRun, onNotice }: Props) {
   const { t, locale } = useLanguage();
   const [filter, setFilter] = useState<QueueFilter>("submitted");
@@ -193,6 +202,7 @@ export function AdminAlumniReviewsPanel({ token, busy, onRun, onNotice }: Props)
   const caseTitle = t("alumni.review.caseTitle", { intake: intakeLabel });
   const readOnly = detail?.status === "approved";
   const editable = detail?.status === "draft" || detail?.status === "submitted";
+  const canApprove = draft ? canApproveReview(draft) : false;
 
   const saveReviewToServer = useCallback(
     async (nextDraft: EvalReviewDraft, status: "draft" | "submitted") => {
@@ -234,23 +244,28 @@ export function AdminAlumniReviewsPanel({ token, busy, onRun, onNotice }: Props)
   );
 
   const handleApprove = () => {
-    if (!detail || !draft || actionBusy || busy) return;
+    if (!detail || !draft || actionBusy || busy || !canApprove) return;
     void onRun(async () => {
       setActionBusy(true);
       onNotice(null);
       setPanelError(null);
       try {
-        if (detail.status === "submitted") {
-          await saveReviewToServer(draft, "submitted");
-        }
-        const { review } = await approveAdminAlumniReview(token, detail.id);
+        const payload = draftToReviewPayload({ ...draft, status: "submitted" });
+        const { review, sync } = await approveAdminAlumniReview(token, detail.id, payload);
         setDetail(review);
         setDraft(draftFromReview(review, profileLabel));
-        onNotice(t("admin.alumniReviews.approveSuccess"));
+        const corpusOk = (sync?.trainingCorpus as { ok?: boolean } | undefined)?.ok !== false;
+        onNotice(
+          corpusOk
+            ? t("admin.alumniReviews.approveSuccess")
+            : t("admin.alumniReviews.approveSuccessPartial"),
+        );
         await refreshList();
       } catch (e) {
         const code = (e as Error & { code?: string }).code;
-        onNotice(adminErrorMessage(code, t));
+        const message = adminErrorMessage(code, t);
+        setPanelError(message);
+        onNotice(message);
       } finally {
         setActionBusy(false);
       }
@@ -318,7 +333,8 @@ export function AdminAlumniReviewsPanel({ token, busy, onRun, onNotice }: Props)
               <button
                 type="button"
                 className="admin-portal__btn admin-portal__btn--primary"
-                disabled={actionBusy || busy || detailLoading || saving}
+                disabled={actionBusy || busy || detailLoading || saving || !canApprove}
+                title={!canApprove ? t("admin.alumniReviews.approveNeedSchools") : undefined}
                 onClick={handleApprove}
               >
                 {actionBusy ? t("admin.alumniReviews.approving") : t("admin.alumniReviews.approve")}
@@ -333,6 +349,7 @@ export function AdminAlumniReviewsPanel({ token, busy, onRun, onNotice }: Props)
         ) : (
           <AdminEvalReviewForm
             variant="alumni"
+            adminAlumniEdit={editable}
             readOnly={readOnly}
             evalCase={shimEvalCase(detail, caseTitle)}
             run={shimRun(detail)}

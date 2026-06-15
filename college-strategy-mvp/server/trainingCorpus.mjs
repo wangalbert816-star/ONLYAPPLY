@@ -424,7 +424,13 @@ export function upsertGoldCaseFromEval(input) {
   if (idx >= 0) cases[idx] = entry;
   else cases.push(entry);
   cases.sort((a, b) => String(a.caseKey).localeCompare(String(b.caseKey)));
-  writeGoldCases(cases);
+  try {
+    writeGoldCases(cases);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn("[training-corpus] gold_case_write_failed", msg);
+    return { ok: false, reason: "corpus_write_failed", message: msg };
+  }
 
   return { ok: true, caseKey: entry.caseKey, goldCaseCount: cases.length };
 }

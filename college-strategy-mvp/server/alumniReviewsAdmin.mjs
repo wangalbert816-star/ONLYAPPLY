@@ -104,14 +104,25 @@ export function registerAlumniReviewsAdminRoutes(app, { requireAdmin }) {
     const id = String(req.params.id ?? "").trim();
     if (!id) return res.status(400).json({ error: "eval_id_required" });
     try {
-      const row = await getAlumniReviewById(ctx.admin, id);
+      let row = await getAlumniReviewById(ctx.admin, id);
       if (!row) return res.status(404).json({ error: "alumni_review_not_found" });
       if (row.status !== "submitted") {
         return res.status(400).json({ error: "alumni_review_not_submitted" });
       }
 
+      const body = req.body && typeof req.body === "object" ? req.body : null;
+      if (body && Object.keys(body).length > 0) {
+        const normalized = normalizeReviewInput(body, ctx.user.email ?? ctx.user.id);
+        if (normalized.error) return res.status(400).json({ error: normalized.error });
+        if (normalized.payload.status === "approved") {
+          return res.status(400).json({ error: "alumni_review_status_invalid" });
+        }
+        normalized.payload.status = "submitted";
+        row = await updateAlumniReviewById(ctx.admin, id, normalized.payload);
+      }
+
       const sync = await syncApprovedAlumniReview(row, ctx.user.email ?? ctx.user.id);
-      if (!sync.decisionEngine?.ok || !sync.trainingCorpus?.ok) {
+      if (!sync.decisionEngine?.ok) {
         const reason =
           sync.decisionEngine?.reason ?? sync.trainingCorpus?.reason ?? "alumni_sync_failed";
         return res.status(400).json({ error: reason, sync });

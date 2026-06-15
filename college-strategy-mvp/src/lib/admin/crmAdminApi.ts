@@ -847,9 +847,11 @@ export async function fetchAdminAlumniReview(
 export async function approveAdminAlumniReview(
   accessToken: string,
   reviewId: string,
+  input?: Record<string, unknown>,
 ): Promise<{ review: AdminAlumniReview; sync: Record<string, unknown> }> {
   return adminFetch(`/api/admin/crm/alumni/reviews/${encodeURIComponent(reviewId)}/approve`, accessToken, {
     method: "POST",
+    ...(input ? { body: JSON.stringify(input) } : {}),
   });
 }
 
@@ -877,5 +879,7 @@ export function adminErrorMessage(code: string | undefined, t: (key: string) => 
   if (!code) return t("admin.errors.generic");
   const key = `admin.errors.${code}`;
   const msg = t(key);
-  return msg === key ? t("admin.errors.generic") : msg;
+  if (msg !== key) return msg;
+  if (/^[a-z][a-z0-9_]*$/i.test(code)) return t("admin.errors.generic");
+  return code.length <= 160 ? code : t("admin.errors.generic");
 }

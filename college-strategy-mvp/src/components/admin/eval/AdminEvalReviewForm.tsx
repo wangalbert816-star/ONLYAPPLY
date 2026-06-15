@@ -28,6 +28,8 @@ type Props = {
   engineWriteOk?: boolean;
   canWriteEngineStandard?: boolean;
   readOnly?: boolean;
+  /** Admin alumni queue: save draft only in toolbar, hide bottom submit bar. */
+  adminAlumniEdit?: boolean;
   t: Translate;
 };
 
@@ -59,6 +61,7 @@ function ReviewActionButtons({
   t,
   size = "md",
   variant = "admin",
+  saveOnly = false,
 }: {
   saving: boolean;
   canSubmit: boolean;
@@ -66,6 +69,7 @@ function ReviewActionButtons({
   t: Translate;
   size?: "md" | "lg";
   variant?: "admin" | "alumni";
+  saveOnly?: boolean;
 }) {
   const sizeClass = size === "lg" ? " admin-portal__btn--lg" : "";
   const saveDraftLabel =
@@ -88,6 +92,7 @@ function ReviewActionButtons({
       >
         {saveDraftLabel}
       </button>
+      {!saveOnly ? (
       <button
         type="button"
         className={`admin-portal__btn admin-portal__btn--submit${sizeClass}`}
@@ -97,6 +102,7 @@ function ReviewActionButtons({
       >
         {submitLabel}
       </button>
+      ) : null}
     </>
   );
 }
@@ -117,6 +123,7 @@ export function AdminEvalReviewForm({
   engineWriteOk = false,
   canWriteEngineStandard = false,
   readOnly = false,
+  adminAlumniEdit = false,
   t,
 }: Props) {
   const [tab, setTab] = useState<ReviewTab>("report");
@@ -177,7 +184,8 @@ export function AdminEvalReviewForm({
                 canSubmit={canSubmit}
                 onSave={onSave}
                 t={t}
-                variant={variant}
+                variant={adminAlumniEdit ? "admin" : variant}
+                saveOnly={adminAlumniEdit}
               />
             ) : null}
           </div>
@@ -522,7 +530,7 @@ export function AdminEvalReviewForm({
 
       </fieldset>
 
-      {!readOnly ? (
+      {!readOnly && !adminAlumniEdit ? (
       <div className="admin-eval-review__action-bar">
         <div className="admin-eval-review__action-bar-copy">
           <strong>

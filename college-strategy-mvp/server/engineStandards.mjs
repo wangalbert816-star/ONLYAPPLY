@@ -202,7 +202,13 @@ export async function upsertBenchmarkToLiveFromReview(input) {
   if (!built.ok) return built;
 
   const { entry } = built;
-  await persistBenchmarkEntry(entry, ["draft", "live"]);
+  try {
+    await persistBenchmarkEntry(entry, ["draft", "live"]);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn("[engine-benchmarks] live_upsert_failed", msg);
+    return { ok: false, reason: "benchmark_persist_failed", message: msg };
+  }
 
   return {
     ok: true,
