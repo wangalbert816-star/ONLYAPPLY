@@ -44,6 +44,9 @@ import { AccountHome } from "./components/auth/AccountHome";
 import { CounselorPortal } from "./components/crm/CounselorPortal";
 import { SignedServiceHub } from "./components/crm/SignedServiceHub";
 import { AdminPortal } from "./components/admin/AdminPortal";
+import { AlumniFeedbackView } from "./components/alumni/AlumniFeedbackView";
+import { AlumniAccessModal } from "./components/alumni/AlumniAccessModal";
+import { grantAlumniAccess, hasAlumniAccess } from "./lib/alumniAccess";
 import { AuthChromeProvider } from "./auth/AuthChromeContext";
 import { AppTopChrome } from "./components/AppTopChrome";
 import { LegalLinks } from "./components/LegalLinks";
@@ -259,6 +262,8 @@ export default function App() {
   const [aboutUsOpen, setAboutUsOpen] = useState(false);
   const [expertConsultModalOpen, setExpertConsultModalOpen] = useState(false);
   const [landingMarqueeVisible, setLandingMarqueeVisible] = useState(true);
+  const [alumniFeedbackMode, setAlumniFeedbackMode] = useState(false);
+  const [alumniAccessOpen, setAlumniAccessOpen] = useState(false);
 
   const openApplicationHub = useCallback((e: MouseEvent<HTMLElement>) => {
     applicationHubTriggerRef.current = e.currentTarget as HTMLButtonElement;
@@ -271,6 +276,32 @@ export default function App() {
     setApplicationHubOpen(false);
     setResourcesHubOpen(true);
   }, []);
+
+  const startQuestionnaire = useCallback((options?: { alumni?: boolean }) => {
+    setApplicationHubOpen(false);
+    setResourcesHubOpen(false);
+    setBrandStoryOpen(false);
+    setAboutUsOpen(false);
+    setAlumniFeedbackMode(Boolean(options?.alumni));
+    setFlowStarted(true);
+    setView("form");
+    setErr(null);
+    queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+  }, []);
+
+  const requestAlumniStart = useCallback(() => {
+    if (hasAlumniAccess()) {
+      startQuestionnaire({ alumni: true });
+      return;
+    }
+    setAlumniAccessOpen(true);
+  }, [startQuestionnaire]);
+
+  const handleAlumniAccessSuccess = useCallback(() => {
+    grantAlumniAccess();
+    setAlumniAccessOpen(false);
+    startQuestionnaire({ alumni: true });
+  }, [startQuestionnaire]);
 
   const openRoadmapConsult = useCallback(() => {
     requestExpertConsult({
@@ -313,6 +344,7 @@ export default function App() {
     setBrandStoryOpen(false);
     setAboutUsOpen(false);
     setExpertConsultModalOpen(false);
+    setAlumniFeedbackMode(false);
     setFlowStarted(false);
     setView("form");
     setErr(null);
@@ -350,16 +382,12 @@ export default function App() {
           onStart={() => {
             setBrandStoryOpen(false);
             setAboutUsOpen(false);
-            setApplicationHubOpen(false);
-            setResourcesHubOpen(false);
-            setFlowStarted(true);
-            setView("form");
-            queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+            startQuestionnaire();
           }}
         />
       </AuthChromeProvider>
     ),
-    [aboutUsOpen, authChromeHandlers, brandStoryOpen, goHome, openFoundersLetter, t, user?.email],
+    [aboutUsOpen, authChromeHandlers, brandStoryOpen, goHome, openFoundersLetter, startQuestionnaire, t, user?.email],
   );
 
   const refreshEntitlements = useCallback(async (): Promise<string[]> => {
@@ -695,8 +723,13 @@ export default function App() {
     answeredGapSupplementaryRef.current = pending.supplementaryNotes ?? [];
     profileFiveSupplementaryRef.current = [];
     setReportUnlocked(
-      cloudEntitlementsEnabled ? false : demoUnlockEnabled && (Boolean(pending.reportUnlocked) || readUnlockFromStorage()),
+      pending.alumniFeedback
+        ? true
+        : cloudEntitlementsEnabled
+          ? false
+          : demoUnlockEnabled && (Boolean(pending.reportUnlocked) || readUnlockFromStorage()),
     );
+    setAlumniFeedbackMode(Boolean(pending.alumniFeedback));
     setView("report");
     setFlowStarted(true);
     if (authReturnRef.current) {
@@ -719,8 +752,13 @@ export default function App() {
     answeredGapSupplementaryRef.current = pending.supplementaryNotes ?? [];
     profileFiveSupplementaryRef.current = [];
     setReportUnlocked(
-      cloudEntitlementsEnabled ? false : demoUnlockEnabled && (Boolean(pending.reportUnlocked) || readUnlockFromStorage()),
+      pending.alumniFeedback
+        ? true
+        : cloudEntitlementsEnabled
+          ? false
+          : demoUnlockEnabled && (Boolean(pending.reportUnlocked) || readUnlockFromStorage()),
     );
+    setAlumniFeedbackMode(Boolean(pending.alumniFeedback));
     setView("report");
     setFlowStarted(true);
     setSaveBannerDismissed(true);
@@ -918,6 +956,10 @@ export default function App() {
       const parsed = await readApiJson(res);
       if (!parsed.ok) {
         if (import.meta.env.DEV) console.warn("[report] response_parse_failed", parsed.kind, res.status);
+        if (res.status === 413) {
+          setErr(t("app.errGeneratePayload"));
+          return;
+        }
         setErr(translateReportFetchFailure(parsed.kind, t));
         return;
       }
@@ -949,9 +991,16 @@ export default function App() {
         locale,
         report: nextReport,
         supplementaryNotes: existingNotes.length > 0 ? existingNotes : undefined,
-        reportUnlocked: false,
+        reportUnlocked: alumniFeedbackMode,
+        alumniFeedback: alumniFeedbackMode,
       });
-      if (user) {
+      if (alumniFeedbackMode) {
+        writeUnlockToStorage();
+        setReportUnlocked(true);
+        if (user) {
+          await persistToCloud({ formState: form, reportPayload: nextReport });
+        }
+      } else if (user) {
         const saved = await persistToCloud({ formState: form, reportPayload: nextReport });
         if (cloudEntitlementsEnabled && saved.ok && saved.applicationId) {
           const ids = await refreshEntitlements();
@@ -1130,7 +1179,7 @@ export default function App() {
           setReportUnlocked(ids.includes(saved.applicationId));
         }
       } else {
-        writePendingSave({ form, locale, report: next, supplementaryNotes: merged, reportUnlocked });
+        writePendingSave({ form, locale, report: next, supplementaryNotes: merged, reportUnlocked, alumniFeedback: alumniFeedbackMode });
       }
       const diff = compareReports(prev, next, { prevForm: form, nextForm: form, locale: REPORT_CONTENT_LOCALE });
       if (reportDiffIsEmpty(diff)) {
@@ -1314,6 +1363,59 @@ export default function App() {
   }
 
   if (view === "report" && report) {
+    if (alumniFeedbackMode) {
+      return withChrome(
+        <>
+          <AlumniFeedbackView
+            report={report}
+            form={form}
+            locale={locale}
+            applicationId={currentApplicationId}
+            reportId={currentReportId}
+            isAuthenticated={Boolean(user)}
+            onRequestSignIn={() => setAuthModalOpen(true)}
+            onReset={() => {
+              clearUnlockStorage();
+              setReportUnlocked(false);
+              setAlumniFeedbackMode(false);
+              profileFiveSupplementaryRef.current = [];
+              answeredGapSupplementaryRef.current = [];
+              setCurrentApplicationId(null);
+              setCurrentReportId(null);
+              setSessionSaved(false);
+              setSaveBannerDismissed(false);
+              clearPendingSave();
+              clearFormDraft();
+              setView("form");
+              setReport(null);
+              setStep(1);
+              setStep1Screen(0);
+              setStep2Screen(0);
+              setStep3Screen(0);
+              setFlowStarted(false);
+              setApplicationHubOpen(false);
+              setReportDiff(null);
+              setHighlightSchoolKeys(new Set());
+              setRefreshError(null);
+              setSubtleRefreshNotice(null);
+              setSaveNotice(null);
+              if (highlightTimerRef.current != null) {
+                window.clearTimeout(highlightTimerRef.current);
+                highlightTimerRef.current = null;
+              }
+            }}
+          />
+          <AuthModal
+            open={authModalOpen}
+            onClose={() => setAuthModalOpen(false)}
+            successHint={saveNotice}
+            onOpenAppLinks={openApplicationHub}
+          />
+        </>,
+      );
+    }
+
+    const reportUnlockedEffective = reportUnlocked || alumniFeedbackMode;
     return withChrome(
       <>
       <ReportView
@@ -1321,7 +1423,7 @@ export default function App() {
         form={form}
         applicationId={currentApplicationId}
         reportId={currentReportId}
-        unlocked={reportUnlocked}
+        unlocked={reportUnlockedEffective}
         authConfigured={authConfigured}
         isAuthenticated={Boolean(user)}
         showSaveBanner={authConfigured && !user && !saveBannerDismissed && !authLoading}
@@ -1350,6 +1452,7 @@ export default function App() {
         onReset={() => {
           clearUnlockStorage();
           setReportUnlocked(false);
+          setAlumniFeedbackMode(false);
           profileFiveSupplementaryRef.current = [];
           answeredGapSupplementaryRef.current = [];
           setCurrentApplicationId(null);
@@ -1400,12 +1503,8 @@ export default function App() {
       <>
         <LandingPageReplica
           landingMarqueeVisible={landingMarqueeVisible}
-          onStart={() => {
-            setApplicationHubOpen(false);
-            setResourcesHubOpen(false);
-            setFlowStarted(true);
-            queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
-          }}
+          onStart={() => startQuestionnaire()}
+          onStartAlumni={requestAlumniStart}
           onOpenBrandStory={() => setBrandStoryOpen(true)}
           onOpenAboutUs={() => setAboutUsOpen(true)}
           onBookExpertConsult={() =>
@@ -1434,6 +1533,11 @@ export default function App() {
           }}
         />
         <ExpertConsultContactModal open={expertConsultModalOpen} onClose={() => setExpertConsultModalOpen(false)} />
+        <AlumniAccessModal
+          open={alumniAccessOpen}
+          onClose={() => setAlumniAccessOpen(false)}
+          onSuccess={handleAlumniAccessSuccess}
+        />
         <AuthModal
           open={authModalOpen}
           onClose={() => setAuthModalOpen(false)}
@@ -1448,6 +1552,11 @@ export default function App() {
   return withChrome(
     <>
     <div className="app app--flow">
+      {alumniFeedbackMode ? (
+        <p className="alumni-flow-banner" role="status">
+          {t("alumni.flow.banner")}
+        </p>
+      ) : null}
       <p className="steps-caption" aria-live="polite">
         {t("app.steps.caption", { step })}
         {step === 3 ? t("app.steps.captionFinal") : t("app.steps.captionMid")}
@@ -1593,7 +1702,11 @@ export default function App() {
                   onClick={submitReport}
                   disabled={loading || !!stepError}
                 >
-                  {loading ? t("app.actions.generating") : t("app.actions.submit")}
+                  {loading
+                    ? t("app.actions.generating")
+                    : alumniFeedbackMode
+                      ? t("alumni.flow.submit")
+                      : t("app.actions.submit")}
                 </button>
               )}
             </div>

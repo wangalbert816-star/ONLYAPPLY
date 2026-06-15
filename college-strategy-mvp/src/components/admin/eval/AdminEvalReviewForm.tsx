@@ -13,6 +13,7 @@ import { buildEvalReportPreview } from "../../../lib/admin/evalCaseForm";
 import type { Translate } from "../../../i18n/LanguageContext";
 
 type Props = {
+  variant?: "admin" | "alumni";
   evalCase: AdminEvalCase;
   run: AdminEvalRun;
   result: AdminEvalRunResult;
@@ -56,14 +57,26 @@ function ReviewActionButtons({
   onSave,
   t,
   size = "md",
+  variant = "admin",
 }: {
   saving: boolean;
   canSubmit: boolean;
   onSave: (status: EvalReviewDraft["status"]) => void;
   t: Translate;
   size?: "md" | "lg";
+  variant?: "admin" | "alumni";
 }) {
   const sizeClass = size === "lg" ? " admin-portal__btn--lg" : "";
+  const saveDraftLabel =
+    variant === "alumni" ? t("alumni.review.saveDraft") : t("admin.evalHarness.saveDraft");
+  const submitLabel =
+    variant === "alumni"
+      ? saving
+        ? t("alumni.review.submitting")
+        : t("alumni.review.submit")
+      : saving
+        ? t("admin.eval.savingScore")
+        : t("admin.evalHarness.submitReview");
   return (
     <>
       <button
@@ -72,7 +85,7 @@ function ReviewActionButtons({
         disabled={saving}
         onClick={() => onSave("draft")}
       >
-        {t("admin.evalHarness.saveDraft")}
+        {saveDraftLabel}
       </button>
       <button
         type="button"
@@ -81,13 +94,14 @@ function ReviewActionButtons({
         title={!canSubmit ? t("admin.evalHarness.submitReviewNeedSchools") : undefined}
         onClick={() => onSave("submitted")}
       >
-        {saving ? t("admin.eval.savingScore") : t("admin.evalHarness.submitReview")}
+        {submitLabel}
       </button>
     </>
   );
 }
 
 export function AdminEvalReviewForm({
+  variant = "admin",
   evalCase,
   run,
   result,
@@ -140,8 +154,14 @@ export function AdminEvalReviewForm({
         <div className="admin-eval-review__toolbar-main">
           <strong>{evalCase.title}</strong>
           <span className="admin-eval-review__chips">
-            <span className="admin-eval-review__chip">P {run.promptVersion ?? "—"}</span>
-            <span className="admin-eval-review__chip">M {result.model ?? "—"}</span>
+            {variant === "admin" ? (
+              <>
+                <span className="admin-eval-review__chip">P {run.promptVersion ?? "—"}</span>
+                <span className="admin-eval-review__chip">M {result.model ?? "—"}</span>
+              </>
+            ) : (
+              <span className="admin-eval-review__chip">{t("alumni.review.badge")}</span>
+            )}
             {avg != null ? (
               <span className="admin-eval-review__chip admin-eval-review__chip--accent">
                 {t("admin.evalHarness.rubricAvg", { avg: avg.toFixed(1) })}
@@ -149,7 +169,13 @@ export function AdminEvalReviewForm({
             ) : null}
           </span>
           <div className="admin-eval-review__toolbar-actions">
-            <ReviewActionButtons saving={saving} canSubmit={canSubmit} onSave={onSave} t={t} />
+            <ReviewActionButtons
+              saving={saving}
+              canSubmit={canSubmit}
+              onSave={onSave}
+              t={t}
+              variant={variant}
+            />
           </div>
         </div>
         <div className="admin-eval-review__tabs" role="tablist" aria-label={t("admin.evalHarness.reviewTabsLabel")}>
@@ -491,13 +517,21 @@ export function AdminEvalReviewForm({
 
       <div className="admin-eval-review__action-bar">
         <div className="admin-eval-review__action-bar-copy">
-          <strong>{t("admin.evalHarness.submitReviewTitle")}</strong>
+          <strong>
+            {variant === "alumni"
+              ? t("alumni.review.submitTitle")
+              : t("admin.evalHarness.submitReviewTitle")}
+          </strong>
           <p className={canSubmit ? undefined : "admin-eval-review__action-bar-warn"}>
-            {canSubmit ? t("admin.evalHarness.submitReviewHint") : t("admin.evalHarness.submitReviewNeedSchools")}
+            {canSubmit
+              ? variant === "alumni"
+                ? t("alumni.review.submitHint")
+                : t("admin.evalHarness.submitReviewHint")
+              : t("admin.evalHarness.submitReviewNeedSchools")}
           </p>
         </div>
         <div className="admin-eval-review__action-bar-btns">
-          {onWriteEngineStandard ? (
+          {variant === "admin" && onWriteEngineStandard ? (
             <button
               type="button"
               className="admin-portal__btn admin-portal__btn--ghost admin-portal__btn--lg"
@@ -512,7 +546,14 @@ export function AdminEvalReviewForm({
                   : t("admin.evalHarness.engineWriteStandard")}
             </button>
           ) : null}
-          <ReviewActionButtons saving={saving} canSubmit={canSubmit} onSave={onSave} t={t} size="lg" />
+          <ReviewActionButtons
+            saving={saving}
+            canSubmit={canSubmit}
+            onSave={onSave}
+            t={t}
+            size="lg"
+            variant={variant}
+          />
         </div>
         <p className="admin-eval-review__footer-meta">
           {t("admin.evalHarness.reviewStats", {

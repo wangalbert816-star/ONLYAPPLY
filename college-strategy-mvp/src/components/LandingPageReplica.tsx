@@ -17,6 +17,7 @@ import type { Locale } from "../i18n/strings";
 type Props = {
   landingMarqueeVisible: boolean;
   onStart: () => void;
+  onStartAlumni: () => void;
   onOpenBrandStory: () => void;
   onOpenAboutUs: () => void;
   onBookExpertConsult: () => void;
@@ -212,6 +213,7 @@ function LandingFaqItem({ id, question, answer }: { id: string; question: string
 export function LandingPageReplica({
   landingMarqueeVisible,
   onStart,
+  onStartAlumni,
   onOpenBrandStory,
   onOpenAboutUs,
   onBookExpertConsult,
@@ -605,6 +607,7 @@ export function LandingPageReplica({
 
         <LandingSiteFooter
           onStart={onStart}
+          onStartAlumni={onStartAlumni}
           onOpenApplicationRoadmap={onOpenApplicationRoadmap}
           onOpenResources={onOpenResources}
           onBookExpertConsult={onBookExpertConsult}

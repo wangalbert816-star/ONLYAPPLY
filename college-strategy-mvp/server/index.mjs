@@ -49,13 +49,14 @@ import { registerTrainingCorpusRoutes } from "./trainingCorpusAdmin.mjs";
 import { registerEngineStandardsRoutes } from "./engineStandardsAdmin.mjs";
 import { ensureBenchmarksLoaded } from "./engineStandards.mjs";
 import { registerCounselorCrmRoutes } from "./counselorCrm.mjs";
+import { registerAlumniReviewRoutes } from "./alumniReviews.mjs";
 import { registerUsHighSchoolRoutes } from "./usHighSchools.mjs";
 import { registerTranscriptParseRoutes, formatTranscriptSheetBlock } from "./transcriptParse.mjs";
 import { registerActivitiesParseRoutes } from "./activitiesParse.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // 始终从项目根目录加载 .env（避免从别的 cwd 启动 node 时读不到 OPENAI_BASE_URL，误连 OpenAI 官方导致 401）
-dotenv.config({ path: path.join(__dirname, "..", ".env") });
+dotenv.config({ path: path.join(__dirname, "..", ".env"), override: true });
 
 /** 方舟 OpenAI 兼容网关（北京）；地域以控制台为准时可改 ARK_BASE_URL */
 const DEFAULT_ARK_BASE = "https://ark.cn-beijing.volces.com/api/v3";
@@ -74,7 +75,7 @@ const LLM_TIMEOUT_MS = (() => {
   if (process.env.VERCEL && VERCEL_LLM_WALL_MS > 0) {
     return configured > 0 ? Math.min(configured, VERCEL_LLM_WALL_MS) : VERCEL_LLM_WALL_MS;
   }
-  return configured > 0 ? configured : 120_000;
+  return configured > 0 ? configured : 240_000;
 })();
 const LLM_MAX_RETRIES = Number(process.env.LLM_MAX_RETRIES ?? 0);
 /** 0 = 不传 max_tokens，由模型默认；报告 JSON 较大，默认给足输出避免截断 */
@@ -340,7 +341,9 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
   res.json({ received: true });
 });
 
-app.use(express.json({ limit: "256kb" }));
+registerAlumniReviewRoutes(app, { supabaseAdmin, express });
+
+app.use(express.json({ limit: "4mb" }));
 
 app.post("/api/stripe/create-checkout-session", async (req, res) => {
   if (!stripeReadyForCheckout()) {
@@ -1611,6 +1614,8 @@ function canFallbackToNextLlm(e, index, configs) {
   if (index >= configs.length - 1) return false;
   if (!isLlmRetryableError(e)) return false;
   if (process.env.VERCEL && isLlmTimeoutError(e)) return false;
+  // 本地开发：Ollama 超时后不再串联方舟（通常更慢），直接提示加大超时或重试
+  if (!process.env.VERCEL && isLlmTimeoutError(e) && configs[index + 1]?.isArk) return false;
   return true;
 }
 
@@ -1639,11 +1644,33 @@ function llmConfigsToTryForOnlyApply() {
   if (!dedicated) return base;
 
   const primary = base[0];
-  if (primary.model === dedicated) return base;
+  const ollamaFallback = (
+    (process.env.OLLAMA_MODEL || "").trim() ||
+    (primary.provider === "ollama" && primary.model !== dedicated ? primary.model : "") ||
+    (process.env.US_OPENAI_MODEL || "").trim() ||
+    "gpt-oss:120b"
+  ).trim();
 
-  const dedicatedCfg = { ...primary, model: dedicated };
-  const fallbacks = [primary, ...base.slice(1)].filter((cfg) => cfg.model !== dedicated);
-  return [dedicatedCfg, ...fallbacks];
+  const out = [];
+  const seen = new Set();
+  const push = (cfg) => {
+    if (!cfg?.model) return;
+    const key = `${cfg.provider || ""}:${cfg.model}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(cfg);
+  };
+
+  push({ ...primary, model: dedicated });
+  if (primary.model !== dedicated) push(primary);
+  if (ollamaFallback && ollamaFallback !== dedicated) push({ ...primary, model: ollamaFallback });
+  for (const cfg of base.slice(1)) push(cfg);
+
+  if (out.length < 2 && ollamaFallback && ollamaFallback !== dedicated) {
+    push({ ...primary, model: ollamaFallback });
+  }
+
+  return out.length > 0 ? out : base;
 }
 
 function withWallClockTimeout(promise, ms, label) {
@@ -1853,7 +1880,10 @@ app.post("/api/report", async (req, res) => {
       const code = e && typeof e === "object" && "code" in e ? e.code : "";
       const msg = e instanceof Error ? e.message : String(e);
       if (canFallbackToNextLlm(e, i, configs)) {
-        console.warn(`[api/report] fallback provider=${configs[i + 1].provider} after ${provider} failed:`, msg);
+        console.warn(
+          `[api/report] fallback provider=${configs[i + 1].provider} model=${configs[i + 1].model} after ${provider}/${model} failed:`,
+          msg,
+        );
         continue;
       }
       console.error("[api/report] generation_error", msg);

@@ -10,6 +10,7 @@ export type PendingSavePayload = {
   report: ReportPayload;
   supplementaryNotes?: SupplementaryNote[];
   reportUnlocked?: boolean;
+  alumniFeedback?: boolean;
   savedAt: number;
 };
 

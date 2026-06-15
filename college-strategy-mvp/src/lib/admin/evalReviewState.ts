@@ -1,6 +1,7 @@
 import type { Locale } from "../../i18n/strings";
-import type { ReportPayload } from "../../types";
+import type { FormState, ReportPayload } from "../../types";
 import { buildFiveDimensionProfile, type ProfileDimensionKey } from "../fiveDimensionProfile";
+import { buildReportApiBody } from "../reportApiBody";
 import { reportBodyToFormState } from "./evalCaseForm";
 import type {
   AdminEvalCase,
@@ -71,6 +72,74 @@ function finalFromCase(c: AdminEvalCase): FinalApprovedRecommendation {
     safety: c.expectedSafety.map((s) => s.school),
     notes: c.notes ?? "",
   };
+}
+
+function finalFromReport(report: ReportPayload | null | undefined): FinalApprovedRecommendation {
+  const tierSchools = (rows: ReportPayload["reach"] | undefined) =>
+    (rows ?? []).map((r) => String(r.school ?? "").trim()).filter(Boolean).slice(0, 3);
+  return {
+    reach: tierSchools(report?.reach),
+    match: tierSchools(report?.match),
+    safety: tierSchools(report?.safety),
+    notes: "",
+  };
+}
+
+export function buildInitialAlumniReviewDraft(
+  form: FormState,
+  report: ReportPayload,
+  locale: Locale,
+  labelForKey: (key: ProfileDimensionKey) => string,
+): EvalReviewDraft {
+  const reportBody = buildReportApiBody(form, undefined, locale);
+  return {
+    status: "draft",
+    rubricScores: emptyRubricScores(),
+    schoolReviews: schoolsFromReport(report),
+    profileDimensionReviews: profileReviewsFromReport(reportBody, labelForKey),
+    finalApprovedRecommendation: finalFromReport(report),
+    overallNotes: "",
+  };
+}
+
+export function alumniReviewToDraft(
+  review: {
+    status: EvalReviewDraft["status"];
+    rubricScores?: Record<string, { score?: number | null; notes?: string | null }>;
+    schoolReviews?: EvalReviewDraft["schoolReviews"];
+    profileDimensionReviews?: EvalReviewDraft["profileDimensionReviews"];
+    finalApprovedRecommendation?: Partial<FinalApprovedRecommendation> & { notes?: string | null };
+    overallNotes?: string | null;
+  },
+  fallback: EvalReviewDraft,
+): EvalReviewDraft {
+  const final = review.finalApprovedRecommendation ?? {};
+  return reviewToDraft(
+    {
+      id: "",
+      runId: "",
+      caseId: "",
+      status: review.status,
+      rubricVersion: "1.0",
+      rubricScores: (review.rubricScores ?? {}) as AdminEvalReview["rubricScores"],
+      schoolReviews: (review.schoolReviews ?? []) as AdminEvalReview["schoolReviews"],
+      profileDimensionReviews: (review.profileDimensionReviews ??
+        []) as AdminEvalReview["profileDimensionReviews"],
+      finalApprovedRecommendation: {
+        reach: final.reach ?? fallback.finalApprovedRecommendation.reach,
+        match: final.match ?? fallback.finalApprovedRecommendation.match,
+        safety: final.safety ?? fallback.finalApprovedRecommendation.safety,
+        notes: final.notes ?? fallback.finalApprovedRecommendation.notes,
+      },
+      overallNotes: review.overallNotes ?? "",
+      reviewedBy: null,
+      submittedAt: null,
+      approvedAt: null,
+      createdAt: "",
+      updatedAt: "",
+    },
+    fallback,
+  );
 }
 
 export function buildInitialReviewDraft(

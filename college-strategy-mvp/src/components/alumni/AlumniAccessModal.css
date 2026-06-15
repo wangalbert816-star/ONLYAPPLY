@@ -1,0 +1,89 @@
+.alumni-access-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.alumni-access-modal {
+  position: relative;
+  width: min(100%, 22rem);
+  padding: 1.35rem 1.25rem 1.25rem;
+  border-radius: 12px;
+  border: 1px solid #bbf7d0;
+  background: linear-gradient(180deg, #f0fdf4 0%, #fff 55%);
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.18);
+}
+
+.alumni-access-modal__close {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.65rem;
+  border: none;
+  background: transparent;
+  font-size: 1.35rem;
+  line-height: 1;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.alumni-access-modal__eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #166534;
+}
+
+.alumni-access-modal h2 {
+  margin: 0 0 0.45rem;
+  font-size: 1.2rem;
+  color: #14532d;
+}
+
+.alumni-access-modal__lead {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #475569;
+}
+
+.alumni-access-modal__label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.alumni-access-modal__input {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 0.65rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.alumni-access-modal__input:focus {
+  outline: none;
+  border-color: #16a34a;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.18);
+}
+
+.alumni-access-modal__err {
+  margin: 0 0 0.65rem;
+  font-size: 0.85rem;
+  color: #b91c1c;
+}
+
+.alumni-access-modal__submit {
+  margin-top: 0.15rem;
+}

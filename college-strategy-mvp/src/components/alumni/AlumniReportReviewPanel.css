@@ -1,0 +1,61 @@
+.alumni-review-panel {
+  margin-top: 2.5rem;
+  padding: 1.5rem 0 0;
+  border-top: 2px solid #d1fae5;
+}
+
+.alumni-review-panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.alumni-review-panel__head h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.35rem;
+  color: #14532d;
+}
+
+.alumni-review-panel__lead {
+  margin: 0;
+  max-width: 42rem;
+  color: #475569;
+  line-height: 1.55;
+}
+
+.alumni-review-panel__success {
+  margin-bottom: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.alumni-review-panel__success p {
+  margin: 0.35rem 0 0;
+}
+
+.alumni-review-panel__error {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.alumni-review-panel__form {
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  padding: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  .alumni-review-panel__form {
+    padding: 0.35rem;
+  }
+}

@@ -8,6 +8,7 @@ import "./LandingSiteFooter.css";
 
 type Props = {
   onStart: () => void;
+  onStartAlumni: () => void;
   onOpenApplicationRoadmap: (e: MouseEvent<HTMLButtonElement>) => void;
   onOpenResources: (e: MouseEvent<HTMLButtonElement>) => void;
   onBookExpertConsult: () => void;
@@ -19,6 +20,7 @@ function scrollToId(id: string) {
 
 export function LandingSiteFooter({
   onStart,
+  onStartAlumni,
   onOpenApplicationRoadmap,
   onOpenResources,
   onBookExpertConsult,
@@ -40,6 +42,11 @@ export function LandingSiteFooter({
             <li>
               <button type="button" className="landing-site-footer__link" onClick={onStart}>
                 {t("app.welcome.start")}
+              </button>
+            </li>
+            <li>
+              <button type="button" className="landing-site-footer__link" onClick={onStartAlumni}>
+                {t("landingReplica.footerAlumniFeedback")}
               </button>
             </li>
             <li>
