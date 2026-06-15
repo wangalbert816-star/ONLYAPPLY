@@ -149,11 +149,12 @@ export function AdminAlumniReviewsPanel({ token, busy, onRun, onNotice }: Props)
     [t],
   );
 
-  const refreshList = useCallback(async () => {
+  const refreshList = useCallback(async (statusOverride?: QueueFilter | "all") => {
     setLoading(true);
     setPanelError(null);
     try {
-      const status = filter === "all" ? undefined : filter;
+      const active = statusOverride ?? filter;
+      const status = active === "all" ? undefined : active;
       const { reviews: rows } = await listAdminAlumniReviews(token, status);
       setReviews(rows);
     } catch (e) {
@@ -251,16 +252,15 @@ export function AdminAlumniReviewsPanel({ token, busy, onRun, onNotice }: Props)
       setPanelError(null);
       try {
         const payload = draftToReviewPayload({ ...draft, status: "submitted" });
-        const { review, sync } = await approveAdminAlumniReview(token, detail.id, payload);
+        const { review } = await approveAdminAlumniReview(token, detail.id, payload);
         setDetail(review);
         setDraft(draftFromReview(review, profileLabel));
-        const corpusOk = (sync?.trainingCorpus as { ok?: boolean } | undefined)?.ok !== false;
-        onNotice(
-          corpusOk
-            ? t("admin.alumniReviews.approveSuccess")
-            : t("admin.alumniReviews.approveSuccessPartial"),
-        );
-        await refreshList();
+        onNotice(t("admin.alumniReviews.approveSuccess"));
+        setFilter("approved");
+        setSelectedId(null);
+        setDetail(null);
+        setDraft(null);
+        await refreshList("approved");
       } catch (e) {
         const code = (e as Error & { code?: string }).code;
         const message = adminErrorMessage(code, t);
