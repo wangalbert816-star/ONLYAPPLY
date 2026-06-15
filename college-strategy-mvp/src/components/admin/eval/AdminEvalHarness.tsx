@@ -143,6 +143,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
   const [reviewPanel, setReviewPanel] = useState<"list" | "detail">("list");
   const prevStepRef = useRef<EvalStep>(step);
   const selectedRunIdRef = useRef(selectedRunId);
+  const refreshAllGenRef = useRef(0);
   selectedRunIdRef.current = selectedRunId;
 
   const profileLabel = useCallback(
@@ -162,6 +163,7 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
         return;
       }
       const detail = await fetchAdminEvalRun(token, runId);
+      if (selectedRunIdRef.current !== runId) return;
       setRunDetail(detail);
     },
     [token],
@@ -196,23 +198,32 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
   }, [token]);
 
   const refreshAll = useCallback(async () => {
+    const gen = ++refreshAllGenRef.current;
     setLoading(true);
     setPanelError(null);
     try {
       await refreshCases();
+      if (gen !== refreshAllGenRef.current) return;
       const { runs: nextRuns } = await listAdminEvalRuns(token);
+      if (gen !== refreshAllGenRef.current) return;
       setRuns(nextRuns);
-      const runId =
-        selectedRunIdRef.current && nextRuns.some((r) => r.id === selectedRunIdRef.current)
-          ? selectedRunIdRef.current
-          : nextRuns[0]?.id || "";
-      if (runId !== selectedRunIdRef.current) setSelectedRunId(runId);
-      if (runId) await loadRunDetail(runId);
+      let runId = selectedRunIdRef.current;
+      if (!runId || !nextRuns.some((r) => r.id === runId)) {
+        runId = nextRuns[0]?.id || "";
+        if (runId) {
+          setSelectedRunId(runId);
+          selectedRunIdRef.current = runId;
+        }
+      }
+      if (runId && gen === refreshAllGenRef.current) await loadRunDetail(runId);
+      if (gen !== refreshAllGenRef.current) return;
       await Promise.all([refreshDashboard(), refreshCaseStatus(), refreshTrainingCorpus(), refreshEngineStandards()]);
     } catch (e) {
-      setPanelError(evalErrorMessage((e as Error & { code?: string }).code, t));
+      if (gen === refreshAllGenRef.current) {
+        setPanelError(evalErrorMessage((e as Error & { code?: string }).code, t));
+      }
     } finally {
-      setLoading(false);
+      if (gen === refreshAllGenRef.current) setLoading(false);
     }
   }, [loadRunDetail, refreshCaseStatus, refreshCases, refreshDashboard, refreshEngineStandards, refreshTrainingCorpus, t, token]);
 
@@ -392,37 +403,48 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
 
   const handleGenerate = async () => {
     if (testing || busy || !selectedCaseId) return;
+    refreshAllGenRef.current += 1;
     setTesting(true);
     setPanelError(null);
+    const caseId = selectedCaseId;
     try {
       const { run } = await createAdminEvalRun(token, {
         label: autoRunLabel(locale),
-        caseIds: [selectedCaseId],
+        caseIds: [caseId],
         promptVersion: REPORT_PROMPT_VERSION,
         rubricVersion: REPORT_RUBRIC_VERSION,
         reportTemplateVersion: REPORT_TEMPLATE_VERSION,
       });
       setSelectedRunId(run.id);
+      selectedRunIdRef.current = run.id;
       setRuns((prev) => [run, ...prev.filter((r) => r.id !== run.id)]);
-      await generateAdminEvalRunCase(token, run.id, selectedCaseId);
+      await generateAdminEvalRunCase(token, run.id, caseId);
       const detail = await fetchAdminEvalRun(token, run.id);
+      if (selectedRunIdRef.current !== run.id) return;
       setRunDetail(detail);
       await refreshCaseStatus();
-      const resultRow = detail.results.find((r) => r.caseId === selectedCaseId);
+      const resultRow = detail.results.find((r) => r.caseId === caseId);
       if (resultRow?.case && resultRow.status === "ok") {
         const initialDraft = buildInitialReviewDraft(resultRow.case, resultRow, profileLabel);
         try {
-          await saveAdminEvalReview(token, run.id, selectedCaseId, draftToReviewPayload(initialDraft));
+          await saveAdminEvalReview(token, run.id, caseId, draftToReviewPayload(initialDraft));
           await loadRunDetail(run.id);
         } catch (e) {
           setPanelError(evalErrorMessage((e as Error & { code?: string }).code, t));
         }
+        setReviewCaseId(caseId);
+        setReviewPanel("detail");
+        setStep("review");
+        return;
       }
-      setReviewCaseId(selectedCaseId);
-      setReviewPanel("detail");
-      setStep("review");
+      const failMsg = resultRow?.error?.trim() || t("admin.eval.generateFailed");
+      setPanelError(failMsg);
+      setGeneratePanel("detail");
+      setStep("generate");
     } catch (e) {
       setPanelError(evalErrorMessage((e as Error & { code?: string }).code, t));
+      setGeneratePanel("detail");
+      setStep("generate");
     } finally {
       setTesting(false);
     }
@@ -883,7 +905,44 @@ export function AdminEvalHarness({ token, busy, onRun }: Props) {
             {reviewableResults.length === 0 ? (
               <>
                 <h3 className="admin-eval__heading">{t("admin.evalHarness.steps.review")}</h3>
-                <p className="admin-eval__empty">{t("admin.evalHarness.noReportYet")}</p>
+                {(() => {
+                  const failedRow = runDetail?.results.find(
+                    (r) => r.caseId === (reviewCaseId || selectedCaseId) && r.status === "error",
+                  );
+                  if (failedRow?.error) {
+                    return (
+                      <>
+                        <p className="admin-eval__empty">{t("admin.eval.generateFailed")}</p>
+                        <p className="admin-eval-harness__error">{failedRow.error}</p>
+                        <button
+                          type="button"
+                          className="admin-portal__btn admin-portal__btn--primary"
+                          onClick={() => {
+                            setGeneratePanel("detail");
+                            setStep("generate");
+                          }}
+                        >
+                          {t("admin.eval.startTest")}
+                        </button>
+                      </>
+                    );
+                  }
+                  return (
+                    <>
+                      <p className="admin-eval__empty">{t("admin.evalHarness.noReportYet")}</p>
+                      <button
+                        type="button"
+                        className="admin-portal__btn admin-portal__btn--ghost"
+                        onClick={() => {
+                          setGeneratePanel("detail");
+                          setStep("generate");
+                        }}
+                      >
+                        {t("admin.evalHarness.steps.generate")}
+                      </button>
+                    </>
+                  );
+                })()}
               </>
             ) : reviewPanel === "list" ? (
               <>
