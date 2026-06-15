@@ -28,9 +28,9 @@ create index if not exists alumni_report_reviews_user_idx
 create index if not exists alumni_report_reviews_report_idx
   on public.alumni_report_reviews (report_id);
 
+-- One review row per user + report (NULL report_id rows are not deduped by this index).
 create unique index if not exists alumni_report_reviews_user_report_uidx
-  on public.alumni_report_reviews (user_id, report_id)
-  where report_id is not null;
+  on public.alumni_report_reviews (user_id, report_id);
 
 alter table public.alumni_report_reviews enable row level security;
 

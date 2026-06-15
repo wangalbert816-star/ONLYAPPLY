@@ -89,11 +89,24 @@ async function upsertAlumniReviewSupabase(admin, userId, input) {
       .select("*")
       .single());
   } else if (reportId) {
-    ({ data, error } = await admin
+    const { data: existing, error: findErr } = await admin
       .from("alumni_report_reviews")
-      .upsert(row, { onConflict: "user_id,report_id" })
-      .select("*")
-      .single());
+      .select("id")
+      .eq("user_id", userId)
+      .eq("report_id", reportId)
+      .maybeSingle();
+    if (findErr) throw findErr;
+    if (existing?.id) {
+      ({ data, error } = await admin
+        .from("alumni_report_reviews")
+        .update(row)
+        .eq("id", existing.id)
+        .eq("user_id", userId)
+        .select("*")
+        .single());
+    } else {
+      ({ data, error } = await admin.from("alumni_report_reviews").insert(row).select("*").single());
+    }
   } else {
     ({ data, error } = await admin.from("alumni_report_reviews").insert(row).select("*").single());
   }
