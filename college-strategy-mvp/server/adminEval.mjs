@@ -703,7 +703,7 @@ export function registerAdminEvalRoutes(app, { requireAdmin, generateReportForAd
                 ? { id: runRow.id, promptVersion: runRow.prompt_version }
                 : null,
             });
-            decisionEngine = upsertBenchmarkToLiveFromReview({
+            decisionEngine = await upsertBenchmarkToLiveFromReview({
               evalCase,
               review,
               reviewerEmail: ctx.user.email,

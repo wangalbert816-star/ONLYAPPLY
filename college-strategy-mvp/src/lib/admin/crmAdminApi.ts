@@ -658,6 +658,7 @@ export type EngineStandardsStats = {
   catalogSchoolCount?: number;
   v2Enabled?: boolean;
   lastPublishedAt: string | null;
+  storageSource?: "supabase" | "file" | "file_fallback" | null;
   draftEntries: Array<{
     sourceCaseKey: string;
     title: string;

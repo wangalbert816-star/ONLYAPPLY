@@ -1,6 +1,7 @@
 /** Admin API: engine standards (write from review, trial-run, publish). */
 
 import {
+  ensureBenchmarksLoaded,
   getEngineStandardsStats,
   listDraftBenchmarks,
   publishEngineStandardsDraft,
@@ -47,6 +48,7 @@ export function registerEngineStandardsRoutes(app, ctx) {
     const admin = await ctx.requireAdmin(req, res);
     if (!admin) return;
     try {
+      await ensureBenchmarksLoaded();
       res.json({
         ...getEngineStandardsStats(),
         draftEntries: listDraftBenchmarks().map((e) => ({
@@ -81,7 +83,7 @@ export function registerEngineStandardsRoutes(app, ctx) {
       if (!reviewRow) return res.status(404).json({ error: "eval_review_not_found" });
 
       const review = mapEvalReview(reviewRow);
-      const result = upsertBenchmarkToLiveFromReview({
+      const result = await upsertBenchmarkToLiveFromReview({
         evalCase: mapEvalCaseRow(caseRow),
         review,
         reviewerEmail: admin.user.email,
@@ -104,7 +106,7 @@ export function registerEngineStandardsRoutes(app, ctx) {
     if (!evalCase?.caseKey) return res.status(400).json({ error: "eval_case_required" });
 
     try {
-      const result = upsertBenchmarkToLiveFromReview({
+      const result = await upsertBenchmarkToLiveFromReview({
         evalCase,
         review: review ?? { status: "submitted", finalApprovedRecommendation: req.body?.finalApprovedRecommendation },
         reviewerEmail: admin.user.email,
@@ -121,6 +123,7 @@ export function registerEngineStandardsRoutes(app, ctx) {
     const admin = await ctx.requireAdmin(req, res);
     if (!admin) return;
     try {
+      await ensureBenchmarksLoaded();
       const entries = await loadEvalTrialEntries(admin.admin);
       const report = trialRunEngineStandards(entries);
       res.json(report);
@@ -134,7 +137,7 @@ export function registerEngineStandardsRoutes(app, ctx) {
     const admin = await ctx.requireAdmin(req, res);
     if (!admin) return;
     try {
-      const result = publishEngineStandardsDraft(admin.user.email);
+      const result = await publishEngineStandardsDraft(admin.user.email);
       if (!result.ok) return res.status(400).json(result);
       res.json({ ...result, stats: getEngineStandardsStats() });
     } catch (e) {

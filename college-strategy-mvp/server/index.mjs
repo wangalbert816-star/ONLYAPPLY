@@ -47,6 +47,7 @@ import {
 } from "./decisionEngine.mjs";
 import { registerTrainingCorpusRoutes } from "./trainingCorpusAdmin.mjs";
 import { registerEngineStandardsRoutes } from "./engineStandardsAdmin.mjs";
+import { ensureBenchmarksLoaded } from "./engineStandards.mjs";
 import { registerCounselorCrmRoutes } from "./counselorCrm.mjs";
 import { registerUsHighSchoolRoutes } from "./usHighSchools.mjs";
 import { registerTranscriptParseRoutes, formatTranscriptSheetBlock } from "./transcriptParse.mjs";
@@ -2336,6 +2337,9 @@ registerTrainingCorpusRoutes(app, {
 registerEngineStandardsRoutes(app, {
   requireAdmin: requireCrmAdmin,
 });
+ensureBenchmarksLoaded().catch((e) =>
+  console.warn("[engine-benchmarks] preload_failed", e instanceof Error ? e.message : e),
+);
 registerCounselorCrmRoutes(app, { supabaseAdmin });
 registerUsHighSchoolRoutes(app);
 registerTranscriptParseRoutes(app, express);

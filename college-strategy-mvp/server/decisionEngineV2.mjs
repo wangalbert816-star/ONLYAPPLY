@@ -84,7 +84,7 @@ function resultFromPick(body, tags, context, reachRows, matchRows, safetyRows, m
  * @param {{ geoStrict?: boolean }} [options]
  */
 export function runDecisionEngineV2Catalog(body, tags = [], options = {}) {
-  const profileScores = scoreFiveDimensions(body);
+  const profileScores = options.calibratedProfileScores ?? scoreFiveDimensions(body);
   const composite = profileCompositeScore(profileScores);
   const baseContext = buildEngineContext(body, tags, { ...profileScores, composite });
   const geoStrict = options.geoStrict ?? baseContext.geoStrict;

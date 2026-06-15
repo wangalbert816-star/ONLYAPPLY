@@ -9,6 +9,10 @@ import { fileURLToPath } from "node:url";
 import { REPORT_PROMPT_VERSION } from "./evalConstants.mjs";
 import { getIntakeHorizon } from "./intakeHorizon.mjs";
 import { linearReferenceWeight } from "./engineIntakeProfile.mjs";
+import {
+  buildReviewFeedbackSummaryLines,
+  extractReviewFeedback,
+} from "./engineReviewFeedback.mjs";
 
 /** Gold-case similarity uses more tags + athlete/arch flags; practical ceiling ~40. */
 export const GOLD_CASE_REFERENCE_SCORE_CEILING = 40;
@@ -329,6 +333,19 @@ function buildOneGoldCaseReferenceBlock(ranked, index, locale) {
     );
   }
 
+  const feedback = c.reviewFeedback ?? extractReviewFeedback(c.review);
+  if (feedback && w >= 0.25) {
+    const trainingLines = buildReviewFeedbackSummaryLines(feedback, locale);
+    if (trainingLines.length) {
+      lines.push(
+        locale === "en"
+          ? `- Counselor training from this case (${pct}% ref):`
+          : `- 顾问培训要点（参考 ${pct}%）：`,
+      );
+      lines.push(...trainingLines.map((l) => `  ${l}`));
+    }
+  }
+
   return lines.join("\n");
 }
 
@@ -381,6 +398,8 @@ export function upsertGoldCaseFromEval(input) {
     ? patchSchoolsIntoReport(result.reportPayload, approvedSchools)
     : null;
 
+  const reviewFeedback = extractReviewFeedback(review);
+
   const entry = {
     id: evalCase.caseKey,
     caseKey: evalCase.caseKey,
@@ -390,6 +409,8 @@ export function upsertGoldCaseFromEval(input) {
     reportBody,
     approvedSchools,
     approvedReport,
+    reviewFeedback,
+    review,
     overallNotes: review.overallNotes ?? null,
     reviewedAt: review.approvedAt ?? review.submittedAt ?? new Date().toISOString(),
     reviewedBy: review.reviewedBy ?? null,

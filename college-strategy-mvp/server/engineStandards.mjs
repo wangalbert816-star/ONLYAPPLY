@@ -1,6 +1,7 @@
 /**
  * OnlyApply engine standards — counselor-maintained benchmark profiles (draft → live).
  * Non-programmers update via admin: write from review, trial-run, publish.
+ * Persisted in Supabase (production) with JSON file fallback for local dev.
  */
 
 import fs from "node:fs";
@@ -8,32 +9,23 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { runDecisionEngine } from "./decisionEngine.mjs";
 import { benchmarkSimilarityScore, profileSignatureFromBody } from "./engineIntakeProfile.mjs";
+import {
+  ensureBenchmarksLoaded,
+  getBenchmarkStorageSource,
+  getLastPublishedAt,
+  listDraftBenchmarksCached,
+  listLiveBenchmarksCached,
+  persistBenchmarkEntry,
+  publishDraftBenchmarksToLive,
+} from "./engineBenchmarksStore.mjs";
+import { extractReviewFeedback, feedbackTrainingStats } from "./engineReviewFeedback.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ENGINE_DIR = path.join(__dirname, "..", "data", "engine");
 const DRAFT_FILE = path.join(ENGINE_DIR, "benchmarks-draft.json");
 const LIVE_FILE = path.join(ENGINE_DIR, "benchmarks-live.json");
-const LOG_FILE = path.join(ENGINE_DIR, "publish-log.json");
 
-function ensureEngineDir() {
-  if (!fs.existsSync(ENGINE_DIR)) fs.mkdirSync(ENGINE_DIR, { recursive: true });
-}
-
-function readJsonArray(file) {
-  ensureEngineDir();
-  if (!fs.existsSync(file)) return [];
-  try {
-    const raw = JSON.parse(fs.readFileSync(file, "utf8"));
-    return Array.isArray(raw) ? raw : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeJsonArray(file, rows) {
-  ensureEngineDir();
-  fs.writeFileSync(file, `${JSON.stringify(rows, null, 2)}\n`, "utf8");
-}
+export { ensureBenchmarksLoaded };
 
 function parseSchoolEntry(raw) {
   if (!raw) return null;
@@ -90,10 +82,6 @@ function tierSchoolSet(tier) {
 
 export { profileSignatureFromBody };
 
-function signatureKey(sig) {
-  return JSON.stringify(sig);
-}
-
 export function findBestBenchmark(entries, reportBody, tags = []) {
   const query = profileSignatureFromBody(reportBody, tags);
   const ranked = entries
@@ -129,35 +117,29 @@ function readCatalogCount() {
 }
 
 export function getEngineStandardsStats() {
-  const draft = readJsonArray(DRAFT_FILE);
-  const live = readJsonArray(LIVE_FILE);
-  const log = readJsonArray(LOG_FILE);
+  const draft = listDraftBenchmarksCached();
+  const live = listLiveBenchmarksCached();
   return {
     draftCount: draft.length,
     liveCount: live.length,
     catalogSchoolCount: readCatalogCount(),
     v2Enabled: (process.env.DECISION_ENGINE_V2_ENABLED ?? "1").trim().toLowerCase() !== "0",
-    lastPublishedAt: log[0]?.publishedAt ?? null,
+    lastPublishedAt: getLastPublishedAt(),
+    storageSource: getBenchmarkStorageSource(),
     draftFile: DRAFT_FILE,
     liveFile: LIVE_FILE,
   };
 }
 
 export function listDraftBenchmarks() {
-  return readJsonArray(DRAFT_FILE);
+  return listDraftBenchmarksCached();
 }
 
 export function listLiveBenchmarks() {
-  return readJsonArray(LIVE_FILE);
+  return listLiveBenchmarksCached();
 }
 
-/**
- * @param {object} input
- * @param {object} input.evalCase
- * @param {object} input.review
- * @param {string} input.reviewerEmail
- */
-export function upsertBenchmarkFromReview(input) {
+function buildBenchmarkEntryFromReview(input) {
   const { evalCase, review, reviewerEmail } = input;
   if (!evalCase?.caseKey) return { ok: false, reason: "missing_case" };
 
@@ -177,48 +159,69 @@ export function upsertBenchmarkFromReview(input) {
   }
 
   const profile = profileSignatureFromBody(reportBody, evalCase.tags);
+  const reviewFeedback = extractReviewFeedback(review);
   const entry = {
     id: evalCase.caseKey,
     sourceCaseKey: evalCase.caseKey,
     title: evalCase.title ?? evalCase.caseKey,
     profile,
     approvedSchools,
+    reviewFeedback,
     notes: approvedSchools.notes ?? review.overallNotes ?? null,
     updatedAt: new Date().toISOString(),
     updatedBy: reviewerEmail ?? null,
   };
 
-  const draft = readJsonArray(DRAFT_FILE);
-  const idx = draft.findIndex((r) => r.sourceCaseKey === entry.sourceCaseKey);
-  if (idx >= 0) draft[idx] = entry;
-  else draft.push(entry);
-  draft.sort((a, b) => String(a.sourceCaseKey).localeCompare(String(b.sourceCaseKey)));
-  writeJsonArray(DRAFT_FILE, draft);
+  return { ok: true, entry };
+}
 
-  return { ok: true, entry, draftCount: draft.length };
+/**
+ * @param {object} input
+ * @param {object} input.evalCase
+ * @param {object} input.review
+ * @param {string} input.reviewerEmail
+ */
+export async function upsertBenchmarkFromReview(input) {
+  const built = buildBenchmarkEntryFromReview(input);
+  if (!built.ok) return built;
+
+  const { entry } = built;
+  await persistBenchmarkEntry(entry, ["draft"]);
+
+  return {
+    ok: true,
+    entry,
+    draftCount: listDraftBenchmarksCached().length,
+    storageSource: getBenchmarkStorageSource(),
+  };
 }
 
 /** Write the same benchmark to draft and live (used after counselor submit). */
-export function upsertBenchmarkToLiveFromReview(input) {
-  const draftResult = upsertBenchmarkFromReview(input);
-  if (!draftResult.ok) return draftResult;
+export async function upsertBenchmarkToLiveFromReview(input) {
+  const built = buildBenchmarkEntryFromReview(input);
+  if (!built.ok) return built;
 
-  const live = readJsonArray(LIVE_FILE);
-  const idx = live.findIndex((r) => r.sourceCaseKey === draftResult.entry.sourceCaseKey);
-  if (idx >= 0) live[idx] = draftResult.entry;
-  else live.push(draftResult.entry);
-  live.sort((a, b) => String(a.sourceCaseKey).localeCompare(String(b.sourceCaseKey)));
-  writeJsonArray(LIVE_FILE, live);
+  const { entry } = built;
+  await persistBenchmarkEntry(entry, ["draft", "live"]);
 
-  return { ...draftResult, liveCount: live.length, syncedToLive: true };
+  return {
+    ok: true,
+    entry,
+    draftCount: listDraftBenchmarksCached().length,
+    liveCount: listLiveBenchmarksCached().length,
+    syncedToLive: true,
+    storageSource: getBenchmarkStorageSource(),
+    reviewFeedback: entry.reviewFeedback ?? null,
+    trainingStats: entry.reviewFeedback ? feedbackTrainingStats(entry.reviewFeedback) : null,
+  };
 }
 
 /**
  * @param {Array<{ case: object, review?: object }>} evalEntries
  */
 export function trialRunEngineStandards(evalEntries = []) {
-  const draft = readJsonArray(DRAFT_FILE);
-  const live = readJsonArray(LIVE_FILE);
+  const draft = listDraftBenchmarksCached();
+  const live = listLiveBenchmarksCached();
 
   const caseResults = [];
   let draftMatchSum = 0;
@@ -299,18 +302,6 @@ export function trialRunEngineStandards(evalEntries = []) {
   };
 }
 
-export function publishEngineStandardsDraft(reviewerEmail) {
-  const draft = readJsonArray(DRAFT_FILE);
-  if (!draft.length) return { ok: false, reason: "draft_empty" };
-
-  writeJsonArray(LIVE_FILE, draft);
-  const log = readJsonArray(LOG_FILE);
-  log.unshift({
-    publishedAt: new Date().toISOString(),
-    publishedBy: reviewerEmail ?? null,
-    entryCount: draft.length,
-  });
-  writeJsonArray(LOG_FILE, log.slice(0, 20));
-
-  return { ok: true, liveCount: draft.length, publishedAt: log[0].publishedAt };
+export async function publishEngineStandardsDraft(reviewerEmail) {
+  return publishDraftBenchmarksToLive(reviewerEmail);
 }

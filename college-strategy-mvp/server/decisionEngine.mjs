@@ -3,6 +3,7 @@
  */
 
 import {
+  ensureBenchmarksLoaded,
   findBestBenchmark,
   listDraftBenchmarks,
   listLiveBenchmarks,
@@ -10,6 +11,11 @@ import {
 } from "./engineStandards.mjs";
 import { BENCHMARK_STRONG_SCORE, runDecisionEngineV2, runDecisionEngineV2Catalog } from "./decisionEngineV2.mjs";
 import { fillDecisionGapsWithAi } from "./decisionEngineAiFill.mjs";
+import {
+  buildReviewFeedbackPromptBlock,
+  profileScoresWithFeedback,
+} from "./engineReviewFeedback.mjs";
+import { scoreFiveDimensions } from "./fiveDimensionScore.mjs";
 import {
   BENCHMARK_REFERENCE_SCORE_CEILING,
   benchmarkProfilePrefDiff,
@@ -140,6 +146,7 @@ function tryBenchmarkMatch(body, tags) {
     schools,
     notes: hit.notes ?? schools.notes ?? null,
     profile: hit.profile,
+    reviewFeedback: hit.reviewFeedback ?? null,
   };
 }
 
@@ -157,8 +164,37 @@ function benchmarkReferenceFromAttempt(attempt) {
     prefConflictReasons: attempt.prefConflictReasons ?? [],
     schools: attempt.schools,
     notes: attempt.notes,
+    reviewFeedback: attempt.reviewFeedback ?? null,
   };
 }
+
+function buildScoringOptsFromBenchmark(benchmark, body) {
+  if (!benchmark?.ok) return {};
+  const computed = scoreFiveDimensions(body);
+  let calibratedProfileScores = null;
+  if (benchmark.reviewFeedback?.profileScoreOverrides) {
+    calibratedProfileScores = profileScoresWithFeedback(
+      computed,
+      benchmark.reviewFeedback,
+      benchmark.matchScore ?? 0,
+      BENCHMARK_STRONG_SCORE,
+    );
+  }
+  const profileCalibrated =
+    calibratedProfileScores != null &&
+    PROFILE_CALIBRATION_KEYS.some((k) => calibratedProfileScores[k] !== computed[k]);
+
+  return {
+    calibratedProfileScores,
+    reviewFeedback: benchmark.reviewFeedback ?? null,
+    benchmarkMatchScore: benchmark.matchScore ?? null,
+    benchmarkId: benchmark.benchmarkId ?? null,
+    benchmarkTitle: benchmark.benchmarkTitle ?? null,
+    profileCalibrated,
+  };
+}
+
+const PROFILE_CALIBRATION_KEYS = ["academic", "testing", "activities", "rigor", "strategy"];
 
 function attachBenchmarkReference(result, benchmarkAttempt) {
   const ref = benchmarkReferenceFromAttempt(benchmarkAttempt);
@@ -172,11 +208,20 @@ function formatTierLine(tier, locale) {
     .join(locale === "en" ? ", " : "、");
 }
 
-async function runScoredWithAiFill(body, tags, locale, generateJson) {
-  let pick = runDecisionEngineV2Catalog(body, tags, { geoStrict: true });
+async function runScoredWithAiFill(body, tags, locale, generateJson, scoringOpts = {}) {
+  let pick = runDecisionEngineV2Catalog(body, tags, {
+    geoStrict: true,
+    calibratedProfileScores: scoringOpts.calibratedProfileScores,
+  });
 
   if (pick.ok) {
-    return finalizeV2FromPick(pick, "scored");
+    return finalizeV2FromPick(pick, "scored", {
+      reviewFeedback: scoringOpts.reviewFeedback,
+      benchmarkMatchScore: scoringOpts.benchmarkMatchScore,
+      benchmarkId: scoringOpts.benchmarkId,
+      benchmarkTitle: scoringOpts.benchmarkTitle,
+      profileCalibrated: scoringOpts.profileCalibrated,
+    });
   }
 
   const gaps = pick.gaps;
@@ -199,7 +244,8 @@ async function runScoredWithAiFill(body, tags, locale, generateJson) {
         mode: "scored_ai_fill",
         benchmarkId: null,
         benchmarkTitle: `五维算分+AI补校 · ${ctx.majorBucket}`,
-        matchScore: null,
+        matchScore: scoringOpts.benchmarkMatchScore ?? null,
+        reviewFeedback: scoringOpts.reviewFeedback ?? null,
         schools,
         notes: schools.notes ?? `偏好优先 catalog + AI 补 ${fillResult.aiFilled} 所`,
         profile: {
@@ -211,6 +257,7 @@ async function runScoredWithAiFill(body, tags, locale, generateJson) {
             geoStrict: ctx.geoStrict,
             geoAllowed: ctx.geo.allowed,
             aiFilled: fillResult.aiFilled,
+            profileCalibrated: Boolean(scoringOpts.profileCalibrated),
           },
         },
         v2Meta: {
@@ -222,23 +269,33 @@ async function runScoredWithAiFill(body, tags, locale, generateJson) {
     }
   }
 
-  const relaxed = runDecisionEngineV2Catalog(body, tags, { geoStrict: false });
+  const relaxed = runDecisionEngineV2Catalog(body, tags, {
+    geoStrict: false,
+    calibratedProfileScores: scoringOpts.calibratedProfileScores,
+  });
   if (relaxed.ok) {
-    return finalizeV2FromPick(relaxed, "scored_relaxed_geo");
+    return finalizeV2FromPick(relaxed, "scored_relaxed_geo", {
+      reviewFeedback: scoringOpts.reviewFeedback,
+      benchmarkMatchScore: scoringOpts.benchmarkMatchScore,
+      benchmarkId: scoringOpts.benchmarkId,
+      benchmarkTitle: scoringOpts.benchmarkTitle,
+      profileCalibrated: scoringOpts.profileCalibrated,
+    });
   }
 
   return { ok: false, reason: "incomplete_tiers", gaps, partial: pick.schools };
 }
 
-function finalizeV2FromPick(pick, mode) {
+function finalizeV2FromPick(pick, mode, extra = {}) {
   const { reachRows, matchRows, safetyRows, context, schools } = pick;
   return {
     ok: true,
     source: "scored",
     mode,
-    benchmarkId: null,
-    benchmarkTitle: `五维算分 · ${context.majorBucket}`,
-    matchScore: null,
+    benchmarkId: extra.benchmarkId ?? null,
+    benchmarkTitle: extra.benchmarkTitle ?? `五维算分 · ${context.majorBucket}`,
+    matchScore: extra.benchmarkMatchScore ?? null,
+    reviewFeedback: extra.reviewFeedback ?? null,
     schools,
     notes: schools.notes,
     profile: {
@@ -253,6 +310,7 @@ function finalizeV2FromPick(pick, mode) {
         testOptional: context.testOptional,
         riskStyle: context.riskStyle || "balanced",
         dealbreakers: context.dealbreakers.themes,
+        profileCalibrated: Boolean(extra.profileCalibrated),
       },
     },
     v2Meta: {
@@ -299,15 +357,18 @@ export async function runDecisionEngineAsync(body, tags = [], opts = {}) {
     return { ok: false, reason: "disabled" };
   }
 
+  await ensureBenchmarksLoaded();
+
   const locale = opts.locale === "en" ? "en" : "zh";
   const benchmark = tryBenchmarkMatch(body, tags);
+  const scoringOpts = buildScoringOptsFromBenchmark(benchmark, body);
 
   if (benchmark.ok && benchmark.canApplyExact) {
     return benchmark;
   }
 
   if (scoringEngineEnabled()) {
-    const withAi = await runScoredWithAiFill(body, tags, locale, opts.generateJson);
+    const withAi = await runScoredWithAiFill(body, tags, locale, opts.generateJson, scoringOpts);
     if (withAi.ok) {
       return attachBenchmarkReference({ ...withAi, benchmarkAttempt: benchmark.ok ? benchmark : null }, benchmark);
     }
@@ -408,6 +469,11 @@ export function buildDecisionEnginePromptBlock(decision, locale = "zh", body = n
       : "";
 
   const referenceBlock = buildBenchmarkReferencePromptBlock(decision.benchmarkReference, locale);
+  const feedbackSource = decision.reviewFeedback ?? decision.benchmarkReference?.reviewFeedback ?? null;
+  const trainingBlock = buildReviewFeedbackPromptBlock(feedbackSource, locale, {
+    caseTitle: decision.benchmarkTitle ?? decision.benchmarkId ?? undefined,
+    matchScore: decision.matchScore ?? decision.benchmarkReference?.matchScore ?? null,
+  });
 
   const prefNote =
     decision.mode === "scored_ai_fill"
@@ -429,6 +495,7 @@ export function buildDecisionEnginePromptBlock(decision, locale = "zh", body = n
 The following 9 schools are engine-approved. Do NOT rename, remove, swap tiers, or add different schools in reach/match/safety.
 ${prefNote}
 ${referenceBlock}
+${trainingBlock}
 ${intakeBlock}
 - Reach: ${formatTierLine(s.reach, "en")}
 - Match: ${formatTierLine(s.match, "en")}
@@ -443,6 +510,7 @@ ${decision.notes ? `- Engine note: ${decision.notes}\n` : ""}Write why_reach_for
 reach / match / safety 必须使用下列校名与档位，不得替换、删除或新增其它学校。
 ${prefNote}
 ${referenceBlock}
+${trainingBlock}
 ${intakeBlock}
 - 冲：${formatTierLine(s.reach, "zh")}
 - 稳：${formatTierLine(s.match, "zh")}
