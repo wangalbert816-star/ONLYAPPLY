@@ -94,8 +94,8 @@ export function computeTranscriptRigorStats(sheet: TranscriptSheet | undefined):
 function parseGpaFromText(text: string): { unweighted: string; weighted: string } {
   const t = text.trim();
   if (!t) return { unweighted: "", weighted: "" };
-  const uw = t.match(/(?:unweighted|UW|未加权|非加权)[^\d]*(\d(?:\.\d{1,2})?)/i);
-  const w = t.match(/(?:weighted|W(?!ed)|加权)[^\d]*(\d(?:\.\d{1,2})?)/i);
+  const uw = t.match(/(?:unweighted|UW|未加权|非加权)[^\d]*(\d+(?:\.\d+)?)/i);
+  const w = t.match(/(?:weighted|加权)[^\d]*(\d+(?:\.\d+)?)/i);
   return {
     unweighted: sanitizeGpaValue(uw?.[1] ?? "", { min: 1.5, max: 4.5 }),
     weighted: sanitizeGpaValue(w?.[1] ?? "", { min: 2.0, max: 5.5 }),
