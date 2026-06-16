@@ -53,6 +53,7 @@ import { registerAlumniReviewRoutes } from "./alumniReviews.mjs";
 import { registerAlumniReviewsAdminRoutes } from "./alumniReviewsAdmin.mjs";
 import { registerUsHighSchoolRoutes } from "./usHighSchools.mjs";
 import { registerTranscriptParseRoutes, formatTranscriptSheetBlock } from "./transcriptParse.mjs";
+import { buildGpaPromptSection, transcriptSheetIsAuthoritative } from "./transcriptSheetReport.mjs";
 import { registerActivitiesParseRoutes } from "./activitiesParse.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -1300,16 +1301,27 @@ function campusCultureAnalysisHint(pref, locale) {
 function academicRigorAnalysisHint(body, locale) {
   const school = String(body?.currentHighSchool || "").trim();
   const system = String(body?.highSchoolSystem || "").trim();
+  const sheetAuth = transcriptSheetIsAuthoritative(body?.transcriptSheet);
   if (locale === "en") {
     if (!school) {
-      return "No current high school name—infer course rigor only from curriculum system and GPA notes; flag rigor uncertainty in information_gaps when it affects tiering.";
+      const rigorSource = sheetAuth
+        ? "confirmed structured grade sheet (authoritative)"
+        : "curriculum system and GPA notes";
+      return `No current high school name—infer course rigor from ${rigorSource}; flag rigor uncertainty in information_gaps when it affects tiering.`;
     }
-    return `Current high school: ${school}. Combine with curriculum (${system || "unknown"}) to interpret course rigor in executive_summary, tier rationales, and key_risks. Do NOT invent school profile stats, rankings, or admit rates. You may note well-known rigorous reputations in neutral terms; otherwise tell the student what to verify (school profile, counselor context, course list). Cross-check AP/IB/honors mentions in GPA notes against this school context.`;
+    const sheetNote = sheetAuth
+      ? " Count AP/IB/honors and course rigor from the confirmed grade sheet—not freeform GPA summary text."
+      : " Cross-check AP/IB/honors mentions in GPA notes against this school context.";
+    return `Current high school: ${school}. Combine with curriculum (${system || "unknown"}) to interpret course rigor in executive_summary, tier rationales, and key_risks. Do NOT invent school profile stats, rankings, or admit rates. You may note well-known rigorous reputations in neutral terms; otherwise tell the student what to verify (school profile, counselor context, course list).${sheetNote}`;
   }
   if (!school) {
-    return "未提供就读学校名称——仅依据课程体系与 GPA 说明推断课程 rigor；若影响档位判断，请在 information_gaps 中提示 rigor 不确定。";
+    const rigorSource = sheetAuth ? "已确认的结构化成绩表（以此为准）" : "课程体系与 GPA 说明";
+    return `未提供就读学校名称——仅依据${rigorSource}推断课程 rigor；若影响档位判断，请在 information_gaps 中提示 rigor 不确定。`;
   }
-  return `当前就读学校：${school}。须与课程体系（${system || "未填"}）结合，在总览、分档理由与 key_risks 中解释课程 rigor 如何影响判断。禁止编造该校 profile 数据、排名或录取率；知名 rigorous 学校可用中性表述，否则应写清需核对项（学校 profile、counselor 说明、课程清单）。GPA 说明中的 AP/IB/honors 须与此校语境交叉验证。`;
+  const sheetNote = sheetAuth
+    ? " AP/IB/honors 数量与课程 rigor 须以已确认成绩表为准，勿依赖 GPA 自由文字摘要。"
+    : " GPA 说明中的 AP/IB/honors 须与此校语境交叉验证。";
+  return `当前就读学校：${school}。须与课程体系（${system || "未填"}）结合，在总览、分档理由与 key_risks 中解释课程 rigor 如何影响判断。禁止编造该校 profile 数据、排名或录取率；知名 rigorous 学校可用中性表述，否则应写清需核对项（学校 profile、counselor 说明、课程清单）。${sheetNote}`;
 }
 
 function formatAcademicSpecialLine(body) {
@@ -1357,7 +1369,6 @@ function buildUserPayload(body, includeUc = false) {
     actScore,
     highSchoolSystem,
     currentHighSchool,
-    gpa,
     gpaTrend,
     languageScores,
     majorPrimary,
@@ -1384,7 +1395,7 @@ function buildUserPayload(body, includeUc = false) {
   const cultureLine = campusCultureAnalysisHint(campusCulturePref, locale);
   const rigorLine = academicRigorAnalysisHint(body, locale);
   const forbiddenLine = formatForbiddenSchoolsLine(body, locale);
-  const transcriptBlock = formatTranscriptSheetBlock(body?.transcriptSheet, locale);
+  const { gpaLine, transcriptBlock } = buildGpaPromptSection(body, locale, formatTranscriptSheetBlock);
   const tierHintBlock =
     athleticRecruitmentHint(body, locale) +
     statsTierCalibrationHint(body, locale) +
@@ -1421,7 +1432,7 @@ ${planHorizonLine}
 [High school system] ${highSchoolSystem || na}
 [Current high school] ${currentHighSchool || na}
 [Course rigor — analysis instruction] ${rigorLine}
-[GPA / transcript notes] ${gpa || na}
+[GPA / transcript notes] ${gpaLine}
 ${transcriptBlock ? `\n${transcriptBlock}` : ""}
 [GPA trend] ${gpaTrend || na}
 [Language scores] ${languageScores || na}
@@ -1457,7 +1468,7 @@ ${planHorizonLine}
 【高中体系】${highSchoolSystem || "未填"}
 【就读学校】${currentHighSchool || "未填"}
 【课程 rigor · 分析要求】${rigorLine}
-【GPA/成绩说明】${gpa || "未填"}
+【GPA/成绩说明】${gpaLine}
 ${transcriptBlock ? `\n${transcriptBlock}` : ""}
 【GPA 趋势】${gpaTrend || "未填"}
 【语言成绩】${languageScores || "未填"}

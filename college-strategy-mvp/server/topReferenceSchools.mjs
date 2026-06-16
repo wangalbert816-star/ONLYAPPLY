@@ -1,5 +1,6 @@
 import { coerceStringArray } from "./coerceStringArray.mjs";
 import { isActivityThinFromBody, structuredActivityBlob } from "./activityEvidence.mjs";
+import { resolveGpaNumbersFromBody } from "./transcriptSheetReport.mjs";
 
 const ULTRA_SELECTIVE_SCHOOLS = [
   "mit",
@@ -102,25 +103,9 @@ export function isUltraSelectiveSchoolName(name) {
   });
 }
 
-function parseGpaNumbers(gpaText) {
-  const t = String(gpaText || "").trim();
-  if (!t) return { unweighted: null, weighted: null };
-  let unweighted = null;
-  let weighted = null;
-  const uw = t.match(/(?:unweighted|UW|未加权|非加权)[^\d]*(\d(?:\.\d{1,2})?)/i);
-  const w = t.match(/(?:weighted|W|加权)[^\d]*(\d(?:\.\d{1,2})?)/i);
-  if (uw) unweighted = Number(uw[1]);
-  if (w) weighted = Number(w[1]);
-  const all = [...t.matchAll(/\b([1-4]\.\d{1,2})\b/g)].map((m) => Number(m[1]));
-  if (unweighted == null && all.length) unweighted = Math.min(...all);
-  if (weighted == null && all.length > 1) weighted = Math.max(...all);
-  if (weighted == null && all.length === 1) weighted = all[0];
-  return { unweighted, weighted };
-}
-
 /** 是否允许输出 top_reference_schools（强背景或罕见证据） */
 export function allowsTopReferenceSchools(body) {
-  const { unweighted, weighted } = parseGpaNumbers(body?.gpa);
+  const { unweighted, weighted } = resolveGpaNumbersFromBody(body);
   const uw = unweighted ?? weighted;
   const w = weighted ?? unweighted;
   const thin = isActivityThinFromBody(body);

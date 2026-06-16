@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import type { FormState, ReportDiff, ReportPayload, SupplementaryNote } from "./types";
 import { getEffectiveIntake } from "./lib/intakeTerm";
+import { transcriptSheetCoversGpaField } from "./lib/transcriptSheet";
 import { buildReportApiBody } from "./lib/reportApiBody";
 import { collectHighlightKeys, compareReports, reportDiffIsEmpty } from "./lib/reportDiff";
 import { REPORT_CONTENT_LOCALE } from "./lib/reportContentLocale";
@@ -158,7 +159,7 @@ function validateStep(step: number, f: FormState, tr: (path: string) => string):
     if (!f.budget) return tr("validation.budget");
   }
   if (step === 2) {
-    if (!f.gpa.trim()) return tr("validation.gpa");
+    if (!f.gpa.trim() && !transcriptSheetCoversGpaField(f.transcriptSheet)) return tr("validation.gpa");
     if (!f.gpaTrend) return tr("validation.gpaTrend");
     if (!f.testing) return tr("validation.testing");
     if (f.testing === "will_submit") {

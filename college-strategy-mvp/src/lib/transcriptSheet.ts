@@ -55,6 +55,14 @@ export function transcriptSheetIsUsable(sheet: TranscriptSheet | undefined): boo
   return Boolean(sheet.gradingScale && (hasGpa || hasCourse)) || hasCourse;
 }
 
+/** Confirmed grade sheet with courses or GPA — satisfies Step 2 GPA screen without freeform text. */
+export function transcriptSheetCoversGpaField(sheet: TranscriptSheet | undefined): boolean {
+  if (!sheet || sheet.skipped || !sheet.confirmedAt) return false;
+  const hasGpa = Boolean(sheet.unweightedGpa.trim() || sheet.weightedGpa.trim());
+  const hasCourse = sheet.courses.some((c) => c.courseName.trim() && c.grade.trim());
+  return hasGpa || hasCourse;
+}
+
 export type TranscriptRigorStats = {
   apCount: number;
   ibHlCount: number;

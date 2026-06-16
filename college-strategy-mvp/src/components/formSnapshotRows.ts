@@ -5,7 +5,7 @@ import type { Step1ScreenId } from "./GuidedStep1Flow";
 import type { Step2ScreenId } from "./GuidedStep2Flow";
 import type { Step3ScreenId } from "./GuidedStep3Flow";
 import { activityItemMeetsWizardRequirement } from "./guidedStepShared";
-import { transcriptSheetIsUsable } from "../lib/transcriptSheet";
+import { transcriptSheetCoversGpaField, transcriptSheetIsUsable } from "../lib/transcriptSheet";
 
 export type SnapshotRowStatus = "filled" | "pending" | "optional" | "na";
 
@@ -268,7 +268,7 @@ const ROW_DEFS: RowDef[] = [
     section: 2,
     labelKey: "wizard.summary.row.gpa",
     hintKey: "wizard.summary.hint.gpa",
-    filled: (f) => Boolean(f.gpa.trim()),
+    filled: (f) => Boolean(f.gpa.trim()) || transcriptSheetCoversGpaField(f.transcriptSheet),
     value: (f) => f.gpa.trim() || null,
   },
   {

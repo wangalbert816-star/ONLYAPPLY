@@ -8,7 +8,6 @@ import {
   GRADING_SCALE_OPTIONS,
   createTranscriptCourseRow,
   ensureTranscriptSheet,
-  syncGpaSummaryFromSheet,
 } from "../lib/transcriptSheet";
 import { parseTranscriptFile, parseTranscriptPaste } from "../lib/transcriptParseClient";
 import "./TranscriptGradeSheet.css";
@@ -34,10 +33,6 @@ export function TranscriptGradeSheet({ form, update, t, onSkipAdvance }: Props) 
     (patch: Partial<TranscriptSheet>) => {
       const next: TranscriptSheet = { ...ensureTranscriptSheet(form), ...patch };
       update("transcriptSheet", next);
-      if (!next.skipped && (next.courses.length || next.unweightedGpa || next.weightedGpa)) {
-        const summary = syncGpaSummaryFromSheet(next);
-        if (summary) update("gpa", summary);
-      }
     },
     [form, update],
   );

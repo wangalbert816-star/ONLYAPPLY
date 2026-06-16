@@ -15,6 +15,7 @@ import {
 } from "./guidedStepShared";
 import { HighSchoolSearchCombobox } from "./HighSchoolSearchCombobox";
 import { TranscriptGradeSheet } from "./TranscriptGradeSheet";
+import { transcriptSheetCoversGpaField } from "../lib/transcriptSheet";
 
 export type Step2ScreenId =
   | "gpa"
@@ -47,7 +48,7 @@ export function getStep2Screens(form: FormState): Step2ScreenId[] {
 export function validateStep2Screen(screen: Step2ScreenId, f: FormState, tr: (path: string) => string): string | null {
   switch (screen) {
     case "gpa":
-      if (!f.gpa.trim()) return tr("validation.gpa");
+      if (!f.gpa.trim() && !transcriptSheetCoversGpaField(f.transcriptSheet)) return tr("validation.gpa");
       return null;
     case "transcriptSheet": {
       const sheet = f.transcriptSheet;
@@ -117,7 +118,9 @@ export function GuidedStep2Flow({
   useButtonPickers?: boolean;
 }) {
   const choose = t("form.opt.choose");
-  const gpaOk = Boolean(guideTouch.s2_gpa && form.gpa.trim());
+  const gpaOk = Boolean(
+    guideTouch.s2_gpa && (form.gpa.trim() || transcriptSheetCoversGpaField(form.transcriptSheet)),
+  );
   const majorOk = Boolean(guideTouch.s2_major && form.majorPrimary.trim());
   const major2Ok = Boolean(guideTouch.s2_major2);
 

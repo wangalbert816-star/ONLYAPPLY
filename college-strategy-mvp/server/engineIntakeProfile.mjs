@@ -5,6 +5,7 @@
 
 import { meaningfulStructuredActivities, structuredActivityBlob } from "./activityEvidence.mjs";
 import { forbiddenSchoolsFromBody } from "./topReferenceSchools.mjs";
+import { resolveGpaTextForAnalysis } from "./transcriptSheetReport.mjs";
 
 const GEO_ALIASES = { great_lakes: "midwest" };
 
@@ -206,7 +207,7 @@ export function buildEngineIntakeProfile(body, tags = []) {
   const schoolSize = String(b.schoolSize ?? "any").trim().toLowerCase() || "any";
   const campusCulture = String(b.campusCulturePref ?? "any").trim().toLowerCase() || "any";
   const riskStyle = String(b.riskStyle ?? "balanced").trim().toLowerCase() || "balanced";
-  const gpaBand = parseGpaBand(b.gpa);
+  const gpaBand = parseGpaBand(resolveGpaTextForAnalysis(b));
   const testBand = parseTestBand(b);
 
   const intl = applicantIdentity === "intl" || tagSet.includes("intl");

@@ -1,6 +1,7 @@
 /** Dynamic tier-calibration hints injected into report user payload (from eval review 2026-06-08). */
 
 import { meaningfulStructuredActivities, structuredActivityBlob } from "./activityEvidence.mjs";
+import { parseGpaNumberFromBody } from "./transcriptSheetReport.mjs";
 
 function parseGpaNumber(gpaRaw) {
   const text = String(gpaRaw || "").trim();
@@ -12,6 +13,10 @@ function parseGpaNumber(gpaRaw) {
   return Math.min(...all);
 }
 
+function gpaFromBody(body) {
+  return parseGpaNumberFromBody(body) ?? parseGpaNumber(body?.gpa);
+}
+
 function parseSatNumber(body) {
   const sat = String(body?.satScore || "").trim();
   if (sat && /^\d{3,4}$/.test(sat)) return Number(sat);
@@ -21,7 +26,7 @@ function parseSatNumber(body) {
 }
 
 function isWeakAcademicProfile(body) {
-  const gpa = parseGpaNumber(body?.gpa);
+  const gpa = gpaFromBody(body);
   const sat = parseSatNumber(body);
   const testing = String(body?.testing || "");
   const thinActivities = meaningfulStructuredActivities(body).filter(
@@ -34,7 +39,7 @@ function isWeakAcademicProfile(body) {
 }
 
 function isModerateAcademicProfile(body) {
-  const gpa = parseGpaNumber(body?.gpa);
+  const gpa = gpaFromBody(body);
   const sat = parseSatNumber(body);
   if (gpa != null && gpa >= 3.55 && sat != null && sat >= 1400) return false;
   if (gpa != null && gpa >= 3.7 && sat != null && sat >= 1350) return false;
@@ -93,7 +98,7 @@ export function athleticRecruitmentHint(body, locale) {
 
 /** @param {Record<string, unknown>} body @param {"zh"|"en"} locale */
 export function statsTierCalibrationHint(body, locale) {
-  const gpa = parseGpaNumber(body?.gpa);
+  const gpa = gpaFromBody(body);
   const sat = parseSatNumber(body);
   const weak = isWeakAcademicProfile(body);
   const moderate = isModerateAcademicProfile(body);

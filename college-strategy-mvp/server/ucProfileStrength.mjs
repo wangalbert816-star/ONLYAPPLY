@@ -1,21 +1,6 @@
 import { ucCampusKeyFromSchool } from "./ucCampusSelectivity.mjs";
 import { isActivityThinFromBody } from "./activityEvidence.mjs";
-
-function parseGpaNumbers(gpaText) {
-  const t = String(gpaText || "").trim();
-  if (!t) return { unweighted: null, weighted: null };
-  let unweighted = null;
-  let weighted = null;
-  const uw = t.match(/(?:unweighted|UW|未加权|非加权)[^\d]*(\d(?:\.\d{1,2})?)/i);
-  const w = t.match(/(?:weighted|W|加权)[^\d]*(\d(?:\.\d{1,2})?)/i);
-  if (uw) unweighted = Number(uw[1]);
-  if (w) weighted = Number(w[1]);
-  const all = [...t.matchAll(/\b([1-4]\.\d{1,2})\b/g)].map((m) => Number(m[1]));
-  if (unweighted == null && all.length) unweighted = Math.min(...all);
-  if (weighted == null && all.length > 1) weighted = Math.max(...all);
-  if (weighted == null && all.length === 1) weighted = all[0];
-  return { unweighted, weighted };
-}
+import { resolveGpaNumbersFromBody } from "./transcriptSheetReport.mjs";
 
 function parseSatFromBody(body) {
   const d = String(body?.satScore || "").replace(/\D/g, "");
@@ -25,7 +10,7 @@ function parseSatFromBody(body) {
 }
 
 export function assessUcProfileSignals(body) {
-  const { unweighted, weighted } = parseGpaNumbers(body?.gpa);
+  const { unweighted, weighted } = resolveGpaNumbersFromBody(body);
   const sat = parseSatFromBody(body);
   const activityThin = isActivityThinFromBody(body);
   let band = "mid";
