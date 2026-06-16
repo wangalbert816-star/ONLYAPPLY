@@ -195,11 +195,197 @@ function parseActivitiesCsv(text) {
 const CA_ACTIVITY_ROW_TYPE_RE =
   /^(Extracurricular Activity|Community Service|Academic \/ Competition|Research|Internship \/ Work|School Club \/ Organization|Art \/ Performance|Athletics|Other Club \/ Activity)\b/i;
 
+/** Common App "print/save PDF" vertical blocks (type on its own line, not tabular export). */
+const CA_PDF_TYPE_LINE_RE =
+  /^(Community Service(?:\s*\(Volunteer\))?|Other Club\/Activity|Foreign Exchange|Internship|Academic|Debate\/Speech|Extracurricular Activity|Research|School Club\/Organization|Art\/Performance|Athletics)$/i;
+
+const GRADES_LINE_RE = /^\d{1,2}(?:\s*,\s*\d{1,2})*$/;
+const HOURS_LINE_RE = /^\d+\s*hr\/wk,\s*\d+\s*wk\/yr$/i;
+const TIMING_LINE_RE = /^(School|Break|Year|All year)(\s*,\s*(School|Break|Year|All year))*$/i;
+const COLLEGE_INTENT_RE = /^(Continue|I intend to participate|Do not wish to continue)/i;
+
+function kindFromCaPdfTypeLine(typeLine) {
+  const t = String(typeLine || "").trim();
+  if (/^Community Service/i.test(t)) return "service";
+  if (/^Internship$/i.test(t)) return "internship";
+  if (/^Academic$/i.test(t)) return "competition";
+  if (/^Research$/i.test(t)) return "research";
+  if (/^Foreign Exchange$/i.test(t)) return "activity";
+  if (/^Debate\/Speech$/i.test(t)) return "activity";
+  if (/^Other Club\/Activity$/i.test(t)) return "club";
+  if (/^School Club/i.test(t)) return "club";
+  if (/^Art\/Performance$/i.test(t)) return "arts";
+  if (/^Athletics$/i.test(t)) return "sports";
+  return normalizeKind(t) || "activity";
+}
+
+function scopeFromTimingLine(timingLine, kind, typeLine = "") {
+  if (/foreign exchange/i.test(typeLine)) return "international";
+  const t = String(timingLine || "").trim().toLowerCase();
+  if (kind === "internship" && /school/i.test(t)) return "national";
+  if (/foreign|international|exchange/i.test(t)) return "international";
+  if (/national/i.test(t)) return "national";
+  if (/school/i.test(t)) return "school";
+  return "";
+}
+
+function splitRoleAndOrganization(line) {
+  const raw = String(line || "").trim();
+  const idx = raw.indexOf(",");
+  if (idx < 0) return { role: "", name: raw };
+  return { role: raw.slice(0, idx).trim(), name: raw.slice(idx + 1).trim() };
+}
+
+function looksLikeDescriptionStart(line) {
+  return /^(Organized|Donated|Led|Wrote|Contacted|Taught|Assisted|Took|Engaged|Discussed|Managed|Participated|Founded|Created|Developed|Completed|Volunteered|Helped|Coordinated)/i.test(
+    String(line || "").trim(),
+  );
+}
+
+function consumeRoleNameAndDescription(blockLines, startIdx) {
+  let i = startIdx;
+  let role = "";
+  let name = "";
+  if (blockLines[i]) {
+    ({ role, name } = splitRoleAndOrganization(blockLines[i]));
+    i += 1;
+    while (i < blockLines.length) {
+      const line = blockLines[i];
+      if (CA_PDF_TYPE_LINE_RE.test(line)) break;
+      if (GRADES_LINE_RE.test(line) || HOURS_LINE_RE.test(line) || TIMING_LINE_RE.test(line)) break;
+      if (COLLEGE_INTENT_RE.test(line)) break;
+      if (looksLikeDescriptionStart(line)) break;
+      if (line.length > 90) break;
+      name = `${name} ${line}`.replace(/\s+/g, " ").trim();
+      i += 1;
+    }
+  }
+  const description = blockLines.slice(i).join(" ").replace(/\s+/g, " ").trim();
+  return { role, name, description, nextIdx: i };
+}
+
+function extractOutcomeAndAward(description) {
+  const text = String(description || "").trim();
+  let outcome = "";
+  let award = "";
+  const awardPatterns = [
+    /received an? ([^.]+certificate[^.]*)/i,
+    /\b(second place|third place|first place|honorable mention)\b[^.]*/i,
+    /earned the title of ([^.]+)/i,
+    /earned ([^.]+(?:certificate|cert|praise)[^.]*)/i,
+    /achieved ([^.]+)/i,
+  ];
+  for (const re of awardPatterns) {
+    const m = text.match(re);
+    if (m) {
+      const snippet = (m[1] || m[0]).trim();
+      if (/certificate|place|title|cert/i.test(snippet)) award = award ? `${award}; ${snippet}` : snippet;
+      else outcome = outcome ? `${outcome}; ${snippet}` : snippet;
+    }
+  }
+  return { outcome, award };
+}
+
+function cleanCommonAppPdfLines(text) {
+  const cutIdx = text.search(/Responsibilities and circumstances\b/i);
+  const clipped = cutIdx >= 0 ? text.slice(0, cutIdx) : text;
+  return clipped
+    .replace(/\r/g, "\n")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((line) => {
+      if (!line) return false;
+      if (/^Activities$/i.test(line)) return false;
+      if (/My Common Application/i.test(line)) return false;
+      if (/apply\.commonapp\.org/i.test(line)) return false;
+      if (/^\d{4}\/\d{1,2}\/\d{1,2}/.test(line)) return false;
+      if (/^\d+\/\d+$/.test(line)) return false;
+      return true;
+    });
+}
+
+function parseCommonAppPdfBlock(blockLines) {
+  if (!blockLines.length) return null;
+  const typeLine = blockLines[0];
+  if (!CA_PDF_TYPE_LINE_RE.test(typeLine)) return null;
+
+  const kind = kindFromCaPdfTypeLine(typeLine);
+  let i = 1;
+  let grades = "";
+  let hours = "";
+  let scope = "";
+
+  if (blockLines[i] && GRADES_LINE_RE.test(blockLines[i])) {
+    grades = blockLines[i].replace(/\s+/g, "");
+    i += 1;
+  }
+  if (blockLines[i] && TIMING_LINE_RE.test(blockLines[i])) {
+    scope = scopeFromTimingLine(blockLines[i], kind, typeLine);
+    i += 1;
+  }
+  if (blockLines[i] && HOURS_LINE_RE.test(blockLines[i])) {
+    hours = blockLines[i];
+    i += 1;
+  }
+  if (blockLines[i] && COLLEGE_INTENT_RE.test(blockLines[i])) {
+    i += 1;
+  }
+
+  const { role, name, description } = consumeRoleNameAndDescription(blockLines, i);
+  if (!name && !description) return null;
+
+  const { outcome, award } = extractOutcomeAndAward(description);
+  if (!scope && /worldwide|international|unicef|global/i.test(description)) scope = "international";
+  return emptyActivityItem({
+    kind,
+    name,
+    role,
+    grades,
+    hours,
+    scope,
+    description,
+    outcome,
+    award,
+  });
+}
+
+function looksLikeCommonAppPdfExport(text) {
+  return (
+    /hr\/wk,\s*\d+\s*wk\/yr/i.test(text) &&
+    /(?:Community Service|Other Club\/Activity|Internship|Debate\/Speech|Foreign Exchange)/i.test(text)
+  );
+}
+
+function parseCommonAppPdfExport(text) {
+  if (!looksLikeCommonAppPdfExport(text)) return [];
+
+  const lines = cleanCommonAppPdfLines(text);
+  const blocks = [];
+  let current = [];
+
+  for (const line of lines) {
+    if (CA_PDF_TYPE_LINE_RE.test(line)) {
+      if (current.length) blocks.push(current);
+      current = [line];
+    } else if (current.length) {
+      current.push(line);
+    }
+  }
+  if (current.length) blocks.push(current);
+
+  return blocks
+    .map(parseCommonAppPdfBlock)
+    .filter((item) => item && !isRowEmpty(item) && !isLikelyGarbageActivity(item))
+    .slice(0, 20);
+}
+
 function isLikelyGarbageActivity(item) {
   const name = String(item?.name || "").trim();
   if (!name) return true;
   if (/^(activities|activity type|organization name|position)/i.test(name)) return true;
   if (/activity type.*organization name/i.test(name)) return true;
+  if (/^\(Volunteer\)/i.test(name)) return true;
+  if (/hr\/wk/i.test(name)) return true;
   if (name.length > 140 && !String(item.description || "").trim()) return true;
   return false;
 }
@@ -366,6 +552,11 @@ export function heuristicParseActivitiesText(raw) {
   const fromCsv = parseActivitiesCsv(text);
   if (fromCsv.length > 0) {
     return finalizeActivitiesParseResult(fromCsv);
+  }
+
+  const fromCaPdf = parseCommonAppPdfExport(text);
+  if (fromCaPdf.length > 0) {
+    return finalizeActivitiesParseResult(fromCaPdf);
   }
 
   const fromCommonApp = parseCommonAppActivityBlocks(text);
