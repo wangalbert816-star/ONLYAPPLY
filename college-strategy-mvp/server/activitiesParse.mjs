@@ -1,7 +1,9 @@
 /** POST /api/activities/parse — draft activity list from upload or text. */
 
+import OpenAI from "openai";
 import { resolveVisionLlmClient, visionLlmConfigHint } from "./llmVisionConfig.mjs";
-import { extractPdfText, renderPdfPagesToPngBase64 } from "./pdfExtract.mjs";
+import { parseJsonFromLlm } from "./parseLlmJson.mjs";
+import { extractPdfText, getPdfPageCount, renderPdfPageToPngBase64 } from "./pdfExtract.mjs";
 
 const VALID_KINDS = new Set([
   "activity",
@@ -413,7 +415,13 @@ function listHasUsableActivities(result) {
   return listHasQualityActivities(result);
 }
 
-const VISION_PROMPT = `Extract extracurricular activities from a student activity list into JSON only. Schema:
+const VISION_PROMPT = `You are reading a student extracurricular / activity list image. Extract ONLY activity rows into JSON.
+
+INCLUDE: named activities, clubs, competitions, research, internships, sports, service — with role, grades, hours, description when visible.
+
+EXCLUDE: student name, ID, birthdate, school header, page numbers, column headers ("Activity type", "Organization name"), instructions.
+
+Schema:
 {
   "activities": [{
     "name": string,
@@ -429,7 +437,38 @@ const VISION_PROMPT = `Extract extracurricular activities from a student activit
     "proof": string
   }]
 }
-Return at most 20 activities. Use empty strings when unknown. JSON only.`;
+Return at most 20 activities total across all pages. Use empty strings when unknown. JSON only.`;
+
+const PDF_TEXT_ACTIVITY_THRESHOLD = 5;
+const PDF_VISION_PARALLEL = 2;
+
+function pdfVisionPageLimit() {
+  const configured = Number(process.env.ACTIVITIES_PDF_MAX_PAGES || process.env.TRANSCRIPT_PDF_MAX_PAGES || 0);
+  return configured > 0 ? configured : 10;
+}
+
+function mergeActivityLists(...lists) {
+  const seen = new Set();
+  const out = [];
+  for (const list of lists) {
+    for (const item of filterQualityActivities(list)) {
+      const key = [
+        String(item.name || "").trim().toLowerCase(),
+        String(item.role || "").trim().toLowerCase(),
+        String(item.description || "").trim().toLowerCase().slice(0, 48),
+      ].join("|");
+      if (!key.replace(/\|/g, "") || seen.has(key)) continue;
+      seen.add(key);
+      out.push(item);
+    }
+  }
+  return out.slice(0, 20);
+}
+
+function limitWarning(numPages) {
+  const limit = pdfVisionPageLimit();
+  return numPages > limit ? `pdf_page_limit:${limit}` : "";
+}
 
 function visionApiErrorCode(err) {
   const msg = err instanceof Error ? err.message : String(err);
@@ -441,19 +480,49 @@ function visionApiErrorCode(err) {
   return "vision_parse_failed";
 }
 
-async function parseWithVisionLlm(imageBase64List, mimeType = "image/png") {
+async function parseWithVisionLlm(imageBase64List, mimeType = "image/png", opts = {}) {
   const cfg = resolveVisionLlmClient();
   if (!cfg) return { result: null, error: "vision_not_configured" };
+
+  const first = await callVisionLlm(cfg, imageBase64List, mimeType, opts);
+  if (!first.error || first.error === "no_activities_detected") return first;
+
+  const sk = String(process.env.US_OPENAI_API_KEY || process.env.OPENAI_API_KEY || "").trim();
+  if (
+    /^sk-/.test(sk) &&
+    cfg.provider !== "openai" &&
+    /vision_model_unsupported|endpoint_not_found|vision_parse_failed/i.test(first.error)
+  ) {
+    const timeoutMs = Number(process.env.TRANSCRIPT_VISION_TIMEOUT_MS || 0) || 180_000;
+    const fallbackCfg = {
+      client: new OpenAI({ apiKey: sk, timeout: timeoutMs }),
+      model: "gpt-4o-mini",
+      provider: "openai",
+    };
+    console.info("[activities/parse] vision_retry openai/gpt-4o-mini after", first.error);
+    return callVisionLlm(fallbackCfg, imageBase64List, mimeType, opts);
+  }
+
+  return first;
+}
+
+async function callVisionLlm(cfg, imageBase64List, mimeType = "image/png", opts = {}) {
   const { client, model, provider } = cfg;
+  const { pageNum, numPages } = opts;
 
   const images = Array.isArray(imageBase64List) ? imageBase64List : [imageBase64List];
   const totalBytes = images.reduce((n, b64) => n + Math.ceil((b64.length * 3) / 4), 0);
+  const pageTag = pageNum && numPages ? ` page=${pageNum}/${numPages}` : "";
   console.info(
-    `[activities/parse] vision_start model=${model} images=${images.length} bytes≈${Math.round(totalBytes / 1024)}KB thinking=disabled`,
+    `[activities/parse] vision_start model=${model}${pageTag} images=${images.length} bytes≈${Math.round(totalBytes / 1024)}KB thinking=disabled`,
   );
 
+  const pageHint =
+    pageNum && numPages
+      ? `\n\nThis image is page ${pageNum} of ${numPages}. Extract activities visible on THIS page only.`
+      : "";
   const content = [
-    { type: "text", text: VISION_PROMPT },
+    { type: "text", text: VISION_PROMPT + pageHint },
     ...images.map((b64) => ({
       type: "image_url",
       image_url: { url: `data:${mimeType};base64,${b64}` },
@@ -464,7 +533,7 @@ async function parseWithVisionLlm(imageBase64List, mimeType = "image/png") {
     const request = {
       model,
       messages: [
-        { role: "system", content: "You extract structured activity list data. Output valid JSON only." },
+        { role: "system", content: "You extract extracurricular activities from student lists. Ignore demographics and headers. Output valid JSON only." },
         { role: "user", content },
       ],
       response_format: { type: "json_object" },
@@ -476,17 +545,13 @@ async function parseWithVisionLlm(imageBase64List, mimeType = "image/png") {
 
     const res = await client.chat.completions.create(request);
     const raw = res.choices?.[0]?.message?.content ?? "";
-    console.info(`[activities/parse] vision_done model=${model} chars=${raw.length}`);
-    const parsed = JSON.parse(raw);
+    console.info(`[activities/parse] vision_done model=${model}${pageTag} chars=${raw.length}`);
+    const parsed = parseJsonFromLlm(raw);
     const activities = normalizeParsedActivities(parsed.activities);
-    const result = {
-      activities,
-      parseStatus: activities.length ? "ready" : "failed",
-      parseError: activities.length ? "" : "no_activities_detected",
-    };
+    const result = finalizeActivitiesParseResult(activities);
     return { result, error: listHasUsableActivities(result) ? "" : "no_activities_detected" };
   } catch (e) {
-    const code = visionApiErrorCode(e);
+    const code = e?.code === "invalid_json" ? "vision_parse_failed" : visionApiErrorCode(e);
     console.warn("[activities/parse] vision_failed", e instanceof Error ? e.message : e);
     return {
       result: { activities: [], parseStatus: "failed", parseError: code },
@@ -495,7 +560,53 @@ async function parseWithVisionLlm(imageBase64List, mimeType = "image/png") {
   }
 }
 
+function mergeParseResults(primary, fallback) {
+  const activities = mergeActivityLists(primary?.activities, fallback?.activities);
+  if (activities.length === 0) {
+    return primary?.parseStatus === "ready" ? primary : fallback ?? { activities: [], parseStatus: "failed", parseError: "no_activities_detected" };
+  }
+  return finalizeActivitiesParseResult(activities);
+}
+
+async function parsePdfWithVisionPerPage(buffer, cfg, numPages) {
+  const limit = Math.min(numPages, pdfVisionPageLimit());
+  const activityBatches = [];
+
+  for (let start = 1; start <= limit; start += PDF_VISION_PARALLEL) {
+    const batchPages = [];
+    for (let p = start; p < start + PDF_VISION_PARALLEL && p <= limit; p += 1) {
+      batchPages.push(p);
+    }
+
+    const rendered = await Promise.all(
+      batchPages.map(async (pageNum) => ({
+        pageNum,
+        image: await renderPdfPageToPngBase64(buffer, pageNum),
+      })),
+    );
+
+    const results = await Promise.all(
+      rendered.map(({ pageNum, image }) =>
+        callVisionLlm(cfg, [image], "image/png", { pageNum, numPages }),
+      ),
+    );
+
+    for (const { result } of results) {
+      if (result?.activities?.length) activityBatches.push(result.activities);
+    }
+  }
+
+  return finalizeActivitiesParseResult(mergeActivityLists(...activityBatches));
+}
+
 async function parsePdfBuffer(buffer) {
+  let numPages = 1;
+  try {
+    numPages = await getPdfPageCount(buffer);
+  } catch (e) {
+    console.warn("[activities/parse] pdf_page_count_failed", e instanceof Error ? e.message : e);
+  }
+
   let text = "";
   try {
     text = await extractPdfText(buffer);
@@ -505,13 +616,21 @@ async function parsePdfBuffer(buffer) {
 
   if (text.length >= 20) {
     const fromText = heuristicParseActivitiesText(text);
-    if (listHasUsableActivities(fromText)) {
-      return { result: fromText, method: "pdf_text" };
+    const textActivities = filterQualityActivities(fromText.activities);
+    if (numPages === 1 && textActivities.length > 0) {
+      return { result: finalizeActivitiesParseResult(textActivities), method: "pdf_text" };
+    }
+    if (textActivities.length >= PDF_TEXT_ACTIVITY_THRESHOLD) {
+      return { result: finalizeActivitiesParseResult(textActivities), method: "pdf_text" };
     }
   }
 
   const cfg = resolveVisionLlmClient();
   if (!cfg) {
+    const partial = text.length >= 20 ? heuristicParseActivitiesText(text) : null;
+    if (partial && listHasUsableActivities(partial)) {
+      return { result: partial, method: "pdf_text_partial" };
+    }
     return {
       result: {
         activities: [],
@@ -523,23 +642,26 @@ async function parsePdfBuffer(buffer) {
   }
 
   try {
-    const pages = await renderPdfPagesToPngBase64(buffer, 2);
-    if (!pages.length) {
+    const textPartial = text.length >= 20 ? heuristicParseActivitiesText(text) : null;
+    const visionResult = await parsePdfWithVisionPerPage(buffer, cfg, numPages);
+    const merged = mergeParseResults(visionResult, textPartial);
+    if (listHasUsableActivities(merged)) {
       return {
-        result: { activities: [], parseStatus: "failed", parseError: "pdf_render_failed" },
-        method: "pdf_vision",
+        result: merged,
+        method: numPages > 1 ? "pdf_vision_multipage" : "pdf_vision",
+        warning: limitWarning(numPages),
       };
     }
-    const { result, error } = await parseWithVisionLlm(pages, "image/png");
-    if (listHasUsableActivities(result)) {
-      return { result, method: "pdf_vision" };
-    }
     return {
-      result: result ?? { activities: [], parseStatus: "failed", parseError: error || "vision_parse_failed" },
+      result: merged ?? { activities: [], parseStatus: "failed", parseError: "no_activities_detected" },
       method: "pdf_vision",
     };
   } catch (e) {
     console.warn("[activities/parse] pdf_vision_failed", e instanceof Error ? e.message : e);
+    const partial = text.length >= 20 ? heuristicParseActivitiesText(text) : null;
+    if (partial && listHasUsableActivities(partial)) {
+      return { result: partial, method: "pdf_text_partial", warning: "vision_parse_failed" };
+    }
     return {
       result: { activities: [], parseStatus: "failed", parseError: "vision_parse_failed" },
       method: "pdf_vision",
@@ -567,9 +689,9 @@ export function registerActivitiesParseRoutes(app, express) {
       const isPdf = mimeType === "application/pdf" || fileName.endsWith(".pdf");
 
       if (isPdf) {
-        const { result, method } = await parsePdfBuffer(buffer);
+        const { result, method, warning } = await parsePdfBuffer(buffer);
         if (listHasUsableActivities(result)) {
-          return res.json({ ...result, method });
+          return res.json({ ...result, method, warning: warning || undefined });
         }
         const hint =
           result?.parseError === "vision_not_configured" ? visionLlmConfigHint(locale) : undefined;

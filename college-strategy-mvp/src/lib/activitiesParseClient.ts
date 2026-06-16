@@ -2,7 +2,7 @@ import type { ActivityItem } from "../types";
 import { normalizeParsedActivities, parseActivitiesTextHeuristic, type ActivitiesParseResult } from "./activitiesParseHeuristic";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
-const PARSE_TIMEOUT_MS = 150_000;
+const PARSE_TIMEOUT_MS = 280_000;
 
 export type ActivitiesParseResponse = ActivitiesParseResult & {
   fileName?: string;
