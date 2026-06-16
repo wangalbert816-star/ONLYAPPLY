@@ -31,6 +31,51 @@ function tryBuildChinaArkConfig() {
   return { key, baseURL, model: modelRaw, region: "cn", provider: "volcengine-ark" };
 }
 
+/** Models that cannot accept image_url content parts. */
+const NON_VISION_MODEL_RE =
+  /gpt-oss|onlyapply|llama3\.?2|llama-3\.2|llama3\.1|llama-3\.1|qwen(?!-vl)|deepseek(?!-vl)|mistral|mixtral|phi-?[34]|gemma/i;
+
+const KNOWN_VISION_MODELS = new Set([
+  "gpt-4o",
+  "gpt-4o-mini",
+  "gpt-4.1",
+  "gpt-4.1-mini",
+  "gpt-4.1-nano",
+  "llava",
+  "llava:13b",
+  "llava:34b",
+  "bakllava",
+  "moondream",
+  "minicpm-v",
+]);
+
+function isVisionCapableModel(model) {
+  const m = String(model || "").trim().toLowerCase();
+  if (!m) return false;
+  if (KNOWN_VISION_MODELS.has(m)) return true;
+  if (/^ep-/.test(m)) return true;
+  if (/llava|bakllava|moondream|minicpm-v|gpt-4o|gpt-4\.1|vision|vl\b|qwen-vl|gemini/i.test(m)) return true;
+  return !NON_VISION_MODEL_RE.test(m);
+}
+
+function pickVisionModel({ model, provider, keySource }) {
+  const override = trimKey(process.env.TRANSCRIPT_VISION_MODEL);
+  if (override) return override;
+  if (isVisionCapableModel(model)) return model;
+
+  if (provider === "openai" && /^sk-/.test(trimKey(process.env.US_OPENAI_API_KEY || process.env.OPENAI_API_KEY))) {
+    return "gpt-4o-mini";
+  }
+
+  if (provider === "ollama" || keySource === "ollama") {
+    const ollamaVision = trimKey(process.env.OLLAMA_VISION_MODEL);
+    if (ollamaVision) return ollamaVision;
+    return "llava";
+  }
+
+  return "gpt-4o-mini";
+}
+
 function tryBuildUSOpenAIConfig() {
   let key = trimKey(process.env.US_OPENAI_API_KEY);
   /** @type {"us" | "ollama" | "shared" | "none"} */
@@ -82,6 +127,7 @@ function tryBuildUSOpenAIConfig() {
     model,
     region: "us",
     provider: inferOllama ? "ollama" : "openai",
+    keySource,
   };
 }
 
@@ -121,7 +167,19 @@ export function resolveVisionLlmClient() {
     timeout: timeoutMs,
   });
 
-  return { client, model: picked.model, region: picked.region, provider: picked.provider };
+  const visionModel = pickVisionModel({
+    model: picked.model,
+    provider: picked.provider,
+    keySource: picked.keySource ?? (picked.provider === "ollama" ? "ollama" : "us"),
+  });
+
+  if (visionModel !== picked.model) {
+    console.info(
+      `[llmVision] transcript vision model ${picked.model} → ${visionModel} (text-only model cannot read images)`,
+    );
+  }
+
+  return { client, model: visionModel, region: picked.region, provider: picked.provider };
 }
 
 export function visionLlmConfigHint(locale = "zh") {

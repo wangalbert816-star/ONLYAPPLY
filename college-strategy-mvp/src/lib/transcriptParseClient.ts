@@ -4,6 +4,12 @@ import { emptyTranscriptSheet, parseTranscriptTextHeuristic } from "./transcript
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 const PARSE_TIMEOUT_MS = 150_000;
 
+function hasUsableTranscriptData(sheet: Partial<TranscriptSheet>): boolean {
+  const hasGpa = Boolean(sheet.unweightedGpa?.trim() || sheet.weightedGpa?.trim());
+  const hasCourse = sheet.courses?.some((c) => c.courseName?.trim());
+  return Boolean(hasGpa || hasCourse);
+}
+
 export async function parseTranscriptFile(file: File, locale: "en" | "zh" = "zh"): Promise<TranscriptSheet> {
   const base = emptyTranscriptSheet();
   base.fileName = file.name;
@@ -30,15 +36,26 @@ export async function parseTranscriptFile(file: File, locale: "en" | "zh" = "zh"
       sheet?: Partial<TranscriptSheet>;
       error?: string;
       hint?: string;
+      warning?: string;
     };
     if (!res.ok) {
       const merged = mergeParseResult(base, data.sheet ?? {});
-      merged.parseStatus = "failed";
-      merged.parseError = data.error || `parse_failed_${res.status}`;
-      if (data.hint) merged.parseError = `${merged.parseError}\n${data.hint}`;
+      if (hasUsableTranscriptData(merged)) {
+        merged.parseStatus = "ready";
+        merged.parseError = data.warning || data.error || "";
+        if (data.hint && !merged.parseError.includes(data.hint)) {
+          merged.parseError = merged.parseError ? `${merged.parseError}\n${data.hint}` : data.hint;
+        }
+      } else {
+        merged.parseStatus = "failed";
+        merged.parseError = data.error || `parse_failed_${res.status}`;
+        if (data.hint) merged.parseError = `${merged.parseError}\n${data.hint}`;
+      }
       return merged;
     }
-    return mergeParseResult(base, data.sheet ?? {});
+    const merged = mergeParseResult(base, data.sheet ?? {});
+    if (data.warning) merged.parseError = data.warning;
+    return merged;
   } catch (e) {
     base.parseStatus = "failed";
     if (e instanceof Error && e.name === "AbortError") {

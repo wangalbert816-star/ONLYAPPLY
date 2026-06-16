@@ -164,6 +164,11 @@ export function TranscriptGradeSheet({ form, update, t, onSkipAdvance }: Props) 
             {formatParseError(sheet.parseError, t)}
           </p>
         ) : null}
+        {sheet.parseStatus === "ready" && sheet.parseError ? (
+          <p className="transcript-sheet__banner" role="status">
+            {formatParseError(sheet.parseError, t)}
+          </p>
+        ) : null}
 
         <button
           type="button"

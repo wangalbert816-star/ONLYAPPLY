@@ -1,6 +1,8 @@
 /** POST /api/transcript/parse — draft grade sheet from upload or text. */
 
 import { resolveVisionLlmClient, visionLlmConfigHint } from "./llmVisionConfig.mjs";
+import OpenAI from "openai";
+import { parseJsonFromLlm } from "./parseLlmJson.mjs";
 import { extractPdfText, renderPdfPagesToPngBase64 } from "./pdfExtract.mjs";
 
 const PARSE_SCHEMA = {
@@ -55,6 +57,44 @@ function newCourseId() {
   return `tc-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 }
 
+function parseCourseFromLine(line) {
+  const trimmed = String(line || "").trim();
+  if (trimmed.length < 4) return null;
+  if (/gpa|绩点|weighted|unweighted|class rank|transcript|school|student/i.test(trimmed) && !/\b[A-F][+-]?\b/.test(trimmed)) {
+    return null;
+  }
+
+  const tabCols = trimmed.split(/\t|\|/).map((c) => c.trim()).filter(Boolean);
+  if (tabCols.length >= 2) {
+    const last = tabCols[tabCols.length - 1];
+    const gradeMatch = last.match(/^([A-F][+-]?|\d{1,3})$/);
+    if (gradeMatch) {
+      const coursePart = tabCols.length >= 3 ? tabCols.slice(1, -1).join(" ") : tabCols[0];
+      const name = coursePart.replace(/^(grade\s*)?(9|10|11|12)\s*/i, "").trim();
+      if (name.length >= 2) {
+        return { coursePart: name, grade: gradeMatch[1], line: trimmed };
+      }
+    }
+  }
+
+  const spaced = trimmed.match(
+    /^(?:(?:\d{4}[-/]\d{2,4}|[SF]\d{2})\s+)?(?:(?:grade\s*)?(9|10|11|12)\s+)?(.+?)\s+([A-F][+-]?|\d{1,3})\s*$/i,
+  );
+  if (spaced) {
+    const coursePart = spaced[2].trim();
+    if (coursePart.length >= 2) {
+      return { coursePart, grade: spaced[3], line: trimmed };
+    }
+  }
+
+  const gradeMatch = trimmed.match(/([A-F][+-]?|\d{1,3})\s*$/) || trimmed.match(/\b([1-7])\s*$/);
+  if (!gradeMatch) return null;
+  let coursePart = trimmed.slice(0, gradeMatch.index).replace(/[|\t,;]+/g, " ").trim();
+  coursePart = coursePart.replace(/^(grade\s*)?(9|10|11|12)\s*/i, "").trim();
+  if (coursePart.length < 2) return null;
+  return { coursePart, grade: gradeMatch[1], line: trimmed };
+}
+
 export function heuristicParseTranscriptText(raw) {
   const text = String(raw || "").replace(/\r/g, "\n").trim();
   const gpas = parseGpaFromText(text);
@@ -62,21 +102,15 @@ export function heuristicParseTranscriptText(raw) {
   const courses = [];
 
   for (const line of lines) {
-    if (line.length < 4) continue;
-    if (/gpa|绩点|weighted|unweighted|class rank/i.test(line) && !/\b[A-F][+-]?\b/.test(line)) continue;
-    const gradeMatch = line.match(/([A-F][+-]?|\d{1,3})\s*$/) || line.match(/\b([1-7])\s*$/);
-    if (!gradeMatch) continue;
-    const grade = gradeMatch[1];
-    let coursePart = line.slice(0, gradeMatch.index).replace(/[|\t,;]+/g, " ").trim();
-    coursePart = coursePart.replace(/^(grade\s*)?(9|10|11|12)\s*/i, "").trim();
-    if (coursePart.length < 2) continue;
+    const parsed = parseCourseFromLine(line);
+    if (!parsed) continue;
     courses.push({
       id: newCourseId(),
-      gradeYear: inferGradeYear(line),
-      subject: inferSubject(coursePart),
-      courseName: coursePart,
-      level: inferCourseLevel(coursePart),
-      grade,
+      gradeYear: inferGradeYear(parsed.line),
+      subject: inferSubject(parsed.coursePart),
+      courseName: parsed.coursePart,
+      level: inferCourseLevel(parsed.coursePart),
+      grade: parsed.grade,
       confidence: "medium",
       source: "ocr",
     });
@@ -120,9 +154,51 @@ function visionApiErrorCode(err) {
   return "vision_parse_failed";
 }
 
+function mergeSheets(primary, fallback) {
+  if (!fallback) return primary;
+  if (!primary) return fallback;
+  const courses =
+    Array.isArray(primary.courses) && primary.courses.some((c) => c.courseName?.trim())
+      ? primary.courses
+      : fallback.courses ?? [];
+  return {
+    gradingScale: primary.gradingScale || fallback.gradingScale || "",
+    unweightedGpa: primary.unweightedGpa || fallback.unweightedGpa || "",
+    weightedGpa: primary.weightedGpa || fallback.weightedGpa || "",
+    scaleNotes: primary.scaleNotes || fallback.scaleNotes || "",
+    courses,
+    parseStatus: sheetHasUsableCourses({ ...primary, courses }) ? "ready" : "failed",
+    parseError: "",
+  };
+}
+
 async function parseWithVisionLlm(imageBase64List, mimeType = "image/png") {
   const cfg = resolveVisionLlmClient();
   if (!cfg) return { sheet: null, error: "vision_not_configured" };
+
+  const first = await callVisionLlm(cfg, imageBase64List, mimeType);
+  if (!first.error || first.error === "no_courses_detected") return first;
+
+  const sk = String(process.env.US_OPENAI_API_KEY || process.env.OPENAI_API_KEY || "").trim();
+  if (
+    /^sk-/.test(sk) &&
+    cfg.provider !== "openai" &&
+    /vision_model_unsupported|endpoint_not_found|vision_parse_failed/i.test(first.error)
+  ) {
+    const timeoutMs = Number(process.env.TRANSCRIPT_VISION_TIMEOUT_MS || 0) || 180_000;
+    const fallbackCfg = {
+      client: new OpenAI({ apiKey: sk, timeout: timeoutMs }),
+      model: "gpt-4o-mini",
+      provider: "openai",
+    };
+    console.info("[transcript/parse] vision_retry openai/gpt-4o-mini after", first.error);
+    return callVisionLlm(fallbackCfg, imageBase64List, mimeType);
+  }
+
+  return first;
+}
+
+async function callVisionLlm(cfg, imageBase64List, mimeType = "image/png") {
   const { client, model, provider } = cfg;
 
   const images = Array.isArray(imageBase64List) ? imageBase64List : [imageBase64List];
@@ -159,7 +235,7 @@ async function parseWithVisionLlm(imageBase64List, mimeType = "image/png") {
 
     const raw = res.choices?.[0]?.message?.content ?? "";
     console.info(`[transcript/parse] vision_done model=${model} chars=${raw.length}`);
-    const parsed = JSON.parse(raw);
+    const parsed = parseJsonFromLlm(raw);
   const courses = Array.isArray(parsed.courses)
     ? parsed.courses.map((c) => ({
         id: newCourseId(),
@@ -183,7 +259,7 @@ async function parseWithVisionLlm(imageBase64List, mimeType = "image/png") {
   };
   return { sheet, error: sheetHasUsableCourses(sheet) ? "" : "no_courses_detected" };
   } catch (e) {
-    const code = visionApiErrorCode(e);
+    const code = e?.code === "invalid_json" ? "vision_parse_failed" : visionApiErrorCode(e);
     console.warn("[transcript/parse] vision_failed", e instanceof Error ? e.message : e);
     return {
       sheet: { ...PARSE_SCHEMA, parseStatus: "failed", parseError: code },
@@ -200,18 +276,24 @@ async function parsePdfBuffer(buffer) {
     console.warn("[transcript/parse] pdf_text_extract_failed", e instanceof Error ? e.message : e);
   }
 
+  let textSheet = null;
   if (text.length >= 20) {
-    const fromText = heuristicParseTranscriptText(text);
-    if (sheetHasUsableCourses(fromText)) {
-      return { sheet: fromText, method: "pdf_text" };
+    textSheet = heuristicParseTranscriptText(text);
+    const hasCourses = textSheet.courses?.some((c) => c.courseName?.trim());
+    if (hasCourses) {
+      return { sheet: textSheet, method: "pdf_text" };
     }
   }
 
   const cfg = resolveVisionLlmClient();
   if (!cfg) {
+    if (textSheet && sheetHasUsableCourses(textSheet)) {
+      return { sheet: textSheet, method: "pdf_text_partial" };
+    }
     return {
       sheet: {
         ...PARSE_SCHEMA,
+        ...(textSheet ?? {}),
         parseStatus: "failed",
         parseError: text.length >= 20 ? "no_courses_detected" : "vision_not_configured",
       },
@@ -220,23 +302,34 @@ async function parsePdfBuffer(buffer) {
   }
 
   try {
-    const pages = await renderPdfPagesToPngBase64(buffer, 2);
+    const pages = await renderPdfPagesToPngBase64(buffer, 4);
     if (pages.length === 0) {
+      if (textSheet && sheetHasUsableCourses(textSheet)) {
+        return { sheet: textSheet, method: "pdf_text_partial", warning: "pdf_render_failed" };
+      }
       return {
         sheet: { ...PARSE_SCHEMA, parseStatus: "failed", parseError: "pdf_render_failed" },
         method: "pdf_vision",
       };
     }
     const { sheet, error } = await parseWithVisionLlm(pages, "image/png");
-    if (sheet && sheetHasUsableCourses(sheet)) {
-      return { sheet, method: "pdf_vision" };
+    const merged = mergeSheets(sheet ?? PARSE_SCHEMA, textSheet);
+    if (sheetHasUsableCourses(merged)) {
+      if (error && !merged.courses?.some((c) => c.courseName?.trim())) {
+        merged.parseError = error;
+      }
+      return { sheet: merged, method: merged.courses?.length ? "pdf_vision" : "pdf_text_partial", warning: error || "" };
     }
     return {
-      sheet: sheet ?? { ...PARSE_SCHEMA, parseStatus: "failed", parseError: error || "no_courses_detected" },
+      sheet: merged ?? { ...PARSE_SCHEMA, parseStatus: "failed", parseError: error || "no_courses_detected" },
       method: "pdf_vision",
+      warning: error || "",
     };
   } catch (e) {
     console.warn("[transcript/parse] pdf_vision_failed", e instanceof Error ? e.message : e);
+    if (textSheet && sheetHasUsableCourses(textSheet)) {
+      return { sheet: textSheet, method: "pdf_text_partial", warning: "vision_parse_failed" };
+    }
     return {
       sheet: { ...PARSE_SCHEMA, parseStatus: "failed", parseError: "vision_parse_failed" },
       method: "pdf_vision",
@@ -264,9 +357,9 @@ export function registerTranscriptParseRoutes(app, express) {
       const isPdf = mimeType === "application/pdf" || fileName.endsWith(".pdf");
 
       if (isPdf) {
-        const { sheet, method } = await parsePdfBuffer(buffer);
+        const { sheet, method, warning } = await parsePdfBuffer(buffer);
         if (sheetHasUsableCourses(sheet)) {
-          return res.json({ sheet, method });
+          return res.json({ sheet, method, warning: warning || undefined });
         }
         const hint =
           sheet?.parseError === "vision_not_configured" ? visionLlmConfigHint(locale) : undefined;

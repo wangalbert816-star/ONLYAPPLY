@@ -1,12 +1,26 @@
 /** Extract text or page images from PDF buffers (Node). */
 
+import { createRequire } from "node:module";
+import { pathToFileURL } from "node:url";
 import { createCanvas } from "@napi-rs/canvas";
 import { getDocument, GlobalWorkerOptions } from "pdfjs-dist/legacy/build/pdf.mjs";
 
-GlobalWorkerOptions.workerSrc = new URL(
-  "../../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
-  import.meta.url,
-).href;
+const require = createRequire(import.meta.url);
+try {
+  GlobalWorkerOptions.workerSrc = pathToFileURL(
+    require.resolve("pdfjs-dist/legacy/build/pdf.worker.mjs"),
+  ).href;
+} catch {
+  GlobalWorkerOptions.workerSrc = new URL(
+    "../../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
+    import.meta.url,
+  ).href;
+}
+
+function pdfDocumentParams(buffer) {
+  const data = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+  return { data, useSystemFonts: true, disableFontFace: true };
+}
 
 class NodeCanvasFactory {
   create(width, height) {
@@ -54,8 +68,7 @@ function textItemsToLines(items) {
 }
 
 export async function extractPdfText(buffer) {
-  const data = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
-  const doc = await getDocument({ data, useSystemFonts: true, disableFontFace: true }).promise;
+  const doc = await getDocument(pdfDocumentParams(buffer)).promise;
   const chunks = [];
   for (let pageNum = 1; pageNum <= doc.numPages; pageNum += 1) {
     const page = await doc.getPage(pageNum);
@@ -72,8 +85,7 @@ export async function extractPdfText(buffer) {
  * @returns {Promise<string[]>}
  */
 export async function renderPdfPagesToPngBase64(buffer, maxPages = 3) {
-  const data = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
-  const doc = await getDocument({ data, useSystemFonts: true, disableFontFace: true }).promise;
+  const doc = await getDocument(pdfDocumentParams(buffer)).promise;
   const limit = Math.min(doc.numPages, maxPages);
   const images = [];
   const factory = new NodeCanvasFactory();
