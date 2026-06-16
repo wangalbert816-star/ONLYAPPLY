@@ -6,6 +6,11 @@ import type {
   TranscriptGradeYear,
   TranscriptSheet,
 } from "../types";
+import {
+  isPlausibleCourseRow,
+  isValidTranscriptGrade,
+  sanitizeGpaValue,
+} from "./transcriptCourseValidate";
 
 export function createTranscriptCourseRow(partial?: Partial<TranscriptCourseRow>): TranscriptCourseRow {
   const id =
@@ -90,11 +95,10 @@ function parseGpaFromText(text: string): { unweighted: string; weighted: string 
   const t = text.trim();
   if (!t) return { unweighted: "", weighted: "" };
   const uw = t.match(/(?:unweighted|UW|未加权|非加权)[^\d]*(\d(?:\.\d{1,2})?)/i);
-  const w = t.match(/(?:weighted|W|加权)[^\d]*(\d(?:\.\d{1,2})?)/i);
-  const all = [...t.matchAll(/\b(\d\.\d{1,2})\b/g)].map((m) => m[1]);
+  const w = t.match(/(?:weighted|W(?!ed)|加权)[^\d]*(\d(?:\.\d{1,2})?)/i);
   return {
-    unweighted: uw?.[1] ?? (all[0] ?? ""),
-    weighted: w?.[1] ?? (all.length > 1 ? all[1] : all[0] ?? ""),
+    unweighted: sanitizeGpaValue(uw?.[1] ?? "", { min: 1.5, max: 4.5 }),
+    weighted: sanitizeGpaValue(w?.[1] ?? "", { min: 2.0, max: 5.5 }),
   };
 }
 
@@ -148,6 +152,7 @@ export function parseTranscriptTextHeuristic(raw: string): Partial<TranscriptShe
     let coursePart = line.slice(0, gradeMatch.index).replace(/[|\t,;]+/g, " ").trim();
     coursePart = coursePart.replace(/^(grade\s*)?(9|10|11|12)\s*/i, "").trim();
     if (coursePart.length < 2) continue;
+    if (!isValidTranscriptGrade(grade) || !isPlausibleCourseRow(coursePart, grade)) continue;
 
     const level = inferCourseLevel(coursePart);
     courses.push(

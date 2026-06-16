@@ -4,6 +4,11 @@ import { resolveVisionLlmClient, visionLlmConfigHint } from "./llmVisionConfig.m
 import OpenAI from "openai";
 import { parseJsonFromLlm } from "./parseLlmJson.mjs";
 import { extractPdfText, renderPdfPagesToPngBase64 } from "./pdfExtract.mjs";
+import {
+  filterTranscriptCourses,
+  isPlausibleCourseRow,
+  sanitizeGpaValue,
+} from "./transcriptCourseValidate.mjs";
 
 const PARSE_SCHEMA = {
   gradingScale: "",
@@ -15,12 +20,27 @@ const PARSE_SCHEMA = {
 
 function parseGpaFromText(text) {
   const t = String(text || "").trim();
-  const uw = t.match(/(?:unweighted|UW|未加权|非加权)[^\d]*(\d(?:\.\d{1,2})?)/i);
-  const w = t.match(/(?:weighted|W|加权)[^\d]*(\d(?:\.\d{1,2})?)/i);
-  const all = [...t.matchAll(/\b(\d\.\d{1,2})\b/g)].map((m) => m[1]);
+  const uw = t.match(/(?:unweighted|UW|未加权|非加权)[^\d]*(\d+(?:\.\d+)?)/i);
+  const w = t.match(/(?:weighted|加权)[^\d]*(\d+(?:\.\d+)?)/i);
   return {
-    unweighted: uw?.[1] ?? all[0] ?? "",
-    weighted: w?.[1] ?? (all.length > 1 ? all[1] : all[0] ?? ""),
+    unweighted: sanitizeGpaValue(uw?.[1], { min: 1.5, max: 4.5 }),
+    weighted: sanitizeGpaValue(w?.[1], { min: 2.0, max: 5.5 }),
+  };
+}
+
+function normalizeTranscriptSheet(sheet) {
+  if (!sheet) return sheet;
+  const courses = filterTranscriptCourses(sheet.courses);
+  const unweightedGpa = sanitizeGpaValue(sheet.unweightedGpa, { min: 1.5, max: 4.5 });
+  const weightedGpa = sanitizeGpaValue(sheet.weightedGpa, { min: 2.0, max: 5.5 });
+  const ok = courses.length > 0 || unweightedGpa || weightedGpa;
+  return {
+    ...sheet,
+    courses,
+    unweightedGpa,
+    weightedGpa,
+    parseStatus: ok ? "ready" : "failed",
+    parseError: ok ? "" : "no_courses_detected",
   };
 }
 
@@ -71,7 +91,7 @@ function parseCourseFromLine(line) {
     if (gradeMatch) {
       const coursePart = tabCols.length >= 3 ? tabCols.slice(1, -1).join(" ") : tabCols[0];
       const name = coursePart.replace(/^(grade\s*)?(9|10|11|12)\s*/i, "").trim();
-      if (name.length >= 2) {
+      if (name.length >= 2 && isPlausibleCourseRow(name, gradeMatch[1])) {
         return { coursePart: name, grade: gradeMatch[1], line: trimmed };
       }
     }
@@ -83,6 +103,7 @@ function parseCourseFromLine(line) {
   if (spaced) {
     const coursePart = spaced[2].trim();
     if (coursePart.length >= 2) {
+      if (!isPlausibleCourseRow(coursePart, spaced[3])) return null;
       return { coursePart, grade: spaced[3], line: trimmed };
     }
   }
@@ -92,6 +113,7 @@ function parseCourseFromLine(line) {
   let coursePart = trimmed.slice(0, gradeMatch.index).replace(/[|\t,;]+/g, " ").trim();
   coursePart = coursePart.replace(/^(grade\s*)?(9|10|11|12)\s*/i, "").trim();
   if (coursePart.length < 2) return null;
+  if (!isPlausibleCourseRow(coursePart, gradeMatch[1])) return null;
   return { coursePart, grade: gradeMatch[1], line: trimmed };
 }
 
@@ -116,7 +138,7 @@ export function heuristicParseTranscriptText(raw) {
     });
   }
 
-  return {
+  return normalizeTranscriptSheet({
     gradingScale: gpas.unweighted ? "4.0_uw" : "",
     unweightedGpa: gpas.unweighted,
     weightedGpa: gpas.weighted,
@@ -124,25 +146,44 @@ export function heuristicParseTranscriptText(raw) {
     courses: courses.slice(0, 40),
     parseStatus: courses.length || gpas.unweighted ? "ready" : "failed",
     parseError: courses.length || gpas.unweighted ? "" : "no_courses_detected",
-  };
+  });
 }
 
 function sheetHasUsableCourses(sheet) {
   if (!sheet) return false;
-  const hasGpa = Boolean(sheet.unweightedGpa?.trim() || sheet.weightedGpa?.trim());
-  const hasCourse = Array.isArray(sheet.courses) && sheet.courses.some((c) => c.courseName?.trim());
+  const normalized = normalizeTranscriptSheet(sheet);
+  const hasGpa = Boolean(normalized.unweightedGpa?.trim() || normalized.weightedGpa?.trim());
+  const hasCourse = normalized.courses.length > 0;
   return hasGpa || hasCourse;
 }
 
-const VISION_PROMPT = `Extract high school transcript courses into JSON only. Schema:
+const VISION_PROMPT = `You are reading a high school transcript image. Extract ONLY academic course rows into JSON.
+
+INCLUDE: rows from course/grade tables — subject titles like "AP Calculus BC", "English 11 Honors", "Chemistry" with a letter grade (A, B+, etc.) or numeric grade (0-100).
+
+EXCLUDE completely (do NOT put in courses[]):
+- Student name, age, birthdate, gender, address, phone, email
+- Student ID, state ID, SSN, barcode numbers
+- School name, district, counselor, page numbers
+- GPA summary lines, class rank, credits earned/attempted
+- Column headers (Course, Grade, Term, Semester, Year)
+- Term codes like "2022-2023" or "78 2022-2023 1 9" without a real course title
+- Rows where the "grade" is an age, ID digit, or school year
+
+Schema:
 {
   "gradingScale": "4.0_uw"|"4.0_w"|"100"|"ib"|"a_level"|"other"|"",
-  "unweightedGpa": string,
-  "weightedGpa": string,
+  "unweightedGpa": string (only if explicitly labeled unweighted/UW, else ""),
+  "weightedGpa": string (only if explicitly labeled weighted/W, else ""),
   "scaleNotes": string,
   "courses": [{ "gradeYear": "9"|"10"|"11"|"12"|"other", "subject": string, "courseName": string, "level": "regular"|"honors"|"ap"|"ib_hl"|"ib_sl"|"a_level"|"dual_enrollment"|"other", "grade": string }]
 }
-Return at most 40 courses. Use empty strings when unknown. JSON only.`;
+
+Rules:
+- courseName must be an academic course title (at least 2 words OR contains subject keywords).
+- grade must be a letter grade or 55-100 numeric score, NOT student ID or year.
+- unweightedGpa/weightedGpa must be between 1.5 and 5.5; leave empty if unsure.
+- Return at most 40 courses. JSON only.`;
 
 function visionApiErrorCode(err) {
   const msg = err instanceof Error ? err.message : String(err);
@@ -155,21 +196,20 @@ function visionApiErrorCode(err) {
 }
 
 function mergeSheets(primary, fallback) {
-  if (!fallback) return primary;
-  if (!primary) return fallback;
-  const courses =
-    Array.isArray(primary.courses) && primary.courses.some((c) => c.courseName?.trim())
-      ? primary.courses
-      : fallback.courses ?? [];
-  return {
+  if (!fallback) return normalizeTranscriptSheet(primary);
+  if (!primary) return normalizeTranscriptSheet(fallback);
+  const primaryCourses = filterTranscriptCourses(primary.courses);
+  const fallbackCourses = filterTranscriptCourses(fallback.courses);
+  const courses = primaryCourses.length ? primaryCourses : fallbackCourses;
+  return normalizeTranscriptSheet({
     gradingScale: primary.gradingScale || fallback.gradingScale || "",
     unweightedGpa: primary.unweightedGpa || fallback.unweightedGpa || "",
     weightedGpa: primary.weightedGpa || fallback.weightedGpa || "",
     scaleNotes: primary.scaleNotes || fallback.scaleNotes || "",
     courses,
-    parseStatus: sheetHasUsableCourses({ ...primary, courses }) ? "ready" : "failed",
+    parseStatus: "ready",
     parseError: "",
-  };
+  });
 }
 
 async function parseWithVisionLlm(imageBase64List, mimeType = "image/png") {
@@ -220,7 +260,7 @@ async function callVisionLlm(cfg, imageBase64List, mimeType = "image/png") {
     const request = {
       model,
       messages: [
-        { role: "system", content: "You extract structured transcript data. Output valid JSON only." },
+        { role: "system", content: "You extract academic course rows from transcripts. Ignore demographics and headers. Output valid JSON only." },
         { role: "user", content },
       ],
       response_format: { type: "json_object" },
@@ -248,7 +288,7 @@ async function callVisionLlm(cfg, imageBase64List, mimeType = "image/png") {
         source: "ocr",
       }))
     : [];
-  const sheet = {
+  const sheet = normalizeTranscriptSheet({
     gradingScale: parsed.gradingScale || "",
     unweightedGpa: String(parsed.unweightedGpa || "").trim(),
     weightedGpa: String(parsed.weightedGpa || "").trim(),
@@ -256,7 +296,7 @@ async function callVisionLlm(cfg, imageBase64List, mimeType = "image/png") {
     courses: courses.filter((c) => c.courseName),
     parseStatus: courses.length ? "ready" : "failed",
     parseError: courses.length ? "" : "no_courses_detected",
-  };
+  });
   return { sheet, error: sheetHasUsableCourses(sheet) ? "" : "no_courses_detected" };
   } catch (e) {
     const code = e?.code === "invalid_json" ? "vision_parse_failed" : visionApiErrorCode(e);
