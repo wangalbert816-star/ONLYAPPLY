@@ -17,9 +17,15 @@ try {
   ).href;
 }
 
+/** pdfjs-dist rejects Node Buffer even though Buffer extends Uint8Array. */
+function toPdfUint8Array(buffer) {
+  if (Buffer.isBuffer(buffer)) return new Uint8Array(buffer);
+  if (buffer instanceof Uint8Array) return buffer;
+  return new Uint8Array(buffer);
+}
+
 function pdfDocumentParams(buffer) {
-  const data = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
-  return { data, useSystemFonts: true, disableFontFace: true };
+  return { data: toPdfUint8Array(buffer), useSystemFonts: true, disableFontFace: true };
 }
 
 class NodeCanvasFactory {
