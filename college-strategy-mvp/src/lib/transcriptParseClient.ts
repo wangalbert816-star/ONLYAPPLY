@@ -2,7 +2,7 @@ import type { TranscriptSheet } from "../types";
 import { emptyTranscriptSheet, parseTranscriptTextHeuristic } from "./transcriptSheet";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
-const PARSE_TIMEOUT_MS = 150_000;
+const PARSE_TIMEOUT_MS = 280_000;
 
 function hasUsableTranscriptData(sheet: Partial<TranscriptSheet>): boolean {
   const hasGpa = Boolean(sheet.unweightedGpa?.trim() || sheet.weightedGpa?.trim());

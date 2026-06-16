@@ -3,7 +3,7 @@
 import { resolveVisionLlmClient, visionLlmConfigHint } from "./llmVisionConfig.mjs";
 import OpenAI from "openai";
 import { parseJsonFromLlm } from "./parseLlmJson.mjs";
-import { extractPdfText, renderPdfPagesToPngBase64 } from "./pdfExtract.mjs";
+import { extractPdfText, getPdfPageCount, renderPdfPageToPngBase64 } from "./pdfExtract.mjs";
 import {
   filterTranscriptCourses,
   isPlausibleCourseRow,
@@ -195,12 +195,30 @@ function visionApiErrorCode(err) {
   return "vision_parse_failed";
 }
 
+const PDF_TEXT_COURSE_THRESHOLD = 10;
+const PDF_VISION_PARALLEL = 2;
+
+function pdfVisionPageLimit() {
+  const configured = Number(process.env.TRANSCRIPT_PDF_MAX_PAGES || 0);
+  return configured > 0 ? configured : 10;
+}
+
+function mergeCourseLists(...lists) {
+  return filterTranscriptCourses(lists.flat().filter(Boolean));
+}
+
+function limitWarning(numPages) {
+  const limit = pdfVisionPageLimit();
+  return numPages > limit ? `pdf_page_limit:${limit}` : "";
+}
+
 function mergeSheets(primary, fallback) {
   if (!fallback) return normalizeTranscriptSheet(primary);
   if (!primary) return normalizeTranscriptSheet(fallback);
-  const primaryCourses = filterTranscriptCourses(primary.courses);
-  const fallbackCourses = filterTranscriptCourses(fallback.courses);
-  const courses = primaryCourses.length ? primaryCourses : fallbackCourses;
+  const courses = mergeCourseLists(
+    filterTranscriptCourses(primary.courses),
+    filterTranscriptCourses(fallback.courses),
+  );
   return normalizeTranscriptSheet({
     gradingScale: primary.gradingScale || fallback.gradingScale || "",
     unweightedGpa: primary.unweightedGpa || fallback.unweightedGpa || "",
@@ -238,17 +256,23 @@ async function parseWithVisionLlm(imageBase64List, mimeType = "image/png") {
   return first;
 }
 
-async function callVisionLlm(cfg, imageBase64List, mimeType = "image/png") {
+async function callVisionLlm(cfg, imageBase64List, mimeType = "image/png", opts = {}) {
   const { client, model, provider } = cfg;
+  const { pageNum, numPages } = opts;
 
   const images = Array.isArray(imageBase64List) ? imageBase64List : [imageBase64List];
   const totalBytes = images.reduce((n, b64) => n + Math.ceil((b64.length * 3) / 4), 0);
+  const pageTag = pageNum && numPages ? ` page=${pageNum}/${numPages}` : "";
   console.info(
-    `[transcript/parse] vision_start model=${model} images=${images.length} bytes≈${Math.round(totalBytes / 1024)}KB thinking=disabled`,
+    `[transcript/parse] vision_start model=${model}${pageTag} images=${images.length} bytes≈${Math.round(totalBytes / 1024)}KB thinking=disabled`,
   );
 
+  const pageHint =
+    pageNum && numPages
+      ? `\n\nThis image is page ${pageNum} of ${numPages} of the transcript. Extract courses visible on THIS page only.`
+      : "";
   const content = [
-    { type: "text", text: VISION_PROMPT },
+    { type: "text", text: VISION_PROMPT + pageHint },
     ...images.map((b64) => ({
       type: "image_url",
       image_url: { url: `data:${mimeType};base64,${b64}` },
@@ -274,7 +298,7 @@ async function callVisionLlm(cfg, imageBase64List, mimeType = "image/png") {
     const res = await client.chat.completions.create(request);
 
     const raw = res.choices?.[0]?.message?.content ?? "";
-    console.info(`[transcript/parse] vision_done model=${model} chars=${raw.length}`);
+    console.info(`[transcript/parse] vision_done model=${model}${pageTag} chars=${raw.length}`);
     const parsed = parseJsonFromLlm(raw);
   const courses = Array.isArray(parsed.courses)
     ? parsed.courses.map((c) => ({
@@ -308,7 +332,66 @@ async function callVisionLlm(cfg, imageBase64List, mimeType = "image/png") {
   }
 }
 
+async function parsePdfWithVisionPerPage(buffer, cfg, numPages) {
+  const limit = Math.min(numPages, pdfVisionPageLimit());
+  const courseBatches = [];
+  let gradingScale = "";
+  let unweightedGpa = "";
+  let weightedGpa = "";
+  let scaleNotes = "";
+
+  for (let start = 1; start <= limit; start += PDF_VISION_PARALLEL) {
+    const batchPages = [];
+    for (let p = start; p < start + PDF_VISION_PARALLEL && p <= limit; p += 1) {
+      batchPages.push(p);
+    }
+
+    const rendered = await Promise.all(
+      batchPages.map(async (pageNum) => ({
+        pageNum,
+        image: await renderPdfPageToPngBase64(buffer, pageNum),
+      })),
+    );
+
+    const results = await Promise.all(
+      rendered.map(({ pageNum, image }) =>
+        callVisionLlm(cfg, [image], "image/png", { pageNum, numPages }),
+      ),
+    );
+
+    for (const { sheet } of results) {
+      if (!sheet) continue;
+      if (!gradingScale && sheet.gradingScale) gradingScale = sheet.gradingScale;
+      if (!unweightedGpa && sheet.unweightedGpa) unweightedGpa = sheet.unweightedGpa;
+      if (!weightedGpa && sheet.weightedGpa) weightedGpa = sheet.weightedGpa;
+      if (!scaleNotes && sheet.scaleNotes) scaleNotes = sheet.scaleNotes;
+      if (sheet.courses?.length) courseBatches.push(sheet.courses);
+    }
+  }
+
+  if (limit < numPages) {
+    scaleNotes = [scaleNotes, `Parsed first ${limit} of ${numPages} pages.`].filter(Boolean).join(" ");
+  }
+
+  return normalizeTranscriptSheet({
+    gradingScale,
+    unweightedGpa,
+    weightedGpa,
+    scaleNotes,
+    courses: mergeCourseLists(...courseBatches),
+    parseStatus: "ready",
+    parseError: "",
+  });
+}
+
 async function parsePdfBuffer(buffer) {
+  let numPages = 1;
+  try {
+    numPages = await getPdfPageCount(buffer);
+  } catch (e) {
+    console.warn("[transcript/parse] pdf_page_count_failed", e instanceof Error ? e.message : e);
+  }
+
   let text = "";
   try {
     text = await extractPdfText(buffer);
@@ -319,9 +402,12 @@ async function parsePdfBuffer(buffer) {
   let textSheet = null;
   if (text.length >= 20) {
     textSheet = heuristicParseTranscriptText(text);
-    const hasCourses = textSheet.courses?.some((c) => c.courseName?.trim());
-    if (hasCourses) {
-      return { sheet: textSheet, method: "pdf_text" };
+    const textCourses = filterTranscriptCourses(textSheet.courses ?? []);
+    if (numPages === 1 && textCourses.length > 0) {
+      return { sheet: { ...textSheet, courses: textCourses }, method: "pdf_text" };
+    }
+    if (textCourses.length >= PDF_TEXT_COURSE_THRESHOLD) {
+      return { sheet: { ...textSheet, courses: textCourses }, method: "pdf_text" };
     }
   }
 
@@ -342,28 +428,19 @@ async function parsePdfBuffer(buffer) {
   }
 
   try {
-    const pages = await renderPdfPagesToPngBase64(buffer, 4);
-    if (pages.length === 0) {
-      if (textSheet && sheetHasUsableCourses(textSheet)) {
-        return { sheet: textSheet, method: "pdf_text_partial", warning: "pdf_render_failed" };
-      }
+    const visionSheet = await parsePdfWithVisionPerPage(buffer, cfg, numPages);
+    const merged = mergeSheets(visionSheet, textSheet);
+    if (sheetHasUsableCourses(merged)) {
       return {
-        sheet: { ...PARSE_SCHEMA, parseStatus: "failed", parseError: "pdf_render_failed" },
-        method: "pdf_vision",
+        sheet: merged,
+        method: numPages > 1 ? "pdf_vision_multipage" : "pdf_vision",
+        warning: limitWarning(numPages),
       };
     }
-    const { sheet, error } = await parseWithVisionLlm(pages, "image/png");
-    const merged = mergeSheets(sheet ?? PARSE_SCHEMA, textSheet);
-    if (sheetHasUsableCourses(merged)) {
-      if (error && !merged.courses?.some((c) => c.courseName?.trim())) {
-        merged.parseError = error;
-      }
-      return { sheet: merged, method: merged.courses?.length ? "pdf_vision" : "pdf_text_partial", warning: error || "" };
-    }
     return {
-      sheet: merged ?? { ...PARSE_SCHEMA, parseStatus: "failed", parseError: error || "no_courses_detected" },
+      sheet: merged ?? { ...PARSE_SCHEMA, parseStatus: "failed", parseError: "no_courses_detected" },
       method: "pdf_vision",
-      warning: error || "",
+      warning: "",
     };
   } catch (e) {
     console.warn("[transcript/parse] pdf_vision_failed", e instanceof Error ? e.message : e);

@@ -73,6 +73,30 @@ function textItemsToLines(items) {
   return lines;
 }
 
+export async function getPdfPageCount(buffer) {
+  const doc = await getDocument(pdfDocumentParams(buffer)).promise;
+  return doc.numPages;
+}
+
+export async function renderPdfPageToPngBase64(buffer, pageNum, scale = 2) {
+  const doc = await getDocument(pdfDocumentParams(buffer)).promise;
+  if (pageNum < 1 || pageNum > doc.numPages) {
+    throw new Error(`pdf_page_out_of_range:${pageNum}`);
+  }
+  const factory = new NodeCanvasFactory();
+  const page = await doc.getPage(pageNum);
+  const viewport = page.getViewport({ scale });
+  const { canvas, context } = factory.create(viewport.width, viewport.height);
+  await page.render({
+    canvasContext: context,
+    viewport,
+    canvasFactory: factory,
+  }).promise;
+  const b64 = canvas.toBuffer("image/png").toString("base64");
+  factory.destroy({ canvas, context });
+  return b64;
+}
+
 export async function extractPdfText(buffer) {
   const doc = await getDocument(pdfDocumentParams(buffer)).promise;
   const chunks = [];
