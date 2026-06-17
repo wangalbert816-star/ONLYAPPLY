@@ -1,0 +1,161 @@
+/**
+ * Per-school stats gap vs student profile (2026 official admit stats).
+ */
+
+import { resolveGpaNumbersFromBody } from "./transcriptSheetReport.mjs";
+
+const INTL_SAT_OFFSET = 20;
+const INTL_ACT_OFFSET = 1;
+const INTL_GPA_OFFSET = 0.05;
+const CMU_CS_SAT_STRICT = 15;
+const CS_MAJOR_RE =
+  /computer science|\bcs\b|software|data science|artificial intelligence|\bai\b|computational|informatics/i;
+
+export function isCsMajor(majorPrimary) {
+  return CS_MAJOR_RE.test(String(majorPrimary ?? ""));
+}
+
+export function buildStudentStatsProfile(body) {
+  const b = body && typeof body === "object" ? body : {};
+  const testing = String(b.testing ?? "").trim().toLowerCase();
+  const satDigits = String(b.satScore ?? "").replace(/\D/g, "");
+  const actDigits = String(b.actScore ?? "").replace(/\D/g, "");
+  const sat = satDigits.length >= 3 ? Number(satDigits.slice(0, 4)) : null;
+  const act = actDigits.length >= 1 ? Number(actDigits.slice(0, 2)) : null;
+  const satOk = sat != null && sat >= 400 && sat <= 1600;
+  const actOk = act != null && act >= 10 && act <= 36;
+
+  const { unweighted, weighted } = resolveGpaNumbersFromBody(b);
+  const uwGpa = unweighted ?? null;
+  const wGpa = weighted ?? null;
+
+  const hasSubmittedTesting =
+    testing === "will_submit" && ((satOk && sat != null) || (actOk && act != null));
+  const testOptionalNoScore =
+    (testing === "test_optional" || testing === "will_submit") && !hasSubmittedTesting;
+
+  const applicantIdentity = String(b.applicantIdentity ?? "").trim().toLowerCase();
+  const intl =
+    applicantIdentity === "intl" ||
+    (Array.isArray(b.tags) && b.tags.some((t) => String(t).toLowerCase() === "intl"));
+
+  return {
+    uwGpa,
+    wGpa,
+    sat: satOk ? sat : null,
+    act: actOk ? act : null,
+    hasSubmittedTesting,
+    testOptionalNoScore,
+    testing,
+    intl,
+    majorPrimary: String(b.majorPrimary ?? "").trim(),
+    isCsMajor: isCsMajor(b.majorPrimary),
+  };
+}
+
+export function effectiveTestPolicy(statsEntry, student) {
+  if (!statsEntry) return "unknown";
+  if (statsEntry.testPolicy === "test_blind") return "test_blind";
+  if (statsEntry.testPolicyCs === "required" && student.isCsMajor) return "required";
+  return statsEntry.testPolicyDefault ?? statsEntry.testPolicy ?? "optional";
+}
+
+/** Positive gap = student below school band (harder / reach-ward). */
+export function computeSchoolStatsGap(student, statsEntry) {
+  if (!statsEntry) return null;
+
+  const policy = effectiveTestPolicy(statsEntry, student);
+  const flags = [];
+  let priorityPenalty = 0;
+
+  if (policy === "required" && !student.hasSubmittedTesting) {
+    flags.push("missing_required_testing");
+    priorityPenalty += 18;
+  }
+
+  let satGap = null;
+  let actGap = null;
+  let gpaGap = null;
+  let testingCompared = false;
+
+  const canCompareTesting =
+    policy !== "test_blind" && !(student.testOptionalNoScore && policy !== "required");
+
+  if (canCompareTesting) {
+    if (student.sat != null && statsEntry.satCompositeMid != null) {
+      satGap = statsEntry.satCompositeMid - student.sat;
+      testingCompared = true;
+    }
+    if (student.act != null && statsEntry.actMid != null) {
+      actGap = statsEntry.actMid - student.act;
+      testingCompared = true;
+    }
+  }
+
+  if (statsEntry.gpaPublished && student.uwGpa != null && statsEntry.gpaUwMid != null) {
+    gpaGap = statsEntry.gpaUwMid - student.uwGpa;
+  }
+
+  if (student.intl) {
+    if (satGap != null) satGap += INTL_SAT_OFFSET;
+    if (actGap != null) actGap += INTL_ACT_OFFSET;
+    if (gpaGap != null) gpaGap += INTL_GPA_OFFSET;
+    flags.push("intl_stricter");
+  }
+
+  if (statsEntry.testPolicyCs === "required" && student.isCsMajor && satGap != null) {
+    satGap += CMU_CS_SAT_STRICT;
+    flags.push("cmu_cs_strict");
+  }
+
+  let engineGap = 6;
+  if (satGap != null) engineGap += satGap / 4.5;
+  if (actGap != null) engineGap += actGap * 2.2;
+  if (gpaGap != null) engineGap += gpaGap * 22;
+
+  if (!testingCompared && gpaGap == null && statsEntry.selectivity != null) {
+    engineGap = statsEntry.selectivity / 4 - 12;
+  }
+
+  if (satGap != null && satGap >= 80) flags.push("below_sat_band");
+  if (gpaGap != null && gpaGap >= 0.3) flags.push("below_gpa_band");
+  if (satGap != null && satGap <= -40 && (gpaGap == null || gpaGap <= 0)) flags.push("above_testing_band");
+
+  const suggestedTier = suggestTierFromEngineGap(engineGap, flags);
+
+  return {
+    engineGap: Math.round(engineGap * 10) / 10,
+    satGap,
+    actGap,
+    gpaGap,
+    flags,
+    priorityPenalty,
+    suggestedTier,
+    testingCompared,
+    testPolicy: policy,
+    gpaPublished: statsEntry.gpaPublished,
+    blocksMatch: statsGapBlocksMatch(satGap, gpaGap),
+    blocksSafety: statsGapBlocksSafety(engineGap, satGap, gpaGap),
+  };
+}
+
+function suggestTierFromEngineGap(engineGap, flags) {
+  if (flags.includes("missing_required_testing")) return "reach";
+  if (flags.includes("below_sat_band") || flags.includes("below_gpa_band")) return "reach";
+  if (engineGap >= 14) return "reach";
+  if (engineGap >= -4 && engineGap < 14) return "match";
+  if (engineGap <= -4) return "safety";
+  return "match";
+}
+
+export function statsGapBlocksMatch(satGap, gpaGap) {
+  if (satGap != null && satGap >= 80) return true;
+  if (gpaGap != null && gpaGap >= 0.3) return true;
+  return false;
+}
+
+export function statsGapBlocksSafety(engineGap, satGap, gpaGap) {
+  if (statsGapBlocksMatch(satGap, gpaGap)) return true;
+  if (engineGap >= 8) return true;
+  return false;
+}

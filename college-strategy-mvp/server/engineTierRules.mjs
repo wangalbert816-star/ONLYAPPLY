@@ -7,6 +7,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildEngineIntakeProfile, isUcSchoolName, schoolRegionMatchesPrefs } from "./engineIntakeProfile.mjs";
 import { forbiddenSchoolsFromBody, schoolMatchesForbidden } from "./topReferenceSchools.mjs";
+import { findAdmitStatsEntry } from "./schoolAdmitStats.mjs";
+import { buildStudentStatsProfile, computeSchoolStatsGap } from "./statsTierGap.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CATALOG_FILE = path.join(__dirname, "..", "data", "engine", "school-major-catalog.json");
@@ -173,6 +175,8 @@ export function buildEngineContext(body, tags = [], profileScores, intakeOverrid
     riskStyle: intake.riskStyle,
     tags: tagSet,
     geoStrict: intake.geoStrict,
+    body,
+    studentStatsProfile: buildStudentStatsProfile(body),
   };
 }
 
@@ -321,7 +325,7 @@ export function pickTopPerTier(candidates, tier, count = 3, context = null) {
   return picked.slice(0, count);
 }
 
-export function formatSchoolNote(entry, context, tier, gap) {
+export function formatSchoolNote(entry, context, tier, gap, statsGap = null) {
   const fit = majorFitForSchool(entry, context.majorBucket);
   const bits = [];
   if (entry.notes) bits.push(entry.notes);
@@ -330,6 +334,8 @@ export function formatSchoolNote(entry, context, tier, gap) {
   if (context.geoStrict && schoolRegionMatchesPrefs(entry.region, context.geo)) bits.push("符合地理偏好");
   if (context.intl && entry.intlFriendly) bits.push("国际生路径较常见");
   if (tier === "reach" && gap >= 18) bits.push("现实可冲");
+  if (statsGap?.flags?.includes("missing_required_testing")) bits.push("缺标化—Required校");
+  if (statsGap?.testPolicy === "test_blind") bits.push("test-blind");
   return bits.filter(Boolean).slice(0, 2).join("；") || null;
 }
 
@@ -337,19 +343,33 @@ export function formatSchoolNote(entry, context, tier, gap) {
  * Build ranked candidates from catalog under current context (geoStrict from context).
  */
 export function buildCatalogCandidates(catalog, composite, context) {
+  const student = context.studentStatsProfile ?? buildStudentStatsProfile(context.body);
   const candidates = [];
   for (const entry of catalog) {
     if (!isSchoolEligible(entry, context)) continue;
-    const gap = tierGap(composite, entry.selectivity, context, entry);
-    const tier = classifySchoolTier(entry, context, gap);
+    const statsEntry = findAdmitStatsEntry(entry.school);
+    let gap = tierGap(composite, entry.selectivity, context, entry);
+    let statsGap = null;
+    if (statsEntry) {
+      statsGap = computeSchoolStatsGap(student, statsEntry);
+      gap = statsGap.engineGap;
+    }
+    const selectivity = statsEntry?.selectivity ?? entry.selectivity;
+    const tier = classifySchoolTier({ ...entry, selectivity }, context, gap);
     if (!tier) continue;
     const fit = majorFitForSchool(entry, context.majorBucket);
+    let rank = rankCandidate(entry, context, gap, tier);
+    if (!statsEntry) rank -= 35;
+    if (statsGap?.priorityPenalty) rank -= statsGap.priorityPenalty;
+    if (statsEntry) rank += 8;
     candidates.push({
       entry,
       gap,
       tier,
       fit,
-      rank: rankCandidate(entry, context, gap, tier),
+      rank,
+      statsGap,
+      statsEntry,
     });
   }
   return candidates;

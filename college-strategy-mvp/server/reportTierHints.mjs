@@ -2,6 +2,7 @@
 
 import { meaningfulStructuredActivities, structuredActivityBlob } from "./activityEvidence.mjs";
 import { parseGpaNumberFromBody } from "./transcriptSheetReport.mjs";
+import { isWeakProfileFromStats } from "./statsTierCalibration.mjs";
 
 function parseGpaNumber(gpaRaw) {
   const text = String(gpaRaw || "").trim();
@@ -100,7 +101,7 @@ export function athleticRecruitmentHint(body, locale) {
 export function statsTierCalibrationHint(body, locale) {
   const gpa = gpaFromBody(body);
   const sat = parseSatNumber(body);
-  const weak = isWeakAcademicProfile(body);
+  const weak = isWeakAcademicProfile(body) || isWeakProfileFromStats(body);
   const moderate = isModerateAcademicProfile(body);
   const parts = [];
 

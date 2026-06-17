@@ -31,6 +31,15 @@ import {
   schoolMatchesForbidden,
   validateMainSchoolReport,
 } from "../server/topReferenceSchools.mjs";
+import { parseSatCell, parseTestPolicyCell } from "../server/schoolAdmitStatsParse.mjs";
+import { findAdmitStatsEntry, listAdmitStatsSchools, resolveAdmitStatsSchool } from "../server/schoolAdmitStats.mjs";
+import { canonicalizeReportSchoolNames } from "../server/statsSchoolNameCanonicalize.mjs";
+import {
+  buildStudentStatsProfile,
+  computeSchoolStatsGap,
+  effectiveTestPolicy,
+} from "../server/statsTierGap.mjs";
+import { sanitizeStatsTierReport } from "../server/statsTierSanitize.mjs";
 
 const results = [];
 
@@ -383,6 +392,152 @@ check("plan B: forbidden Penn does not block Penn State", () => {
 check("plan B: allowsTopReferenceSchools strong vs weak", () => {
   if (!allowsTopReferenceSchools(strongBody)) throw new Error("strong should allow");
   if (allowsTopReferenceSchools(weakBody)) throw new Error("weak should deny");
+});
+
+check("admit stats: section SAT composite midpoint", () => {
+  const sat = parseSatCell("690-750 (English) 720-780 (Math)");
+  if (sat.compositeMid !== 1470) throw new Error(`expected 1470, got ${sat.compositeMid}`);
+});
+
+check("admit stats: Test-Bilnd typo normalizes", () => {
+  const tp = parseTestPolicyCell("Test-Bilnd");
+  if (tp.policy !== "test_blind") throw new Error(tp.policy);
+});
+
+check("admit stats: table loads 68 schools", () => {
+  const rows = listAdmitStatsSchools();
+  if (rows.length < 65) throw new Error(`expected ~68 schools, got ${rows.length}`);
+});
+
+check("admit stats: CMU CS required policy", () => {
+  const cmu = findAdmitStatsEntry("Carnegie Mellon University");
+  if (!cmu) throw new Error("CMU not found");
+  const student = buildStudentStatsProfile({ majorPrimary: "Computer Science", testing: "will_submit", satScore: "1500" });
+  if (effectiveTestPolicy(cmu, student) !== "required") throw new Error("CMU CS should be required");
+});
+
+check("admit stats: CMU CS adds strict SAT gap", () => {
+  const cmu = findAdmitStatsEntry("Carnegie Mellon University");
+  const student = buildStudentStatsProfile({
+    majorPrimary: "Computer Science",
+    testing: "will_submit",
+    satScore: "1500",
+  });
+  const gap = computeSchoolStatsGap(student, cmu);
+  if (!gap.flags.includes("cmu_cs_strict")) throw new Error(JSON.stringify(gap.flags));
+});
+
+check("admit stats: UC test-blind skips SAT compare", () => {
+  const ucla = findAdmitStatsEntry("University of California, Los Angeles");
+  if (!ucla) throw new Error("UCLA not found");
+  const student = buildStudentStatsProfile({ testing: "will_submit", satScore: "1200" });
+  const gap = computeSchoolStatsGap(student, ucla);
+  if (gap.testPolicy !== "test_blind") throw new Error(gap.testPolicy);
+  if (gap.testingCompared) throw new Error("should not compare testing for test-blind");
+});
+
+check("admit stats: no published GPA skips gpa gap", () => {
+  const entry = findAdmitStatsEntry("Cornell University");
+  if (!entry) throw new Error("Cornell not found");
+  if (entry.gpaPublished) throw new Error("Cornell should have no published GPA in table");
+  const student = buildStudentStatsProfile({ gpa: "3.2 UW" });
+  const gap = computeSchoolStatsGap(student, entry);
+  if (gap.gpaGap != null) throw new Error(`expected null gpaGap, got ${gap.gpaGap}`);
+});
+
+check("admit stats sanitize: strips SAT from UC row", () => {
+  const parsed = sanitizeStatsTierReport(
+    {
+      reach: [
+        {
+          school: "University of California, Los Angeles",
+          why_reach_for_you: "Your SAT 1200 is below typical admits.",
+          key_risks: ["SAT may hurt"],
+        },
+      ],
+      match: [],
+      safety: [],
+    },
+    { testing: "will_submit", satScore: "1200" },
+    "en",
+  );
+  const why = parsed.reach[0].why_reach_for_you;
+  if (/SAT/i.test(why)) throw new Error(`SAT not stripped: ${why}`);
+});
+
+const namePairs = [
+  ["CMU", "Carnegie Mellon University"],
+  ["GT", "Georgia Tech"],
+  ["UW", "University of Washington"],
+  ["UPenn", "University of Pennsylvania"],
+  ["UMich", "University of Michigan"],
+  ["UVA", "University of Virginia"],
+  ["SJSU", "San José State University"],
+  ["San Jose State University", "San José State University"],
+  ["University of California, Los Angeles", "UCLA"],
+];
+
+for (const [input, expected] of namePairs) {
+  check(`admit stats name: ${input}`, () => {
+    const hit = findAdmitStatsEntry(input);
+    if (!hit || hit.school !== expected) throw new Error(`got ${hit?.school ?? "null"}, want ${expected}`);
+  });
+}
+
+check("admit stats name: GT not WashU", () => {
+  const hit = findAdmitStatsEntry("GT");
+  if (!hit || hit.school !== "Georgia Tech") throw new Error(hit?.school ?? "null");
+});
+check("admit stats name: Penn State not in table", () => {
+  if (findAdmitStatsEntry("Penn State University")) throw new Error("should be null");
+});
+check("admit stats name: UC Davis Extension not UC Davis", () => {
+  const hit = findAdmitStatsEntry("UC Davis Extension");
+  if (hit?.school === "UC Davis") throw new Error("extension should not map to main campus stats");
+});
+check("admit stats name: UW is Seattle not Madison", () => {
+  const hit = findAdmitStatsEntry("UW");
+  if (!hit || hit.school !== "University of Washington") throw new Error(hit?.school ?? "null");
+});
+
+check("admit stats resolve: rejects NYU Stern", () => {
+  const r = resolveAdmitStatsSchool("NYU Stern");
+  if (r.confidence !== "none" || r.reason !== "qualified_college") {
+    throw new Error(JSON.stringify(r));
+  }
+});
+
+check("admit stats resolve: rejects USC Marshall", () => {
+  const r = resolveAdmitStatsSchool("USC Marshall School of Business");
+  if (r.confidence !== "none") throw new Error(JSON.stringify(r));
+});
+
+check("admit stats resolve: Penn State blocked from UPenn", () => {
+  const r = resolveAdmitStatsSchool("Penn State University");
+  if (r.entry) throw new Error(JSON.stringify(r));
+});
+
+check("admit stats resolve: Michigan State blocked from UMich", () => {
+  const r = resolveAdmitStatsSchool("Michigan State University");
+  if (r.entry) throw new Error(JSON.stringify(r));
+});
+
+check("admit stats canonicalize: UCLA from legal name", () => {
+  const parsed = canonicalizeReportSchoolNames({
+    reach: [{ school: "University of California, Los Angeles", why_reach_for_you: "x" }],
+    match: [],
+    safety: [],
+  });
+  if (parsed.reach[0].school !== "UCLA") throw new Error(parsed.reach[0].school);
+});
+
+check("admit stats canonicalize: leaves off-table names unchanged", () => {
+  const parsed = canonicalizeReportSchoolNames({
+    reach: [{ school: "Penn State University" }],
+    match: [],
+    safety: [],
+  });
+  if (parsed.reach[0].school !== "Penn State University") throw new Error(parsed.reach[0].school);
 });
 
 let failed = 0;

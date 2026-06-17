@@ -37,6 +37,12 @@ import {
   riskStyleCalibrationHint,
   statsTierCalibrationHint,
 } from "./reportTierHints.mjs";
+import {
+  buildStatsCalibrationForSchools,
+  buildStatsCalibrationPromptBlock,
+} from "./statsTierCalibration.mjs";
+import { sanitizeStatsTierReport } from "./statsTierSanitize.mjs";
+import { canonicalizeReportSchoolNames } from "./statsSchoolNameCanonicalize.mjs";
 import { registerAdminCrmRoutes, crmAdminConfigured } from "./adminCrm.mjs";
 import { registerAdminEvalRoutes } from "./adminEval.mjs";
 import { buildFewShotPromptBlock } from "./trainingCorpus.mjs";
@@ -1398,6 +1404,7 @@ function buildUserPayload(body, includeUc = false) {
   const { gpaLine, transcriptBlock } = buildGpaPromptSection(body, locale, formatTranscriptSheetBlock);
   const tierHintBlock =
     athleticRecruitmentHint(body, locale) +
+    buildStatsCalibrationPromptBlock(body, locale) +
     statsTierCalibrationHint(body, locale) +
     riskStyleCalibrationHint(body, locale);
   let extra = "";
@@ -1515,6 +1522,10 @@ async function generateReportWithConfig(cfg, body) {
   if (fewShotBlock) userContent += fewShotBlock;
   if (decision.ok) {
     userContent += buildDecisionEnginePromptBlock(decision, locale, body, body?.tags ?? []);
+    const engineSchools = ["reach", "match", "safety"]
+      .flatMap((tier) => (decision.schools?.[tier] ?? []).map((row) => String(row?.school ?? "").trim()))
+      .filter(Boolean);
+    userContent += buildStatsCalibrationForSchools(body, engineSchools, locale);
   }
   const maxTokens = reportCompletionMaxTokens();
   const baseMessages = [
@@ -1855,6 +1866,8 @@ function finalizeReportPayload(parsed, body) {
     delete parsed.uc_analysis;
   }
   parsed.top_reference_schools = normalizeTopReferenceSchoolRows(parsed.top_reference_schools, locale);
+  canonicalizeReportSchoolNames(parsed, { logTag: "[api/report/stats-canonicalize]" });
+  sanitizeStatsTierReport(parsed, body, locale);
   return sanitizeReportTierDifferentiation(parsed, locale);
 }
 

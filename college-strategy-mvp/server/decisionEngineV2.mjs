@@ -17,8 +17,8 @@ export const BENCHMARK_STRONG_SCORE = 10;
 
 function buildSchoolsFromCandidates(reachRows, matchRows, safetyRows, context, modeLabel) {
   const toTier = (rows, tier) =>
-    rows.map(({ entry, gap }) => {
-      const note = formatSchoolNote(entry, context, tier, gap);
+    rows.map(({ entry, gap, statsGap }) => {
+      const note = formatSchoolNote(entry, context, tier, gap, statsGap);
       return note ? { school: entry.school, note } : { school: entry.school };
     });
 
@@ -41,17 +41,17 @@ function resultFromPick(body, tags, context, reachRows, matchRows, safetyRows, m
   const schools = complete
     ? buildSchoolsFromCandidates(reachRows, matchRows, safetyRows, context, modeLabel)
     : normalizeApprovedSchools({
-        reach: reachRows.map(({ entry, gap }) => ({
+        reach: reachRows.map(({ entry, gap, statsGap }) => ({
           school: entry.school,
-          note: formatSchoolNote(entry, context, "reach", gap) ?? undefined,
+          note: formatSchoolNote(entry, context, "reach", gap, statsGap) ?? undefined,
         })),
-        match: matchRows.map(({ entry, gap }) => ({
+        match: matchRows.map(({ entry, gap, statsGap }) => ({
           school: entry.school,
-          note: formatSchoolNote(entry, context, "match", gap) ?? undefined,
+          note: formatSchoolNote(entry, context, "match", gap, statsGap) ?? undefined,
         })),
-        safety: safetyRows.map(({ entry, gap }) => ({
+        safety: safetyRows.map(({ entry, gap, statsGap }) => ({
           school: entry.school,
-          note: formatSchoolNote(entry, context, "safety", gap) ?? undefined,
+          note: formatSchoolNote(entry, context, "safety", gap, statsGap) ?? undefined,
         })),
       });
 

@@ -1,0 +1,70 @@
+Name,SAT,ACT(25%-75%),GPA,Acceptance Rate,Test Policy
+Harvard University,1500-1580 (25%-75%）,34-36,3.9(UW),4%,Required
+Yale University,1480-1560 (25%-75%）,33-35,3.95(UW),4.60%,Required
+Princeton University,1510-1580 (25%-75%）,34-36,3.97(UW),5%,Required
+Columbia University,1510-1560 (25%-75%）,34-36,3.97(UW),3.90%,Required
+Brown University,1480-1560 (25%-75%）,34-36,3.97(UW),5.65%,Required
+Dartmouth College,1500-1570 (25%-75%）,33-35,3.95(UW),6%,Required
+University of Pennsylvania,1510-1560 (25%-75%）,34-35,3.91(UW),5%,Required
+Cornell University,730-750(English) 770-790(Math),33-35,,8%,Required
+Stanford University,770-800(Math) 740-780(English),34-35,,3.61%,Required
+MIT,780-800(Math) 740-780(English),34-36,,4.60%,Required
+University of Chicago,1510-1560 (25%-75%）,34-35,,4.48%,Optional
+Boston University,1420-1530 (25%-75%）,32-34,3.7-4.0(UW),11%,Optional
+Duke University,1520-1570 (25%-75%）,34-36,,5.20%,Optional
+Northwestern University,1500-1560 (25%-75%）,33-35,,7%,Optional
+Johns Hopkins University,1530-1570 (25%-75%）,35(AVG),3.95(UW),6%,Required
+Vanderbilt University,1510-1560 (25%-75%）,34-35,,2.80%,Optional
+Rice University,1510-1560 (25%-75%）,34-36,,8%,Optional
+Washington University in St. Louis,1490-1550 (25%-75%）,33-35,,12%,Optional
+UC Berkeley,test-blind,test-blind,3.89-4.00(UW) 4.31-4.65(W),11%,Test-Bilnd
+UCLA,test-blind,test-blind,3.95-4.00(UW) 4.44-4.78(W),9%,Test-Bilnd
+UC San Diego,test-blind,test-blind,4.12-4.29(W),28%,Test-Bilnd
+UC Santa Barbara,test-blind,test-blind,4.09-4.28(W),38.30%,Test-Bilnd
+UC Irvine,test-blind,test-blind,4.04-4.27(W) 3.84-4.00(UW),28.94%,Test-Bilnd
+UC Davis,test-blind,test-blind,4.00-4.26(W) 3.79-4.00(UW),44.60%,Test-Bilnd
+UC Santa Cruz,test-blind,test-blind,3.83-4.20(W),72.70%,Test-Bilnd
+UC Riverside,test-blind,test-blind,3.65-4.16(W),87.10%,Test-Bilnd
+UC Merced,test-blind,test-blind,3.54-4.15(W),95.10%,Test-Bilnd
+University of Notre Dame,1460-1540 (25%-75%）,33-35,,9%,Optional
+Georgetown University,690-780(Math) 700-770(English),32-35,,13%,Required
+Carnegie Mellon University,770-800(Math) 730-770(English),34-35,3.89(UW),12%,"School of Computer Science:Required 
+Else:Optional"
+Emory University,740-770(English) 760-800(Math),33-35,3.83(UW),10.30%,Optional
+USC,1490-1550 (25%-75%）,33-35,3.87-4.00(UW),11.20%,Optional
+University of Michigan,690-780（Math）690-750(English),34-35,3.91(UW),16%,Optional
+NYU,1470-1570 (25%-75%）,33-35,3.7(UW),8%,Optional
+Tufts University,740-790(Math) 730-770(English),33-35,,10.80%,Optional
+Caltech,1500-1600 (25%-75%）,35-36,,3.78%,Required
+Babson College,1450-1530 (25%-75%）,32-34,,16%,Optional
+University of Virginia,710-780(Math) 700-760(English),32-35,,12.50%,Optional
+University of North Carolina at Chapel Hill,1400-1520(25%-75%）,29-34,4.44-4.61(W),15%,Optional
+University of Florida,1380-1510 (25%-75%）,31-34,4.5-4.7(W),24%,Required
+University of Texas at Austin,1250-1510 (25%-75%）,27-33,,27%,Required
+Georgia Tech,1440(AVG),32(AVG),4.1(W),13%,Required
+University of Wisconsin-Madison,1350-1510 (25%-75%）,29-33,,45%,Optional
+University of Illinois Urbana-Champaign,1420-1540 (25%-75%）,31-35,3.7-4.0(UW),36.60%,Optional
+Purdue University,1220-1480 (25%-75%）,28-34,,43.40%,Required
+Ohio State University,1350-1450 (25%-75%）,29-33,3.6-4.0(UW),61%,Required
+University of Washington,1280-1490 (25%-75%）,28-33,3.75-3.98(UW),39%,Optional
+Boston College,1440-1520 (25%-75%）,33-35,,14%,Optional
+Wake Forest University,1440-1520 (25%-75%）,32-34,,22%,Optional
+Northeastern University,1475(MEAN),33-35,,5.22%,Optional
+Case Western Reserve University,1440-1550 (25%-75%）,32-35,,38%,Optional
+University of Rochester,1440-1550 (25%-75%）,32-35,,40%,Optional
+Brandeis University,1380-1480 (25%-75%）,31-34,,45%,Optional
+Lehigh University,700-750(English) 710-780(Math),32-35,,26%,Optional
+Villanova University,1390-1510 (25%-75%）,32-34,,27%,Optional
+Santa Clara University,1350-1490 (25%-75%）,31-33,,48%,Optional
+Williams College,1490-1570 (25%-75%）,34-35,,8.60%,Optional
+Claremont McKenna College,1470-1560 (25%-75%）,33-35,,10%,Optional
+Pomona College,1490-1560 (25%-75%）,33-35,,7%,Optional
+Harvey Mudd College,1500-1570 (25%-75%）,34-36,,13%,Optional
+Scripps College,1440-1540（25%-75%）,31-34,,38%,Optional
+Pitzer College,Test-Bilnd,Test-Bilnd,3.96(UW),28.60%,Test-Bilnd
+Loyola Marymount University,1260-1430（25%-75%）,28-32,,45%,Optional
+Pepperdine University,1330-1420 (25%-75%）,30-32,3.64-3.88(UW),63%,Optional
+Cal Poly San Luis Obispo,test-blind,test-blind,4.06-4.12(W),31%,Test-Bilnd
+Cal Poly Pomona,test-blind,test-blind,3.5-4.0(UW),74%,Test-Bilnd
+San José State University,test-blind,test-blind,3.53（UW）,85%,Test-Bilnd
+Chapman University,1350(AVG),30(AVG),3.78(UW),65%,Optional

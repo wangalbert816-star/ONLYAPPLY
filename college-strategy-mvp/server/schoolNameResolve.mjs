@@ -38,7 +38,23 @@ const ALIAS_RULES = [
   { re: /university of chicago|^uchicago$|芝加哥大学/i, aliases: ["UChicago", "University of Chicago"] },
   {
     re: /university of michigan(?:\s*-\s*ann\s*arbor)?|\bumich\b|密歇根/i,
-    aliases: ["University of Michigan", "UMich"],
+    aliases: ["University of Michigan", "UMich", "Michigan"],
+  },
+  {
+    re: /university of notre dame|^notre dame$|圣母/i,
+    aliases: ["Notre Dame", "University of Notre Dame"],
+  },
+  {
+    re: /san jos[eé]\s+state|\bsjsu\b/i,
+    aliases: ["SJSU", "San Jose State University", "San José State University"],
+  },
+  {
+    re: /university of wisconsin(?:\s*-\s*|\s+)madison|\buw\s*madison\b|威斯康星/i,
+    aliases: ["University of Wisconsin-Madison", "UW Madison", "Wisconsin Madison"],
+  },
+  {
+    re: /california polytechnic state university|cal poly san luis obispo|cal poly slo/i,
+    aliases: ["Cal Poly SLO", "Cal Poly San Luis Obispo"],
   },
   { re: /new york university|^nyu$|纽约大学/i, aliases: ["NYU", "New York University"] },
   { re: /university of southern california|^usc$|南加州大学/i, aliases: ["USC", "Southern California"] },
@@ -61,6 +77,10 @@ const ALIAS_RULES = [
   },
   { re: /purdue university|^purdue$|普渡/i, aliases: ["Purdue"] },
   { re: /carnegie mellon university|^cmu$|卡内基梅隆/i, aliases: ["CMU", "Carnegie Mellon"] },
+  {
+    re: /university of virginia|^uva$|\buva\b|弗吉尼亚/i,
+    aliases: ["UVA", "University of Virginia", "Virginia"],
+  },
   { re: /vanderbilt university|^vanderbilt$|范德堡/i, aliases: ["Vanderbilt"] },
   { re: /rice university|^rice$|莱斯/i, aliases: ["Rice", "Rice University"] },
   { re: /emory university|^emory$|埃默里/i, aliases: ["Emory"] },
