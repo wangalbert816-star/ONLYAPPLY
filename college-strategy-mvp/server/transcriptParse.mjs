@@ -2,7 +2,7 @@
 
 import { resolveVisionLlmClient, visionLlmConfigHint } from "./llmVisionConfig.mjs";
 import OpenAI from "openai";
-import { parseJsonFromLlm } from "./parseLlmJson.mjs";
+import { parseJsonFromLlm, salvageCourseObjectsFromLlm } from "./parseLlmJson.mjs";
 import { extractPdfText, getPdfPageCount, renderPdfPageToPngBase64 } from "./pdfExtract.mjs";
 import {
   filterTranscriptCourses,
@@ -185,6 +185,23 @@ Rules:
 - unweightedGpa/weightedGpa must be between 1.5 and 5.5; leave empty if unsure.
 - Return at most 40 courses. JSON only.`;
 
+const VISION_PROMPT_COMPACT = `Extract academic course rows from this transcript page. Return JSON only:
+{"gradingScale":"","unweightedGpa":"","weightedGpa":"","scaleNotes":"","courses":[{"gradeYear":"9","subject":"","courseName":"","level":"regular","grade":""}]}
+Rules: courseName = academic title; grade = letter or 55-100; max 30 courses on this page; no demographics; valid JSON only.`;
+
+function parseTranscriptVisionPayload(raw) {
+  try {
+    return parseJsonFromLlm(raw);
+  } catch (e) {
+    const salvaged = salvageCourseObjectsFromLlm(raw);
+    if (salvaged?.courses?.length) {
+      console.warn(`[transcript/parse] vision_json_salvaged courses=${salvaged.courses.length} chars=${String(raw).length}`);
+      return salvaged;
+    }
+    throw e;
+  }
+}
+
 function visionApiErrorCode(err) {
   const msg = err instanceof Error ? err.message : String(err);
   if (/timed out|timeout|ETIMEDOUT/i.test(msg)) return "vision_timeout";
@@ -258,21 +275,22 @@ async function parseWithVisionLlm(imageBase64List, mimeType = "image/png") {
 
 async function callVisionLlm(cfg, imageBase64List, mimeType = "image/png", opts = {}) {
   const { client, model, provider } = cfg;
-  const { pageNum, numPages } = opts;
+  const { pageNum, numPages, compactRetry = false } = opts;
 
   const images = Array.isArray(imageBase64List) ? imageBase64List : [imageBase64List];
   const totalBytes = images.reduce((n, b64) => n + Math.ceil((b64.length * 3) / 4), 0);
   const pageTag = pageNum && numPages ? ` page=${pageNum}/${numPages}` : "";
   console.info(
-    `[transcript/parse] vision_start model=${model}${pageTag} images=${images.length} bytes≈${Math.round(totalBytes / 1024)}KB thinking=disabled`,
+    `[transcript/parse] vision_start model=${model}${pageTag} images=${images.length} bytes≈${Math.round(totalBytes / 1024)}KB thinking=disabled${compactRetry ? " compact=1" : ""}`,
   );
 
   const pageHint =
     pageNum && numPages
       ? `\n\nThis image is page ${pageNum} of ${numPages} of the transcript. Extract courses visible on THIS page only.`
       : "";
+  const prompt = (compactRetry ? VISION_PROMPT_COMPACT : VISION_PROMPT) + pageHint;
   const content = [
-    { type: "text", text: VISION_PROMPT + pageHint },
+    { type: "text", text: prompt },
     ...images.map((b64) => ({
       type: "image_url",
       image_url: { url: `data:${mimeType};base64,${b64}` },
@@ -288,7 +306,7 @@ async function callVisionLlm(cfg, imageBase64List, mimeType = "image/png", opts 
         { role: "user", content },
       ],
       response_format: { type: "json_object" },
-      max_tokens: 2048,
+      max_tokens: compactRetry ? 3072 : 4096,
     };
     // Transcript OCR is structured extraction — disable Ark thinking for much faster responses.
     if (provider === "volcengine-ark") {
@@ -299,7 +317,16 @@ async function callVisionLlm(cfg, imageBase64List, mimeType = "image/png", opts 
 
     const raw = res.choices?.[0]?.message?.content ?? "";
     console.info(`[transcript/parse] vision_done model=${model}${pageTag} chars=${raw.length}`);
-    const parsed = parseJsonFromLlm(raw);
+    let parsed;
+    try {
+      parsed = parseTranscriptVisionPayload(raw);
+    } catch (parseErr) {
+      if (!compactRetry) {
+        console.warn(`[transcript/parse] vision_json_retry compact${pageTag}`, parseErr instanceof Error ? parseErr.message : parseErr);
+        return callVisionLlm(cfg, imageBase64List, mimeType, { ...opts, compactRetry: true });
+      }
+      throw parseErr;
+    }
   const courses = Array.isArray(parsed.courses)
     ? parsed.courses.map((c) => ({
         id: newCourseId(),
@@ -359,13 +386,33 @@ async function parsePdfWithVisionPerPage(buffer, cfg, numPages) {
       ),
     );
 
-    for (const { sheet } of results) {
-      if (!sheet) continue;
-      if (!gradingScale && sheet.gradingScale) gradingScale = sheet.gradingScale;
-      if (!unweightedGpa && sheet.unweightedGpa) unweightedGpa = sheet.unweightedGpa;
-      if (!weightedGpa && sheet.weightedGpa) weightedGpa = sheet.weightedGpa;
-      if (!scaleNotes && sheet.scaleNotes) scaleNotes = sheet.scaleNotes;
-      if (sheet.courses?.length) courseBatches.push(sheet.courses);
+    for (let i = 0; i < results.length; i += 1) {
+      const { sheet, error } = results[i];
+      const pageNum = rendered[i]?.pageNum;
+      if (sheetHasUsableCourses(sheet)) {
+        if (!gradingScale && sheet.gradingScale) gradingScale = sheet.gradingScale;
+        if (!unweightedGpa && sheet.unweightedGpa) unweightedGpa = sheet.unweightedGpa;
+        if (!weightedGpa && sheet.weightedGpa) weightedGpa = sheet.weightedGpa;
+        if (!scaleNotes && sheet.scaleNotes) scaleNotes = sheet.scaleNotes;
+        if (sheet.courses?.length) courseBatches.push(sheet.courses);
+        continue;
+      }
+      if (error === "vision_parse_failed" && pageNum) {
+        console.warn(`[transcript/parse] page_retry page=${pageNum}/${numPages}`);
+        const retry = await callVisionLlm(cfg, [rendered[i].image], "image/png", {
+          pageNum,
+          numPages,
+          compactRetry: true,
+        });
+        if (sheetHasUsableCourses(retry.sheet)) {
+          const rs = retry.sheet;
+          if (!gradingScale && rs.gradingScale) gradingScale = rs.gradingScale;
+          if (!unweightedGpa && rs.unweightedGpa) unweightedGpa = rs.unweightedGpa;
+          if (!weightedGpa && rs.weightedGpa) weightedGpa = rs.weightedGpa;
+          if (!scaleNotes && rs.scaleNotes) scaleNotes = rs.scaleNotes;
+          if (rs.courses?.length) courseBatches.push(rs.courses);
+        }
+      }
     }
   }
 
