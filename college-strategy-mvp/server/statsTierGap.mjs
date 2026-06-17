@@ -122,6 +122,16 @@ export function computeSchoolStatsGap(student, statsEntry) {
   if (satGap != null && satGap <= -40 && (gpaGap == null || gpaGap <= 0)) flags.push("above_testing_band");
 
   const suggestedTier = suggestTierFromEngineGap(engineGap, flags);
+  const effectiveTier = computeEffectiveTier({
+    engineGap,
+    flags,
+    suggestedTier,
+    statsEntry,
+    gpaGap,
+    policy,
+  });
+
+  const safetyBand = classifySafetyBand(statsEntry, effectiveTier, flags, gpaGap);
 
   return {
     engineGap: Math.round(engineGap * 10) / 10,
@@ -131,12 +141,76 @@ export function computeSchoolStatsGap(student, statsEntry) {
     flags,
     priorityPenalty,
     suggestedTier,
+    effectiveTier,
+    safetyBand,
     testingCompared,
     testPolicy: policy,
     gpaPublished: statsEntry.gpaPublished,
     blocksMatch: statsGapBlocksMatch(satGap, gpaGap),
     blocksSafety: statsGapBlocksSafety(engineGap, satGap, gpaGap),
   };
+}
+
+/** Cap "SAT-only" safeties at selective flagships; promote high-admit test-blind schools. */
+function computeEffectiveTier({ engineGap, flags, suggestedTier, statsEntry, gpaGap, policy }) {
+  let tier = suggestedTier;
+  const selectivity = Number(statsEntry.selectivity ?? 70);
+  const acceptRate = statsEntry.acceptanceRate;
+
+  const prestigeStatsOnly =
+    tier === "safety" &&
+    selectivity >= 55 &&
+    flags.includes("above_testing_band") &&
+    (gpaGap == null || gpaGap < 0.12) &&
+    !flags.includes("below_gpa_band");
+
+  if (prestigeStatsOnly) {
+    tier = "match";
+    flags.push("cap_prestige_stats_safety");
+  }
+
+  const stableHighAdmit =
+    tier === "match" &&
+    !flags.includes("below_sat_band") &&
+    !flags.includes("below_gpa_band") &&
+    engineGap < 12 &&
+    (policy === "test_blind" || (acceptRate != null && acceptRate >= 0.6) || selectivity <= 38) &&
+    (gpaGap == null || gpaGap <= 0.15);
+
+  if (stableHighAdmit) {
+    tier = "safety";
+    flags.push("stable_high_admit_safety");
+  }
+
+  return tier;
+}
+
+/** @returns {"stable"|"moderate"|"prestige"|null} */
+export function classifySafetyBand(statsEntry, effectiveTier, flags = [], gpaGap = null) {
+  if (effectiveTier !== "safety") return null;
+  if (flags.includes("stable_high_admit_safety")) return "stable";
+  const selectivity = Number(statsEntry?.selectivity ?? 70);
+  const acceptRate = statsEntry?.acceptanceRate;
+  if ((acceptRate != null && acceptRate >= 0.6) || selectivity <= 38) return "stable";
+  if (selectivity >= 55 && flags.includes("above_testing_band")) return "prestige";
+  if (selectivity >= 48) return "moderate";
+  return "stable";
+}
+
+export function isStableSafetyCandidate(candidate) {
+  const { statsEntry, statsGap, entry } = candidate;
+  if (statsGap?.safetyBand === "stable") return true;
+  if (statsGap?.flags?.includes("stable_high_admit_safety")) return true;
+  const sel = Number(statsEntry?.selectivity ?? entry?.selectivity ?? 70);
+  const rate = statsEntry?.acceptanceRate;
+  return (rate != null && rate >= 0.6) || sel <= 38;
+}
+
+export function isPrestigeStatsSafetyCandidate(candidate) {
+  const { statsEntry, statsGap } = candidate;
+  if (statsGap?.safetyBand === "prestige") return true;
+  const sel = Number(statsEntry?.selectivity ?? 70);
+  return sel >= 55 && statsGap?.flags?.includes("above_testing_band");
 }
 
 function suggestTierFromEngineGap(engineGap, flags) {

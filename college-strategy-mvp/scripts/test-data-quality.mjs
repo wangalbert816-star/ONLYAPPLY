@@ -540,6 +540,30 @@ check("admit stats canonicalize: leaves off-table names unchanged", () => {
   if (parsed.reach[0].school !== "Penn State University") throw new Error(parsed.reach[0].school);
 });
 
+const intlBizBody = {
+  satScore: "1440",
+  gpa: "3.64 UW",
+  testing: "will_submit",
+  applicantIdentity: "intl",
+  majorPrimary: "Business",
+};
+
+check("safety band: Purdue capped to match for intl 1440", () => {
+  const student = buildStudentStatsProfile(intlBizBody);
+  const entry = findAdmitStatsEntry("Purdue University");
+  const gap = computeSchoolStatsGap(student, entry);
+  if (gap.effectiveTier !== "match") throw new Error(`effectiveTier=${gap.effectiveTier}`);
+  if (!gap.flags.includes("cap_prestige_stats_safety")) throw new Error(JSON.stringify(gap.flags));
+});
+
+check("safety band: SJSU promoted to stable safety", () => {
+  const student = buildStudentStatsProfile(intlBizBody);
+  const entry = findAdmitStatsEntry("San José State University");
+  const gap = computeSchoolStatsGap(student, entry);
+  if (gap.effectiveTier !== "safety") throw new Error(`effectiveTier=${gap.effectiveTier}`);
+  if (gap.safetyBand !== "stable") throw new Error(`safetyBand=${gap.safetyBand}`);
+});
+
 let failed = 0;
 for (const r of results) {
   const mark = r.ok ? "PASS" : "FAIL";

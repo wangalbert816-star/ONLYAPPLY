@@ -30,7 +30,8 @@ export function calibrateSchoolsFromStats(body, schoolNames) {
     rows.push({
       school: stats.school,
       inTable: true,
-      suggestedTier: gap.suggestedTier,
+      suggestedTier: gap.effectiveTier ?? gap.suggestedTier,
+      safetyBand: gap.safetyBand,
       testPolicy: gap.testPolicy,
       gpaPublished: gap.gpaPublished,
       flags: gap.flags,
@@ -70,6 +71,12 @@ export function buildStatsCalibrationPromptBlock(body, locale = "zh") {
         : "主申 CS：CMU School of Computer Science 按 Required 且标化门槛更高。",
     );
   }
+
+  lines.push(
+    isEn
+      ? "Safety tier must mix stable high-admit schools (e.g. test-blind CSU/UC extensions) with at most ONE selective flagship where stats only exceed on testing—do not label Purdue/UMD-tier as the only safeties while SJSU sits in Match."
+      : "Safety 档须包含稳定高录取率校（如 test-blind 州立/UC），至多 1 所仅因标化超 band 的 selective flagship；勿把 Purdue/UMD 档全放 Safety 而 SJSU 留在 Match。",
+  );
 
   lines.push(
     isEn

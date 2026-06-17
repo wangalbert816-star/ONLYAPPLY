@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { buildEngineIntakeProfile, isUcSchoolName, schoolRegionMatchesPrefs } from "./engineIntakeProfile.mjs";
 import { forbiddenSchoolsFromBody, schoolMatchesForbidden } from "./topReferenceSchools.mjs";
 import { findAdmitStatsEntry } from "./schoolAdmitStats.mjs";
-import { buildStudentStatsProfile, computeSchoolStatsGap } from "./statsTierGap.mjs";
+import { buildStudentStatsProfile, computeSchoolStatsGap, isPrestigeStatsSafetyCandidate, isStableSafetyCandidate } from "./statsTierGap.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CATALOG_FILE = path.join(__dirname, "..", "data", "engine", "school-major-catalog.json");
@@ -302,6 +302,59 @@ function clamp01(n) {
 }
 
 export function pickTopPerTier(candidates, tier, count = 3, context = null) {
+  if (tier === "safety") return pickSafetyWithBandSpread(candidates, count, context);
+  return pickTopPerTierPlain(candidates, tier, count, context);
+}
+
+/**
+ * Safety portfolio: prefer 2+ stable/high-admit schools; at most 1 selective "stats-only" safety.
+ */
+export function pickSafetyWithBandSpread(candidates, count = 3, context = null) {
+  const rows = candidates
+    .filter((c) => c.tier === "safety")
+    .sort((a, b) => b.rank - a.rank || b.fit - a.fit || a.entry.school.localeCompare(b.entry.school));
+
+  const stable = rows.filter(isStableSafetyCandidate);
+  const moderate = rows.filter((c) => !isStableSafetyCandidate(c) && !isPrestigeStatsSafetyCandidate(c));
+  const prestige = rows.filter(isPrestigeStatsSafetyCandidate);
+
+  const picked = [];
+  const seen = new Set();
+
+  const push = (row) => {
+    const key = normalizeSchoolKey(row.entry.school);
+    if (seen.has(key)) return;
+    seen.add(key);
+    picked.push(row);
+  };
+
+  const targetStable = Math.min(2, count, stable.length);
+  for (const row of stable.slice(0, targetStable)) push(row);
+
+  let prestigeUsed = picked.some(isPrestigeStatsSafetyCandidate);
+  for (const row of moderate) {
+    if (picked.length >= count) break;
+    push(row);
+  }
+  for (const row of prestige) {
+    if (picked.length >= count) break;
+    if (prestigeUsed) continue;
+    push(row);
+    prestigeUsed = true;
+  }
+  for (const row of stable) {
+    if (picked.length >= count) break;
+    push(row);
+  }
+  for (const row of rows) {
+    if (picked.length >= count) break;
+    push(row);
+  }
+
+  return picked.slice(0, count);
+}
+
+function pickTopPerTierPlain(candidates, tier, count = 3, context = null) {
   const rows = candidates
     .filter((c) => c.tier === tier)
     .sort((a, b) => b.rank - a.rank || b.fit - a.fit || a.entry.school.localeCompare(b.entry.school));
@@ -355,13 +408,19 @@ export function buildCatalogCandidates(catalog, composite, context) {
       gap = statsGap.engineGap;
     }
     const selectivity = statsEntry?.selectivity ?? entry.selectivity;
-    const tier = classifySchoolTier({ ...entry, selectivity }, context, gap);
+    let tier = classifySchoolTier({ ...entry, selectivity }, context, gap);
+    if (statsGap?.effectiveTier) {
+      tier = statsGap.effectiveTier;
+    }
     if (!tier) continue;
     const fit = majorFitForSchool(entry, context.majorBucket);
     let rank = rankCandidate(entry, context, gap, tier);
     if (!statsEntry) rank -= 35;
     if (statsGap?.priorityPenalty) rank -= statsGap.priorityPenalty;
     if (statsEntry) rank += 8;
+    if (tier === "safety" && isStableSafetyCandidate({ statsEntry, statsGap, entry })) rank += 22;
+    if (tier === "safety" && isPrestigeStatsSafetyCandidate({ statsEntry, statsGap, entry })) rank -= 28;
+    if (tier === "match" && statsGap?.flags?.includes("cap_prestige_stats_safety")) rank += 12;
     candidates.push({
       entry,
       gap,
