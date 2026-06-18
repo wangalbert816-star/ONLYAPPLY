@@ -29,7 +29,27 @@ const EXTRA_ALIASES = {
   "new york university": ["nyu"],
   "boston university": ["bu"],
   "cal poly san luis obispo": ["cal poly slo", "cal poly slo"],
-  "san jose state university": ["san jose state", "sjsu"],
+  "san jose state university": ["san jose state", "sjsu", "san josé state university"],
+  "university of maryland college park": ["university of maryland", "umd", "maryland"],
+  "university of minnesota twin cities": ["university of minnesota", "umn", "minnesota twin cities"],
+  "the university of utah": ["university of utah", "utah", "u of utah"],
+  "rutgers university new brunswick": ["rutgers university", "rutgers", "rutgers new brunswick"],
+  "stony brook university suny": ["stony brook university", "stony brook", "suny stony brook"],
+  "university at buffalo suny": ["university at buffalo", "buffalo", "ub"],
+  "baruch college cuny": ["baruch college", "baruch", "cuny baruch"],
+  "penn state university": ["penn state", "psu", "pennsylvania state university"],
+  "texas a m university": ["texas a m", "tamu", "a m"],
+  "indiana university bloomington": ["indiana university", "indiana", "iu", "iu bloomington"],
+  "michigan state university": ["michigan state", "msu"],
+  "north carolina state university": ["nc state", "ncsu", "north carolina state"],
+  "university of massachusetts amherst": ["umass amherst", "umass", "massachusetts amherst"],
+  "binghamton university suny": ["binghamton university", "binghamton", "suny binghamton"],
+  "george washington university": ["gwu", "gw"],
+  "american university": ["au"],
+  "rensselaer polytechnic institute": ["rpi"],
+  "worcester polytechnic institute": ["wpi"],
+  "stevens institute of technology": ["stevens"],
+  "brigham young university": ["byu"],
 };
 
 export function normalizeSchoolKey(name) {
@@ -160,7 +180,10 @@ function parseGpaBand(text, label) {
 }
 
 export function parseGpaCell(raw) {
-  const s = String(raw ?? "").trim();
+  const s = String(raw ?? "")
+    .trim()
+    .replace(/[\u2013\u2014–—]/g, "-")
+    .replace(/[（）]/g, (c) => (c === "（" ? "(" : ")"));
   if (!s) return { published: false };
 
   const uw =
@@ -213,6 +236,11 @@ export function selectivityFromAcceptanceRate(rate) {
 export function buildAliasesForSchool(name) {
   const key = normalizeSchoolKey(name);
   const aliases = new Set();
+  if (key.startsWith("the ")) aliases.add(key.slice(4));
+  if (key.includes(" college park")) aliases.add(key.replace(" college park", ""));
+  if (key.endsWith(" suny")) aliases.add(key.replace(/ suny$/, ""));
+  if (key.endsWith(" cuny")) aliases.add(key.replace(/ cuny$/, ""));
+  if (key.includes(" twin cities")) aliases.add(key.replace(",", "").replace(" twin cities", " twin cities"));
   if (key.startsWith("uc ")) {
     aliases.add(key);
     aliases.add(key.replace(/^uc /, "university of california "));

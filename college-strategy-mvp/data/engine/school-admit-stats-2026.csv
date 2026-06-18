@@ -14,18 +14,18 @@ Boston University,1420-1530 (25%-75%）,32-34,3.7-4.0(UW),11%,Optional
 Duke University,1520-1570 (25%-75%）,34-36,,5.20%,Optional
 Northwestern University,1500-1560 (25%-75%）,33-35,,7%,Optional
 Johns Hopkins University,1530-1570 (25%-75%）,35(AVG),3.95(UW),6%,Required
-Vanderbilt University,1510-1560 (25%-75%）,34-35,,2.80%,Optional
+Vanderbilt University,1510-1560 (25%-75%）,34-35,,4.5%,Optional
 Rice University,1510-1560 (25%-75%）,34-36,,8%,Optional
 Washington University in St. Louis,1490-1550 (25%-75%）,33-35,,12%,Optional
-UC Berkeley,test-blind,test-blind,3.89-4.00(UW) 4.31-4.65(W),11%,Test-Bilnd
-UCLA,test-blind,test-blind,3.95-4.00(UW) 4.44-4.78(W),9%,Test-Bilnd
-UC San Diego,test-blind,test-blind,4.12-4.29(W),28%,Test-Bilnd
-UC Santa Barbara,test-blind,test-blind,4.09-4.28(W),38.30%,Test-Bilnd
-UC Irvine,test-blind,test-blind,4.04-4.27(W) 3.84-4.00(UW),28.94%,Test-Bilnd
-UC Davis,test-blind,test-blind,4.00-4.26(W) 3.79-4.00(UW),44.60%,Test-Bilnd
-UC Santa Cruz,test-blind,test-blind,3.83-4.20(W),72.70%,Test-Bilnd
-UC Riverside,test-blind,test-blind,3.65-4.16(W),87.10%,Test-Bilnd
-UC Merced,test-blind,test-blind,3.54-4.15(W),95.10%,Test-Bilnd
+UC Berkeley,Test-Blind,Test-Blind,3.89-4.00(UW) 4.31-4.65(W),11%,Test-Blind
+UCLA,Test-Blind,Test-Blind,3.95-4.00(UW) 4.44-4.78(W),9%,Test-Blind
+UC San Diego,Test-Blind,Test-Blind,4.12-4.29(W),28%,Test-Blind
+UC Santa Barbara,Test-Blind,Test-Blind,4.09-4.28(W),38.30%,Test-Blind
+UC Irvine,Test-Blind,Test-Blind,4.04-4.27(W) 3.84-4.00(UW),28.94%,Test-Blind
+UC Davis,Test-Blind,Test-Blind,4.00-4.26(W) 3.79-4.00(UW),44.60%,Test-Blind
+UC Santa Cruz,Test-Blind,Test-Blind,3.83-4.20(W),72.70%,Test-Blind
+UC Riverside,Test-Blind,Test-Blind,3.65-4.16(W),87.10%,Test-Blind
+UC Merced,Test-Blind,Test-Blind,3.54-4.15(W),95.10%,Test-Blind
 University of Notre Dame,1460-1540 (25%-75%）,33-35,,9%,Optional
 Georgetown University,690-780(Math) 700-770(English),32-35,,13%,Required
 Carnegie Mellon University,770-800(Math) 730-770(English),34-35,3.89(UW),12%,"School of Computer Science:Required 
@@ -61,10 +61,60 @@ Claremont McKenna College,1470-1560 (25%-75%）,33-35,,10%,Optional
 Pomona College,1490-1560 (25%-75%）,33-35,,7%,Optional
 Harvey Mudd College,1500-1570 (25%-75%）,34-36,,13%,Optional
 Scripps College,1440-1540（25%-75%）,31-34,,38%,Optional
-Pitzer College,Test-Bilnd,Test-Bilnd,3.96(UW),28.60%,Test-Bilnd
-Loyola Marymount University,1260-1430（25%-75%）,28-32,,45%,Optional
+Pitzer College,Test-Blind,Test-Blind,3.96(UW),28.60%,Test-Blind
+Loyola Marymount University,1260-1430(25%-75%）,28-32,,45%,Optional
 Pepperdine University,1330-1420 (25%-75%）,30-32,3.64-3.88(UW),63%,Optional
-Cal Poly San Luis Obispo,test-blind,test-blind,4.06-4.12(W),31%,Test-Bilnd
-Cal Poly Pomona,test-blind,test-blind,3.5-4.0(UW),74%,Test-Bilnd
-San José State University,test-blind,test-blind,3.53（UW）,85%,Test-Bilnd
+Cal Poly San Luis Obispo,Test-Blind,Test-Blind,4.06-4.12(W),31%,Test-Blind
+Cal Poly Pomona,Test-Blind,Test-Blind,3.5-4.0(UW),74%,Test-Blind
+San José State University,Test-Blind,Test-Blind,3.53(UW),85%,Test-Blind
 Chapman University,1350(AVG),30(AVG),3.78(UW),65%,Optional
+Amherst College,1470-1540(25%-75%),33-35,4.13(W),9%,Optional
+Swarthmore College,1480-1520(25%-75%),33-35,4.13(W),7%,Optional
+Bowdoin College,1470-1540(25%-75%),33-35,,7%,Optional
+Middlebury College,1460-1530(25%-75%),33-35,,11%,Optional
+Wellesley College,1460-1540(25%-75%),33-35,,14%,Optional
+Barnard College,1480-1540(25%-75%),32-34,4.13(W),9%,Optional
+Haverford College,1460-1530(25%-75%),33-35,,12%,Optional
+Wesleyan University,1300-1500(25%-75%),31-34,3.9(UW),16%,Optional
+Colgate University,1450-1530(25%-75%),33-34,3.85(W),14%,Optional
+Hamilton College,1440-1510(25%-75%),33-35,4.11(W),13.50%,Optional
+Davidson College,710-760(English) 690-760(Math),32-34,3.86(UW),13%,Optional
+University of Miami,1350-1450(25%-75%),30-33,3.75(UW),18%,Required
+Tulane University,1430-1500(25%-75%),32-34,3.67(UW),14%,Optional
+"University of Maryland, College Park",1410-1520(25%-75%),32-35,4.41(W),45.10%,Optional
+Penn State University,1320-1460(25%-75%),29-34,3.61-3.93 (UW),61%,Optional
+Texas A&M University,1160-1390(25%-75%),24-32,,57%,Optional
+Indiana University Bloomington,1250-1450(25%-75%),29-33,3.73-4.00(UW),78%,Optional
+Michigan State University,1100-1310(25%-75%),25-31,3.74(UW),85%,Optional
+Rutgers University-New Brunswick,630-720(English) 640-760(Math),28-33,3.7-4.2(W),41%,Optional
+George Washington University,1310-1450(25%-75%),31-34,,47%,Optional
+American University,1320-1440(25%-75%),30-33,3.57-4.02(W),62%,Optional
+Fordham University,1340-1470(25%-75%),30-33,3.75(UW),59%,Optional
+Syracuse University,1280-1410(25%-75%),28-32,3.8(UW),46%,Optional
+University of Richmond,1430-1510(25%-75%),33-35,3.81(W),22%,Optional
+Bucknell University,1170-1360(25%-75%),25-32,3.58(W),32%,Optional
+Lafayette College,1360-1490(25%-75%),31-33,3.56(UW),31%,Optional
+Macalester College,1350-1480(25%-75%),30-33,,29%,Optional
+Grinnell College,1430-1520(25%-75%),31-34,,15%,Optional
+Kenyon College,1400-1495(25%-75%),31-34,4.15(W),31%,Optional
+Bates College,1325-1510(25%-75%),31-34,,15%,Optional
+Colorado College,1240-1430(25%-75%),28-34,3.39(UW),22%,Optional
+Reed College,Test-Blind,Test-Blind,4.00(W),25%,Test-Blind
+Skidmore College,1360-1460(25%-75%),31-34,,21%,Optional
+Trinity College,1450-1460(25%-75%),31-33,,29%,Optional
+Union College,1320-1470(25%-75%),30-34,3.7(UW),44%,Optional
+Rensselaer Polytechnic Institute,1380-1500(25%-75%),31-34,3.93(UW),63%,Optional
+Worcester Polytechnic Institute,1300-1460(25%-75%),31(AVG),3.9(W),60%,Optional
+Stevens Institute of Technology,1370-1470(25%-75%),32-34,3.83(W),51%,Optional
+University of Connecticut,1220-1420(25%-75%),28-33,,52%,Optional
+Olin College of Engineering,1500-1560(25%-75%),34-35,3.9(UW),15.40%,Optional
+Stony Brook University-SUNY,1350-1470(25%-75%),30-34,3.78(UW),49%,Optional
+"University of Minnesota,Twin Cities",1320-1470(25%-75%),26-31,,80%,Optional
+North Carolina State University,1290-1440(25%-75%),25-32,3.83(UW),39.46%,Optional
+"University of Massachusetts, Amherst",1330-1480(25%-75%),30-34,4.05(W),59%,Optional
+Binghamton University-SUNY,1320-1480(25%-75%),31-34,3.88(W),38%,Optional
+University at Buffalo-SUNY,610-690(English) 610-700(Math),27-31,3.66(UW),57%,Optional
+Drexel University,1260-1430(25%-75%),28-33,3.79(W),70%,Optional
+Baruch College-CUNY,550-690(English) 550-710(Math),23-29,3.66(W),48%,Optional
+Brigham Young University,1290-1430(25%-75%),28-32,3.89(W),68%,Optional
+The University of Utah,1120-1320(25%-75%),22-29,3.64(W),86%,Optional

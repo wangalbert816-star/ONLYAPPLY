@@ -404,9 +404,9 @@ check("admit stats: Test-Bilnd typo normalizes", () => {
   if (tp.policy !== "test_blind") throw new Error(tp.policy);
 });
 
-check("admit stats: table loads 68 schools", () => {
+check("admit stats: table loads 118 schools", () => {
   const rows = listAdmitStatsSchools();
-  if (rows.length < 65) throw new Error(`expected ~68 schools, got ${rows.length}`);
+  if (rows.length !== 118) throw new Error(`expected 118 schools, got ${rows.length}`);
 });
 
 check("admit stats: CMU CS required policy", () => {
@@ -488,8 +488,9 @@ check("admit stats name: GT not WashU", () => {
   const hit = findAdmitStatsEntry("GT");
   if (!hit || hit.school !== "Georgia Tech") throw new Error(hit?.school ?? "null");
 });
-check("admit stats name: Penn State not in table", () => {
-  if (findAdmitStatsEntry("Penn State University")) throw new Error("should be null");
+check("admit stats name: Penn State in table", () => {
+  const hit = findAdmitStatsEntry("Penn State University");
+  if (!hit || hit.school !== "Penn State University") throw new Error(hit?.school ?? "null");
 });
 check("admit stats name: UC Davis Extension not UC Davis", () => {
   const hit = findAdmitStatsEntry("UC Davis Extension");
@@ -512,14 +513,16 @@ check("admit stats resolve: rejects USC Marshall", () => {
   if (r.confidence !== "none") throw new Error(JSON.stringify(r));
 });
 
-check("admit stats resolve: Penn State blocked from UPenn", () => {
+check("admit stats resolve: Penn State not UPenn", () => {
   const r = resolveAdmitStatsSchool("Penn State University");
-  if (r.entry) throw new Error(JSON.stringify(r));
+  if (!r.entry || r.entry.school !== "Penn State University") throw new Error(JSON.stringify(r));
+  const upenn = resolveAdmitStatsSchool("University of Pennsylvania");
+  if (r.entry.school === upenn.entry?.school) throw new Error("confused with UPenn");
 });
 
-check("admit stats resolve: Michigan State blocked from UMich", () => {
+check("admit stats resolve: Michigan State not UMich", () => {
   const r = resolveAdmitStatsSchool("Michigan State University");
-  if (r.entry) throw new Error(JSON.stringify(r));
+  if (!r.entry || r.entry.school !== "Michigan State University") throw new Error(JSON.stringify(r));
 });
 
 check("admit stats canonicalize: UCLA from legal name", () => {
