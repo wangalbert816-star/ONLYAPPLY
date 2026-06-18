@@ -22,8 +22,34 @@ export function isUcSchoolName(name) {
 }
 
 export function normalizeGeoPref(raw) {
-  const g = String(raw ?? "").trim().toLowerCase();
-  return GEO_ALIASES[g] ?? g;
+  const g = String(raw ?? "").trim().toLowerCase().replace(/\s+/g, "_");
+  return GEO_ALIASES[g] ?? g.replace(/\s+/g, "_");
+}
+
+/** Region on the admit-stats table (East / Great Lakes / …). */
+export function normalizeSchoolRegion(raw) {
+  const g = String(raw ?? "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+  if (!g) return null;
+  if (g === "great_lakes") return "great_lakes";
+  if (["east", "west", "south", "midwest"].includes(g)) return g;
+  return normalizeGeoPref(g);
+}
+
+function regionsEquivalent(a, b) {
+  if (a === b) return true;
+  if ((a === "great_lakes" && b === "midwest") || (a === "midwest" && b === "great_lakes")) return true;
+  return false;
+}
+
+export function schoolRegionMatchesPrefs(schoolRegion, geo) {
+  const region = normalizeSchoolRegion(schoolRegion);
+  if (!geo.strict) return true;
+  if (!region || region === "any") return false;
+  for (const pref of geo.allowed) {
+    const normalized = normalizeGeoPref(pref);
+    if (regionsEquivalent(region, normalized)) return true;
+  }
+  return false;
 }
 
 export function parseGeoPrefs(body) {
@@ -33,13 +59,6 @@ export function parseGeoPrefs(body) {
   const strict = !includesAny;
   const allowed = strict ? normalized.filter((g) => g !== "any") : [];
   return { strict, allowed, includesAny, normalized };
-}
-
-export function schoolRegionMatchesPrefs(schoolRegion, geo) {
-  const region = normalizeGeoPref(schoolRegion);
-  if (!geo.strict) return true;
-  if (!region || region === "any") return false;
-  return geo.allowed.includes(region);
 }
 
 function parseGpaBand(gpaRaw) {

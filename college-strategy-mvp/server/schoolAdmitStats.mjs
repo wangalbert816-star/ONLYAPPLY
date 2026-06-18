@@ -3,7 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { normalizeSchoolKey, parseAdmitStatsRow } from "./schoolAdmitStatsParse.mjs";
+import { normalizeSchoolKey, parseAdmitStatsRow, parseAdmitStatsCsv } from "./schoolAdmitStatsParse.mjs";
 import { schoolNameLookupVariants } from "./schoolNameResolve.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -68,49 +68,10 @@ const CONFLICT_GUARDS = [
 let statsCache = null;
 let keyIndex = null;
 
-function parseCsvLine(line) {
-  const out = [];
-  let cur = "";
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i += 1) {
-    const ch = line[i];
-    if (ch === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        cur += '"';
-        i += 1;
-      } else {
-        inQuotes = !inQuotes;
-      }
-      continue;
-    }
-    if (ch === "," && !inQuotes) {
-      out.push(cur);
-      cur = "";
-      continue;
-    }
-    cur += ch;
-  }
-  out.push(cur);
-  return out;
-}
-
 function loadFromCsv() {
   if (!fs.existsSync(CSV_FILE)) return [];
   const text = fs.readFileSync(CSV_FILE, "utf8");
-  const lines = text.split(/\r?\n/).filter((l) => l.trim());
-  if (lines.length < 2) return [];
-  const headers = parseCsvLine(lines[0]);
-  const rows = [];
-  for (let i = 1; i < lines.length; i += 1) {
-    const cols = parseCsvLine(lines[i]);
-    const row = {};
-    for (let j = 0; j < headers.length; j += 1) {
-      row[headers[j]] = cols[j] ?? "";
-    }
-    const parsed = parseAdmitStatsRow(row);
-    if (parsed) rows.push(parsed);
-  }
-  return rows;
+  return parseAdmitStatsCsv(text).map(parseAdmitStatsRow).filter(Boolean);
 }
 
 function readStatsFile() {

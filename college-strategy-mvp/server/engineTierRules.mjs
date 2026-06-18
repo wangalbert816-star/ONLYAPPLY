@@ -5,23 +5,15 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildEngineIntakeProfile, isUcSchoolName, schoolRegionMatchesPrefs } from "./engineIntakeProfile.mjs";
+import { buildEngineIntakeProfile, isUcSchoolName, normalizeSchoolRegion, schoolRegionMatchesPrefs } from "./engineIntakeProfile.mjs";
 import { forbiddenSchoolsFromBody, schoolMatchesForbidden } from "./topReferenceSchools.mjs";
 import { findAdmitStatsEntry } from "./schoolAdmitStats.mjs";
 import { buildStudentStatsProfile, computeSchoolStatsGap, isPrestigeStatsSafetyCandidate, isStableSafetyCandidate } from "./statsTierGap.mjs";
+import { majorGuidanceRankAdjust } from "./majorGuidance.mjs";
+import { resolveMajorBucket } from "./majorBucket.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CATALOG_FILE = path.join(__dirname, "..", "data", "engine", "school-major-catalog.json");
-
-const MAJOR_BUCKET_PATTERNS = [
-  ["cs", /computer science|\bcs\b|software|data science|artificial intelligence|\bai\b|computational|informatics/i],
-  ["business", /business|entrepreneurship|finance|economics|accounting|marketing|management|\bmba\b/i],
-  ["bio", /biology|\bbio\b|pre-?med|medicine|public health|biomedical|neuroscience|biochem/i],
-  ["engineering", /engineering|mechanical|electrical|civil|aerospace|chemical eng|industrial eng/i],
-  ["arts", /film|media studies|art\b|design|music|theater|architecture|fine arts|animation/i],
-  ["social", /psychology|sociology|political|history|philosophy|anthropology|international relations/i],
-  ["environmental", /environmental|sustainability|ecology|climate|earth science/i],
-];
 
 let catalogCache = null;
 
@@ -69,13 +61,7 @@ export function schoolMatchesCatalogEntry(name, entry) {
   return false;
 }
 
-export function resolveMajorBucket(body) {
-  const text = [body?.majorPrimary, body?.majorSecondary, ...(body?.tags ?? [])].filter(Boolean).join(" ");
-  for (const [bucket, re] of MAJOR_BUCKET_PATTERNS) {
-    if (re.test(text)) return bucket;
-  }
-  return "general";
-}
+export { resolveMajorBucket } from "./majorBucket.mjs";
 
 export function majorFitForSchool(entry, bucket) {
   const majors = entry.majors ?? {};
@@ -204,7 +190,9 @@ export function tierGap(profileComposite, schoolSelectivity, context, entry) {
 export function isSchoolEligible(entry, context) {
   if (schoolMatchesForbidden(entry.school, context.forbidden)) return false;
 
-  if (context.geoStrict && !schoolRegionMatchesPrefs(entry.region, context.geo)) {
+  const statsEntry = findAdmitStatsEntry(entry.school);
+  const regionForGeo = statsEntry?.region ?? entry.region;
+  if (context.geoStrict && !schoolRegionMatchesPrefs(regionForGeo, context.geo)) {
     return false;
   }
 
@@ -262,13 +250,18 @@ export function classifySchoolTier(entry, context, gap) {
 }
 
 export function geoBoost(entry, context) {
-  const region = String(entry.region ?? "any").toLowerCase();
+  const region = normalizeSchoolRegion(entry.region ?? "any") ?? String(entry.region ?? "any").toLowerCase();
   if (context.geoStrict) {
     return schoolRegionMatchesPrefs(region, context.geo) ? 0.25 : -0.2;
   }
   if (!context.geoPrefs.length || context.geo.includesAny) return 0;
   if (region === "any") return 0.05;
-  if (context.geoPrefs.includes(region)) return 0.18;
+  for (const pref of context.geoPrefs) {
+    const normalized = String(pref).toLowerCase();
+    if (region === normalized) return 0.18;
+    if (region === "great_lakes" && normalized === "midwest") return 0.18;
+    if (region === "midwest" && normalized === "great_lakes") return 0.18;
+  }
   return -0.06;
 }
 
@@ -389,7 +382,10 @@ export function formatSchoolNote(entry, context, tier, gap, statsGap = null) {
   if (tier === "reach" && gap >= 18) bits.push("现实可冲");
   if (statsGap?.flags?.includes("missing_required_testing")) bits.push("缺标化—Required校");
   if (statsGap?.testPolicy === "test_blind") bits.push("test-blind");
-  return bits.filter(Boolean).slice(0, 2).join("；") || null;
+  if (statsGap?.flags?.includes("major_selective")) bits.push("专业 selective");
+  if (statsGap?.flags?.includes("major_indirect")) bits.push("专业 indirect");
+  if (statsGap?.flags?.includes("major_direct")) bits.push("专业可直申");
+  return bits.filter(Boolean).slice(0, 3).join("；") || null;
 }
 
 /**
@@ -401,28 +397,33 @@ export function buildCatalogCandidates(catalog, composite, context) {
   for (const entry of catalog) {
     if (!isSchoolEligible(entry, context)) continue;
     const statsEntry = findAdmitStatsEntry(entry.school);
-    let gap = tierGap(composite, entry.selectivity, context, entry);
+    const effectiveEntry =
+      statsEntry?.region != null
+        ? { ...entry, region: statsEntry.region }
+        : entry;
+    let gap = tierGap(composite, entry.selectivity, context, effectiveEntry);
     let statsGap = null;
     if (statsEntry) {
-      statsGap = computeSchoolStatsGap(student, statsEntry);
+      statsGap = computeSchoolStatsGap(student, statsEntry, context.majorBucket);
       gap = statsGap.engineGap;
     }
     const selectivity = statsEntry?.selectivity ?? entry.selectivity;
-    let tier = classifySchoolTier({ ...entry, selectivity }, context, gap);
+    let tier = classifySchoolTier({ ...effectiveEntry, selectivity }, context, gap);
     if (statsGap?.effectiveTier) {
       tier = statsGap.effectiveTier;
     }
     if (!tier) continue;
     const fit = majorFitForSchool(entry, context.majorBucket);
-    let rank = rankCandidate(entry, context, gap, tier);
+    let rank = rankCandidate(effectiveEntry, context, gap, tier);
     if (!statsEntry) rank -= 35;
     if (statsGap?.priorityPenalty) rank -= statsGap.priorityPenalty;
     if (statsEntry) rank += 8;
+    if (statsEntry) rank += majorGuidanceRankAdjust(statsEntry, context.majorBucket);
     if (tier === "safety" && isStableSafetyCandidate({ statsEntry, statsGap, entry })) rank += 22;
     if (tier === "safety" && isPrestigeStatsSafetyCandidate({ statsEntry, statsGap, entry })) rank -= 28;
     if (tier === "match" && statsGap?.flags?.includes("cap_prestige_stats_safety")) rank += 12;
     candidates.push({
-      entry,
+      entry: effectiveEntry,
       gap,
       tier,
       fit,

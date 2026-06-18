@@ -1,120 +1,120 @@
-Name,SAT,ACT(25%-75%),GPA,Acceptance Rate,Test Policy
-Harvard University,1500-1580 (25%-75%）,34-36,3.9(UW),4%,Required
-Yale University,1480-1560 (25%-75%）,33-35,3.95(UW),4.60%,Required
-Princeton University,1510-1580 (25%-75%）,34-36,3.97(UW),5%,Required
-Columbia University,1510-1560 (25%-75%）,34-36,3.97(UW),3.90%,Required
-Brown University,1480-1560 (25%-75%）,34-36,3.97(UW),5.65%,Required
-Dartmouth College,1500-1570 (25%-75%）,33-35,3.95(UW),6%,Required
-University of Pennsylvania,1510-1560 (25%-75%）,34-35,3.91(UW),5%,Required
-Cornell University,730-750(English) 770-790(Math),33-35,,8%,Required
-Stanford University,770-800(Math) 740-780(English),34-35,,3.61%,Required
-MIT,780-800(Math) 740-780(English),34-36,,4.60%,Required
-University of Chicago,1510-1560 (25%-75%）,34-35,,4.48%,Optional
-Boston University,1420-1530 (25%-75%）,32-34,3.7-4.0(UW),11%,Optional
-Duke University,1520-1570 (25%-75%）,34-36,,5.20%,Optional
-Northwestern University,1500-1560 (25%-75%）,33-35,,7%,Optional
-Johns Hopkins University,1530-1570 (25%-75%）,35(AVG),3.95(UW),6%,Required
-Vanderbilt University,1510-1560 (25%-75%）,34-35,,4.5%,Optional
-Rice University,1510-1560 (25%-75%）,34-36,,8%,Optional
-Washington University in St. Louis,1490-1550 (25%-75%）,33-35,,12%,Optional
-UC Berkeley,Test-Blind,Test-Blind,3.89-4.00(UW) 4.31-4.65(W),11%,Test-Blind
-UCLA,Test-Blind,Test-Blind,3.95-4.00(UW) 4.44-4.78(W),9%,Test-Blind
-UC San Diego,Test-Blind,Test-Blind,4.12-4.29(W),28%,Test-Blind
-UC Santa Barbara,Test-Blind,Test-Blind,4.09-4.28(W),38.30%,Test-Blind
-UC Irvine,Test-Blind,Test-Blind,4.04-4.27(W) 3.84-4.00(UW),28.94%,Test-Blind
-UC Davis,Test-Blind,Test-Blind,4.00-4.26(W) 3.79-4.00(UW),44.60%,Test-Blind
-UC Santa Cruz,Test-Blind,Test-Blind,3.83-4.20(W),72.70%,Test-Blind
-UC Riverside,Test-Blind,Test-Blind,3.65-4.16(W),87.10%,Test-Blind
-UC Merced,Test-Blind,Test-Blind,3.54-4.15(W),95.10%,Test-Blind
-University of Notre Dame,1460-1540 (25%-75%）,33-35,,9%,Optional
-Georgetown University,690-780(Math) 700-770(English),32-35,,13%,Required
+Name,SAT,ACT(25%-75%),GPA,Acceptance Rate,Test Policy,Major Guidance,Region
+Harvard University,1500-1580 (25%-75%）,34-36,3.9(UW),4%,Required,Overall pool only,East
+Yale University,1480-1560 (25%-75%）,33-35,3.95(UW),4.60%,Required,Overall pool only,East
+Princeton University,1510-1580 (25%-75%）,34-36,3.97(UW),5%,Required,engineering: direct; default: indirect (AB vs BSE),East
+Columbia University,1510-1560 (25%-75%）,34-36,3.97(UW),3.90%,Required,engineering: direct (SEAS),East
+Brown University,1480-1560 (25%-75%）,34-36,3.97(UW),5.65%,Required,Overall pool only,East
+Dartmouth College,1500-1570 (25%-75%）,33-35,3.95(UW),6%,Required,engineering: indirect,East
+University of Pennsylvania,1510-1560 (25%-75%）,34-35,3.91(UW),5%,Required,"business: direct (Wharton), selective; engineering: direct",East
+Cornell University,730-750(English) 770-790(Math),33-35,,8%,Required,"engineering: direct; business: direct (Dyson), selective; cs: selective",East
+Stanford University,770-800(Math) 740-780(English),34-35,,3.61%,Required,Overall pool only,West
+MIT,780-800(Math) 740-780(English),34-36,,4.60%,Required,cs: strong; engineering: strong; business: indirect (no UG biz school),East
+University of Chicago,1510-1560 (25%-75%）,34-35,,4.48%,Optional,business: indirect,Midwest
+Boston University,1420-1530 (25%-75%）,32-34,3.7-4.0(UW),11%,Optional,engineering: direct; business: direct (Questrom),East
+Duke University,1520-1570 (25%-75%）,34-36,,5.20%,Optional,engineering: direct; business: indirect,South
+Northwestern University,1500-1560 (25%-75%）,33-35,,7%,Optional,engineering: direct (McCormick),Midwest
+Johns Hopkins University,1530-1570 (25%-75%）,35(AVG),3.95(UW),6%,Required,engineering: direct; bio: strong,East
+Vanderbilt University,1510-1560 (25%-75%）,34-35,,4.50%,Optional,engineering: direct,South
+Rice University,1510-1560 (25%-75%）,34-36,,8%,Optional,engineering: strong,South
+Washington University in St. Louis,1490-1550 (25%-75%）,33-35,,12%,Optional,business: direct (Olin); engineering: direct; bio: strong,Midwest
+UC Berkeley,Test-Blind,Test-Blind,3.89-4.00(UW) 4.31-4.65(W),11%,Test-Blind,cs: selective; business: selective; engineering: direct; bio: selective,West
+UCLA,Test-Blind,Test-Blind,3.95-4.00(UW) 4.44-4.78(W),9%,Test-Blind,cs: selective; business: selective; engineering: direct,West
+UC San Diego,Test-Blind,Test-Blind,4.12-4.29(W),28%,Test-Blind,cs: selective; engineering: direct; bio: strong,West
+UC Santa Barbara,Test-Blind,Test-Blind,4.09-4.28(W),38.30%,Test-Blind,engineering: direct; cs: selective,West
+UC Irvine,Test-Blind,Test-Blind,4.04-4.27(W) 3.84-4.00(UW),28.94%,Test-Blind,cs: selective; business: selective; engineering: direct,West
+UC Davis,Test-Blind,Test-Blind,4.00-4.26(W) 3.79-4.00(UW),44.60%,Test-Blind,engineering: direct; bio: strong,West
+UC Santa Cruz,Test-Blind,Test-Blind,3.83-4.20(W),72.70%,Test-Blind,Overall pool only,West
+UC Riverside,Test-Blind,Test-Blind,3.65-4.16(W),87.10%,Test-Blind,Overall pool only,West
+UC Merced,Test-Blind,Test-Blind,3.54-4.15(W),95.10%,Test-Blind,Overall pool only,West
+University of Notre Dame,1460-1540 (25%-75%）,33-35,,9%,Optional,business: direct (Mendoza); engineering: direct,Midwest
+Georgetown University,690-780(Math) 700-770(English),32-35,,13%,Required,"business: direct (McDonough), selective",East
 Carnegie Mellon University,770-800(Math) 730-770(English),34-35,3.89(UW),12%,"School of Computer Science:Required 
-Else:Optional"
-Emory University,740-770(English) 760-800(Math),33-35,3.83(UW),10.30%,Optional
-USC,1490-1550 (25%-75%）,33-35,3.87-4.00(UW),11.20%,Optional
-University of Michigan,690-780（Math）690-750(English),34-35,3.91(UW),16%,Optional
-NYU,1470-1570 (25%-75%）,33-35,3.7(UW),8%,Optional
-Tufts University,740-790(Math) 730-770(English),33-35,,10.80%,Optional
-Caltech,1500-1600 (25%-75%）,35-36,,3.78%,Required
-Babson College,1450-1530 (25%-75%）,32-34,,16%,Optional
-University of Virginia,710-780(Math) 700-760(English),32-35,,12.50%,Optional
-University of North Carolina at Chapel Hill,1400-1520(25%-75%）,29-34,4.44-4.61(W),15%,Optional
-University of Florida,1380-1510 (25%-75%）,31-34,4.5-4.7(W),24%,Required
-University of Texas at Austin,1250-1510 (25%-75%）,27-33,,27%,Required
-Georgia Tech,1440(AVG),32(AVG),4.1(W),13%,Required
-University of Wisconsin-Madison,1350-1510 (25%-75%）,29-33,,45%,Optional
-University of Illinois Urbana-Champaign,1420-1540 (25%-75%）,31-35,3.7-4.0(UW),36.60%,Optional
-Purdue University,1220-1480 (25%-75%）,28-34,,43.40%,Required
-Ohio State University,1350-1450 (25%-75%）,29-33,3.6-4.0(UW),61%,Required
-University of Washington,1280-1490 (25%-75%）,28-33,3.75-3.98(UW),39%,Optional
-Boston College,1440-1520 (25%-75%）,33-35,,14%,Optional
-Wake Forest University,1440-1520 (25%-75%）,32-34,,22%,Optional
-Northeastern University,1475(MEAN),33-35,,5.22%,Optional
-Case Western Reserve University,1440-1550 (25%-75%）,32-35,,38%,Optional
-University of Rochester,1440-1550 (25%-75%）,32-35,,40%,Optional
-Brandeis University,1380-1480 (25%-75%）,31-34,,45%,Optional
-Lehigh University,700-750(English) 710-780(Math),32-35,,26%,Optional
-Villanova University,1390-1510 (25%-75%）,32-34,,27%,Optional
-Santa Clara University,1350-1490 (25%-75%）,31-33,,48%,Optional
-Williams College,1490-1570 (25%-75%）,34-35,,8.60%,Optional
-Claremont McKenna College,1470-1560 (25%-75%）,33-35,,10%,Optional
-Pomona College,1490-1560 (25%-75%）,33-35,,7%,Optional
-Harvey Mudd College,1500-1570 (25%-75%）,34-36,,13%,Optional
-Scripps College,1440-1540（25%-75%）,31-34,,38%,Optional
-Pitzer College,Test-Blind,Test-Blind,3.96(UW),28.60%,Test-Blind
-Loyola Marymount University,1260-1430(25%-75%）,28-32,,45%,Optional
-Pepperdine University,1330-1420 (25%-75%）,30-32,3.64-3.88(UW),63%,Optional
-Cal Poly San Luis Obispo,Test-Blind,Test-Blind,4.06-4.12(W),31%,Test-Blind
-Cal Poly Pomona,Test-Blind,Test-Blind,3.5-4.0(UW),74%,Test-Blind
-San José State University,Test-Blind,Test-Blind,3.53(UW),85%,Test-Blind
-Chapman University,1350(AVG),30(AVG),3.78(UW),65%,Optional
-Amherst College,1470-1540(25%-75%),33-35,4.13(W),9%,Optional
-Swarthmore College,1480-1520(25%-75%),33-35,4.13(W),7%,Optional
-Bowdoin College,1470-1540(25%-75%),33-35,,7%,Optional
-Middlebury College,1460-1530(25%-75%),33-35,,11%,Optional
-Wellesley College,1460-1540(25%-75%),33-35,,14%,Optional
-Barnard College,1480-1540(25%-75%),32-34,4.13(W),9%,Optional
-Haverford College,1460-1530(25%-75%),33-35,,12%,Optional
-Wesleyan University,1300-1500(25%-75%),31-34,3.9(UW),16%,Optional
-Colgate University,1450-1530(25%-75%),33-34,3.85(W),14%,Optional
-Hamilton College,1440-1510(25%-75%),33-35,4.11(W),13.50%,Optional
-Davidson College,710-760(English) 690-760(Math),32-34,3.86(UW),13%,Optional
-University of Miami,1350-1450(25%-75%),30-33,3.75(UW),18%,Required
-Tulane University,1430-1500(25%-75%),32-34,3.67(UW),14%,Optional
-"University of Maryland, College Park",1410-1520(25%-75%),32-35,4.41(W),45.10%,Optional
-Penn State University,1320-1460(25%-75%),29-34,3.61-3.93 (UW),61%,Optional
-Texas A&M University,1160-1390(25%-75%),24-32,,57%,Optional
-Indiana University Bloomington,1250-1450(25%-75%),29-33,3.73-4.00(UW),78%,Optional
-Michigan State University,1100-1310(25%-75%),25-31,3.74(UW),85%,Optional
-Rutgers University-New Brunswick,630-720(English) 640-760(Math),28-33,3.7-4.2(W),41%,Optional
-George Washington University,1310-1450(25%-75%),31-34,,47%,Optional
-American University,1320-1440(25%-75%),30-33,3.57-4.02(W),62%,Optional
-Fordham University,1340-1470(25%-75%),30-33,3.75(UW),59%,Optional
-Syracuse University,1280-1410(25%-75%),28-32,3.8(UW),46%,Optional
-University of Richmond,1430-1510(25%-75%),33-35,3.81(W),22%,Optional
-Bucknell University,1170-1360(25%-75%),25-32,3.58(W),32%,Optional
-Lafayette College,1360-1490(25%-75%),31-33,3.56(UW),31%,Optional
-Macalester College,1350-1480(25%-75%),30-33,,29%,Optional
-Grinnell College,1430-1520(25%-75%),31-34,,15%,Optional
-Kenyon College,1400-1495(25%-75%),31-34,4.15(W),31%,Optional
-Bates College,1325-1510(25%-75%),31-34,,15%,Optional
-Colorado College,1240-1430(25%-75%),28-34,3.39(UW),22%,Optional
-Reed College,Test-Blind,Test-Blind,4.00(W),25%,Test-Blind
-Skidmore College,1360-1460(25%-75%),31-34,,21%,Optional
-Trinity College,1450-1460(25%-75%),31-33,,29%,Optional
-Union College,1320-1470(25%-75%),30-34,3.7(UW),44%,Optional
-Rensselaer Polytechnic Institute,1380-1500(25%-75%),31-34,3.93(UW),63%,Optional
-Worcester Polytechnic Institute,1300-1460(25%-75%),31(AVG),3.9(W),60%,Optional
-Stevens Institute of Technology,1370-1470(25%-75%),32-34,3.83(W),51%,Optional
-University of Connecticut,1220-1420(25%-75%),28-33,,52%,Optional
-Olin College of Engineering,1500-1560(25%-75%),34-35,3.9(UW),15.40%,Optional
-Stony Brook University-SUNY,1350-1470(25%-75%),30-34,3.78(UW),49%,Optional
-"University of Minnesota,Twin Cities",1320-1470(25%-75%),26-31,,80%,Optional
-North Carolina State University,1290-1440(25%-75%),25-32,3.83(UW),39.46%,Optional
-"University of Massachusetts, Amherst",1330-1480(25%-75%),30-34,4.05(W),59%,Optional
-Binghamton University-SUNY,1320-1480(25%-75%),31-34,3.88(W),38%,Optional
-University at Buffalo-SUNY,610-690(English) 610-700(Math),27-31,3.66(UW),57%,Optional
-Drexel University,1260-1430(25%-75%),28-33,3.79(W),70%,Optional
-Baruch College-CUNY,550-690(English) 550-710(Math),23-29,3.66(W),48%,Optional
-Brigham Young University,1290-1430(25%-75%),28-32,3.89(W),68%,Optional
-The University of Utah,1120-1320(25%-75%),22-29,3.64(W),86%,Optional
+ Else:Optional","cs: selective, extra: SAT required; engineering: direct, strong; business: direct (Tepper)",Midwest
+Emory University,740-770(English) 760-800(Math),33-35,3.83(UW),10.30%,Optional,business: indirect (Goizueta),South
+USC,1490-1550 (25%-75%）,33-35,3.87-4.00(UW),11.20%,Optional,business: direct (Marshall); engineering: direct; cs: strong,West
+University of Michigan,690-780（Math）690-750(English),34-35,3.91(UW),16%,Optional,"business: direct (Ross), selective; engineering: direct; cs: selective",Great Lakes
+NYU,1470-1570 (25%-75%）,33-35,3.7(UW),8%,Optional,"business: direct (Stern), selective; engineering: direct (Tandon); default: CAS for most majors",East
+Tufts University,740-790(Math) 730-770(English),33-35,,10.80%,Optional,engineering: direct,East
+Caltech,1500-1600 (25%-75%）,35-36,,3.78%,Required,cs: strong; engineering: strong,West
+Babson College,1450-1530 (25%-75%）,32-34,,16%,Optional,"business: direct, strong",East
+University of Virginia,710-780(Math) 700-760(English),32-35,,12.50%,Optional,"business: direct (McIntire), selective; engineering: direct",South
+University of North Carolina at Chapel Hill,1400-1520(25%-75%）,29-34,4.44-4.61(W),15%,Optional,"business: direct (Kenan-Flagler), selective; cs: selective",South
+University of Florida,1380-1510 (25%-75%）,31-34,4.5-4.7(W),24%,Required,business: direct; engineering: direct,South
+University of Texas at Austin,1250-1510 (25%-75%）,27-33,,27%,Required,"business: direct (McCombs), selective; engineering: direct; cs: selective",South
+Georgia Tech,1440(AVG),32(AVG),4.1(W),13%,Required,"engineering: direct, strong; cs: strong, selective; business: direct",South
+University of Wisconsin-Madison,1350-1510 (25%-75%）,29-33,,45%,Optional,business: direct; engineering: direct; cs: selective,Midwest
+University of Illinois Urbana-Champaign,1420-1540 (25%-75%）,31-35,3.7-4.0(UW),36.60%,Optional,"engineering: direct, strong; cs: selective, strong; business: direct",Midwest
+Purdue University,1220-1480 (25%-75%）,28-34,,43.40%,Required,"engineering: direct, strong; cs: selective; business: direct",Midwest
+Ohio State University,1350-1450 (25%-75%）,29-33,3.6-4.0(UW),61%,Required,engineering: direct; business: direct,Midwest
+University of Washington,1280-1490 (25%-75%）,28-33,3.75-3.98(UW),39%,Optional,"cs: selective, intl-limited; engineering: direct",West
+Boston College,1440-1520 (25%-75%）,33-35,,14%,Optional,business: direct (Carroll),East
+Wake Forest University,1440-1520 (25%-75%）,32-34,,22%,Optional,Overall pool only,South
+Northeastern University,1475(MEAN),33-35,,5.22%,Optional,business: direct (D’Amore-McKim); engineering: direct; cs: strong,East
+Case Western Reserve University,1440-1550 (25%-75%）,32-35,,38%,Optional,engineering: strong; bio: strong,Midwest
+University of Rochester,1440-1550 (25%-75%）,32-35,,40%,Optional,Overall pool only,East
+Brandeis University,1380-1480 (25%-75%）,31-34,,45%,Optional,Overall pool only,East
+Lehigh University,700-750(English) 710-780(Math),32-35,,26%,Optional,Overall pool only,East
+Villanova University,1390-1510 (25%-75%）,32-34,,27%,Optional,Overall pool only,East
+Santa Clara University,1350-1490 (25%-75%）,31-33,,48%,Optional,business: direct; engineering: direct; cs: strong,West
+Williams College,1490-1570 (25%-75%）,34-35,,8.60%,Optional,Overall pool only,East
+Claremont McKenna College,1470-1560 (25%-75%）,33-35,,10%,Optional,Overall pool only,West
+Pomona College,1490-1560 (25%-75%）,33-35,,7%,Optional,Overall pool only,West
+Harvey Mudd College,1500-1570 (25%-75%）,34-36,,13%,Optional,cs: strong; engineering: strong,West
+Scripps College,1440-1540（25%-75%）,31-34,,38%,Optional,Overall pool only,West
+Pitzer College,Test-Blind,Test-Blind,3.96(UW),28.60%,Test-Blind,Overall pool only,West
+Loyola Marymount University,1260-1430(25%-75%）,28-32,,45%,Optional,Overall pool only,West
+Pepperdine University,1330-1420 (25%-75%）,30-32,3.64-3.88(UW),63%,Optional,Overall pool only,West
+Cal Poly San Luis Obispo,Test-Blind,Test-Blind,4.06-4.12(W),31%,Test-Blind,"engineering: direct, strong; business: direct; cs: selective",West
+Cal Poly Pomona,Test-Blind,Test-Blind,3.5-4.0(UW),74%,Test-Blind,engineering: direct; business: direct,West
+San José State University,Test-Blind,Test-Blind,3.53(UW),85%,Test-Blind,"business: direct, strong; cs: selective; engineering: direct",West
+Chapman University,1350(AVG),30(AVG),3.78(UW),65%,Optional,Overall pool only,West
+Amherst College,1470-1540(25%-75%),33-35,4.13(W),9%,Optional,Overall pool only,East
+Swarthmore College,1480-1520(25%-75%),33-35,4.13(W),7%,Optional,Overall pool only,East
+Bowdoin College,1470-1540(25%-75%),33-35,,7%,Optional,Overall pool only,East
+Middlebury College,1460-1530(25%-75%),33-35,,11%,Optional,Overall pool only,East
+Wellesley College,1460-1540(25%-75%),33-35,,14%,Optional,Overall pool only,East
+Barnard College,1480-1540(25%-75%),32-34,4.13(W),9%,Optional,Overall pool only,East
+Haverford College,1460-1530(25%-75%),33-35,,12%,Optional,Overall pool only,East
+Wesleyan University,1300-1500(25%-75%),31-34,3.9(UW),16%,Optional,Overall pool only,East
+Colgate University,1450-1530(25%-75%),33-34,3.85(W),14%,Optional,Overall pool only,East
+Hamilton College,1440-1510(25%-75%),33-35,4.11(W),13.50%,Optional,Overall pool only,East
+Davidson College,710-760(English) 690-760(Math),32-34,3.86(UW),13%,Optional,Overall pool only,South
+University of Miami,1350-1450(25%-75%),30-33,3.75(UW),18%,Required,business: direct (Miami Herbert),South
+Tulane University,1430-1500(25%-75%),32-34,3.67(UW),14%,Optional,Overall pool only,South
+"University of Maryland, College Park",1410-1520(25%-75%),32-35,4.41(W),45.10%,Optional,engineering: direct; cs: selective; business: direct (Smith),East
+Penn State University,1320-1460(25%-75%),29-34,3.61-3.93 (UW),61%,Optional,engineering: direct; business: direct (Smeal),East
+Texas A&M University,1160-1390(25%-75%),24-32,,57%,Optional,engineering: direct; business: direct (Mays); cs: selective,South
+Indiana University Bloomington,1250-1450(25%-75%),29-33,3.73-4.00(UW),78%,Optional,"business: direct (Kelley), selective",Midwest
+Michigan State University,1100-1310(25%-75%),25-31,3.74(UW),85%,Optional,Overall pool only,Great Lakes
+Rutgers University-New Brunswick,630-720(English) 640-760(Math),28-33,3.7-4.2(W),41%,Optional,business: direct; engineering: direct,East
+George Washington University,1310-1450(25%-75%),31-34,,47%,Optional,Overall pool only,East
+American University,1320-1440(25%-75%),30-33,3.57-4.02(W),62%,Optional,Overall pool only,East
+Fordham University,1340-1470(25%-75%),30-33,3.75(UW),59%,Optional,business: direct (Gabelli),East
+Syracuse University,1280-1410(25%-75%),28-32,3.8(UW),46%,Optional,Overall pool only,East
+University of Richmond,1430-1510(25%-75%),33-35,3.81(W),22%,Optional,Overall pool only,South
+Bucknell University,1170-1360(25%-75%),25-32,3.58(W),32%,Optional,Overall pool only,East
+Lafayette College,1360-1490(25%-75%),31-33,3.56(UW),31%,Optional,Overall pool only,East
+Macalester College,1350-1480(25%-75%),30-33,,29%,Optional,Overall pool only,Midwest
+Grinnell College,1430-1520(25%-75%),31-34,,15%,Optional,Overall pool only,Midwest
+Kenyon College,1400-1495(25%-75%),31-34,4.15(W),31%,Optional,Overall pool only,Midwest
+Bates College,1325-1510(25%-75%),31-34,,15%,Optional,Overall pool only,East
+Colorado College,1240-1430(25%-75%),28-34,3.39(UW),22%,Optional,Overall pool only,West
+Reed College,Test-Blind,Test-Blind,4.00(W),25%,Test-Blind,Overall pool only,West
+Skidmore College,1360-1460(25%-75%),31-34,,21%,Optional,Overall pool only,East
+Trinity College,1450-1460(25%-75%),31-33,,29%,Optional,Overall pool only,East
+Union College,1320-1470(25%-75%),30-34,3.7(UW),44%,Optional,Overall pool only,East
+Rensselaer Polytechnic Institute,1380-1500(25%-75%),31-34,3.93(UW),63%,Optional,engineering: strong; cs: strong,East
+Worcester Polytechnic Institute,1300-1460(25%-75%),31(AVG),3.9(W),60%,Optional,engineering: strong; cs: strong,East
+Stevens Institute of Technology,1370-1470(25%-75%),32-34,3.83(W),51%,Optional,engineering: strong; cs: strong; business: direct,East
+University of Connecticut,1220-1420(25%-75%),28-33,,52%,Optional,Overall pool only,East
+Olin College of Engineering,1500-1560(25%-75%),34-35,3.9(UW),15.40%,Optional,"engineering: direct, strong",East
+Stony Brook University-SUNY,1350-1470(25%-75%),30-34,3.78(UW),49%,Optional,engineering: direct; cs: selective,East
+"University of Minnesota,Twin Cities",1320-1470(25%-75%),26-31,,80%,Optional,engineering: direct; business: direct (Carlson); cs: selective,Midwest
+North Carolina State University,1290-1440(25%-75%),25-32,3.83(UW),39.46%,Optional,engineering: direct; cs: selective,South
+"University of Massachusetts, Amherst",1330-1480(25%-75%),30-34,4.05(W),59%,Optional,cs: selective; business: direct (Isenberg),East
+Binghamton University-SUNY,1320-1480(25%-75%),31-34,3.88(W),38%,Optional,"business: direct (SOM), selective",East
+University at Buffalo-SUNY,610-690(English) 610-700(Math),27-31,3.66(UW),57%,Optional,Overall pool only,East
+Drexel University,1260-1430(25%-75%),28-33,3.79(W),70%,Optional,Overall pool only,East
+Baruch College-CUNY,550-690(English) 550-710(Math),23-29,3.66(W),48%,Optional,"business: strong, selective",East
+Brigham Young University,1290-1430(25%-75%),28-32,3.89(W),68%,Optional,Overall pool only,West
+The University of Utah,1120-1320(25%-75%),22-29,3.64(W),86%,Optional,Overall pool only,West

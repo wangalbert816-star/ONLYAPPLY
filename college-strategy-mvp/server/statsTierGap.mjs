@@ -2,6 +2,7 @@
  * Per-school stats gap vs student profile (2026 official admit stats).
  */
 
+import { applyMajorGuidanceToStatsGap } from "./majorGuidance.mjs";
 import { resolveGpaNumbersFromBody } from "./transcriptSheetReport.mjs";
 
 const INTL_SAT_OFFSET = 20;
@@ -61,7 +62,7 @@ export function effectiveTestPolicy(statsEntry, student) {
 }
 
 /** Positive gap = student below school band (harder / reach-ward). */
-export function computeSchoolStatsGap(student, statsEntry) {
+export function computeSchoolStatsGap(student, statsEntry, majorBucket = "default") {
   if (!statsEntry) return null;
 
   const policy = effectiveTestPolicy(statsEntry, student);
@@ -133,7 +134,7 @@ export function computeSchoolStatsGap(student, statsEntry) {
 
   const safetyBand = classifySafetyBand(statsEntry, effectiveTier, flags, gpaGap);
 
-  return {
+  const base = {
     engineGap: Math.round(engineGap * 10) / 10,
     satGap,
     actGap,
@@ -148,6 +149,13 @@ export function computeSchoolStatsGap(student, statsEntry) {
     gpaPublished: statsEntry.gpaPublished,
     blocksMatch: statsGapBlocksMatch(satGap, gpaGap),
     blocksSafety: statsGapBlocksSafety(engineGap, satGap, gpaGap),
+  };
+
+  const adjusted = applyMajorGuidanceToStatsGap(base, statsEntry, student, majorBucket);
+  return {
+    ...adjusted,
+    blocksSafety: statsGapBlocksSafety(adjusted.engineGap, adjusted.satGap, adjusted.gpaGap),
+    safetyBand: classifySafetyBand(statsEntry, adjusted.effectiveTier, adjusted.flags, adjusted.gpaGap),
   };
 }
 

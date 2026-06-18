@@ -24,7 +24,13 @@
     "act75": 36,
     "actMid": 35,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Yale University",
@@ -51,7 +57,13 @@
     "act75": 35,
     "actMid": 34,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Princeton University",
@@ -78,7 +90,32 @@
     "act75": 36,
     "actMid": 35,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: direct; default: indirect (AB vs BSE)",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "default": {
+          "selective": false,
+          "direct": false,
+          "strong": false,
+          "indirect": true,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "indirect (AB vs BSE)"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "Columbia University",
@@ -105,7 +142,23 @@
     "act75": 36,
     "actMid": 35,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: direct (SEAS)",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (SEAS)"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "Brown University",
@@ -132,7 +185,13 @@
     "act75": 36,
     "actMid": 35,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Dartmouth College",
@@ -159,7 +218,23 @@
     "act75": 35,
     "actMid": 34,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: indirect",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": false,
+          "strong": false,
+          "indirect": true,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "indirect"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "University of Pennsylvania",
@@ -190,7 +265,32 @@
     "act75": 35,
     "actMid": 34.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "business: direct (Wharton), selective; engineering: direct",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": true,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (Wharton), selective"
+        },
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "Cornell University",
@@ -217,7 +317,41 @@
     "act75": 35,
     "actMid": 34,
     "satMode": "composite_from_sections",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: direct; business: direct (Dyson), selective; cs: selective",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "business": {
+          "selective": true,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (Dyson), selective"
+        },
+        "cs": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "selective"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "Stanford University",
@@ -244,7 +378,13 @@
     "act75": 35,
     "actMid": 34.5,
     "satMode": "composite_from_sections",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "west"
   },
   {
     "school": "MIT",
@@ -274,7 +414,41 @@
     "act75": 36,
     "actMid": 35,
     "satMode": "composite_from_sections",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "cs: strong; engineering: strong; business: indirect (no UG biz school)",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "cs": {
+          "selective": false,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "strong"
+        },
+        "engineering": {
+          "selective": false,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "strong"
+        },
+        "business": {
+          "selective": false,
+          "direct": false,
+          "strong": false,
+          "indirect": true,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "indirect (no UG biz school)"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "University of Chicago",
@@ -301,7 +475,23 @@
     "act75": 35,
     "actMid": 34.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "business: indirect",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": false,
+          "direct": false,
+          "strong": false,
+          "indirect": true,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "indirect"
+        }
+      }
+    },
+    "region": "midwest"
   },
   {
     "school": "Boston University",
@@ -331,7 +521,32 @@
     "act75": 34,
     "actMid": 33,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: direct; business: direct (Questrom)",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (Questrom)"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "Duke University",
@@ -358,7 +573,32 @@
     "act75": 36,
     "actMid": 35,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: direct; business: indirect",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "business": {
+          "selective": false,
+          "direct": false,
+          "strong": false,
+          "indirect": true,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "indirect"
+        }
+      }
+    },
+    "region": "south"
   },
   {
     "school": "Northwestern University",
@@ -385,7 +625,23 @@
     "act75": 35,
     "actMid": 34,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: direct (McCormick)",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (McCormick)"
+        }
+      }
+    },
+    "region": "midwest"
   },
   {
     "school": "Johns Hopkins University",
@@ -416,7 +672,32 @@
     "act75": 36,
     "actMid": 35,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: direct; bio: strong",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "bio": {
+          "selective": false,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "strong"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "Vanderbilt University",
@@ -443,7 +724,23 @@
     "act75": 35,
     "actMid": 34.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: direct",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        }
+      }
+    },
+    "region": "south"
   },
   {
     "school": "Rice University",
@@ -470,7 +767,23 @@
     "act75": 36,
     "actMid": 35,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: strong",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "strong"
+        }
+      }
+    },
+    "region": "south"
   },
   {
     "school": "Washington University in St. Louis",
@@ -501,7 +814,41 @@
     "act75": 35,
     "actMid": 34,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "business: direct (Olin); engineering: direct; bio: strong",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (Olin)"
+        },
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "bio": {
+          "selective": false,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "strong"
+        }
+      }
+    },
+    "region": "midwest"
   },
   {
     "school": "UC Berkeley",
@@ -532,7 +879,50 @@
     "act75": null,
     "actMid": null,
     "satMode": "test_blind",
-    "actMode": "test_blind"
+    "actMode": "test_blind",
+    "majorGuidance": "cs: selective; business: selective; engineering: direct; bio: selective",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "cs": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "selective"
+        },
+        "business": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "selective"
+        },
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "bio": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "selective"
+        }
+      }
+    },
+    "region": "west"
   },
   {
     "school": "UCLA",
@@ -562,7 +952,41 @@
     "act75": null,
     "actMid": null,
     "satMode": "test_blind",
-    "actMode": "test_blind"
+    "actMode": "test_blind",
+    "majorGuidance": "cs: selective; business: selective; engineering: direct",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "cs": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "selective"
+        },
+        "business": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "selective"
+        },
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        }
+      }
+    },
+    "region": "west"
   },
   {
     "school": "UC San Diego",
@@ -593,7 +1017,41 @@
     "act75": null,
     "actMid": null,
     "satMode": "test_blind",
-    "actMode": "test_blind"
+    "actMode": "test_blind",
+    "majorGuidance": "cs: selective; engineering: direct; bio: strong",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "cs": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "selective"
+        },
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "bio": {
+          "selective": false,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "strong"
+        }
+      }
+    },
+    "region": "west"
   },
   {
     "school": "UC Santa Barbara",
@@ -624,7 +1082,32 @@
     "act75": null,
     "actMid": null,
     "satMode": "test_blind",
-    "actMode": "test_blind"
+    "actMode": "test_blind",
+    "majorGuidance": "engineering: direct; cs: selective",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "cs": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "selective"
+        }
+      }
+    },
+    "region": "west"
   },
   {
     "school": "UC Irvine",
@@ -655,7 +1138,41 @@
     "act75": null,
     "actMid": null,
     "satMode": "test_blind",
-    "actMode": "test_blind"
+    "actMode": "test_blind",
+    "majorGuidance": "cs: selective; business: selective; engineering: direct",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "cs": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "selective"
+        },
+        "business": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "selective"
+        },
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        }
+      }
+    },
+    "region": "west"
   },
   {
     "school": "UC Davis",
@@ -686,7 +1203,32 @@
     "act75": null,
     "actMid": null,
     "satMode": "test_blind",
-    "actMode": "test_blind"
+    "actMode": "test_blind",
+    "majorGuidance": "engineering: direct; bio: strong",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "bio": {
+          "selective": false,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "strong"
+        }
+      }
+    },
+    "region": "west"
   },
   {
     "school": "UC Santa Cruz",
@@ -717,7 +1259,13 @@
     "act75": null,
     "actMid": null,
     "satMode": "test_blind",
-    "actMode": "test_blind"
+    "actMode": "test_blind",
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "west"
   },
   {
     "school": "UC Riverside",
@@ -748,7 +1296,13 @@
     "act75": null,
     "actMid": null,
     "satMode": "test_blind",
-    "actMode": "test_blind"
+    "actMode": "test_blind",
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "west"
   },
   {
     "school": "UC Merced",
@@ -779,7 +1333,13 @@
     "act75": null,
     "actMid": null,
     "satMode": "test_blind",
-    "actMode": "test_blind"
+    "actMode": "test_blind",
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "west"
   },
   {
     "school": "University of Notre Dame",
@@ -809,7 +1369,32 @@
     "act75": 35,
     "actMid": 34,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "business: direct (Mendoza); engineering: direct",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (Mendoza)"
+        },
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        }
+      }
+    },
+    "region": "midwest"
   },
   {
     "school": "Georgetown University",
@@ -836,7 +1421,23 @@
     "act75": 35,
     "actMid": 33.5,
     "satMode": "composite_from_sections",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "business: direct (McDonough), selective",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": true,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (McDonough), selective"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "Carnegie Mellon University",
@@ -867,7 +1468,41 @@
     "act75": 35,
     "actMid": 34.5,
     "satMode": "composite_from_sections",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "cs: selective, extra: SAT required; engineering: direct, strong; business: direct (Tepper)",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "cs": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": "SAT required",
+          "raw": "selective, extra: SAT required"
+        },
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct, strong"
+        },
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (Tepper)"
+        }
+      }
+    },
+    "region": "midwest"
   },
   {
     "school": "Emory University",
@@ -894,7 +1529,23 @@
     "act75": 35,
     "actMid": 34,
     "satMode": "composite_from_sections",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "business: indirect (Goizueta)",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": false,
+          "direct": false,
+          "strong": false,
+          "indirect": true,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "indirect (Goizueta)"
+        }
+      }
+    },
+    "region": "south"
   },
   {
     "school": "USC",
@@ -924,7 +1575,41 @@
     "act75": 35,
     "actMid": 34,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "business: direct (Marshall); engineering: direct; cs: strong",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (Marshall)"
+        },
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "cs": {
+          "selective": false,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "strong"
+        }
+      }
+    },
+    "region": "west"
   },
   {
     "school": "University of Michigan",
@@ -955,7 +1640,41 @@
     "act75": 35,
     "actMid": 34.5,
     "satMode": "composite_from_sections",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "business: direct (Ross), selective; engineering: direct; cs: selective",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": true,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (Ross), selective"
+        },
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "cs": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "selective"
+        }
+      }
+    },
+    "region": "great_lakes"
   },
   {
     "school": "NYU",
@@ -985,7 +1704,41 @@
     "act75": 35,
     "actMid": 34,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "business: direct (Stern), selective; engineering: direct (Tandon); default: CAS for most majors",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": true,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (Stern), selective"
+        },
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (Tandon)"
+        },
+        "default": {
+          "selective": false,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "CAS for most majors"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "Tufts University",
@@ -1012,7 +1765,23 @@
     "act75": 35,
     "actMid": 34,
     "satMode": "composite_from_sections",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: direct",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "Caltech",
@@ -1042,7 +1811,32 @@
     "act75": 36,
     "actMid": 35.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "cs: strong; engineering: strong",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "cs": {
+          "selective": false,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "strong"
+        },
+        "engineering": {
+          "selective": false,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "strong"
+        }
+      }
+    },
+    "region": "west"
   },
   {
     "school": "Babson College",
@@ -1069,7 +1863,23 @@
     "act75": 34,
     "actMid": 33,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "business: direct, strong",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct, strong"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "University of Virginia",
@@ -1100,7 +1910,32 @@
     "act75": 35,
     "actMid": 33.5,
     "satMode": "composite_from_sections",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "business: direct (McIntire), selective; engineering: direct",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": true,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (McIntire), selective"
+        },
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        }
+      }
+    },
+    "region": "south"
   },
   {
     "school": "University of North Carolina at Chapel Hill",
@@ -1131,7 +1966,32 @@
     "act75": 34,
     "actMid": 31.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "business: direct (Kenan-Flagler), selective; cs: selective",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": true,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (Kenan-Flagler), selective"
+        },
+        "cs": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "selective"
+        }
+      }
+    },
+    "region": "south"
   },
   {
     "school": "University of Florida",
@@ -1158,7 +2018,32 @@
     "act75": 34,
     "actMid": 32.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "business: direct; engineering: direct",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        }
+      }
+    },
+    "region": "south"
   },
   {
     "school": "University of Texas at Austin",
@@ -1188,7 +2073,41 @@
     "act75": 33,
     "actMid": 30,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "business: direct (McCombs), selective; engineering: direct; cs: selective",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": true,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (McCombs), selective"
+        },
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "cs": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "selective"
+        }
+      }
+    },
+    "region": "south"
   },
   {
     "school": "Georgia Tech",
@@ -1220,7 +2139,41 @@
     "act75": 33,
     "actMid": 32,
     "satMode": "avg",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: direct, strong; cs: strong, selective; business: direct",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct, strong"
+        },
+        "cs": {
+          "selective": true,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "strong, selective"
+        },
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        }
+      }
+    },
+    "region": "south"
   },
   {
     "school": "University of Wisconsin-Madison",
@@ -1251,7 +2204,41 @@
     "act75": 33,
     "actMid": 31,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "business: direct; engineering: direct; cs: selective",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "cs": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "selective"
+        }
+      }
+    },
+    "region": "midwest"
   },
   {
     "school": "University of Illinois Urbana-Champaign",
@@ -1282,7 +2269,41 @@
     "act75": 35,
     "actMid": 33,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: direct, strong; cs: selective, strong; business: direct",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct, strong"
+        },
+        "cs": {
+          "selective": true,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "selective, strong"
+        },
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        }
+      }
+    },
+    "region": "midwest"
   },
   {
     "school": "Purdue University",
@@ -1309,7 +2330,41 @@
     "act75": 34,
     "actMid": 31,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: direct, strong; cs: selective; business: direct",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct, strong"
+        },
+        "cs": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "selective"
+        },
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        }
+      }
+    },
+    "region": "midwest"
   },
   {
     "school": "Ohio State University",
@@ -1336,7 +2391,32 @@
     "act75": 33,
     "actMid": 31,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: direct; business: direct",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        }
+      }
+    },
+    "region": "midwest"
   },
   {
     "school": "University of Washington",
@@ -1366,7 +2446,32 @@
     "act75": 33,
     "actMid": 30.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "cs: selective, intl-limited; engineering: direct",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "cs": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": true,
+          "extra": null,
+          "raw": "selective, intl-limited"
+        },
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        }
+      }
+    },
+    "region": "west"
   },
   {
     "school": "Boston College",
@@ -1393,7 +2498,23 @@
     "act75": 35,
     "actMid": 34,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "business: direct (Carroll)",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (Carroll)"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "Wake Forest University",
@@ -1420,7 +2541,13 @@
     "act75": 34,
     "actMid": 33,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "south"
   },
   {
     "school": "Northeastern University",
@@ -1447,7 +2574,41 @@
     "act75": 35,
     "actMid": 34,
     "satMode": "avg",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "business: direct (D’Amore-McKim); engineering: direct; cs: strong",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (D’Amore-McKim)"
+        },
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "cs": {
+          "selective": false,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "strong"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "Case Western Reserve University",
@@ -1474,7 +2635,32 @@
     "act75": 35,
     "actMid": 33.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: strong; bio: strong",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "strong"
+        },
+        "bio": {
+          "selective": false,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "strong"
+        }
+      }
+    },
+    "region": "midwest"
   },
   {
     "school": "University of Rochester",
@@ -1501,7 +2687,13 @@
     "act75": 35,
     "actMid": 33.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Brandeis University",
@@ -1528,7 +2720,13 @@
     "act75": 34,
     "actMid": 32.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Lehigh University",
@@ -1555,7 +2753,13 @@
     "act75": 35,
     "actMid": 33.5,
     "satMode": "composite_from_sections",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Villanova University",
@@ -1582,7 +2786,13 @@
     "act75": 34,
     "actMid": 33,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Santa Clara University",
@@ -1609,7 +2819,41 @@
     "act75": 33,
     "actMid": 32,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "business: direct; engineering: direct; cs: strong",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "cs": {
+          "selective": false,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "strong"
+        }
+      }
+    },
+    "region": "west"
   },
   {
     "school": "Williams College",
@@ -1636,7 +2880,13 @@
     "act75": 35,
     "actMid": 34.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Claremont McKenna College",
@@ -1663,7 +2913,13 @@
     "act75": 35,
     "actMid": 34,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "west"
   },
   {
     "school": "Pomona College",
@@ -1690,7 +2946,13 @@
     "act75": 35,
     "actMid": 34,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "west"
   },
   {
     "school": "Harvey Mudd College",
@@ -1717,7 +2979,32 @@
     "act75": 36,
     "actMid": 35,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "cs: strong; engineering: strong",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "cs": {
+          "selective": false,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "strong"
+        },
+        "engineering": {
+          "selective": false,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "strong"
+        }
+      }
+    },
+    "region": "west"
   },
   {
     "school": "Scripps College",
@@ -1744,7 +3031,13 @@
     "act75": 34,
     "actMid": 32.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "west"
   },
   {
     "school": "Pitzer College",
@@ -1771,7 +3064,13 @@
     "act75": null,
     "actMid": null,
     "satMode": "test_blind",
-    "actMode": "test_blind"
+    "actMode": "test_blind",
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "west"
   },
   {
     "school": "Loyola Marymount University",
@@ -1798,7 +3097,13 @@
     "act75": 32,
     "actMid": 30,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "west"
   },
   {
     "school": "Pepperdine University",
@@ -1825,7 +3130,13 @@
     "act75": 32,
     "actMid": 31,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "west"
   },
   {
     "school": "Cal Poly San Luis Obispo",
@@ -1855,7 +3166,41 @@
     "act75": null,
     "actMid": null,
     "satMode": "test_blind",
-    "actMode": "test_blind"
+    "actMode": "test_blind",
+    "majorGuidance": "engineering: direct, strong; business: direct; cs: selective",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct, strong"
+        },
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "cs": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "selective"
+        }
+      }
+    },
+    "region": "west"
   },
   {
     "school": "Cal Poly Pomona",
@@ -1882,7 +3227,32 @@
     "act75": null,
     "actMid": null,
     "satMode": "test_blind",
-    "actMode": "test_blind"
+    "actMode": "test_blind",
+    "majorGuidance": "engineering: direct; business: direct",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        }
+      }
+    },
+    "region": "west"
   },
   {
     "school": "San José State University",
@@ -1913,7 +3283,41 @@
     "act75": null,
     "actMid": null,
     "satMode": "test_blind",
-    "actMode": "test_blind"
+    "actMode": "test_blind",
+    "majorGuidance": "business: direct, strong; cs: selective; engineering: direct",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct, strong"
+        },
+        "cs": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "selective"
+        },
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        }
+      }
+    },
+    "region": "west"
   },
   {
     "school": "Chapman University",
@@ -1940,7 +3344,13 @@
     "act75": 31,
     "actMid": 30,
     "satMode": "avg",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "west"
   },
   {
     "school": "Amherst College",
@@ -1967,7 +3377,13 @@
     "act75": 35,
     "actMid": 34,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Swarthmore College",
@@ -1994,7 +3410,13 @@
     "act75": 35,
     "actMid": 34,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Bowdoin College",
@@ -2021,7 +3443,13 @@
     "act75": 35,
     "actMid": 34,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Middlebury College",
@@ -2048,7 +3476,13 @@
     "act75": 35,
     "actMid": 34,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Wellesley College",
@@ -2075,7 +3509,13 @@
     "act75": 35,
     "actMid": 34,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Barnard College",
@@ -2102,7 +3542,13 @@
     "act75": 34,
     "actMid": 33,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Haverford College",
@@ -2129,7 +3575,13 @@
     "act75": 35,
     "actMid": 34,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Wesleyan University",
@@ -2156,7 +3608,13 @@
     "act75": 34,
     "actMid": 32.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Colgate University",
@@ -2183,7 +3641,13 @@
     "act75": 34,
     "actMid": 33.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Hamilton College",
@@ -2210,7 +3674,13 @@
     "act75": 35,
     "actMid": 34,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Davidson College",
@@ -2237,7 +3707,13 @@
     "act75": 34,
     "actMid": 33,
     "satMode": "composite_from_sections",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "south"
   },
   {
     "school": "University of Miami",
@@ -2264,7 +3740,23 @@
     "act75": 33,
     "actMid": 31.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "business: direct (Miami Herbert)",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (Miami Herbert)"
+        }
+      }
+    },
+    "region": "south"
   },
   {
     "school": "Tulane University",
@@ -2291,7 +3783,13 @@
     "act75": 34,
     "actMid": 33,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "south"
   },
   {
     "school": "University of Maryland, College Park",
@@ -2323,7 +3821,41 @@
     "act75": 35,
     "actMid": 33.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: direct; cs: selective; business: direct (Smith)",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "cs": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "selective"
+        },
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (Smith)"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "Penn State University",
@@ -2355,7 +3887,32 @@
     "act75": 34,
     "actMid": 31.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: direct; business: direct (Smeal)",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (Smeal)"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "Texas A&M University",
@@ -2382,7 +3939,41 @@
     "act75": 32,
     "actMid": 28,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: direct; business: direct (Mays); cs: selective",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (Mays)"
+        },
+        "cs": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "selective"
+        }
+      }
+    },
+    "region": "south"
   },
   {
     "school": "Indiana University Bloomington",
@@ -2415,7 +4006,23 @@
     "act75": 33,
     "actMid": 31,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "business: direct (Kelley), selective",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": true,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (Kelley), selective"
+        }
+      }
+    },
+    "region": "midwest"
   },
   {
     "school": "Michigan State University",
@@ -2446,7 +4053,13 @@
     "act75": 31,
     "actMid": 28,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "great_lakes"
   },
   {
     "school": "Rutgers University-New Brunswick",
@@ -2478,7 +4091,32 @@
     "act75": 33,
     "actMid": 30.5,
     "satMode": "composite_from_sections",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "business: direct; engineering: direct",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "George Washington University",
@@ -2509,7 +4147,13 @@
     "act75": 34,
     "actMid": 32.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "American University",
@@ -2539,7 +4183,13 @@
     "act75": 33,
     "actMid": 31.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Fordham University",
@@ -2566,7 +4216,23 @@
     "act75": 33,
     "actMid": 31.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "business: direct (Gabelli)",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (Gabelli)"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "Syracuse University",
@@ -2593,7 +4259,13 @@
     "act75": 32,
     "actMid": 30,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "University of Richmond",
@@ -2620,7 +4292,13 @@
     "act75": 35,
     "actMid": 34,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "south"
   },
   {
     "school": "Bucknell University",
@@ -2647,7 +4325,13 @@
     "act75": 32,
     "actMid": 28.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Lafayette College",
@@ -2674,7 +4358,13 @@
     "act75": 33,
     "actMid": 32,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Macalester College",
@@ -2701,7 +4391,13 @@
     "act75": 33,
     "actMid": 31.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "midwest"
   },
   {
     "school": "Grinnell College",
@@ -2728,7 +4424,13 @@
     "act75": 34,
     "actMid": 32.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "midwest"
   },
   {
     "school": "Kenyon College",
@@ -2755,7 +4457,13 @@
     "act75": 34,
     "actMid": 32.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "midwest"
   },
   {
     "school": "Bates College",
@@ -2782,7 +4490,13 @@
     "act75": 34,
     "actMid": 32.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Colorado College",
@@ -2809,7 +4523,13 @@
     "act75": 34,
     "actMid": 31,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "west"
   },
   {
     "school": "Reed College",
@@ -2836,7 +4556,13 @@
     "act75": null,
     "actMid": null,
     "satMode": "test_blind",
-    "actMode": "test_blind"
+    "actMode": "test_blind",
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "west"
   },
   {
     "school": "Skidmore College",
@@ -2863,7 +4589,13 @@
     "act75": 34,
     "actMid": 32.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Trinity College",
@@ -2890,7 +4622,13 @@
     "act75": 33,
     "actMid": 32,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Union College",
@@ -2917,7 +4655,13 @@
     "act75": 34,
     "actMid": 32,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Rensselaer Polytechnic Institute",
@@ -2947,7 +4691,32 @@
     "act75": 34,
     "actMid": 32.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: strong; cs: strong",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "strong"
+        },
+        "cs": {
+          "selective": false,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "strong"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "Worcester Polytechnic Institute",
@@ -2977,7 +4746,32 @@
     "act75": 32,
     "actMid": 31,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: strong; cs: strong",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "strong"
+        },
+        "cs": {
+          "selective": false,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "strong"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "Stevens Institute of Technology",
@@ -3007,7 +4801,41 @@
     "act75": 34,
     "actMid": 33,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: strong; cs: strong; business: direct",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "strong"
+        },
+        "cs": {
+          "selective": false,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "strong"
+        },
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "University of Connecticut",
@@ -3034,7 +4862,13 @@
     "act75": 33,
     "actMid": 30.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Olin College of Engineering",
@@ -3061,7 +4895,23 @@
     "act75": 35,
     "actMid": 34.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: direct, strong",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct, strong"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "Stony Brook University-SUNY",
@@ -3093,7 +4943,32 @@
     "act75": 34,
     "actMid": 32,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: direct; cs: selective",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "cs": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "selective"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "University of Minnesota,Twin Cities",
@@ -3125,7 +5000,41 @@
     "act75": 31,
     "actMid": 28.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: direct; business: direct (Carlson); cs: selective",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (Carlson)"
+        },
+        "cs": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "selective"
+        }
+      }
+    },
+    "region": "midwest"
   },
   {
     "school": "North Carolina State University",
@@ -3157,7 +5066,32 @@
     "act75": 32,
     "actMid": 28.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "engineering: direct; cs: selective",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "engineering": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct"
+        },
+        "cs": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "selective"
+        }
+      }
+    },
+    "region": "south"
   },
   {
     "school": "University of Massachusetts, Amherst",
@@ -3189,7 +5123,32 @@
     "act75": 34,
     "actMid": 32,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "cs: selective; business: direct (Isenberg)",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "cs": {
+          "selective": true,
+          "direct": false,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "selective"
+        },
+        "business": {
+          "selective": false,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (Isenberg)"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "Binghamton University-SUNY",
@@ -3221,7 +5180,23 @@
     "act75": 34,
     "actMid": 32.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "business: direct (SOM), selective",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": true,
+          "direct": true,
+          "strong": false,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "direct (SOM), selective"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "University at Buffalo-SUNY",
@@ -3253,7 +5228,13 @@
     "act75": 31,
     "actMid": 29,
     "satMode": "composite_from_sections",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Drexel University",
@@ -3280,7 +5261,13 @@
     "act75": 33,
     "actMid": 30.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "east"
   },
   {
     "school": "Baruch College-CUNY",
@@ -3312,7 +5299,23 @@
     "act75": 29,
     "actMid": 26,
     "satMode": "composite_from_sections",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "business: strong, selective",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": false,
+      "segments": {
+        "business": {
+          "selective": true,
+          "direct": false,
+          "strong": true,
+          "indirect": false,
+          "intlLimited": false,
+          "extra": null,
+          "raw": "strong, selective"
+        }
+      }
+    },
+    "region": "east"
   },
   {
     "school": "Brigham Young University",
@@ -3342,7 +5345,13 @@
     "act75": 32,
     "actMid": 30,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "west"
   },
   {
     "school": "The University of Utah",
@@ -3374,6 +5383,12 @@
     "act75": 29,
     "actMid": 25.5,
     "satMode": "range",
-    "actMode": null
+    "actMode": null,
+    "majorGuidance": "Overall pool only",
+    "majorGuidanceParsed": {
+      "overallPoolOnly": true,
+      "segments": {}
+    },
+    "region": "west"
   }
 ]

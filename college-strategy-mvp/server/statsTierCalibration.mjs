@@ -1,12 +1,14 @@
 /** Internal stats calibration for report + engine (no numeric stats in user-facing copy). */
 
 import { resolveAdmitStatsSchool } from "./schoolAdmitStats.mjs";
+import { resolveMajorBucket } from "./majorBucket.mjs";
 import {
   buildStudentStatsProfile,
   computeSchoolStatsGap,
   statsGapBlocksMatch,
   statsGapBlocksSafety,
 } from "./statsTierGap.mjs";
+import { majorGuidancePromptNote } from "./majorGuidance.mjs";
 
 function qualitativeGapLabel(gap, flags) {
   if (flags.includes("missing_required_testing")) return "missing_required_testing";
@@ -19,6 +21,7 @@ function qualitativeGapLabel(gap, flags) {
 
 export function calibrateSchoolsFromStats(body, schoolNames) {
   const student = buildStudentStatsProfile(body);
+  const majorBucket = resolveMajorBucket(body);
   const rows = [];
   for (const name of schoolNames) {
     const stats = resolveAdmitStatsSchool(name).entry;
@@ -26,7 +29,7 @@ export function calibrateSchoolsFromStats(body, schoolNames) {
       rows.push({ school: name, inTable: false });
       continue;
     }
-    const gap = computeSchoolStatsGap(student, stats);
+    const gap = computeSchoolStatsGap(student, stats, majorBucket);
     rows.push({
       school: stats.school,
       inTable: true,
@@ -95,6 +98,7 @@ export function buildStatsCalibrationPromptBlock(body, locale = "zh") {
 
 export function buildStatsCalibrationForSchools(body, schoolNames, locale = "zh") {
   const isEn = locale === "en";
+  const majorBucket = resolveMajorBucket(body);
   const { rows } = calibrateSchoolsFromStats(body, schoolNames);
   if (!rows.length) return "";
 
@@ -123,9 +127,11 @@ export function buildStatsCalibrationForSchools(body, schoolNames, locale = "zh"
       : isEn
         ? "no published GPA — do not compare GPA"
         : "无 GPA 公布 — 不得比较 GPA";
+    const majorNote = majorGuidancePromptNote(resolveAdmitStatsSchool(r.school).entry, majorBucket, locale);
+    const majorSuffix = majorNote ? (isEn ? `; major=${majorNote}` : `；专业=${majorNote}`) : "";
     return isEn
-      ? `${r.school}: internal ${r.suggestedTier}; ${policyNote}; ${gpaNote}; flags=${(r.flags ?? []).join(",") || "none"}`
-      : `${r.school}：内部建议 ${r.suggestedTier}；${policyNote}；${gpaNote}；标记=${(r.flags ?? []).join("、") || "无"}`;
+      ? `${r.school}: internal ${r.suggestedTier}; ${policyNote}; ${gpaNote}; flags=${(r.flags ?? []).join(",") || "none"}${majorSuffix}`
+      : `${r.school}：内部建议 ${r.suggestedTier}；${policyNote}；${gpaNote}；标记=${(r.flags ?? []).join("、") || "无"}${majorSuffix}`;
   });
 
   const header = isEn

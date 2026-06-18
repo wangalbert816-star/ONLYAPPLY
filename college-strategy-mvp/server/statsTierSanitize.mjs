@@ -1,6 +1,7 @@
 /** Post-process report prose against admit-stats rules (qualitative; no numeric injection). */
 
 import { resolveAdmitStatsSchool } from "./schoolAdmitStats.mjs";
+import { resolveMajorBucket } from "./majorBucket.mjs";
 import { buildStudentStatsProfile, computeSchoolStatsGap } from "./statsTierGap.mjs";
 import { calibrateSchoolsFromStats } from "./statsTierCalibration.mjs";
 
@@ -26,9 +27,9 @@ function stripUnpublishedGpaCompare(text) {
     .trim();
 }
 
-function sanitizeRowFields(row, tier, statsEntry, student, locale) {
+function sanitizeRowFields(row, tier, statsEntry, student, locale, majorBucket) {
   if (!row || typeof row !== "object") return row;
-  const gap = statsEntry ? computeSchoolStatsGap(student, statsEntry) : null;
+  const gap = statsEntry ? computeSchoolStatsGap(student, statsEntry, majorBucket) : null;
   const out = { ...row };
 
   const textFields = [
@@ -96,12 +97,40 @@ function sanitizeRowFields(row, tier, statsEntry, student, locale) {
     );
   }
 
+  if (gap?.flags?.includes("major_selective")) {
+    if (!out.key_risks) out.key_risks = [];
+    out.key_risks.push(
+      locale === "en"
+        ? "Student's major is selective at this school — treat tier conservatively."
+        : "该生目标专业在此校为 selective — 档位宜保守理解。",
+    );
+  }
+
+  if (gap?.flags?.includes("major_indirect")) {
+    if (!out.key_risks) out.key_risks = [];
+    out.key_risks.push(
+      locale === "en"
+        ? "No direct undergraduate path for this major — explain indirect entry if kept on list."
+        : "该专业无本科直申路径 — 若保留在名单中须说明 indirect 路径。",
+    );
+  }
+
+  if (gap?.flags?.includes("major_intl_limited") && student.intl) {
+    if (!out.key_risks) out.key_risks = [];
+    out.key_risks.push(
+      locale === "en"
+        ? "International applicants may face slightly tighter capacity for this major."
+        : "国际生在该专业名额可能略紧 — 宜略保守。",
+    );
+  }
+
   return out;
 }
 
 export function sanitizeStatsTierReport(parsed, body, locale = "zh") {
   if (!parsed || typeof parsed !== "object") return parsed;
   const student = buildStudentStatsProfile(body);
+  const majorBucket = resolveMajorBucket(body);
   const isEn = locale === "en";
 
   for (const tier of ["reach", "match", "safety"]) {
@@ -109,7 +138,7 @@ export function sanitizeStatsTierReport(parsed, body, locale = "zh") {
     if (!Array.isArray(rows)) continue;
     parsed[tier] = rows.map((row) => {
       const stats = resolveAdmitStatsSchool(row?.school).entry;
-      return sanitizeRowFields(row, tier, stats, student, locale);
+      return sanitizeRowFields(row, tier, stats, student, locale, majorBucket);
     });
   }
 

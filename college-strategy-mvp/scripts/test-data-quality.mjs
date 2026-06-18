@@ -31,7 +31,7 @@ import {
   schoolMatchesForbidden,
   validateMainSchoolReport,
 } from "../server/topReferenceSchools.mjs";
-import { parseSatCell, parseTestPolicyCell } from "../server/schoolAdmitStatsParse.mjs";
+import { parseSatCell, parseTestPolicyCell, parseAdmitStatsCsv, parseAdmitStatsRow } from "../server/schoolAdmitStatsParse.mjs";
 import { findAdmitStatsEntry, listAdmitStatsSchools, resolveAdmitStatsSchool } from "../server/schoolAdmitStats.mjs";
 import { canonicalizeReportSchoolNames } from "../server/statsSchoolNameCanonicalize.mjs";
 import {
@@ -40,6 +40,9 @@ import {
   effectiveTestPolicy,
 } from "../server/statsTierGap.mjs";
 import { sanitizeStatsTierReport } from "../server/statsTierSanitize.mjs";
+import { parseMajorGuidance, majorGuidanceRankAdjust } from "../server/majorGuidance.mjs";
+import { parseGeoPrefs, schoolRegionMatchesPrefs } from "../server/engineIntakeProfile.mjs";
+import { isSchoolEligible, buildEngineContext, listSchoolMajorCatalog } from "../server/engineTierRules.mjs";
 
 const results = [];
 
@@ -562,9 +565,104 @@ check("safety band: Purdue capped to match for intl 1440", () => {
 check("safety band: SJSU promoted to stable safety", () => {
   const student = buildStudentStatsProfile(intlBizBody);
   const entry = findAdmitStatsEntry("San José State University");
-  const gap = computeSchoolStatsGap(student, entry);
+  const gap = computeSchoolStatsGap(student, entry, "business");
   if (gap.effectiveTier !== "safety") throw new Error(`effectiveTier=${gap.effectiveTier}`);
   if (gap.safetyBand !== "stable") throw new Error(`safetyBand=${gap.safetyBand}`);
+});
+
+check("major guidance: business selective bumps tier for business student", () => {
+  const student = buildStudentStatsProfile({ ...intlBizBody, majorPrimary: "Business" });
+  const entry = findAdmitStatsEntry("University of Pennsylvania");
+  const gap = computeSchoolStatsGap(student, entry, "business");
+  if (!gap.flags.includes("major_selective")) throw new Error(JSON.stringify(gap.flags));
+});
+
+check("major guidance: cs selective ignored for business student", () => {
+  const student = buildStudentStatsProfile({ ...intlBizBody, majorPrimary: "Business" });
+  const entry = findAdmitStatsEntry("UC Berkeley");
+  const gap = computeSchoolStatsGap(student, entry, "business");
+  if (!gap.flags.includes("major_selective")) throw new Error(JSON.stringify(gap.flags));
+  if (gap.flags.some((f) => f.includes("cs"))) throw new Error("should not apply cs-only flags");
+});
+
+check("major guidance: UW intl cs slightly conservative", () => {
+  const student = buildStudentStatsProfile({
+    majorPrimary: "Computer Science",
+    testing: "will_submit",
+    satScore: "1400",
+    applicantIdentity: "intl",
+  });
+  const entry = findAdmitStatsEntry("University of Washington");
+  const gap = computeSchoolStatsGap(student, entry, "cs");
+  if (!gap.flags.includes("major_selective")) throw new Error(JSON.stringify(gap.flags));
+  if (!gap.flags.includes("major_intl_limited")) throw new Error(JSON.stringify(gap.flags));
+});
+
+check("major guidance: indirect deprioritized in rank adjust", () => {
+  const entry = findAdmitStatsEntry("MIT");
+  const directBoost = majorGuidanceRankAdjust(findAdmitStatsEntry("Babson College"), "business");
+  const indirectPenalty = majorGuidanceRankAdjust(entry, "business");
+  if (directBoost <= 0) throw new Error(`directBoost=${directBoost}`);
+  if (indirectPenalty >= 0) throw new Error(`indirectPenalty=${indirectPenalty}`);
+});
+
+check("admit stats: region and major guidance loaded", () => {
+  const entry = findAdmitStatsEntry("University of Michigan");
+  if (!entry) throw new Error("UMich not found");
+  if (entry.region !== "great_lakes") throw new Error(`region=${entry.region}`);
+  if (!entry.majorGuidance?.includes("business")) throw new Error(entry.majorGuidance);
+  const parsed = parseMajorGuidance(entry.majorGuidance);
+  if (!parsed.segments.business?.selective) throw new Error(JSON.stringify(parsed));
+});
+
+check("geo: Great Lakes matches Midwest preference", () => {
+  const geo = parseGeoPrefs({ geoPrefs: ["midwest"] });
+  if (!schoolRegionMatchesPrefs("Great Lakes", geo)) throw new Error("Great Lakes should match midwest");
+});
+
+check("admit stats name: San José accent resolves", () => {
+  const hit = findAdmitStatsEntry("San Jose State University");
+  if (!hit) throw new Error("San Jose State not resolved");
+});
+
+check("admit stats: CSV multiline CMU test policy parses", () => {
+  const csv = `Name,SAT,ACT(25%-75%),GPA,Acceptance Rate,Test Policy,Major Guidance,Region
+Carnegie Mellon University,770-800(Math) 730-770(English),34-35,3.89(UW),12%,"School of Computer Science:Required 
+ Else:Optional","cs: selective",Midwest`;
+  const row = parseAdmitStatsCsv(csv)[0];
+  const entry = parseAdmitStatsRow(row);
+  if (entry.testPolicyCs !== "required") throw new Error(JSON.stringify(entry));
+});
+
+check("major guidance: selective clears stale safety band", () => {
+  const student = buildStudentStatsProfile({
+    majorPrimary: "Business",
+    testing: "will_submit",
+    satScore: "1540",
+    gpa: "3.95 UW",
+    applicantIdentity: "domestic",
+  });
+  const entry = findAdmitStatsEntry("University of Pennsylvania");
+  const gap = computeSchoolStatsGap(student, entry, "business");
+  if (gap.effectiveTier === "safety") throw new Error(`tier=${gap.effectiveTier}`);
+  if (gap.safetyBand != null) throw new Error(`stale safetyBand=${gap.safetyBand}`);
+});
+
+check("geo strict: stats table region used for eligibility", () => {
+  const body = { geoPrefs: ["west"], majorPrimary: "Business" };
+  const context = buildEngineContext(body, [], {
+    composite: 70,
+    academic: 70,
+    testing: 70,
+    activities: 70,
+    rigor: 70,
+    strategy: 70,
+  });
+  const sjsu = listSchoolMajorCatalog().find((e) => /san jose state/i.test(e.school));
+  if (!sjsu) throw new Error("SJSU not in catalog");
+  if (!isSchoolEligible(sjsu, context)) throw new Error("SJSU should pass west geo via stats region");
+  const babson = listSchoolMajorCatalog().find((e) => /babson/i.test(e.school));
+  if (babson && isSchoolEligible(babson, context)) throw new Error("Babson should fail west geo strict");
 });
 
 let failed = 0;

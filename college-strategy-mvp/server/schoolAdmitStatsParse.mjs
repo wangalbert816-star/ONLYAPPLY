@@ -1,5 +1,47 @@
 /** Parse raw CSV cells into normalized admit-stats fields. */
 
+import { normalizeStatsRegion, parseMajorGuidance } from "./majorGuidance.mjs";
+
+/** RFC-style CSV rows; supports quoted fields spanning multiple lines. */
+export function parseAdmitStatsCsv(text) {
+  const lines = String(text ?? "").split(/\r?\n/).filter((l) => l.trim());
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(",").map((h) => h.trim());
+  const rows = [];
+  let i = 1;
+  while (i < lines.length) {
+    let line = lines[i];
+    while ((line.match(/"/g) ?? []).length % 2 === 1 && i + 1 < lines.length) {
+      i += 1;
+      line += `\n${lines[i]}`;
+    }
+    const cols = [];
+    let cur = "";
+    let inQ = false;
+    for (let j = 0; j < line.length; j += 1) {
+      const ch = line[j];
+      if (ch === '"') {
+        inQ = !inQ;
+        continue;
+      }
+      if (ch === "," && !inQ) {
+        cols.push(cur);
+        cur = "";
+        continue;
+      }
+      cur += ch;
+    }
+    cols.push(cur);
+    const row = {};
+    headers.forEach((h, idx) => {
+      row[h] = cols[idx] ?? "";
+    });
+    rows.push(row);
+    i += 1;
+  }
+  return rows;
+}
+
 const EXTRA_ALIASES = {
   "carnegie mellon university": ["cmu", "carnegie mellon"],
   "massachusetts institute of technology": ["mit"],
@@ -263,6 +305,9 @@ export function parseAdmitStatsRow(row) {
   const gpa = parseGpaCell(row.GPA);
   const acceptanceRate = parseAcceptanceRate(row["Acceptance Rate"] ?? row.acceptanceRate);
   const testMeta = parseTestPolicyCell(row["Test Policy"] ?? row.testPolicy, name);
+  const majorGuidanceRaw = String(row["Major Guidance"] ?? row.majorGuidance ?? "").trim();
+  const majorGuidanceParsed = parseMajorGuidance(majorGuidanceRaw);
+  const region = normalizeStatsRegion(row.Region ?? row.region);
 
   let testPolicy = testMeta.policy;
   if (sat.mode === "test_blind" || act.mode === "test_blind") {
@@ -295,6 +340,9 @@ export function parseAdmitStatsRow(row) {
     actMid: act.actMid ?? null,
     satMode: sat.mode ?? null,
     actMode: act.mode ?? null,
+    majorGuidance: majorGuidanceRaw || null,
+    majorGuidanceParsed,
+    region,
   };
 
   return entry;
