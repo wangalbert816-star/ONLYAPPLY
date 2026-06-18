@@ -124,6 +124,33 @@ function sanitizeRowFields(row, tier, statsEntry, student, locale, majorBucket) 
     );
   }
 
+  if (gap?.flags?.includes("test_optional_private_strict")) {
+    if (!out.key_risks) out.key_risks = [];
+    out.key_risks.push(
+      locale === "en"
+        ? "Test-optional without scores at a selective private — treat as Reach, not a comfortable Match."
+        : "选择性私立 + 无标化：宜按 Reach 理解，不宜当作稳妥 Match。",
+    );
+  }
+
+  if (gap?.flags?.includes("test_optional_intl_caution")) {
+    if (!out.key_risks) out.key_risks = [];
+    out.key_risks.push(
+      locale === "en"
+        ? "International test-optional applicant without scores — selective privates need extra caution."
+        : "国际生 test-optional 且无标化 — 对 selective 私立宜更保守。",
+    );
+  }
+
+  if (gap?.flags?.includes("major_selective_match")) {
+    if (!out.key_risks) out.key_risks = [];
+    out.key_risks.push(
+      locale === "en"
+        ? "Major is selective here but overall admit rate is high — do not equate with elite Reach difficulty."
+        : "专业 selective 但全校录取率较高 — 勿与顶尖 Reach 同档难度理解。",
+    );
+  }
+
   return out;
 }
 
@@ -140,6 +167,19 @@ export function sanitizeStatsTierReport(parsed, body, locale = "zh") {
       const stats = resolveAdmitStatsSchool(row?.school).entry;
       return sanitizeRowFields(row, tier, stats, student, locale, majorBucket);
     });
+  }
+
+  if (Array.isArray(parsed.safety)) {
+    for (const row of parsed.safety) {
+      if (!resolveAdmitStatsSchool(row?.school).entry) {
+        if (!row.key_risks) row.key_risks = [];
+        row.key_risks.push(
+          isEn
+            ? "Not in admit-stats table — cannot calibrate as Safety; prefer engine-approved schools."
+            : "不在 admit 统计表内 — 无法校准为保底；应使用引擎批准学校。",
+        );
+      }
+    }
   }
 
   const allNames = ["reach", "match", "safety"].flatMap((t) =>

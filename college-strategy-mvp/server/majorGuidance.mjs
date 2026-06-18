@@ -77,9 +77,20 @@ export function applyMajorGuidanceToStatsGap(statsGap, statsEntry, student, majo
 
   if (seg.selective) {
     flags.push("major_selective");
-    engineGap += 7;
-    effectiveTier = bumpTierConservative(effectiveTier);
-    suggestedTier = bumpTierConservative(suggestedTier);
+    const acceptRate = statsEntry.acceptanceRate;
+    engineGap += acceptRate != null && acceptRate > 0.5 ? 4 : 7;
+
+    if (acceptRate != null && acceptRate > 0.5) {
+      flags.push("major_selective_match");
+    } else if (acceptRate != null && acceptRate > 0.3) {
+      flags.push("major_selective_match_hard");
+      if (effectiveTier === "safety") effectiveTier = "match";
+      if (suggestedTier === "safety") suggestedTier = "match";
+    } else {
+      flags.push("reach_major_bump");
+      effectiveTier = bumpTierConservative(effectiveTier);
+      suggestedTier = bumpTierConservative(suggestedTier);
+    }
   }
 
   if (seg.intlLimited && student.intl) {

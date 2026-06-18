@@ -8,9 +8,10 @@ import { fileURLToPath } from "node:url";
 import { buildEngineIntakeProfile, isUcSchoolName, normalizeSchoolRegion, schoolRegionMatchesPrefs } from "./engineIntakeProfile.mjs";
 import { forbiddenSchoolsFromBody, schoolMatchesForbidden } from "./topReferenceSchools.mjs";
 import { findAdmitStatsEntry } from "./schoolAdmitStats.mjs";
-import { buildStudentStatsProfile, computeSchoolStatsGap, isPrestigeStatsSafetyCandidate, isStableSafetyCandidate } from "./statsTierGap.mjs";
+import { buildStudentStatsProfile, computeSchoolStatsGap, isPrestigeStatsSafetyCandidate, isStableSafetyCandidate, applyTestOptionalTierAdjustment } from "./statsTierGap.mjs";
 import { majorGuidanceRankAdjust } from "./majorGuidance.mjs";
 import { resolveMajorBucket } from "./majorBucket.mjs";
+import { pickReachWithBandSpread } from "./reachTierBand.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CATALOG_FILE = path.join(__dirname, "..", "data", "engine", "school-major-catalog.json");
@@ -296,6 +297,7 @@ function clamp01(n) {
 
 export function pickTopPerTier(candidates, tier, count = 3, context = null) {
   if (tier === "safety") return pickSafetyWithBandSpread(candidates, count, context);
+  if (tier === "reach") return pickReachWithBandSpread(candidates, count);
   return pickTopPerTierPlain(candidates, tier, count, context);
 }
 
@@ -307,9 +309,12 @@ export function pickSafetyWithBandSpread(candidates, count = 3, context = null) 
     .filter((c) => c.tier === "safety")
     .sort((a, b) => b.rank - a.rank || b.fit - a.fit || a.entry.school.localeCompare(b.entry.school));
 
-  const stable = rows.filter(isStableSafetyCandidate);
-  const moderate = rows.filter((c) => !isStableSafetyCandidate(c) && !isPrestigeStatsSafetyCandidate(c));
-  const prestige = rows.filter(isPrestigeStatsSafetyCandidate);
+  const withStats = rows.filter((c) => c.statsEntry);
+  const pool = withStats.length >= count ? withStats : rows;
+
+  const stable = pool.filter(isStableSafetyCandidate);
+  const moderate = pool.filter((c) => !isStableSafetyCandidate(c) && !isPrestigeStatsSafetyCandidate(c));
+  const prestige = pool.filter(isPrestigeStatsSafetyCandidate);
 
   const picked = [];
   const seen = new Set();
@@ -336,6 +341,10 @@ export function pickSafetyWithBandSpread(candidates, count = 3, context = null) 
     prestigeUsed = true;
   }
   for (const row of stable) {
+    if (picked.length >= count) break;
+    push(row);
+  }
+  for (const row of pool) {
     if (picked.length >= count) break;
     push(row);
   }
@@ -412,13 +421,18 @@ export function buildCatalogCandidates(catalog, composite, context) {
     if (statsGap?.effectiveTier) {
       tier = statsGap.effectiveTier;
     }
+    const testAdj = applyTestOptionalTierAdjustment(tier, entry, statsEntry, statsGap, student);
+    tier = testAdj.tier;
+    statsGap = testAdj.statsGap ?? statsGap;
     if (!tier) continue;
     const fit = majorFitForSchool(entry, context.majorBucket);
     let rank = rankCandidate(effectiveEntry, context, gap, tier);
     if (!statsEntry) rank -= 35;
+    if (!statsEntry && tier === "safety") rank -= 45;
     if (statsGap?.priorityPenalty) rank -= statsGap.priorityPenalty;
     if (statsEntry) rank += 8;
     if (statsEntry) rank += majorGuidanceRankAdjust(statsEntry, context.majorBucket);
+    if (statsGap?.flags?.includes("test_optional_intl_caution")) rank -= 20;
     if (tier === "safety" && isStableSafetyCandidate({ statsEntry, statsGap, entry })) rank += 22;
     if (tier === "safety" && isPrestigeStatsSafetyCandidate({ statsEntry, statsGap, entry })) rank -= 28;
     if (tier === "match" && statsGap?.flags?.includes("cap_prestige_stats_safety")) rank += 12;

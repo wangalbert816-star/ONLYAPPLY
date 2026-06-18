@@ -87,6 +87,18 @@ export function buildStatsCalibrationPromptBlock(body, locale = "zh") {
       : "禁止在 report JSON 正文中写出 SAT/GPA/录取率具体数字；仅用定性 fit/风险表述。",
   );
 
+  lines.push(
+    isEn
+      ? "Reach tier must stay within one coherent selectivity band — do NOT describe Kelley/high-admit selective majors and CMU-tier elite schools as the same difficulty."
+      : "Reach 档须保持录取难度一致 — 勿将 Kelley 等高录取 selective 专业与 CMU 档顶尖校描述为同档难度。",
+  );
+
+  lines.push(
+    isEn
+      ? "Use ONLY the 9 engine-approved schools in reach/match/safety — do not swap in off-table schools (especially for Safety)."
+      : "reach/match/safety 仅可使用引擎批准的 9 校 — 勿替换为表外学校（尤其 Safety）。",
+  );
+
   if (!lines.length) return "";
 
   const header = isEn

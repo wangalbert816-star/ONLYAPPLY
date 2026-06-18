@@ -38,11 +38,15 @@ import {
   buildStudentStatsProfile,
   computeSchoolStatsGap,
   effectiveTestPolicy,
+  applyTestOptionalTierAdjustment,
 } from "../server/statsTierGap.mjs";
 import { sanitizeStatsTierReport } from "../server/statsTierSanitize.mjs";
 import { parseMajorGuidance, majorGuidanceRankAdjust } from "../server/majorGuidance.mjs";
 import { parseGeoPrefs, schoolRegionMatchesPrefs } from "../server/engineIntakeProfile.mjs";
 import { isSchoolEligible, buildEngineContext, listSchoolMajorCatalog } from "../server/engineTierRules.mjs";
+import { schoolReachBand, reachBandDistance } from "../server/reachTierBand.mjs";
+import { runDecisionEngineV2 } from "../server/decisionEngineV2.mjs";
+import { scoreFiveDimensions } from "../server/fiveDimensionScore.mjs";
 
 const results = [];
 
@@ -663,6 +667,78 @@ check("geo strict: stats table region used for eligibility", () => {
   if (!isSchoolEligible(sjsu, context)) throw new Error("SJSU should pass west geo via stats region");
   const babson = listSchoolMajorCatalog().find((e) => /babson/i.test(e.school));
   if (babson && isSchoolEligible(babson, context)) throw new Error("Babson should fail west geo strict");
+});
+
+const refIntlBizBody = {
+  gpa: "3.7 UW",
+  gpaTrend: "upward",
+  testing: "test_optional",
+  applicantIdentity: "intl",
+  citizenship: "China",
+  residenceRegion: "United States",
+  budget: "full_pay",
+  geoPrefs: ["any"],
+  majorPrimary: "Business",
+};
+
+check("major guidance: Kelley selective does not bump to reach at 78% admit", () => {
+  const student = buildStudentStatsProfile({ ...refIntlBizBody, majorPrimary: "Business" });
+  const entry = findAdmitStatsEntry("Indiana University Bloomington");
+  const gap = computeSchoolStatsGap(student, entry, "business");
+  if (!gap.flags.includes("major_selective")) throw new Error(JSON.stringify(gap.flags));
+  if (!gap.flags.includes("major_selective_match")) throw new Error(JSON.stringify(gap.flags));
+  if (gap.effectiveTier === "reach") throw new Error(`tier=${gap.effectiveTier}`);
+});
+
+check("reach band: Indiana D vs CMU A are incompatible bands", () => {
+  const indiana = findAdmitStatsEntry("Indiana University Bloomington");
+  const cmu = findAdmitStatsEntry("Carnegie Mellon University");
+  const b1 = schoolReachBand(indiana);
+  const b2 = schoolReachBand(cmu);
+  if (b1 !== "D" || b2 !== "A") throw new Error(`${b1} vs ${b2}`);
+  if (reachBandDistance(b1, b2) <= 1) throw new Error("should be far apart");
+});
+
+check("test optional intl: Babson private 16% not default match", () => {
+  const student = buildStudentStatsProfile(refIntlBizBody);
+  const entry = findAdmitStatsEntry("Babson College");
+  const babsonCatalog = listSchoolMajorCatalog().find((e) => /babson/i.test(e.school));
+  const gap = computeSchoolStatsGap(student, entry, "business");
+  const adj = applyTestOptionalTierAdjustment("match", babsonCatalog, entry, gap, student);
+  if (adj.tier !== "reach") throw new Error(`tier=${adj.tier}`);
+  if (!adj.statsGap.flags.includes("test_optional_private_strict")) throw new Error(JSON.stringify(adj.statsGap.flags));
+});
+
+check("engine: intl business test-optional reach band coherent", () => {
+  const r = runDecisionEngineV2(refIntlBizBody, [], { allowRelaxedGeo: true });
+  if (!r.ok) throw new Error(r.reason);
+  const reach = r.schools.reach.map((s) => s.school);
+  if (reach.some((s) => /indiana/i.test(s))) throw new Error(`Kelley should be match not reach: ${reach.join(",")}`);
+  const bands = reach.map((name) => schoolReachBand(findAdmitStatsEntry(name)));
+  const anchor = bands[0];
+  for (const b of bands.slice(1)) {
+    if (reachBandDistance(b, anchor) > 1) throw new Error(`incoherent reach bands: ${bands.join(",")} schools=${reach.join(",")}`);
+  }
+});
+
+check("engine: safety prefers stats-table schools over Virginia Tech", () => {
+  const r = runDecisionEngineV2(refIntlBizBody, [], { allowRelaxedGeo: true });
+  if (!r.ok) throw new Error(r.reason);
+  const safety = r.schools.safety.map((s) => s.school);
+  if (safety.some((s) => /virginia tech/i.test(s))) throw new Error(`VT off-table: ${safety.join(",")}`);
+  for (const name of safety) {
+    if (!findAdmitStatsEntry(name)) throw new Error(`safety off-table: ${name}`);
+  }
+});
+
+check("sanitize: off-table safety gets risk bullet", () => {
+  const out = sanitizeStatsTierReport(
+    { reach: [], match: [], safety: [{ school: "Virginia Tech", why_safety_for_you: "x" }] },
+    refIntlBizBody,
+    "zh",
+  );
+  const risks = out.safety[0].key_risks ?? [];
+  if (!risks.some((r) => /统计表|admit-stats/i.test(String(r)))) throw new Error(JSON.stringify(risks));
 });
 
 let failed = 0;

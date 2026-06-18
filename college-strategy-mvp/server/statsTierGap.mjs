@@ -241,3 +241,25 @@ export function statsGapBlocksSafety(engineGap, satGap, gpaGap) {
   if (engineGap >= 8) return true;
   return false;
 }
+
+/** Test-optional without scores: private selective schools should not default to Match. */
+export function applyTestOptionalTierAdjustment(tier, entry, statsEntry, statsGap, student) {
+  if (!student?.testOptionalNoScore || !statsEntry || !entry) {
+    return { tier, statsGap };
+  }
+
+  const flags = [...(statsGap?.flags ?? [])];
+  let adjusted = tier;
+  const rate = statsEntry.acceptanceRate;
+  const isPrivate = entry.type === "private";
+
+  if (adjusted === "match" && isPrivate && rate != null && rate < 0.2) {
+    adjusted = "reach";
+    if (!flags.includes("test_optional_private_strict")) flags.push("test_optional_private_strict");
+  } else if (adjusted === "match" && isPrivate && rate != null && rate < 0.35 && student.intl) {
+    if (!flags.includes("test_optional_intl_caution")) flags.push("test_optional_intl_caution");
+  }
+
+  if (!statsGap) return { tier: adjusted, statsGap: null };
+  return { tier: adjusted, statsGap: { ...statsGap, flags, effectiveTier: adjusted } };
+}
