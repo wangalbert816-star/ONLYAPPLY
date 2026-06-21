@@ -350,6 +350,8 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
 });
 
 registerAlumniReviewRoutes(app, { supabaseAdmin, express });
+registerTranscriptParseRoutes(app, express);
+registerActivitiesParseRoutes(app, express);
 
 app.use(express.json({ limit: "4mb" }));
 
@@ -2408,8 +2410,6 @@ ensureBenchmarksLoaded().catch((e) =>
 );
 registerCounselorCrmRoutes(app, { supabaseAdmin });
 registerUsHighSchoolRoutes(app);
-registerTranscriptParseRoutes(app, express);
-registerActivitiesParseRoutes(app, express);
 
 app.post("/api/dev/seed-counselor", (req, res) => {
   if (IS_PROD) return res.status(404).json({ error: "not_found" });

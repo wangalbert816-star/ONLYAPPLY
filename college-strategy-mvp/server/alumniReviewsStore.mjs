@@ -59,6 +59,10 @@ function isUuid(value) {
   );
 }
 
+function isLockedReview(row) {
+  return row?.status === "submitted" || row?.status === "approved";
+}
+
 async function upsertAlumniReviewSupabase(admin, userId, input) {
   const now = new Date().toISOString();
   const reviewId = String(input.reviewId ?? "").trim() || null;
@@ -66,12 +70,13 @@ async function upsertAlumniReviewSupabase(admin, userId, input) {
   const applicationId = isUuid(input.applicationId) ? input.applicationId : null;
   const expectedUpdatedAt = input.expectedUpdatedAt ?? null;
 
-  if (reviewId && expectedUpdatedAt) {
+  if (reviewId) {
     const current = await getAlumniReviewForUser(admin, userId, reviewId);
     if (!current) throw new Error("alumni_review_not_found");
-    if (String(current.updated_at) !== String(expectedUpdatedAt)) {
+    if (expectedUpdatedAt && String(current.updated_at) !== String(expectedUpdatedAt)) {
       throw new Error("alumni_review_conflict");
     }
+    if (isLockedReview(current)) throw new Error("alumni_review_locked");
   }
 
   const row = {
@@ -100,11 +105,12 @@ async function upsertAlumniReviewSupabase(admin, userId, input) {
   } else if (reportId) {
     const { data: existing, error: findErr } = await admin
       .from("alumni_report_reviews")
-      .select("id")
+      .select("id,status")
       .eq("user_id", userId)
       .eq("report_id", reportId)
       .maybeSingle();
     if (findErr) throw findErr;
+    if (isLockedReview(existing)) throw new Error("alumni_review_locked");
     if (existing?.id) {
       ({ data, error } = await admin
         .from("alumni_report_reviews")
@@ -147,6 +153,26 @@ export async function listAlumniReviews(admin, userId, reportId) {
   return { rows: rows.slice(0, 20), source: "file" };
 }
 
+export async function getAlumniReviewForUserByReport(admin, userId, reportId) {
+  const normalizedReportId = String(reportId ?? "").trim();
+  if (!normalizedReportId) return null;
+  if (admin && isUuid(normalizedReportId)) {
+    try {
+      const { data, error } = await admin
+        .from("alumni_report_reviews")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("report_id", normalizedReportId)
+        .maybeSingle();
+      if (error) throw error;
+      return data ?? null;
+    } catch (e) {
+      if (!isTableMissingError(e)) throw e;
+    }
+  }
+  return readAll().find((r) => r.report_id === normalizedReportId && r.user_id === userId) ?? null;
+}
+
 export async function upsertAlumniReview(admin, userId, input) {
   const now = new Date().toISOString();
   const reviewId = String(input.reviewId ?? "").trim() || null;
@@ -183,6 +209,9 @@ export async function upsertAlumniReview(admin, userId, input) {
     if (String(rows[existingIdx].updated_at) !== String(input.expectedUpdatedAt)) {
       throw new Error("alumni_review_conflict");
     }
+  }
+  if (existingIdx >= 0 && isLockedReview(rows[existingIdx])) {
+    throw new Error("alumni_review_locked");
   }
 
   const nextRow = {
