@@ -4,6 +4,11 @@ import { resolveAdmitStatsSchool } from "./schoolAdmitStats.mjs";
 import { resolveMajorBucket } from "./majorBucket.mjs";
 import { buildStudentStatsProfile, computeSchoolStatsGap } from "./statsTierGap.mjs";
 import { calibrateSchoolsFromStats } from "./statsTierCalibration.mjs";
+import {
+  schoolMatchesCampusSizePref,
+  schoolMatchesCommunityPref,
+} from "./campusProfile.mjs";
+import { buildEngineIntakeProfile } from "./engineIntakeProfile.mjs";
 
 const SAT_LEVER_RE =
   /\b(SAT|ACT|标化|sat score|act score|testing score|submitted score|submit.*score)\b/i;
@@ -27,7 +32,7 @@ function stripUnpublishedGpaCompare(text) {
     .trim();
 }
 
-function sanitizeRowFields(row, tier, statsEntry, student, locale, majorBucket) {
+function sanitizeRowFields(row, tier, statsEntry, student, locale, majorBucket, body) {
   if (!row || typeof row !== "object") return row;
   const gap = statsEntry ? computeSchoolStatsGap(student, statsEntry, majorBucket) : null;
   const out = { ...row };
@@ -151,6 +156,34 @@ function sanitizeRowFields(row, tier, statsEntry, student, locale, majorBucket) 
     );
   }
 
+  const sizePref = String(body?.schoolSize ?? "").trim().toLowerCase();
+  const culturePref = String(body?.campusCulturePref ?? "").trim().toLowerCase();
+  if (statsEntry?.campusSize && sizePref && sizePref !== "any" && !schoolMatchesCampusSizePref(statsEntry.campusSize, sizePref)) {
+    if (!out.key_risks) out.key_risks = [];
+    out.key_risks.push(
+      locale === "en"
+        ? "Campus size may not match your preference — confirm enrollment scale and class sizes."
+        : "校园规模可能与您的偏好不完全一致 — 建议核对本科人数与班级规模。",
+    );
+  }
+  if (statsEntry?.community && culturePref && culturePref !== "any" && !schoolMatchesCommunityPref(statsEntry.community, culturePref)) {
+    if (!out.key_risks) out.key_risks = [];
+    out.key_risks.push(
+      locale === "en"
+        ? "Campus community vibe may not align with your stated preference — verify social vs academic culture."
+        : "校园社区气质可能与您的偏好不完全一致 — 建议核对社交/学术氛围。",
+    );
+  }
+  const dealThemes = buildEngineIntakeProfile(body ?? {}).dealbreakers?.themes ?? [];
+  if (statsEntry?.community === "social" && dealThemes.includes("no_party")) {
+    if (!out.key_risks) out.key_risks = [];
+    out.key_risks.push(
+      locale === "en"
+        ? "Social-forward campus culture — may conflict with your no-party dealbreaker."
+        : "该校社区气质偏社交活跃 — 与您「避免派对」的底线可能存在摩擦。",
+    );
+  }
+
   return out;
 }
 
@@ -165,7 +198,7 @@ export function sanitizeStatsTierReport(parsed, body, locale = "zh") {
     if (!Array.isArray(rows)) continue;
     parsed[tier] = rows.map((row) => {
       const stats = resolveAdmitStatsSchool(row?.school).entry;
-      return sanitizeRowFields(row, tier, stats, student, locale, majorBucket);
+      return sanitizeRowFields(row, tier, stats, student, locale, majorBucket, body);
     });
   }
 

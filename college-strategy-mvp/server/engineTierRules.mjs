@@ -12,6 +12,11 @@ import { buildStudentStatsProfile, computeSchoolStatsGap, isPrestigeStatsSafetyC
 import { majorGuidanceRankAdjust } from "./majorGuidance.mjs";
 import { resolveMajorBucket } from "./majorBucket.mjs";
 import { pickReachWithBandSpread } from "./reachTierBand.mjs";
+import {
+  campusProfilePrefBoost,
+  schoolMatchesCampusSizePref,
+  schoolMatchesCommunityPref,
+} from "./campusProfile.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CATALOG_FILE = path.join(__dirname, "..", "data", "engine", "school-major-catalog.json");
@@ -78,7 +83,7 @@ const KNOWN_SCHOOL_TRAITS = [
   { re: /usc|ucla|michigan|penn state|ohio state|texas at austin|florida|wisconsin|illinois|arizona state/i, party: true },
 ];
 
-function inferSchoolTraits(entry) {
+function inferSchoolTraits(entry, statsEntry = null) {
   const name = String(entry.school ?? "");
   const traits = {
     size: entry.size ?? "medium",
@@ -87,12 +92,22 @@ function inferSchoolTraits(entry) {
     urban: Boolean(entry.urban),
     party: Boolean(entry.party),
   };
+
+  if (statsEntry?.campusSize) traits.size = statsEntry.campusSize;
+  if (statsEntry?.community) {
+    traits.culture = statsEntry.community;
+    traits.party = statsEntry.community === "social";
+  }
+
+  const useRegexSize = !statsEntry?.campusSize;
+  const useRegexCulture = !statsEntry?.community;
+
   for (const row of KNOWN_SCHOOL_TRAITS) {
     if (!row.re.test(name)) continue;
     if (row.religious) traits.religious = true;
     if (row.urban) traits.urban = true;
-    if (row.size) traits.size = row.size;
-    if (row.party) traits.party = true;
+    if (useRegexSize && row.size) traits.size = row.size;
+    if (useRegexCulture && row.party) traits.party = true;
   }
   if (entry.type === "private" && Number(entry.selectivity) >= 90 && traits.size === "medium") {
     traits.size = "medium";
@@ -101,19 +116,11 @@ function inferSchoolTraits(entry) {
 }
 
 function schoolMatchesSizePref(traits, pref) {
-  if (!pref || pref === "any") return true;
-  if (pref === traits.size) return true;
-  if (pref === "small" && traits.size === "medium") return true;
-  if (pref === "large" && traits.size === "medium") return true;
-  return false;
+  return schoolMatchesCampusSizePref(traits.size, pref);
 }
 
 function schoolMatchesCulturePref(traits, pref) {
-  if (!pref || pref === "any") return true;
-  if (pref === traits.culture) return true;
-  if (pref === "collaborative" && traits.culture === "balanced") return true;
-  if (pref === "competitive" && traits.culture === "balanced") return true;
-  return false;
+  return schoolMatchesCommunityPref(traits.culture, pref);
 }
 
 export function buildEngineContext(body, tags = [], profileScores, intakeOverride = null) {
@@ -197,7 +204,7 @@ export function isSchoolEligible(entry, context) {
     return false;
   }
 
-  const traits = inferSchoolTraits(entry);
+  const traits = inferSchoolTraits(entry, statsEntry);
 
   if (context.dealbreakers?.themes.includes("no_religious") && traits.religious) return false;
   if (context.dealbreakers?.themes.includes("avoid_major_city") && traits.urban) return false;
@@ -266,9 +273,9 @@ export function geoBoost(entry, context) {
   return -0.06;
 }
 
-export function rankCandidate(entry, context, gap, tier) {
+export function rankCandidate(entry, context, gap, tier, statsEntry = null) {
   const fit = majorFitForSchool(entry, context.majorBucket);
-  const traits = inferSchoolTraits(entry);
+  const traits = inferSchoolTraits(entry, statsEntry);
   const tierFit =
     tier === "reach"
       ? clamp01(1 - Math.abs(gap - 16) / 18)
@@ -280,10 +287,14 @@ export function rankCandidate(entry, context, gap, tier) {
   if (context.budget?.preferPublic && entry.type === "public") budgetBoost = 0.08;
   if (context.budget?.tier === "strict" && entry.budgetTier === "low") budgetBoost += 0.06;
 
-  let prefBoost = 0;
-  if (schoolMatchesSizePref(traits, context.schoolSize)) prefBoost += 0.06;
-  if (schoolMatchesCulturePref(traits, context.campusCulture)) prefBoost += 0.05;
-  if (context.dealbreakers?.themes.includes("no_party") && traits.party) prefBoost -= 0.12;
+  let prefBoost = campusProfilePrefBoost(statsEntry, context);
+  if (!statsEntry?.campusSize && !statsEntry?.community) {
+    if (schoolMatchesSizePref(traits, context.schoolSize)) prefBoost += 0.06;
+    if (schoolMatchesCulturePref(traits, context.campusCulture)) prefBoost += 0.05;
+  }
+  if (context.dealbreakers?.themes.includes("no_party") && traits.party && statsEntry?.community !== "social") {
+    prefBoost -= 0.12;
+  }
   if (context.dealbreakers?.themes.includes("avoid_cold") && /midwest|northeast|new england|wisconsin|michigan|minnesota/i.test(entry.school)) {
     prefBoost -= 0.08;
   }
@@ -407,8 +418,13 @@ export function buildCatalogCandidates(catalog, composite, context) {
     if (!isSchoolEligible(entry, context)) continue;
     const statsEntry = findAdmitStatsEntry(entry.school);
     const effectiveEntry =
-      statsEntry?.region != null
-        ? { ...entry, region: statsEntry.region }
+      statsEntry?.region != null || statsEntry?.campusSize || statsEntry?.community
+        ? {
+            ...entry,
+            region: statsEntry.region ?? entry.region,
+            campusSize: statsEntry.campusSize ?? entry.campusSize,
+            community: statsEntry.community ?? entry.community,
+          }
         : entry;
     let gap = tierGap(composite, entry.selectivity, context, effectiveEntry);
     let statsGap = null;
@@ -426,7 +442,7 @@ export function buildCatalogCandidates(catalog, composite, context) {
     statsGap = testAdj.statsGap ?? statsGap;
     if (!tier) continue;
     const fit = majorFitForSchool(entry, context.majorBucket);
-    let rank = rankCandidate(effectiveEntry, context, gap, tier);
+    let rank = rankCandidate(effectiveEntry, context, gap, tier, statsEntry);
     if (!statsEntry) rank -= 35;
     if (!statsEntry && tier === "safety") rank -= 45;
     if (statsGap?.priorityPenalty) rank -= statsGap.priorityPenalty;

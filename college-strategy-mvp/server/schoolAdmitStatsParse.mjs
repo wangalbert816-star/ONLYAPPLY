@@ -1,6 +1,7 @@
 /** Parse raw CSV cells into normalized admit-stats fields. */
 
 import { normalizeStatsRegion, parseMajorGuidance } from "./majorGuidance.mjs";
+import { normalizeCampusSize, normalizeCommunity } from "./campusProfile.mjs";
 
 /** RFC-style CSV rows; supports quoted fields spanning multiple lines. */
 export function parseAdmitStatsCsv(text) {
@@ -308,6 +309,8 @@ export function parseAdmitStatsRow(row) {
   const majorGuidanceRaw = String(row["Major Guidance"] ?? row.majorGuidance ?? "").trim();
   const majorGuidanceParsed = parseMajorGuidance(majorGuidanceRaw);
   const region = normalizeStatsRegion(row.Region ?? row.region);
+  const campusSize = normalizeCampusSize(row.Size ?? row["Campus Size"] ?? row.campusSize);
+  const community = normalizeCommunity(row.Community ?? row.community);
 
   let testPolicy = testMeta.policy;
   if (sat.mode === "test_blind" || act.mode === "test_blind") {
@@ -343,6 +346,8 @@ export function parseAdmitStatsRow(row) {
     majorGuidance: majorGuidanceRaw || null,
     majorGuidanceParsed,
     region,
+    campusSize,
+    community,
   };
 
   return entry;

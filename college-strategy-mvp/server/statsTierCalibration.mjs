@@ -9,6 +9,7 @@ import {
   statsGapBlocksSafety,
 } from "./statsTierGap.mjs";
 import { majorGuidancePromptNote } from "./majorGuidance.mjs";
+import { campusProfilePromptNote } from "./campusProfile.mjs";
 
 function qualitativeGapLabel(gap, flags) {
   if (flags.includes("missing_required_testing")) return "missing_required_testing";
@@ -37,6 +38,8 @@ export function calibrateSchoolsFromStats(body, schoolNames) {
       safetyBand: gap.safetyBand,
       testPolicy: gap.testPolicy,
       gpaPublished: gap.gpaPublished,
+      campusSize: stats.campusSize,
+      community: stats.community,
       flags: gap.flags,
       priorityPenalty: gap.priorityPenalty,
       label: qualitativeGapLabel(gap, gap.flags),
@@ -140,10 +143,12 @@ export function buildStatsCalibrationForSchools(body, schoolNames, locale = "zh"
         ? "no published GPA — do not compare GPA"
         : "无 GPA 公布 — 不得比较 GPA";
     const majorNote = majorGuidancePromptNote(resolveAdmitStatsSchool(r.school).entry, majorBucket, locale);
+    const campusNote = campusProfilePromptNote(resolveAdmitStatsSchool(r.school).entry, locale);
     const majorSuffix = majorNote ? (isEn ? `; major=${majorNote}` : `；专业=${majorNote}`) : "";
+    const campusSuffix = campusNote ? (isEn ? `; campus=${campusNote}` : `；校园=${campusNote}`) : "";
     return isEn
-      ? `${r.school}: internal ${r.suggestedTier}; ${policyNote}; ${gpaNote}; flags=${(r.flags ?? []).join(",") || "none"}${majorSuffix}`
-      : `${r.school}：内部建议 ${r.suggestedTier}；${policyNote}；${gpaNote}；标记=${(r.flags ?? []).join("、") || "无"}${majorSuffix}`;
+      ? `${r.school}: internal ${r.suggestedTier}; ${policyNote}; ${gpaNote}; flags=${(r.flags ?? []).join(",") || "none"}${majorSuffix}${campusSuffix}`
+      : `${r.school}：内部建议 ${r.suggestedTier}；${policyNote}；${gpaNote}；标记=${(r.flags ?? []).join("、") || "无"}${majorSuffix}${campusSuffix}`;
   });
 
   const header = isEn

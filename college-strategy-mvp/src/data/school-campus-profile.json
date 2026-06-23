@@ -1,0 +1,901 @@
+[
+  {
+    "school": "Harvard University",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "academic"
+  },
+  {
+    "school": "Yale University",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "academic"
+  },
+  {
+    "school": "Princeton University",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "academic"
+  },
+  {
+    "school": "Columbia University",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "academic"
+  },
+  {
+    "school": "Brown University",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "academic"
+  },
+  {
+    "school": "Dartmouth College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "balanced"
+  },
+  {
+    "school": "University of Pennsylvania",
+    "aliases": [
+      "university of pennsylvania",
+      "upenn",
+      "penn"
+    ],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "Cornell University",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "academic"
+  },
+  {
+    "school": "Stanford University",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "MIT",
+    "aliases": [
+      "massachusetts institute of technology",
+      "mit"
+    ],
+    "campusSize": "small",
+    "community": "academic"
+  },
+  {
+    "school": "University of Chicago",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "academic"
+  },
+  {
+    "school": "Boston University",
+    "aliases": [
+      "boston university",
+      "bu"
+    ],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "Duke University",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "Northwestern University",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "Johns Hopkins University",
+    "aliases": [
+      "johns hopkins university",
+      "jhu",
+      "john hopkins"
+    ],
+    "campusSize": "medium",
+    "community": "academic"
+  },
+  {
+    "school": "Vanderbilt University",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "social"
+  },
+  {
+    "school": "Rice University",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "academic"
+  },
+  {
+    "school": "Washington University in St. Louis",
+    "aliases": [
+      "washington university in st louis",
+      "washu",
+      "wustl"
+    ],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "UC Berkeley",
+    "aliases": [
+      "uc berkeley",
+      "university of california berkeley",
+      "berkeley"
+    ],
+    "campusSize": "large",
+    "community": "academic"
+  },
+  {
+    "school": "UCLA",
+    "aliases": [
+      "university of california los angeles",
+      "ucla"
+    ],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "UC San Diego",
+    "aliases": [
+      "uc san diego",
+      "university of california san diego",
+      "ucsd"
+    ],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "UC Santa Barbara",
+    "aliases": [
+      "uc santa barbara",
+      "university of california santa barbara",
+      "ucsb"
+    ],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "UC Irvine",
+    "aliases": [
+      "uc irvine",
+      "university of california irvine",
+      "uci"
+    ],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "UC Davis",
+    "aliases": [
+      "uc davis",
+      "university of california davis",
+      "ucd"
+    ],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "UC Santa Cruz",
+    "aliases": [
+      "uc santa cruz",
+      "university of california santa cruz",
+      "ucsc"
+    ],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "UC Riverside",
+    "aliases": [
+      "uc riverside",
+      "university of california riverside",
+      "ucr"
+    ],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "UC Merced",
+    "aliases": [
+      "uc merced",
+      "university of california merced",
+      "ucm"
+    ],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "University of Notre Dame",
+    "aliases": [
+      "university of notre dame",
+      "notre dame"
+    ],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "Georgetown University",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "Carnegie Mellon University",
+    "aliases": [
+      "carnegie mellon university",
+      "cmu",
+      "carnegie mellon"
+    ],
+    "campusSize": "medium",
+    "community": "academic"
+  },
+  {
+    "school": "Emory University",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "USC",
+    "aliases": [
+      "university of southern california",
+      "usc"
+    ],
+    "campusSize": "medium",
+    "community": "social"
+  },
+  {
+    "school": "University of Michigan",
+    "aliases": [
+      "university of michigan",
+      "umich",
+      "michigan"
+    ],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "NYU",
+    "aliases": [
+      "new york university",
+      "nyu"
+    ],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "Tufts University",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "Caltech",
+    "aliases": [
+      "california institute of technology",
+      "caltech"
+    ],
+    "campusSize": "small",
+    "community": "academic"
+  },
+  {
+    "school": "Babson College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "balanced"
+  },
+  {
+    "school": "University of Virginia",
+    "aliases": [
+      "university of virginia",
+      "uva",
+      "virginia"
+    ],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "University of North Carolina at Chapel Hill",
+    "aliases": [
+      "university of north carolina at chapel hill",
+      "unc chapel hill",
+      "unc"
+    ],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "University of Florida",
+    "aliases": [],
+    "campusSize": "large",
+    "community": "social"
+  },
+  {
+    "school": "University of Texas at Austin",
+    "aliases": [
+      "university of texas at austin",
+      "ut austin"
+    ],
+    "campusSize": "large",
+    "community": "social"
+  },
+  {
+    "school": "Georgia Tech",
+    "aliases": [
+      "georgia institute of technology",
+      "georgia tech",
+      "gatech",
+      "gt"
+    ],
+    "campusSize": "large",
+    "community": "academic"
+  },
+  {
+    "school": "University of Wisconsin-Madison",
+    "aliases": [
+      "university of wisconsin madison",
+      "uw madison",
+      "wisconsin madison"
+    ],
+    "campusSize": "large",
+    "community": "social"
+  },
+  {
+    "school": "University of Illinois Urbana-Champaign",
+    "aliases": [
+      "university of illinois urbana champaign",
+      "uiuc",
+      "illinois urbana"
+    ],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "Purdue University",
+    "aliases": [],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "Ohio State University",
+    "aliases": [],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "University of Washington",
+    "aliases": [
+      "university of washington",
+      "uw seattle"
+    ],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "Boston College",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "Wake Forest University",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "social"
+  },
+  {
+    "school": "Northeastern University",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "Case Western Reserve University",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "academic"
+  },
+  {
+    "school": "University of Rochester",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "academic"
+  },
+  {
+    "school": "Brandeis University",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "Lehigh University",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "Villanova University",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "Santa Clara University",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "Williams College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "academic"
+  },
+  {
+    "school": "Claremont McKenna College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "balanced"
+  },
+  {
+    "school": "Pomona College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "academic"
+  },
+  {
+    "school": "Harvey Mudd College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "academic"
+  },
+  {
+    "school": "Scripps College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "balanced"
+  },
+  {
+    "school": "Pitzer College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "balanced"
+  },
+  {
+    "school": "Loyola Marymount University",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "Pepperdine University",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "Cal Poly San Luis Obispo",
+    "aliases": [
+      "cal poly san luis obispo",
+      "cal poly slo"
+    ],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "Cal Poly Pomona",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "San José State University",
+    "aliases": [
+      "san jose state university",
+      "san jose state",
+      "sjsu"
+    ],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "Chapman University",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "Amherst College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "academic"
+  },
+  {
+    "school": "Swarthmore College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "academic"
+  },
+  {
+    "school": "Bowdoin College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "balanced"
+  },
+  {
+    "school": "Middlebury College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "balanced"
+  },
+  {
+    "school": "Wellesley College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "balanced"
+  },
+  {
+    "school": "Barnard College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "balanced"
+  },
+  {
+    "school": "Haverford College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "balanced"
+  },
+  {
+    "school": "Wesleyan University",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "balanced"
+  },
+  {
+    "school": "Colgate University",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "balanced"
+  },
+  {
+    "school": "Hamilton College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "balanced"
+  },
+  {
+    "school": "Davidson College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "balanced"
+  },
+  {
+    "school": "University of Miami",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "social"
+  },
+  {
+    "school": "Tulane University",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "social"
+  },
+  {
+    "school": "University of Maryland, College Park",
+    "aliases": [
+      "university of maryland",
+      "university of maryland college park",
+      "umd",
+      "maryland"
+    ],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "Penn State University",
+    "aliases": [
+      "penn state university",
+      "penn state",
+      "psu",
+      "pennsylvania state university"
+    ],
+    "campusSize": "large",
+    "community": "social"
+  },
+  {
+    "school": "Texas A&M University",
+    "aliases": [],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "Indiana University Bloomington",
+    "aliases": [
+      "indiana university bloomington",
+      "indiana university",
+      "indiana",
+      "iu",
+      "iu bloomington"
+    ],
+    "campusSize": "large",
+    "community": "social"
+  },
+  {
+    "school": "Michigan State University",
+    "aliases": [
+      "michigan state university",
+      "michigan state",
+      "msu"
+    ],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "Rutgers University-New Brunswick",
+    "aliases": [
+      "rutgers university new brunswick",
+      "rutgers university",
+      "rutgers",
+      "rutgers new brunswick"
+    ],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "George Washington University",
+    "aliases": [
+      "george washington university",
+      "gwu",
+      "gw"
+    ],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "American University",
+    "aliases": [
+      "american university",
+      "au"
+    ],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "Fordham University",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "Syracuse University",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "social"
+  },
+  {
+    "school": "University of Richmond",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "Bucknell University",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "balanced"
+  },
+  {
+    "school": "Lafayette College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "balanced"
+  },
+  {
+    "school": "Macalester College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "balanced"
+  },
+  {
+    "school": "Grinnell College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "balanced"
+  },
+  {
+    "school": "Kenyon College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "balanced"
+  },
+  {
+    "school": "Bates College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "balanced"
+  },
+  {
+    "school": "Colorado College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "balanced"
+  },
+  {
+    "school": "Reed College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "academic"
+  },
+  {
+    "school": "Skidmore College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "balanced"
+  },
+  {
+    "school": "Trinity College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "balanced"
+  },
+  {
+    "school": "Union College",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "balanced"
+  },
+  {
+    "school": "Rensselaer Polytechnic Institute",
+    "aliases": [
+      "rensselaer polytechnic institute",
+      "rpi"
+    ],
+    "campusSize": "medium",
+    "community": "academic"
+  },
+  {
+    "school": "Worcester Polytechnic Institute",
+    "aliases": [
+      "worcester polytechnic institute",
+      "wpi"
+    ],
+    "campusSize": "medium",
+    "community": "academic"
+  },
+  {
+    "school": "Stevens Institute of Technology",
+    "aliases": [
+      "stevens institute of technology",
+      "stevens"
+    ],
+    "campusSize": "medium",
+    "community": "academic"
+  },
+  {
+    "school": "University of Connecticut",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "Olin College of Engineering",
+    "aliases": [],
+    "campusSize": "small",
+    "community": "academic"
+  },
+  {
+    "school": "Stony Brook University-SUNY",
+    "aliases": [
+      "stony brook university",
+      "stony brook university suny",
+      "stony brook",
+      "suny stony brook"
+    ],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "University of Minnesota,Twin Cities",
+    "aliases": [
+      "university of minnesota twin cities",
+      "university of minnesota",
+      "umn",
+      "minnesota twin cities"
+    ],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "North Carolina State University",
+    "aliases": [
+      "north carolina state university",
+      "nc state",
+      "ncsu",
+      "north carolina state"
+    ],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "University of Massachusetts, Amherst",
+    "aliases": [
+      "university of massachusetts amherst",
+      "umass amherst",
+      "umass",
+      "massachusetts amherst"
+    ],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "Binghamton University-SUNY",
+    "aliases": [
+      "binghamton university",
+      "binghamton university suny",
+      "binghamton",
+      "suny binghamton"
+    ],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "University at Buffalo-SUNY",
+    "aliases": [
+      "university at buffalo",
+      "university at buffalo suny",
+      "buffalo",
+      "ub"
+    ],
+    "campusSize": "large",
+    "community": "balanced"
+  },
+  {
+    "school": "Drexel University",
+    "aliases": [],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "Baruch College-CUNY",
+    "aliases": [
+      "baruch college",
+      "baruch college cuny",
+      "baruch",
+      "cuny baruch"
+    ],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "Brigham Young University",
+    "aliases": [
+      "brigham young university",
+      "byu"
+    ],
+    "campusSize": "medium",
+    "community": "balanced"
+  },
+  {
+    "school": "The University of Utah",
+    "aliases": [
+      "university of utah",
+      "the university of utah",
+      "utah",
+      "u of utah"
+    ],
+    "campusSize": "large",
+    "community": "balanced"
+  }
+]

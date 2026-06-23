@@ -47,6 +47,10 @@ import { isSchoolEligible, buildEngineContext, listSchoolMajorCatalog } from "..
 import { schoolReachBand, reachBandDistance } from "../server/reachTierBand.mjs";
 import { runDecisionEngineV2 } from "../server/decisionEngineV2.mjs";
 import { scoreFiveDimensions } from "../server/fiveDimensionScore.mjs";
+import {
+  campusProfilePrefBoost,
+  schoolMatchesCommunityPref,
+} from "../server/campusProfile.mjs";
 
 const results = [];
 
@@ -739,6 +743,44 @@ check("sanitize: off-table safety gets risk bullet", () => {
   );
   const risks = out.safety[0].key_risks ?? [];
   if (!risks.some((r) => /统计表|admit-stats/i.test(String(r)))) throw new Error(JSON.stringify(risks));
+});
+
+check("campus profile: Size and Community loaded from stats table", () => {
+  const entry = findAdmitStatsEntry("Harvard University");
+  if (entry.campusSize !== "small" || entry.community !== "academic") {
+    throw new Error(JSON.stringify({ campusSize: entry.campusSize, community: entry.community }));
+  }
+});
+
+check("campus profile: social schools list matches table", () => {
+  const socialSchools = [
+    "Vanderbilt University",
+    "USC",
+    "University of Florida",
+    "Indiana University Bloomington",
+  ];
+  for (const name of socialSchools) {
+    const entry = findAdmitStatsEntry(name);
+    if (entry.community !== "social") throw new Error(`${name}=${entry.community}`);
+  }
+});
+
+check("campus profile: academic pref matches balanced bridge", () => {
+  if (!schoolMatchesCommunityPref("balanced", "academic")) throw new Error("balanced should match academic pref");
+  if (schoolMatchesCommunityPref("social", "academic")) throw new Error("social should not match academic pref");
+});
+
+check("campus profile: no_party dealbreaker penalizes social not balanced", () => {
+  const socialEntry = findAdmitStatsEntry("Penn State University");
+  const balancedEntry = findAdmitStatsEntry("Ohio State University");
+  const ctx = {
+    schoolSize: "any",
+    campusCulture: "any",
+    dealbreakers: { themes: ["no_party"] },
+  };
+  const socialBoost = campusProfilePrefBoost(socialEntry, ctx);
+  const balancedBoost = campusProfilePrefBoost(balancedEntry, ctx);
+  if (socialBoost >= balancedBoost) throw new Error(`social=${socialBoost} balanced=${balancedBoost}`);
 });
 
 let failed = 0;

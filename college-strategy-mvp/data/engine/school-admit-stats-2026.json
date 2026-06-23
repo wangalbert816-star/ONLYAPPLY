@@ -30,7 +30,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "academic"
   },
   {
     "school": "Yale University",
@@ -63,7 +65,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "academic"
   },
   {
     "school": "Princeton University",
@@ -115,7 +119,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "academic"
   },
   {
     "school": "Columbia University",
@@ -158,7 +164,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "medium",
+    "community": "academic"
   },
   {
     "school": "Brown University",
@@ -191,7 +199,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "academic"
   },
   {
     "school": "Dartmouth College",
@@ -234,7 +244,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "balanced"
   },
   {
     "school": "University of Pennsylvania",
@@ -290,7 +302,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "Cornell University",
@@ -351,7 +365,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "medium",
+    "community": "academic"
   },
   {
     "school": "Stanford University",
@@ -384,7 +400,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "MIT",
@@ -448,7 +466,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "academic"
   },
   {
     "school": "University of Chicago",
@@ -491,7 +511,9 @@
         }
       }
     },
-    "region": "midwest"
+    "region": "midwest",
+    "campusSize": "medium",
+    "community": "academic"
   },
   {
     "school": "Boston University",
@@ -546,7 +568,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "Duke University",
@@ -598,7 +622,9 @@
         }
       }
     },
-    "region": "south"
+    "region": "south",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "Northwestern University",
@@ -641,7 +667,9 @@
         }
       }
     },
-    "region": "midwest"
+    "region": "midwest",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "Johns Hopkins University",
@@ -697,7 +725,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "medium",
+    "community": "academic"
   },
   {
     "school": "Vanderbilt University",
@@ -740,7 +770,9 @@
         }
       }
     },
-    "region": "south"
+    "region": "south",
+    "campusSize": "medium",
+    "community": "social"
   },
   {
     "school": "Rice University",
@@ -783,7 +815,9 @@
         }
       }
     },
-    "region": "south"
+    "region": "south",
+    "campusSize": "medium",
+    "community": "academic"
   },
   {
     "school": "Washington University in St. Louis",
@@ -848,7 +882,9 @@
         }
       }
     },
-    "region": "midwest"
+    "region": "midwest",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "UC Berkeley",
@@ -922,7 +958,9 @@
         }
       }
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "large",
+    "community": "academic"
   },
   {
     "school": "UCLA",
@@ -986,7 +1024,9 @@
         }
       }
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "UC San Diego",
@@ -1051,7 +1091,9 @@
         }
       }
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "UC Santa Barbara",
@@ -1107,7 +1149,9 @@
         }
       }
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "UC Irvine",
@@ -1172,7 +1216,9 @@
         }
       }
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "UC Davis",
@@ -1228,7 +1274,9 @@
         }
       }
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "UC Santa Cruz",
@@ -1265,7 +1313,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "UC Riverside",
@@ -1302,7 +1352,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "UC Merced",
@@ -1339,7 +1391,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "University of Notre Dame",
@@ -1394,7 +1448,9 @@
         }
       }
     },
-    "region": "midwest"
+    "region": "midwest",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "Georgetown University",
@@ -1437,7 +1493,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "Carnegie Mellon University",
@@ -1502,7 +1560,9 @@
         }
       }
     },
-    "region": "midwest"
+    "region": "midwest",
+    "campusSize": "medium",
+    "community": "academic"
   },
   {
     "school": "Emory University",
@@ -1545,7 +1605,9 @@
         }
       }
     },
-    "region": "south"
+    "region": "south",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "USC",
@@ -1609,7 +1671,9 @@
         }
       }
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "medium",
+    "community": "social"
   },
   {
     "school": "University of Michigan",
@@ -1674,7 +1738,9 @@
         }
       }
     },
-    "region": "great_lakes"
+    "region": "great_lakes",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "NYU",
@@ -1738,7 +1804,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "Tufts University",
@@ -1781,7 +1849,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "Caltech",
@@ -1836,7 +1906,9 @@
         }
       }
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "small",
+    "community": "academic"
   },
   {
     "school": "Babson College",
@@ -1879,7 +1951,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "balanced"
   },
   {
     "school": "University of Virginia",
@@ -1935,7 +2009,9 @@
         }
       }
     },
-    "region": "south"
+    "region": "south",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "University of North Carolina at Chapel Hill",
@@ -1991,7 +2067,9 @@
         }
       }
     },
-    "region": "south"
+    "region": "south",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "University of Florida",
@@ -2043,7 +2121,9 @@
         }
       }
     },
-    "region": "south"
+    "region": "south",
+    "campusSize": "large",
+    "community": "social"
   },
   {
     "school": "University of Texas at Austin",
@@ -2107,7 +2187,9 @@
         }
       }
     },
-    "region": "south"
+    "region": "south",
+    "campusSize": "large",
+    "community": "social"
   },
   {
     "school": "Georgia Tech",
@@ -2173,7 +2255,9 @@
         }
       }
     },
-    "region": "south"
+    "region": "south",
+    "campusSize": "large",
+    "community": "academic"
   },
   {
     "school": "University of Wisconsin-Madison",
@@ -2238,7 +2322,9 @@
         }
       }
     },
-    "region": "midwest"
+    "region": "midwest",
+    "campusSize": "large",
+    "community": "social"
   },
   {
     "school": "University of Illinois Urbana-Champaign",
@@ -2303,7 +2389,9 @@
         }
       }
     },
-    "region": "midwest"
+    "region": "midwest",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "Purdue University",
@@ -2364,7 +2452,9 @@
         }
       }
     },
-    "region": "midwest"
+    "region": "midwest",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "Ohio State University",
@@ -2416,7 +2506,9 @@
         }
       }
     },
-    "region": "midwest"
+    "region": "midwest",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "University of Washington",
@@ -2471,7 +2563,9 @@
         }
       }
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "Boston College",
@@ -2514,7 +2608,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "Wake Forest University",
@@ -2547,7 +2643,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "south"
+    "region": "south",
+    "campusSize": "medium",
+    "community": "social"
   },
   {
     "school": "Northeastern University",
@@ -2608,7 +2706,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "Case Western Reserve University",
@@ -2660,7 +2760,9 @@
         }
       }
     },
-    "region": "midwest"
+    "region": "midwest",
+    "campusSize": "medium",
+    "community": "academic"
   },
   {
     "school": "University of Rochester",
@@ -2693,7 +2795,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "medium",
+    "community": "academic"
   },
   {
     "school": "Brandeis University",
@@ -2726,7 +2830,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "Lehigh University",
@@ -2759,7 +2865,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "Villanova University",
@@ -2792,7 +2900,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "Santa Clara University",
@@ -2853,7 +2963,9 @@
         }
       }
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "Williams College",
@@ -2886,7 +2998,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "academic"
   },
   {
     "school": "Claremont McKenna College",
@@ -2919,7 +3033,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "small",
+    "community": "balanced"
   },
   {
     "school": "Pomona College",
@@ -2952,7 +3068,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "small",
+    "community": "academic"
   },
   {
     "school": "Harvey Mudd College",
@@ -3004,7 +3122,9 @@
         }
       }
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "small",
+    "community": "academic"
   },
   {
     "school": "Scripps College",
@@ -3037,7 +3157,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "small",
+    "community": "balanced"
   },
   {
     "school": "Pitzer College",
@@ -3070,7 +3192,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "small",
+    "community": "balanced"
   },
   {
     "school": "Loyola Marymount University",
@@ -3103,7 +3227,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "Pepperdine University",
@@ -3136,7 +3262,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "Cal Poly San Luis Obispo",
@@ -3200,7 +3328,9 @@
         }
       }
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "Cal Poly Pomona",
@@ -3252,7 +3382,9 @@
         }
       }
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "San José State University",
@@ -3317,7 +3449,9 @@
         }
       }
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "Chapman University",
@@ -3350,7 +3484,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "Amherst College",
@@ -3383,7 +3519,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "academic"
   },
   {
     "school": "Swarthmore College",
@@ -3416,7 +3554,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "academic"
   },
   {
     "school": "Bowdoin College",
@@ -3449,7 +3589,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "balanced"
   },
   {
     "school": "Middlebury College",
@@ -3482,7 +3624,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "balanced"
   },
   {
     "school": "Wellesley College",
@@ -3515,7 +3659,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "balanced"
   },
   {
     "school": "Barnard College",
@@ -3548,7 +3694,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "balanced"
   },
   {
     "school": "Haverford College",
@@ -3581,7 +3729,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "balanced"
   },
   {
     "school": "Wesleyan University",
@@ -3614,7 +3764,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "balanced"
   },
   {
     "school": "Colgate University",
@@ -3647,7 +3799,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "balanced"
   },
   {
     "school": "Hamilton College",
@@ -3680,7 +3834,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "balanced"
   },
   {
     "school": "Davidson College",
@@ -3713,7 +3869,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "south"
+    "region": "south",
+    "campusSize": "small",
+    "community": "balanced"
   },
   {
     "school": "University of Miami",
@@ -3756,7 +3914,9 @@
         }
       }
     },
-    "region": "south"
+    "region": "south",
+    "campusSize": "medium",
+    "community": "social"
   },
   {
     "school": "Tulane University",
@@ -3789,7 +3949,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "south"
+    "region": "south",
+    "campusSize": "medium",
+    "community": "social"
   },
   {
     "school": "University of Maryland, College Park",
@@ -3855,7 +4017,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "Penn State University",
@@ -3912,7 +4076,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "large",
+    "community": "social"
   },
   {
     "school": "Texas A&M University",
@@ -3973,7 +4139,9 @@
         }
       }
     },
-    "region": "south"
+    "region": "south",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "Indiana University Bloomington",
@@ -4022,7 +4190,9 @@
         }
       }
     },
-    "region": "midwest"
+    "region": "midwest",
+    "campusSize": "large",
+    "community": "social"
   },
   {
     "school": "Michigan State University",
@@ -4059,7 +4229,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "great_lakes"
+    "region": "great_lakes",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "Rutgers University-New Brunswick",
@@ -4116,7 +4288,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "George Washington University",
@@ -4153,7 +4327,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "American University",
@@ -4189,7 +4365,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "Fordham University",
@@ -4232,7 +4410,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "Syracuse University",
@@ -4265,7 +4445,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "medium",
+    "community": "social"
   },
   {
     "school": "University of Richmond",
@@ -4298,7 +4480,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "south"
+    "region": "south",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "Bucknell University",
@@ -4331,7 +4515,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "balanced"
   },
   {
     "school": "Lafayette College",
@@ -4364,7 +4550,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "balanced"
   },
   {
     "school": "Macalester College",
@@ -4397,7 +4585,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "midwest"
+    "region": "midwest",
+    "campusSize": "small",
+    "community": "balanced"
   },
   {
     "school": "Grinnell College",
@@ -4430,7 +4620,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "midwest"
+    "region": "midwest",
+    "campusSize": "small",
+    "community": "balanced"
   },
   {
     "school": "Kenyon College",
@@ -4463,7 +4655,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "midwest"
+    "region": "midwest",
+    "campusSize": "small",
+    "community": "balanced"
   },
   {
     "school": "Bates College",
@@ -4496,7 +4690,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "balanced"
   },
   {
     "school": "Colorado College",
@@ -4529,7 +4725,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "small",
+    "community": "balanced"
   },
   {
     "school": "Reed College",
@@ -4562,7 +4760,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "small",
+    "community": "academic"
   },
   {
     "school": "Skidmore College",
@@ -4595,7 +4795,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "balanced"
   },
   {
     "school": "Trinity College",
@@ -4628,7 +4830,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "balanced"
   },
   {
     "school": "Union College",
@@ -4661,7 +4865,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "balanced"
   },
   {
     "school": "Rensselaer Polytechnic Institute",
@@ -4716,7 +4922,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "medium",
+    "community": "academic"
   },
   {
     "school": "Worcester Polytechnic Institute",
@@ -4771,7 +4979,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "medium",
+    "community": "academic"
   },
   {
     "school": "Stevens Institute of Technology",
@@ -4835,7 +5045,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "medium",
+    "community": "academic"
   },
   {
     "school": "University of Connecticut",
@@ -4868,7 +5080,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "Olin College of Engineering",
@@ -4911,7 +5125,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "small",
+    "community": "academic"
   },
   {
     "school": "Stony Brook University-SUNY",
@@ -4968,7 +5184,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "University of Minnesota,Twin Cities",
@@ -5034,7 +5252,9 @@
         }
       }
     },
-    "region": "midwest"
+    "region": "midwest",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "North Carolina State University",
@@ -5091,7 +5311,9 @@
         }
       }
     },
-    "region": "south"
+    "region": "south",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "University of Massachusetts, Amherst",
@@ -5148,7 +5370,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "Binghamton University-SUNY",
@@ -5196,7 +5420,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "University at Buffalo-SUNY",
@@ -5234,7 +5460,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "large",
+    "community": "balanced"
   },
   {
     "school": "Drexel University",
@@ -5267,7 +5495,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "Baruch College-CUNY",
@@ -5315,7 +5545,9 @@
         }
       }
     },
-    "region": "east"
+    "region": "east",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "Brigham Young University",
@@ -5351,7 +5583,9 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "medium",
+    "community": "balanced"
   },
   {
     "school": "The University of Utah",
@@ -5389,6 +5623,8 @@
       "overallPoolOnly": true,
       "segments": {}
     },
-    "region": "west"
+    "region": "west",
+    "campusSize": "large",
+    "community": "balanced"
   }
 ]

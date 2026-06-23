@@ -1,5 +1,6 @@
 import type { CampusCulturePref, FormState, SchoolRow } from "../types";
 import type { Locale } from "../i18n/strings";
+import { resolveSchoolCampusProfile } from "./schoolCampusProfile";
 
 export function campusCulturePrefLabel(pref: CampusCulturePref | "", locale: Locale): string {
   if (!pref) return "";
@@ -41,68 +42,93 @@ export function campusCulturePrefPromptLine(pref: CampusCulturePref | "", locale
     : `偏好${label}：比较同档学校时须同时写学业与社交生活，不只谈排名。`;
 }
 
-const ACADEMIC_VIBE_RE = /学术|研究|research|quiet|study|library|intellectual/i;
-const SOCIAL_VIBE_RE = /社交|派对|party|greek|athletic|体育|社团|social|weekend|city|urban|活跃/i;
-/** vibe 里明确削弱社交/派对（如「派对氛围相对有限」） */
-const SOCIAL_VIBE_NEGATION_RE =
-  /派对.{0,12}(有限|偏少|较少|不强|不活跃|相对有限|偏弱)|有限.{0,8}派对|偏学术|以学术|primarily academic|limited.{0,16}party|party.{0,16}(limited|minimal|low|relatively)|less.{0,12}social|not.{0,16}party|quiet.{0,8}campus|学术.{0,8}为主/i;
-
-function vibeReadsSocial(vibe: string): boolean {
-  if (SOCIAL_VIBE_NEGATION_RE.test(vibe)) return false;
-  return SOCIAL_VIBE_RE.test(vibe);
+function culturePrefMatchesTable(community: string, pref: CampusCulturePref): boolean {
+  if (pref === "any" || pref === "balanced") return true;
+  if (pref === "academic") return community === "academic" || community === "balanced";
+  if (pref === "social") return community === "social" || community === "balanced";
+  return community === pref;
 }
 
-function vibeReadsAcademic(vibe: string): boolean {
-  return ACADEMIC_VIBE_RE.test(vibe);
+function sizePrefMatchesTable(campusSize: string, pref: FormState["schoolSize"]): boolean {
+  if (!pref || pref === "any") return true;
+  if (pref === "medium") return true;
+  if (pref === "small") return campusSize === "small" || campusSize === "medium";
+  if (pref === "large") return campusSize === "large" || campusSize === "medium";
+  return campusSize === pref;
 }
 
-/** 客户端：对照用户偏好与该校 vibe 的一句话（不替代 LLM，作补充） */
+/** 客户端：对照用户偏好与 admit-stats 表 Size/Community */
 export function campusCultureAlignmentNote(
   form: FormState,
   row: SchoolRow,
   locale: Locale,
 ): string | null {
   const pref = form.campusCulturePref;
-  if (!pref || pref === "any") return null;
-  const vibe = (row.campus_vibe || "").trim();
-  if (!vibe) return null;
+  const sizePref = form.schoolSize;
+  if ((!pref || pref === "any") && (!sizePref || sizePref === "any")) return null;
 
-  const academicish = vibeReadsAcademic(vibe);
-  const socialish = vibeReadsSocial(vibe);
+  const profile = resolveSchoolCampusProfile(row.school);
+  if (!profile) return null;
+
+  const { campusSize, community } = profile;
+  const cultureOk = !pref || pref === "any" || culturePrefMatchesTable(community, pref);
+  const sizeOk = !sizePref || sizePref === "any" || sizePrefMatchesTable(campusSize, sizePref);
+
+  if (!sizeOk) {
+    return locale === "en"
+      ? "Campus size may not match your preference—confirm undergraduate enrollment scale."
+      : "校园规模可能与您的偏好不完全一致——建议核对本科人数与班级规模。";
+  }
+
+  if (pref === "academic" && community === "social") {
+    return locale === "en"
+      ? "Social-forward campus per our reference table—may need stronger time management vs your academic preference."
+      : "参考表标记为社交活跃校——若您偏好学术安静，需评估时间管理与专注度。";
+  }
+
+  if (pref === "social" && community === "academic") {
+    return locale === "en"
+      ? "More academic/quiet per our reference table—check whether weekend life matches what you want."
+      : "参考表偏学术安静——若您重视派对/社交氛围，该校周末生活可能不够活跃。";
+  }
 
   if (pref === "academic") {
-    if (academicish && !socialish) {
+    if (community === "academic") {
       return locale === "en"
         ? "Aligns with your academic-campus preference—confirm major intensity still fits you."
         : "与您的学术导向偏好较一致——仍建议核对专业强度是否合适。";
     }
-    if (socialish) {
+    if (community === "balanced") {
       return locale === "en"
-        ? "Socially active vibe—may need stronger time management vs your academic preference."
-        : "气质偏社交活跃——若您偏好学术安静，需评估时间管理与专注度。";
+        ? "Balanced campus profile—generally compatible with academic preference; confirm social intensity."
+        : "参考表为学业与社交平衡型——与学术偏好大体兼容；建议核对社交强度。";
     }
   }
+
   if (pref === "social") {
-    if (socialish && !academicish) {
+    if (community === "social") {
       return locale === "en"
         ? "Aligns with your social/party-friendly preference—verify clubs/Greek/city access on official pages."
         : "与您的社交/派对氛围偏好较一致——建议在官网核对社团、体育与城市社交资源。";
     }
-    if (academicish && !socialish) {
+    if (community === "balanced") {
       return locale === "en"
-        ? "More academic/quiet than your social preference—check whether weekend life and clubs match what you want."
-        : "气质偏学术安静——若您重视派对/社交氛围，该校周末生活可能不够活跃。";
-    }
-    if (academicish && socialish) {
-      return locale === "en"
-        ? "Mixed vibe (study + some social)—confirm party/weekend culture on official pages vs your social preference."
-        : "学业与社交并存，但派对氛围可能有限——若您偏好活跃社交，建议核对周末/社团资源是否足够。";
+        ? "Balanced campus profile—may fit social preference; verify Greek/weekend culture on official pages."
+        : "参考表为平衡型——可能符合社交偏好；建议在官网核对 Greek/周末文化。";
     }
   }
-  if (pref === "balanced") {
+
+  if (pref === "balanced" && community === "balanced") {
     return locale === "en"
-      ? "Check whether this school balances coursework and social life the way you want."
-      : "建议核对该校学业强度与社交生活是否达到您想要的平衡。";
+      ? "Balanced campus profile—check whether coursework and social life match what you want."
+      : "参考表为学业与社交平衡型——建议核对强度与社交资源是否符合预期。";
   }
+
+  if (!cultureOk) {
+    return locale === "en"
+      ? "Campus community vibe may not fully match your preference—verify culture on official pages."
+      : "校园社区气质可能与您的偏好不完全一致——建议在官网核对氛围。";
+  }
+
   return null;
 }
