@@ -191,9 +191,13 @@ export function AlumniReportReviewPanel({
   }, [form, hydrateFromRow, isAuthenticated, locale, profileLabel, report, reportId, reviewUpdatedAt]);
 
   const persistReview = useCallback(
-    async (status: EvalReviewDraft["status"], options?: { silent?: boolean }) => {
-      if (!draft) return false;
-      if (draft.status === "submitted" || draft.status === "approved") return false;
+    async (
+      status: EvalReviewDraft["status"],
+      options?: { silent?: boolean; draftOverride?: EvalReviewDraft },
+    ) => {
+      const reviewDraft = options?.draftOverride ?? draft;
+      if (!reviewDraft) return false;
+      if (reviewDraft.status === "submitted" || reviewDraft.status === "approved") return false;
       if (!isAuthenticated) {
         onRequestSignIn();
         return false;
@@ -204,7 +208,7 @@ export function AlumniReportReviewPanel({
       try {
         const { review } = await saveAlumniReportReview({
           id: reviewId,
-          draft: { ...draft, status: status === "submitted" ? "submitted" : "draft" },
+          draft: { ...reviewDraft, status: status === "submitted" ? "submitted" : "draft" },
           reportId,
           applicationId,
           reportSnapshot: report,
@@ -215,7 +219,7 @@ export function AlumniReportReviewPanel({
         });
         setReviewId(review.id);
         setReviewUpdatedAt(review.updatedAt);
-        const nextDraft = alumniReviewToDraft(review as Parameters<typeof alumniReviewToDraft>[0], draft);
+        const nextDraft = alumniReviewToDraft(review as Parameters<typeof alumniReviewToDraft>[0], reviewDraft);
         setDraft(nextDraft);
         lastSavedKeyRef.current = JSON.stringify(draftToReviewPayload(nextDraft));
         setSaveState("saved");
@@ -249,9 +253,9 @@ export function AlumniReportReviewPanel({
   );
 
   const triggerAutoSave = useCallback(
-    (mode: "immediate" | "debounced" = "immediate") => {
+    (mode: "immediate" | "debounced" = "immediate", draftOverride?: EvalReviewDraft) => {
       if (!isAuthenticated || reviewLocked) return;
-      const run = () => void persistReview("draft", { silent: true });
+      const run = () => void persistReview("draft", { silent: true, draftOverride });
       if (mode === "immediate") {
         if (autoSaveTimerRef.current != null) {
           window.clearTimeout(autoSaveTimerRef.current);

@@ -2,7 +2,12 @@
 
 import { REPORT_RUBRIC_VERSION } from "./evalConstants.mjs";
 import { mapEvalReview, normalizeReviewInput } from "./adminEvalReview.mjs";
-import { listAlumniReviews, upsertAlumniReview, getAlumniReviewForUser } from "./alumniReviewsStore.mjs";
+import {
+  listAlumniReviews,
+  upsertAlumniReview,
+  getAlumniReviewForUser,
+  getAlumniReviewForUserByReport,
+} from "./alumniReviewsStore.mjs";
 import { extractErrorMessage } from "./apiError.mjs";
 
 function mapAlumniReviewRow(row) {
@@ -63,8 +68,14 @@ export function registerAlumniReviewRoutes(app, { supabaseAdmin, express }) {
       const reviewId = String(req.body?.id ?? "").trim() || null;
       const expectedUpdatedAt = String(req.body?.expectedUpdatedAt ?? "").trim() || null;
 
-      if (reviewId) {
-        const existing = await getAlumniReviewForUser(ctx.admin, ctx.user.id, reviewId);
+      const existing = reviewId
+        ? await getAlumniReviewForUser(ctx.admin, ctx.user.id, reviewId)
+        : reportId
+          ? await getAlumniReviewForUserByReport(ctx.admin, ctx.user.id, reportId)
+          : null;
+      const effectiveReviewId = reviewId || existing?.id || null;
+
+      if (effectiveReviewId) {
         if (!existing) return res.status(404).json({ error: "alumni_review_not_found" });
         if (existing.status === "submitted" || existing.status === "approved") {
           return res.status(400).json({ error: "alumni_review_locked" });
@@ -86,7 +97,7 @@ export function registerAlumniReviewRoutes(app, { supabaseAdmin, express }) {
       }
 
       const { row, source } = await upsertAlumniReview(ctx.admin, ctx.user.id, {
-        reviewId,
+        reviewId: effectiveReviewId,
         reportId,
         applicationId,
         intakeTerm,
@@ -106,6 +117,12 @@ export function registerAlumniReviewRoutes(app, { supabaseAdmin, express }) {
       const msg = extractErrorMessage(e);
       if (msg === "alumni_review_conflict") {
         return res.status(409).json({ error: "alumni_review_conflict" });
+      }
+      if (msg === "alumni_review_locked") {
+        return res.status(400).json({ error: "alumni_review_locked" });
+      }
+      if (msg === "alumni_review_not_found") {
+        return res.status(404).json({ error: "alumni_review_not_found" });
       }
       res.status(500).json({ error: msg });
     }
