@@ -1,0 +1,482 @@
+.chances-page {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.chances-page__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.chances-page__panel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  background: #eef1f4;
+  overflow: hidden;
+}
+
+.chances-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1.15rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.chances-page__header > div:first-child {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.chances-page__title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.chances-page__subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.84rem;
+  color: #64748b;
+}
+
+.chances-page__close {
+  flex-shrink: 0;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.chances-page__body {
+  display: grid;
+  grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+  gap: 1rem;
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  padding: 1rem;
+  align-items: start;
+}
+
+.chances-page__sidebar,
+.chances-page__main {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.chances-card {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 6px 18px rgba(15, 23, 42, 0.05);
+  padding: 1.15rem 1.2rem;
+}
+
+.chances-card__title {
+  margin: 0 0 1rem;
+  font-size: 1.02rem;
+  font-weight: 650;
+  color: #0f172a;
+}
+
+.chances-input-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.chances-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #475569;
+}
+
+.chances-field--full {
+  grid-column: 1 / -1;
+}
+
+.chances-field input {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.58rem 0.7rem;
+  font-size: 0.95rem;
+  background: #fafafa;
+}
+
+.chances-field input:focus {
+  outline: 2px solid rgba(0, 102, 68, 0.25);
+  border-color: #006644;
+  background: #fff;
+}
+
+.chances-test-toggle {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.chances-test-toggle button {
+  flex: 1;
+  border: 1px solid #e2e8f0;
+  background: #fafafa;
+  border-radius: 10px;
+  padding: 0.5rem;
+  cursor: pointer;
+  font-size: 0.88rem;
+}
+
+.chances-test-toggle button.is-active {
+  border-color: #006644;
+  background: rgba(0, 102, 68, 0.08);
+  color: #006644;
+  font-weight: 600;
+}
+
+.chances-panel__hint {
+  margin: 0.75rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.chances-btn {
+  border: none;
+  border-radius: 10px;
+  padding: 0.72rem 1rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chances-btn--primary {
+  width: 100%;
+  margin-top: 1rem;
+  background: #006644;
+  color: #fff;
+}
+
+.chances-btn--primary:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.chances-profile-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.chances-profile-stat {
+  padding: 0.85rem 0.9rem;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #eef2f7;
+}
+
+.chances-profile-stat__label {
+  display: block;
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-bottom: 0.35rem;
+}
+
+.chances-profile-stat__value {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+.chances-profile-stat__value span {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #94a3b8;
+}
+
+.chances-school-search {
+  position: relative;
+  margin-bottom: 0.65rem;
+}
+
+.chances-school-search__icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+  display: flex;
+}
+
+.chances-school-search input {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.62rem 0.75rem 0.62rem 2.35rem;
+  font-size: 0.92rem;
+  background: #fafafa;
+}
+
+.chances-school-search__list {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  margin: 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  max-height: 220px;
+  overflow: auto;
+}
+
+.chances-school-search__list button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.chances-school-search__list button:hover {
+  background: rgba(0, 102, 68, 0.06);
+}
+
+.chances-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.chances-tags--chart {
+  margin-top: 0;
+  margin-bottom: 0.85rem;
+}
+
+.chances-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.32rem 0.6rem;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  color: #0f172a;
+  font-size: 0.78rem;
+  max-width: 100%;
+}
+
+.chances-tag__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.chances-tag button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  color: #64748b;
+}
+
+.chances-chart-shell {
+  width: 100%;
+}
+
+.chances-scatter-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.chances-scatter-tooltip {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 8px));
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  padding: 0.65rem 0.85rem;
+  max-width: min(300px, 90vw);
+}
+
+.chances-scatter-tooltip strong {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 650;
+  color: #0f172a;
+  line-height: 1.35;
+  margin-bottom: 0.2rem;
+}
+
+.chances-scatter-tooltip span {
+  display: block;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.chances-scatter__hit {
+  cursor: pointer;
+  outline: none;
+}
+
+.chances-scatter__hit:focus-visible {
+  stroke: #7c3aed;
+  stroke-width: 2;
+}
+
+.chances-scatter {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 800 / 520;
+  max-height: min(calc(100dvh - 320px), 420px);
+}
+
+.chances-scatter__plot {
+  fill: #fff;
+  stroke: #e2e8f0;
+  stroke-width: 1;
+}
+
+.chances-scatter__grid {
+  stroke: #e2e8f0;
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.chances-scatter__zone-line {
+  stroke-width: 1.5;
+  stroke-dasharray: 6 5;
+}
+
+.chances-scatter__tick {
+  fill: #64748b;
+  font-size: 10px;
+}
+
+.chances-scatter__axis-label {
+  fill: #334155;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.chances-scatter__you-score-label {
+  fill: #7c3aed;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.chances-scatter__you-ring {
+  fill: none;
+}
+
+.chances-scatter__you-ring--outer {
+  stroke: #7c3aed;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+  opacity: 0.75;
+}
+
+.chances-scatter__you-ring--mid {
+  stroke: #7c3aed;
+  stroke-width: 2;
+}
+
+.chances-scatter__you-dot {
+  fill: #7c3aed;
+}
+
+.chances-interpret {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #475569;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.chances-interpret li + li {
+  margin-top: 0.35rem;
+}
+
+.chances-tier-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.chances-tier-list__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: #475569;
+}
+
+.chances-tier-list__item i {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.chances-error {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 0.875rem;
+}
+
+.chances-disclaimer {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: #94a3b8;
+}
+
+@media (max-width: 900px) {
+  .chances-page__body {
+    grid-template-columns: 1fr;
+  }
+
+  .chances-input-grid {
+    grid-template-columns: 1fr;
+  }
+}

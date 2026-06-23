@@ -32,6 +32,7 @@ import "./components/GuidedQuestionnaire.css";
 import "./components/QuestionnaireTheme.css";
 import { FullscreenLogoMarquee } from "./components/FullscreenLogoMarquee";
 import { FullscreenResourcesHub } from "./components/FullscreenResourcesHub";
+import { ChancesPage } from "./components/chances/ChancesPage";
 import { BrandStoryOverlay } from "./components/BrandStoryOverlay";
 import { AboutUsOverlay } from "./components/AboutUsOverlay";
 import { ProductIntroPage } from "./components/ProductIntroPage";
@@ -257,8 +258,10 @@ export default function App() {
   const authReturnRef = useRef(isAuthReturnUrl());
   const applicationHubTriggerRef = useRef<HTMLButtonElement | null>(null);
   const resourcesHubTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const chancesTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [applicationHubOpen, setApplicationHubOpen] = useState(false);
   const [resourcesHubOpen, setResourcesHubOpen] = useState(false);
+  const [chancesOpen, setChancesOpen] = useState(false);
   const [brandStoryOpen, setBrandStoryOpen] = useState(false);
   const [aboutUsOpen, setAboutUsOpen] = useState(false);
   const [expertConsultModalOpen, setExpertConsultModalOpen] = useState(false);
@@ -275,12 +278,21 @@ export default function App() {
   const openResourcesHub = useCallback((e: MouseEvent<HTMLElement>) => {
     resourcesHubTriggerRef.current = e.currentTarget as HTMLButtonElement;
     setApplicationHubOpen(false);
+    setChancesOpen(false);
     setResourcesHubOpen(true);
+  }, []);
+
+  const openChances = useCallback((e: MouseEvent<HTMLElement>) => {
+    chancesTriggerRef.current = e.currentTarget as HTMLButtonElement;
+    setApplicationHubOpen(false);
+    setResourcesHubOpen(false);
+    setChancesOpen(true);
   }, []);
 
   const startQuestionnaire = useCallback((options?: { alumni?: boolean }) => {
     setApplicationHubOpen(false);
     setResourcesHubOpen(false);
+    setChancesOpen(false);
     setBrandStoryOpen(false);
     setAboutUsOpen(false);
     setAlumniFeedbackMode(Boolean(options?.alumni));
@@ -1517,6 +1529,7 @@ export default function App() {
           }
           onOpenApplicationRoadmap={openApplicationHub}
           onOpenResources={openResourcesHub}
+          onOpenChances={openChances}
         />
         <FullscreenLogoMarquee
           open={applicationHubOpen}
@@ -1531,6 +1544,13 @@ export default function App() {
           onClose={() => {
             setResourcesHubOpen(false);
             queueMicrotask(() => resourcesHubTriggerRef.current?.focus());
+          }}
+        />
+        <ChancesPage
+          open={chancesOpen}
+          onClose={() => {
+            setChancesOpen(false);
+            queueMicrotask(() => chancesTriggerRef.current?.focus());
           }}
         />
         <ExpertConsultContactModal open={expertConsultModalOpen} onClose={() => setExpertConsultModalOpen(false)} />

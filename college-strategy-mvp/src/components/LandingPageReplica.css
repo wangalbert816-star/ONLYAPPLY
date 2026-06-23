@@ -6,11 +6,42 @@
   }
 
   html[data-landing] .landing-header-nav {
-    flex: 0 0 auto;
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   html[data-landing] .landing-header-nav button {
     white-space: nowrap;
+  }
+
+  html[data-landing] .landing-header-actions {
+    justify-self: end;
+    flex-wrap: nowrap;
+  }
+
+  html[data-landing] .landing-header-actions > * {
+    flex-shrink: 0;
+  }
+
+  html[data-landing] .landing-header-actions .landing-btn--sm {
+    padding: 0.42rem 0.72rem;
+    font-size: 0.8125rem;
+  }
+
+  html[data-landing] .landing-header-actions .lang-toggle {
+    flex-shrink: 0;
+  }
+}
+
+@media (min-width: 1280px) {
+  html[data-landing] .landing-header-inner {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+}
+
+@media (min-width: 1536px) {
+  html[data-landing] .landing-header-nav {
+    gap: 1.15rem;
   }
 }
 

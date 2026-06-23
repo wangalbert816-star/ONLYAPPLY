@@ -23,6 +23,7 @@ type Props = {
   onBookExpertConsult: () => void;
   onOpenApplicationRoadmap: (e: MouseEvent<HTMLButtonElement>) => void;
   onOpenResources: (e: MouseEvent<HTMLButtonElement>) => void;
+  onOpenChances: (e: MouseEvent<HTMLButtonElement>) => void;
 };
 
 function scrollToId(id: string) {
@@ -219,6 +220,7 @@ export function LandingPageReplica({
   onBookExpertConsult,
   onOpenApplicationRoadmap,
   onOpenResources,
+  onOpenChances,
 }: Props) {
   const { t, locale } = useLanguage();
   const { onOpenAccount } = useAuthChrome();
@@ -281,24 +283,30 @@ export function LandingPageReplica({
     <div className="landing-page-replica flex min-h-dvh flex-col bg-[var(--landing-page-bg,#ecf3ea)] pb-24 text-neutral-900 antialiased">
       {/* —— Sticky nav —— */}
       <header className="sticky top-0 z-40 shrink-0 border-b border-[#006644]/12 bg-[var(--landing-page-bg,#ecf3ea)]/55 backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-[var(--landing-page-bg,#ecf3ea)]/45">
-        <div className="landing-header-inner mx-auto flex min-h-[52px] max-w-[1320px] min-w-0 items-center justify-between gap-3 px-4 py-2 lg:min-h-[60px] lg:gap-5 lg:px-12">
+        <div className="landing-header-inner mx-auto grid min-h-[52px] max-w-[1320px] min-w-0 grid-cols-[minmax(0,auto)_minmax(0,1fr)_auto] items-center gap-2 px-4 py-2 lg:min-h-[60px] lg:gap-3 lg:px-12">
           <button
             type="button"
             onClick={onOpenBrandStory}
-            className="landing-header-brand -m-1 flex min-w-0 shrink items-center rounded-md p-1 transition hover:bg-[#006644]/8 active:bg-[#006644]/12"
+            className="landing-header-brand -m-1 flex min-w-0 shrink-0 items-center rounded-md p-1 transition hover:bg-[#006644]/8 active:bg-[#006644]/12"
             aria-label="OnlyApply"
           >
             <BrandLogo className="landing-header-logo block h-9 w-auto max-w-full lg:h-10" />
           </button>
-          <nav className="landing-header-nav hidden shrink-0 items-center gap-8 text-[15px] font-medium text-neutral-600 md:flex" aria-label="Primary">
+          <nav
+            className="landing-header-nav hidden min-w-0 items-center justify-center gap-3 text-[13px] font-medium text-neutral-600 2xl:flex 2xl:gap-5 2xl:text-[14px]"
+            aria-label="Primary"
+          >
             <button type="button" className="whitespace-nowrap transition hover:text-neutral-950" onClick={onOpenAboutUs}>
               {tf("aboutUs.nav")}
             </button>
             <button type="button" className="whitespace-nowrap transition hover:text-neutral-950" onClick={() => scrollToId("landing-how-it-works")}>
               {tf("app.productIntroLink")}
             </button>
+            <button type="button" className="whitespace-nowrap transition hover:text-neutral-950" onClick={onOpenChances}>
+              {tf("landingReplica.navChances")}
+            </button>
             <button type="button" className="whitespace-nowrap transition hover:text-neutral-950" onClick={onOpenApplicationRoadmap}>
-              {tf("landingReplica.navSampleReport")}
+              {tf("landingReplica.navSampleReportShort")}
             </button>
             <button type="button" className="whitespace-nowrap transition hover:text-neutral-950" onClick={onOpenResources}>
               {tf("landingReplica.navResources")}
@@ -324,27 +332,30 @@ export function LandingPageReplica({
               </button>
             </div>
           </div>
-          <div className="landing-header-actions hidden shrink-0 items-center gap-2 md:flex sm:gap-3">
+          <div className="landing-header-actions hidden shrink-0 items-center gap-1.5 md:flex xl:gap-2">
             <LanguageToggle />
             <button
               type="button"
               onClick={onOpenAccount}
-              className="landing-btn landing-btn--secondary landing-btn--sm"
+              className="landing-btn landing-btn--secondary landing-btn--sm landing-header-actions__apps"
             >
-              {t("auth.myApplications")}
+              {tf("auth.myApplicationsShort")}
             </button>
-            <button type="button" onClick={onStart} className="landing-btn landing-btn--primary landing-btn--sm">
-              {tf("app.welcome.start")}
+            <button type="button" onClick={onStart} className="landing-btn landing-btn--primary landing-btn--sm landing-header-actions__start">
+              {tf("landingReplica.headerStart")}
             </button>
           </div>
         </div>
-        <nav className="landing-mobile-nav border-t border-neutral-100 bg-[var(--landing-page-bg,#ecf3ea)] md:hidden" aria-label="Primary mobile">
+        <nav className="landing-mobile-nav border-t border-neutral-100 bg-[var(--landing-page-bg,#ecf3ea)] 2xl:hidden" aria-label="Primary mobile">
           <div className="landing-mobile-nav__track">
             <button type="button" onClick={onOpenAboutUs}>
               {tf("aboutUs.nav")}
             </button>
             <button type="button" onClick={() => scrollToId("landing-how-it-works")}>
               {tf("app.productIntroLink")}
+            </button>
+            <button type="button" onClick={onOpenChances}>
+              {tf("landingReplica.navChances")}
             </button>
             <button type="button" onClick={onOpenApplicationRoadmap}>
               {tf("landingReplica.navSampleReport")}

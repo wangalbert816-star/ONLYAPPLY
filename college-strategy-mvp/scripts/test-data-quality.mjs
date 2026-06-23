@@ -51,6 +51,13 @@ import {
   campusProfilePrefBoost,
   schoolMatchesCommunityPref,
 } from "../server/campusProfile.mjs";
+import {
+  computeChancesAcademicScore,
+  evaluateChances,
+  normalizeChancesBody,
+  searchAdmitStatsSchools,
+  engineGapToFitScore,
+} from "../server/chances.mjs";
 
 const results = [];
 
@@ -781,6 +788,43 @@ check("campus profile: no_party dealbreaker penalizes social not balanced", () =
   const socialBoost = campusProfilePrefBoost(socialEntry, ctx);
   const balancedBoost = campusProfilePrefBoost(balancedEntry, ctx);
   if (socialBoost >= balancedBoost) throw new Error(`social=${socialBoost} balanced=${balancedBoost}`);
+});
+
+check("chances: academic score uses GPA + testing only", () => {
+  const score = computeChancesAcademicScore({ gpa: "3.7", satScore: "1500", testing: "will_submit" });
+  if (score < 60 || score > 80) throw new Error(String(score));
+});
+
+check("chances: Wisconsin match for 3.7 test-optional profile", () => {
+  const result = evaluateChances({ gpa: "3.7", testing: "test_optional" }, ["University of Wisconsin-Madison"]);
+  const wi = result.schools[0];
+  if (!wi?.inTable) throw new Error("Wisconsin not in table");
+  if (wi.tier !== "match") throw new Error(JSON.stringify(wi));
+});
+
+check("chances: Harvard reach for moderate profile", () => {
+  const result = evaluateChances({ gpa: "3.7", testing: "test_optional" }, ["Harvard University"]);
+  const hu = result.schools[0];
+  if (hu.tier !== "reach") throw new Error(JSON.stringify(hu));
+});
+
+check("chances: search returns stats-table schools only", () => {
+  const hits = searchAdmitStatsSchools("florida", 5);
+  if (!hits.some((h) => h.school.includes("Florida"))) throw new Error(JSON.stringify(hits));
+  if (hits.some((h) => /virginia tech/i.test(h.school))) throw new Error("VT not in table");
+});
+
+check("chances: fit score decreases as engine gap rises", () => {
+  const low = engineGapToFitScore(-5);
+  const high = engineGapToFitScore(15);
+  if (low <= high) throw new Error(`${low} vs ${high}`);
+});
+
+check("chances: test mode clears inactive score", () => {
+  const sat = normalizeChancesBody({ gpa: "3.7", testMode: "sat", satScore: "1400", actScore: "32" });
+  if (sat.actScore) throw new Error(JSON.stringify(sat));
+  const act = normalizeChancesBody({ gpa: "3.7", testMode: "act", satScore: "1400", actScore: "32" });
+  if (act.satScore) throw new Error(JSON.stringify(act));
 });
 
 let failed = 0;
