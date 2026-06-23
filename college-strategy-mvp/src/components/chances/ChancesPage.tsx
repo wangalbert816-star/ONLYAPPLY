@@ -10,14 +10,12 @@ import {
 } from "../../lib/chancesApi";
 import "./ChancesPage.css";
 
-const DEFAULT_SCHOOLS = [
-  "University of Florida",
-  "Harvard University",
-  "Stanford University",
-  "University of Wisconsin-Madison",
-  "Babson College",
-  "Northeastern University",
-];
+const EMPTY_INPUT: ChancesInput = {
+  gpa: "",
+  testMode: "sat",
+  satScore: "",
+  actScore: "",
+};
 
 const TIER_COLOR: Record<string, string> = {
   safety: "#22c55e",
@@ -187,7 +185,7 @@ function ChancesScatterChart({
   const zones =
     academicScore != null
       ? chartZoneBoundaries(academicScore)
-      : { safety: 62, match: 75, reach: 88 };
+      : null;
 
   const pillY = pad.top - 46;
 
@@ -259,47 +257,52 @@ function ChancesScatterChart({
         {t("chances.axisSelectivity")}
       </text>
 
-      {(
-        [
-          { key: "safety" as const, x: zones.safety },
-          { key: "match" as const, x: zones.match },
-          { key: "reach" as const, x: zones.reach },
-        ] as const
-      ).map(({ key, x }) => (
-        <line
-          key={`zone-line-${key}`}
-          x1={xScale(x)}
-          y1={pad.top}
-          x2={xScale(x)}
-          y2={pad.top + plotH}
-          className={`chances-scatter__zone-line chances-scatter__zone-line--${key}`}
-          stroke={ZONE_LINE_COLOR[key]}
-        />
-      ))}
+      {zones &&
+        (
+          [
+            { key: "safety" as const, x: zones.safety },
+            { key: "match" as const, x: zones.match },
+            { key: "reach" as const, x: zones.reach },
+          ] as const
+        ).map(({ key, x }) => (
+          <line
+            key={`zone-line-${key}`}
+            x1={xScale(x)}
+            y1={pad.top}
+            x2={xScale(x)}
+            y2={pad.top + plotH}
+            className={`chances-scatter__zone-line chances-scatter__zone-line--${key}`}
+            stroke={ZONE_LINE_COLOR[key]}
+          />
+        ))}
 
-      <ZonePill
-        x={xScale(zones.safety)}
-        y={pillY}
-        label={t("chances.tierSafetyShort")}
-        fill={ZONE_PILL.safety.fill}
-        textColor={ZONE_PILL.safety.text}
-      />
-      <ZonePill
-        x={xScale(zones.match)}
-        y={pillY}
-        label={t("chances.tierMatchShort")}
-        fill={ZONE_PILL.match.fill}
-        textColor={ZONE_PILL.match.text}
-      />
-      <ZonePill
-        x={xScale(zones.reach)}
-        y={pillY}
-        label={t("chances.tierReachShort")}
-        fill={ZONE_PILL.reach.fill}
-        textColor={ZONE_PILL.reach.text}
-      />
+      {zones && (
+        <>
+          <ZonePill
+            x={xScale(zones.safety)}
+            y={pillY}
+            label={t("chances.tierSafetyShort")}
+            fill={ZONE_PILL.safety.fill}
+            textColor={ZONE_PILL.safety.text}
+          />
+          <ZonePill
+            x={xScale(zones.match)}
+            y={pillY}
+            label={t("chances.tierMatchShort")}
+            fill={ZONE_PILL.match.fill}
+            textColor={ZONE_PILL.match.text}
+          />
+          <ZonePill
+            x={xScale(zones.reach)}
+            y={pillY}
+            label={t("chances.tierReachShort")}
+            fill={ZONE_PILL.reach.fill}
+            textColor={ZONE_PILL.reach.text}
+          />
+        </>
+      )}
 
-      {academicScore != null && (
+      {academicScore != null && zones && (
         <text
           x={xScale(zones.match)}
           y={pad.top - 6}
@@ -376,13 +379,8 @@ export function ChancesPage({ open, onClose }: Props) {
   const searchRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  const [input, setInput] = useState<ChancesInput>({
-    gpa: "3.7",
-    testMode: "sat",
-    satScore: "",
-    actScore: "",
-  });
-  const [selectedSchools, setSelectedSchools] = useState<string[]>(DEFAULT_SCHOOLS);
+  const [input, setInput] = useState<ChancesInput>(EMPTY_INPUT);
+  const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchHits, setSearchHits] = useState<{ school: string; selectivity: number | null }[]>([]);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -402,9 +400,14 @@ export function ChancesPage({ open, onClose }: Props) {
   );
 
   const runEvaluate = useCallback(async () => {
+    if (!input.gpa.trim()) {
+      setResult(null);
+      setError(t("chances.errorNeedGpa"));
+      return;
+    }
     if (!selectedSchools.length) {
       setResult(null);
-      setError(null);
+      setError(t("chances.errorNeedSchool"));
       return;
     }
     const seq = ++evaluateSeqRef.current;
@@ -430,6 +433,19 @@ export function ChancesPage({ open, onClose }: Props) {
 
   useEffect(() => {
     if (!open) return;
+    evaluateSeqRef.current += 1;
+    setInput(EMPTY_INPUT);
+    setSelectedSchools([]);
+    setSearchQuery("");
+    setSearchHits([]);
+    setSearchOpen(false);
+    setResult(null);
+    setError(null);
+    setLoading(false);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     closeRef.current?.focus();
@@ -442,14 +458,6 @@ export function ChancesPage({ open, onClose }: Props) {
       window.removeEventListener("keydown", onKey);
     };
   }, [open, onClose]);
-
-  useEffect(() => {
-    if (!open) return;
-    const timer = window.setTimeout(() => {
-      void runEvaluate();
-    }, 320);
-    return () => window.clearTimeout(timer);
-  }, [open, selectedSchools, input, runEvaluate]);
 
   useEffect(() => {
     if (!searchOpen || searchQuery.trim().length < 2) {

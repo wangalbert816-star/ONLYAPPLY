@@ -1,8 +1,33 @@
+/* Landing replica — header + mobile nav base */
+
+html[data-landing] .landing-mobile-nav__track {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  overflow-x: auto;
+  padding: 0.5rem 1rem 0.6rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+html[data-landing] .landing-mobile-nav__track::-webkit-scrollbar {
+  display: none;
+}
+
+html[data-landing] .landing-mobile-nav__track button {
+  flex: 0 0 auto;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #525252;
+  white-space: nowrap;
+}
+
 /* Landing replica — mobile-first tweaks (max-width: 767px) */
 
 @media (min-width: 768px) {
   html[data-landing] .landing-header-inner {
-    width: min(100%, 1320px);
+    width: 100%;
+    max-width: none;
   }
 
   html[data-landing] .landing-header-nav {
@@ -33,13 +58,13 @@
   }
 }
 
-@media (min-width: 1280px) {
+@media (min-width: 1024px) {
   html[data-landing] .landing-header-inner {
     grid-template-columns: auto minmax(0, 1fr) auto;
   }
 }
 
-@media (min-width: 1536px) {
+@media (min-width: 1280px) {
   html[data-landing] .landing-header-nav {
     gap: 1.15rem;
   }
@@ -161,28 +186,6 @@
   html[data-landing] .landing-mobile-nav {
     border-top-color: rgba(0, 102, 68, 0.1);
     padding: 0;
-  }
-
-  html[data-landing] .landing-mobile-nav__track {
-    display: flex;
-    align-items: center;
-    gap: 1.25rem;
-    overflow-x: auto;
-    padding: 0.5rem 1rem 0.6rem;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-
-  html[data-landing] .landing-mobile-nav__track::-webkit-scrollbar {
-    display: none;
-  }
-
-  html[data-landing] .landing-mobile-nav__track button {
-    flex: 0 0 auto;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: #525252;
-    white-space: nowrap;
   }
 
   html[data-landing] .landing-first-fold {

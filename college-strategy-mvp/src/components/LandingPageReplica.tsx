@@ -283,7 +283,7 @@ export function LandingPageReplica({
     <div className="landing-page-replica flex min-h-dvh flex-col bg-[var(--landing-page-bg,#ecf3ea)] pb-24 text-neutral-900 antialiased">
       {/* —— Sticky nav —— */}
       <header className="sticky top-0 z-40 shrink-0 border-b border-[#006644]/12 bg-[var(--landing-page-bg,#ecf3ea)]/55 backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-[var(--landing-page-bg,#ecf3ea)]/45">
-        <div className="landing-header-inner mx-auto grid min-h-[52px] max-w-[1320px] min-w-0 grid-cols-[minmax(0,auto)_minmax(0,1fr)_auto] items-center gap-2 px-4 py-2 lg:min-h-[60px] lg:gap-3 lg:px-12">
+        <div className="landing-header-inner mx-auto grid min-h-[52px] w-full min-w-0 grid-cols-[minmax(0,auto)_minmax(0,1fr)_auto] items-center gap-2 px-4 py-2 sm:px-5 lg:min-h-[56px] lg:gap-3 lg:px-6 xl:px-8">
           <button
             type="button"
             onClick={onOpenBrandStory}
@@ -293,7 +293,7 @@ export function LandingPageReplica({
             <BrandLogo className="landing-header-logo block h-9 w-auto max-w-full lg:h-10" />
           </button>
           <nav
-            className="landing-header-nav hidden min-w-0 items-center justify-center gap-3 text-[13px] font-medium text-neutral-600 2xl:flex 2xl:gap-5 2xl:text-[14px]"
+            className="landing-header-nav hidden min-w-0 flex-1 items-center justify-center gap-3 text-[13px] font-medium text-neutral-600 lg:flex xl:gap-5 xl:text-[14px]"
             aria-label="Primary"
           >
             <button type="button" className="whitespace-nowrap transition hover:text-neutral-950" onClick={onOpenAboutUs}>
@@ -346,7 +346,7 @@ export function LandingPageReplica({
             </button>
           </div>
         </div>
-        <nav className="landing-mobile-nav border-t border-neutral-100 bg-[var(--landing-page-bg,#ecf3ea)] 2xl:hidden" aria-label="Primary mobile">
+        <nav className="landing-mobile-nav border-t border-neutral-100 bg-[var(--landing-page-bg,#ecf3ea)] lg:hidden" aria-label="Primary mobile">
           <div className="landing-mobile-nav__track">
             <button type="button" onClick={onOpenAboutUs}>
               {tf("aboutUs.nav")}

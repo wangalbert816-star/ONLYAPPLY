@@ -2332,6 +2332,8 @@ merge(zhFlat, {
     chartAria: "录取概率散点图：横轴为学术分，纵轴为选择性",
     disclaimer: "仅供参考，不构成录取保证；仅基于统计表相对位置。",
     errorGeneric: "计算失败，请稍后重试。",
+    errorNeedGpa: "请先填写 GPA。",
+    errorNeedSchool: "请至少添加一所对比学校。",
   },
   landingReplica: {
     navChances: "录取概率",
@@ -4788,6 +4790,8 @@ merge(enFlat, {
     chartAria: "Chances scatter chart: academic score on X, selectivity on Y",
     disclaimer: "For reference only—not an admission guarantee; relative match within the stats table.",
     errorGeneric: "Could not calculate. Please try again.",
+    errorNeedGpa: "Enter your GPA first.",
+    errorNeedSchool: "Add at least one school to compare.",
   },
   landingReplica: {
     navChances: "Chances",
