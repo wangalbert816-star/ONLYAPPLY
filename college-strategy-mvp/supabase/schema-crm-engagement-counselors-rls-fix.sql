@@ -31,13 +31,9 @@ as $$
     );
 $$;
 
--- Link counselor Auth users by email when user_id was never set (common after Admin add).
-update public.counselors c
-set user_id = u.id
-from auth.users u
-where c.user_id is null
-  and c.email is not null
-  and lower(trim(c.email)) = lower(trim(u.email));
+-- Counselor Auth links must be created by admin provisioning or the admin-only linkAuth action.
+-- Do not backfill user_id by email here: an unbound counselor row could otherwise be claimed
+-- by any Auth account that controls the same email address.
 
 create or replace function public.crm_can_access_engagement(p_engagement_id uuid)
 returns boolean

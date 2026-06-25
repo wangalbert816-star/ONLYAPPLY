@@ -8,7 +8,8 @@ function bearerToken(req) {
 }
 
 /**
- * Resolve counselors row for logged-in auth user. Links user_id by email when missing.
+ * Resolve counselors row for logged-in auth user.
+ * Counselor Auth links are created by admin provisioning; never claim rows by email at request time.
  * @returns {Promise<{ counselor: object, linkedAuth: boolean } | null>}
  */
 export async function resolveCounselorForAuthUser(admin, user) {
@@ -24,37 +25,7 @@ export async function resolveCounselorForAuthUser(admin, user) {
     .maybeSingle();
   if (userErr) throw userErr;
   if (byUser) return { counselor: byUser, linkedAuth: true };
-
-  const email = user.email?.trim().toLowerCase();
-  if (!email) return null;
-
-  const { data: byEmailRows, error: emailErr } = await admin
-    .from("counselors")
-    .select(selectCols)
-    .ilike("email", email)
-    .eq("active", true);
-  if (emailErr) throw emailErr;
-
-  const matches = (byEmailRows ?? []).filter(
-    (r) => String(r.email ?? "").trim().toLowerCase() === email,
-  );
-  if (matches.length !== 1) return null;
-
-  const counselor = matches[0];
-  let linkedAuth = false;
-  if (!counselor.user_id) {
-    const { error: linkErr } = await admin
-      .from("counselors")
-      .update({ user_id: user.id })
-      .eq("id", counselor.id)
-      .is("user_id", null);
-    if (!linkErr) {
-      counselor.user_id = user.id;
-      linkedAuth = true;
-    }
-  }
-
-  return { counselor, linkedAuth };
+  return null;
 }
 
 export async function loadCounselorCrmSnapshot(admin, counselorId) {
