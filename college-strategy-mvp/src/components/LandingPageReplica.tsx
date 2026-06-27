@@ -339,7 +339,7 @@ export function LandingPageReplica({
               onClick={onOpenAccount}
               className="landing-btn landing-btn--secondary landing-btn--sm landing-header-actions__apps"
             >
-              {tf("auth.myApplicationsShort")}
+              {tf("auth.myApplications")}
             </button>
             <button type="button" onClick={onStart} className="landing-btn landing-btn--primary landing-btn--sm landing-header-actions__start">
               {tf("landingReplica.headerStart")}

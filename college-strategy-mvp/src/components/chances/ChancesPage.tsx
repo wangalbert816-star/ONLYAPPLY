@@ -540,20 +540,21 @@ export function ChancesPage({ open, onClose, onBookConsult }: Props) {
               {t("chances.headline")}
             </h1>
             <p className="chances-page__subtitle">{t("chances.subtitle")}</p>
-            <div className="chances-steps">
-              <span className="chances-step">
-                {t("chances.stepEnter")}
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-                  <path d="M7 5v9m0 0l-4-4m4 4l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </span>
-              <span className="chances-step">
-                {t("chances.stepSee")}
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-                  <path d="M17 5v9m0 0l-4-4m4 4l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </span>
-            </div>
+          </div>
+
+          <div className="chances-steps">
+            <span className="chances-step">
+              {t("chances.stepEnter")}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                <path d="M7 5v9m0 0l-4-4m4 4l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <span className="chances-step">
+              {t("chances.stepSee")}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                <path d="M17 5v9m0 0l-4-4m4 4l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
           </div>
 
           <div className="chances-page__grid">
