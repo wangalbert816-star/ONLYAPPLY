@@ -45,10 +45,13 @@ function chartZoneBoundaries(academicScore: number) {
   };
 }
 
+const TAG_NEUTRAL = "#cbd5e1";
+
 function tierColorForSchool(name: string, schools: ChancesSchoolResult[]): string {
   const key = chancesSchoolKey(name);
   const row = schools.find((s) => chancesSchoolKey(s.school) === key);
-  return TIER_COLOR[row?.tier ?? "match"] ?? TIER_COLOR.match;
+  if (!row?.tier) return TAG_NEUTRAL;
+  return TIER_COLOR[row.tier] ?? TAG_NEUTRAL;
 }
 
 /** Match server normalizeSchoolKey for client-side school list ↔ chart sync. */
@@ -116,6 +119,7 @@ function predictedSelectivityFromSchools(
 type Props = {
   open: boolean;
   onClose: () => void;
+  onBookConsult?: () => void;
 };
 
 function tierLabel(tier: string | undefined, t: (k: string) => string): string {
@@ -314,9 +318,10 @@ function ChancesScatterChart({
       )}
 
       {points.map((p, index) => {
-        const jitterY = (index - (points.length - 1) / 2) * 1.8;
-        const cx = xScale(p.selectivity!);
-        const cy = yScale(Math.min(100, Math.max(0, p.selectivity! + jitterY)));
+        const baseX = academicScore != null ? academicScore : p.selectivity!;
+        const jitterX = points.length > 1 ? (index - (points.length - 1) / 2) * 12 : 0;
+        const cx = Math.min(pad.left + plotW, Math.max(pad.left, xScale(baseX) + jitterX));
+        const cy = yScale(Math.min(100, Math.max(0, p.selectivity!)));
         const color = TIER_COLOR[p.tier ?? "match"] ?? TIER_COLOR.match;
         return (
           <g key={p.school} className="chances-scatter__point">
@@ -372,7 +377,7 @@ function ChancesScatterChart({
   );
 }
 
-export function ChancesPage({ open, onClose }: Props) {
+export function ChancesPage({ open, onClose, onBookConsult }: Props) {
   const { t } = useLanguage();
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -495,12 +500,17 @@ export function ChancesPage({ open, onClose }: Props) {
   const addSchool = (name: string) => {
     const label = name.trim();
     if (!label) return;
+    let rejected = false;
     setSelectedSchools((prev) => {
       const key = chancesSchoolKey(label);
       if (prev.some((s) => chancesSchoolKey(s) === key)) return prev;
-      if (prev.length >= 8) return prev;
+      if (prev.length >= 8) {
+        rejected = true;
+        return prev;
+      }
       return [...prev, label];
     });
+    setError(rejected ? t("chances.errorMaxSchools") : null);
     setSearchQuery("");
     setSearchOpen(false);
     setSearchHits([]);
@@ -518,18 +528,35 @@ export function ChancesPage({ open, onClose }: Props) {
       <div className="chances-page__backdrop" onClick={onClose} aria-hidden />
       <div className="chances-page__panel">
         <header className="chances-page__header">
-          <div>
-            <h1 id={titleId} className="chances-page__title">
-              {t("chances.title")}
-            </h1>
-            <p className="chances-page__subtitle">{t("chances.subtitle")}</p>
-          </div>
+          <span className="chances-page__eyebrow">{t("chances.title")}</span>
           <button ref={closeRef} type="button" className="chances-page__close" onClick={onClose}>
             {t("chances.close")}
           </button>
         </header>
 
         <div className="chances-page__body">
+          <div className="chances-page__intro">
+            <h1 id={titleId} className="chances-page__headline">
+              {t("chances.headline")}
+            </h1>
+            <p className="chances-page__subtitle">{t("chances.subtitle")}</p>
+            <div className="chances-steps">
+              <span className="chances-step">
+                {t("chances.stepEnter")}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                  <path d="M7 5v9m0 0l-4-4m4 4l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              <span className="chances-step">
+                {t("chances.stepSee")}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                  <path d="M17 5v9m0 0l-4-4m4 4l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+            </div>
+          </div>
+
+          <div className="chances-page__grid">
           <aside className="chances-page__sidebar">
             <section className="chances-card">
               <h2 className="chances-card__title">{t("chances.enterAcademicInfo")}</h2>
@@ -593,31 +620,49 @@ export function ChancesPage({ open, onClose }: Props) {
               </button>
             </section>
 
-            {result && (
-              <section className="chances-card">
-                <h2 className="chances-card__title">{t("chances.profileHeading")}</h2>
-                <div className="chances-profile-stats">
-                  <div className="chances-profile-stat">
-                    <span className="chances-profile-stat__label">{t("chances.academicScore")}</span>
-                    <div className="chances-profile-stat__value">
-                      {result.academicScore}
-                      <span>/100</span>
-                    </div>
-                  </div>
-                  <div className="chances-profile-stat">
-                    <span className="chances-profile-stat__label">{t("chances.predictedSelectivity")}</span>
-                    <div className="chances-profile-stat__value">
-                      {predictedSelectivity ?? "—"}
-                      <span>/100</span>
-                    </div>
+            <section className="chances-card">
+              <div className="chances-card__head">
+                <h2 className="chances-card__title chances-card__title--flush">{t("chances.profileHeading")}</h2>
+                {!result && <span className="chances-card__badge">{t("chances.profilePreviewBadge")}</span>}
+              </div>
+              <div className="chances-profile-stats">
+                <div className="chances-profile-stat">
+                  <span className="chances-profile-stat__label">{t("chances.academicScore")}</span>
+                  <div className="chances-profile-stat__value">
+                    {result ? result.academicScore : "—"}
+                    <span>/100</span>
                   </div>
                 </div>
+                <div className="chances-profile-stat">
+                  <span className="chances-profile-stat__label">{t("chances.predictedSelectivity")}</span>
+                  <div className="chances-profile-stat__value">
+                    {result ? predictedSelectivity ?? "—" : "—"}
+                    <span>/100</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {onBookConsult && (
+              <section className="chances-card chances-consult">
+                <span className="chances-consult__kicker">{t("chances.consultKicker")}</span>
+                <h2 className="chances-consult__title">{t("chances.consultHeading")}</h2>
+                <p className="chances-consult__lead">{t("chances.consultLead")}</p>
+                <ul className="chances-consult__bullets">
+                  <li>{t("chances.consultBullet1")}</li>
+                  <li>{t("chances.consultBullet2")}</li>
+                  <li>{t("chances.consultBullet3")}</li>
+                </ul>
+                <button type="button" className="chances-btn chances-btn--consult" onClick={onBookConsult}>
+                  {t("chances.consultCta")}
+                </button>
               </section>
             )}
           </aside>
 
           <main className="chances-page__main">
             <section className="chances-card">
+              <h2 className="chances-card__title">{t("chances.findHeading")}</h2>
               <div className="chances-school-search" ref={searchContainerRef}>
                 <span className="chances-school-search__icon" aria-hidden>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -652,7 +697,9 @@ export function ChancesPage({ open, onClose }: Props) {
               </div>
 
               {selectedSchools.length > 0 && (
-                <div className="chances-tags chances-tags--chart">
+                <div className="chances-selected">
+                  <span className="chances-selected__label">{t("chances.selectedLabel")}</span>
+                  <div className="chances-tags chances-tags--chart">
                   {selectedSchools.map((name) => (
                     <span key={chancesSchoolKey(name) || name} className="chances-tag">
                       <i
@@ -666,6 +713,7 @@ export function ChancesPage({ open, onClose }: Props) {
                       </button>
                     </span>
                   ))}
+                  </div>
                 </div>
               )}
 
@@ -706,6 +754,7 @@ export function ChancesPage({ open, onClose }: Props) {
               </div>
             </section>
           </main>
+          </div>
         </div>
       </div>
     </div>,

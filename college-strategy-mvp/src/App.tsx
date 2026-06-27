@@ -1552,6 +1552,13 @@ export default function App() {
             setChancesOpen(false);
             queueMicrotask(() => chancesTriggerRef.current?.focus());
           }}
+          onBookConsult={() =>
+            requestExpertConsult({
+              email: user?.email ?? undefined,
+              source: "chances",
+              onFallback: () => setExpertConsultModalOpen(true),
+            })
+          }
         />
         <ExpertConsultContactModal open={expertConsultModalOpen} onClose={() => setExpertConsultModalOpen(false)} />
         <AlumniAccessModal
