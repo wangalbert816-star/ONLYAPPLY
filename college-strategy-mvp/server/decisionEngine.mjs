@@ -31,6 +31,7 @@ import {
   listSchoolMajorCatalog,
   schoolMatchesCatalogEntry,
 } from "./engineTierRules.mjs";
+import { schoolNameLookupVariants } from "./schoolNameResolve.mjs";
 import { schoolMatchesForbidden } from "./topReferenceSchools.mjs";
 
 function decisionEngineEnabled() {
@@ -55,6 +56,33 @@ function aiGapFillEnabled() {
 
 function catalogEntryForSchoolName(name, catalog) {
   return catalog.find((e) => schoolMatchesCatalogEntry(name, e)) ?? null;
+}
+
+function normalizeReportSchoolKey(name) {
+  return String(name || "")
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function reportSchoolKeys(name) {
+  return [
+    normalizeReportSchoolKey(name),
+    ...schoolNameLookupVariants(name).map((variant) => normalizeReportSchoolKey(variant)),
+  ].filter(Boolean);
+}
+
+function buildExistingReportSchoolRowMap(rows) {
+  const out = new Map();
+  for (const row of rows) {
+    if (!row || typeof row !== "object") continue;
+    for (const key of reportSchoolKeys(row.school)) {
+      if (!out.has(key)) out.set(key, row);
+    }
+  }
+  return out;
 }
 
 /** Benchmark 9-school list or stored profile conflicts user preferences → reference only, never copy plan. */
@@ -528,8 +556,23 @@ export function mergeDecisionSchoolsIntoReport(parsed, decision, locale = "zh") 
     const whyKey =
       tier === "reach" ? "why_reach_for_you" : tier === "match" ? "why_match_for_you" : "why_safety_for_you";
     const existing = Array.isArray(parsed[tier]) ? parsed[tier] : [];
+    const existingBySchool = buildExistingReportSchoolRowMap(existing);
+    const usedExisting = new Set();
     parsed[tier] = approved.map((row, i) => {
-      const prev = existing[i] && typeof existing[i] === "object" ? existing[i] : {};
+      const fallback = existing[i] && typeof existing[i] === "object" ? existing[i] : null;
+      let prev = null;
+      for (const key of reportSchoolKeys(row.school)) {
+        const match = existingBySchool.get(key);
+        if (match && !usedExisting.has(match)) {
+          prev = match;
+          break;
+        }
+      }
+      if (!prev && fallback && !usedExisting.has(fallback) && !String(fallback.school ?? "").trim()) {
+        prev = fallback;
+      }
+      if (prev) usedExisting.add(prev);
+      prev = prev ?? {};
       const note = String(row.note ?? "").trim();
       const whyFromLlm = String(prev[whyKey] ?? "").trim();
       return {
