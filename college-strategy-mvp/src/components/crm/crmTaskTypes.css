@@ -42,8 +42,8 @@
 }
 
 .crm-task--report {
-  --crm-task-accent: #2563eb;
-  --crm-task-bg: rgba(37, 99, 235, 0.1);
+  --crm-task-accent: #006644;
+  --crm-task-bg: rgba(0, 102, 68, 0.1);
 }
 
 .crm-task--none.is-done,
@@ -88,8 +88,8 @@
 }
 
 .crm-task-type-badge--report {
-  --crm-task-accent: #1d4ed8;
-  --crm-task-bg: rgba(37, 99, 235, 0.14);
+  --crm-task-accent: #006644;
+  --crm-task-bg: rgba(0, 102, 68, 0.14);
 }
 
 .account-service__task-list li.crm-task--none,
@@ -145,7 +145,7 @@
 .counselor-task-card__check input[type="checkbox"]:focus-visible,
 .student-task-card__check input[type="checkbox"]:focus-visible,
 .account-service__task-check input[type="checkbox"]:focus-visible {
-  outline: 2px solid rgba(37, 99, 235, 0.45);
+  outline: 2px solid rgba(0, 102, 68, 0.45);
   outline-offset: 2px;
 }
 

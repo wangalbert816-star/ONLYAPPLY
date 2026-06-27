@@ -17,6 +17,10 @@
   --account-pad-x: clamp(1rem, 3vw, 2rem);
   --account-shell-max: min(68rem, calc(100vw - 2 * var(--account-pad-x)));
   --account-top-chrome: var(--app-top-chrome-h, clamp(4.25rem, 9vh, 5.25rem));
+  /* 统一为品牌绿，避免主按钮残留蓝色 */
+  --color-primary: #006644;
+  --color-primary-hover: #005538;
+  --color-primary-pressed: #004a30;
   box-sizing: border-box;
   width: 100%;
   max-width: var(--account-shell-max);

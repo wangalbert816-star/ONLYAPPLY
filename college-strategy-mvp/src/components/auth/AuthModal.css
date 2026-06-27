@@ -53,7 +53,7 @@
   background: none;
   font-size: 0.82rem;
   font-weight: 600;
-  color: #2563eb;
+  color: #006644;
   text-align: left;
   text-decoration: underline;
   text-underline-offset: 0.15em;
@@ -61,7 +61,7 @@
 }
 
 .auth-modal__app-links:hover {
-  color: #1d4ed8;
+  color: #005538;
 }
 
 .auth-modal__success {

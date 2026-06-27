@@ -44,13 +44,13 @@
 }
 
 .account-hero {
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 22px;
+  border: 1px solid #e6e8eb;
+  border-radius: 18px;
   padding: 1.15rem 1.2rem 1.2rem;
-  background:
-    radial-gradient(circle at top left, rgba(59, 130, 246, 0.1), transparent 28rem),
-    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.06);
+  background: #ffffff;
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.04),
+    0 10px 30px rgba(16, 24, 40, 0.04);
 }
 
 .account-hero__head {
@@ -67,7 +67,7 @@
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #2563eb;
+  color: #64748b;
 }
 
 .account-hero h2 {
@@ -87,8 +87,8 @@
 .account-hero__badge {
   border-radius: 999px;
   padding: 0.35rem 0.6rem;
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: #006644;
+  color: #ffffff;
   font-size: 0.72rem;
   font-weight: 800;
   white-space: nowrap;
@@ -150,7 +150,7 @@
 .account-hero__next {
   margin: 0;
   padding-left: 0.75rem;
-  border-left: 3px solid #93c5fd;
+  border-left: 3px solid #a7d7c5;
   color: #334155;
   font-size: 0.82rem;
   line-height: 1.55;
@@ -281,7 +281,7 @@
   font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #2563eb;
+  color: #64748b;
 }
 
 .account-home__lead {
@@ -303,7 +303,7 @@
 }
 
 .account-home__new {
-  box-shadow: 0 16px 35px rgba(37, 99, 235, 0.18);
+  box-shadow: 0 16px 35px rgba(0, 102, 68, 0.18);
 }
 
 .account-home__err {
@@ -318,13 +318,13 @@
 }
 
 .account-status-card {
-  border: 1px solid rgba(37, 99, 235, 0.18);
-  border-radius: 22px;
+  border: 1px solid #e6e8eb;
+  border-radius: 18px;
   padding: 1.1rem;
-  background:
-    radial-gradient(circle at top left, rgba(59, 130, 246, 0.14), transparent 32rem),
-    linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
-  box-shadow: 0 20px 55px rgba(15, 23, 42, 0.08);
+  background: #ffffff;
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.04),
+    0 10px 30px rgba(16, 24, 40, 0.04);
 }
 
 .account-status-card__head {
@@ -339,7 +339,7 @@
   margin: 0 0 0.25rem;
   font-size: 0.78rem;
   font-weight: 800;
-  color: #2563eb;
+  color: #64748b;
 }
 
 .account-status-card h2 {
@@ -358,8 +358,8 @@
 .account-status-card__badge {
   border-radius: 999px;
   padding: 0.35rem 0.6rem;
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: #006644;
+  color: #ffffff;
   font-size: 0.72rem;
   font-weight: 800;
   white-space: nowrap;
@@ -402,7 +402,7 @@
 .account-status-card__next {
   margin: 0.85rem 0 0;
   padding-left: 0.8rem;
-  border-left: 3px solid #93c5fd;
+  border-left: 3px solid #a7d7c5;
   color: #334155;
   font-size: 0.84rem;
   line-height: 1.6;
@@ -417,7 +417,7 @@
 .account-info-evidence summary {
   width: fit-content;
   cursor: pointer;
-  color: #2563eb;
+  color: #006644;
   font-size: 0.8rem;
   font-weight: 800;
   list-style: none;
@@ -471,8 +471,8 @@
 
 .account-info-grid--editable:hover .account-info-grid__item,
 .account-info-grid--editable:focus-visible .account-info-grid__item {
-  border-color: rgba(37, 99, 235, 0.38);
-  background: rgba(239, 246, 255, 0.92);
+  border-color: rgba(0, 102, 68, 0.38);
+  background: rgba(231, 243, 238, 0.92);
   transform: translateY(-1px);
 }
 
@@ -492,10 +492,10 @@
 
 .account-info-edit {
   margin-top: 0.7rem;
-  border: 1px solid rgba(37, 99, 235, 0.22);
+  border: 1px solid rgba(0, 102, 68, 0.22);
   border-radius: 999px;
-  background: rgba(37, 99, 235, 0.07);
-  color: #2563eb;
+  background: rgba(0, 102, 68, 0.07);
+  color: #006644;
   cursor: pointer;
   font: inherit;
   font-size: 0.76rem;
@@ -505,9 +505,9 @@
 
 .account-profile-editor {
   margin-top: 0.75rem;
-  border: 1px solid rgba(37, 99, 235, 0.14);
+  border: 1px solid #eceef0;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.68);
+  background: #ffffff;
   padding: 0.8rem;
 }
 
@@ -572,7 +572,7 @@
 
 .account-profile-editor__notice {
   margin: 0.7rem 0 0;
-  color: #2563eb;
+  color: #006644;
   font-size: 0.78rem;
   font-weight: 750;
   line-height: 1.45;
@@ -605,13 +605,13 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  border: 1px solid rgba(37, 99, 235, 0.16);
-  border-radius: 22px;
+  border: 1px solid #e6e8eb;
+  border-radius: 18px;
   padding: 1rem;
-  background:
-    radial-gradient(circle at top right, rgba(37, 99, 235, 0.1), transparent 24rem),
-    linear-gradient(135deg, #fff 0%, #f8fbff 100%);
-  box-shadow: 0 18px 45px rgba(30, 64, 175, 0.06);
+  background: #ffffff;
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.04),
+    0 10px 30px rgba(16, 24, 40, 0.04);
 }
 
 .account-activity-card__head {
@@ -624,7 +624,7 @@
 
 .account-activity-card__kicker {
   margin: 0 0 0.2rem;
-  color: #2563eb;
+  color: #64748b;
   font-size: 0.74rem;
   font-weight: 900;
   letter-spacing: 0.1em;
@@ -649,8 +649,8 @@
   flex: 0 0 auto;
   border-radius: 999px;
   padding: 0.32rem 0.58rem;
-  background: rgba(37, 99, 235, 0.1);
-  color: #1d4ed8;
+  background: #e7f3ee;
+  color: #006644;
   font-size: 0.7rem;
   font-weight: 850;
 }
@@ -674,7 +674,7 @@
 }
 
 .account-activity-preview__item.activity-card--even {
-  border-left: 5px solid #1d4ed8;
+  border-left: 5px solid #15803d;
 }
 
 .account-activity-item {
@@ -788,7 +788,7 @@
 
 .account-activity-card__notice {
   margin: 0.7rem 0 0;
-  color: #2563eb;
+  color: #006644;
   font-size: 0.78rem;
   font-weight: 750;
   line-height: 1.45;
@@ -1285,7 +1285,7 @@
 .account-history-toggle {
   border: none;
   background: transparent;
-  color: #2563eb;
+  color: #006644;
   font-weight: 800;
   font-size: 0.78rem;
   cursor: pointer;
@@ -1385,8 +1385,8 @@
 }
 
 .account-list__more[open] summary {
-  border-color: #bfdbfe;
-  color: #2563eb;
+  border-color: #a7d7c5;
+  color: #006644;
 }
 
 .account-list__more > button {
@@ -1427,12 +1427,12 @@
 }
 
 .account-report-row:hover {
-  border-color: #93c5fd;
-  background: #eff6ff;
+  border-color: #a7d7c5;
+  background: #f0f7f3;
 }
 
 .account-report-row__cta {
-  color: #2563eb;
+  color: #006644;
   font-weight: 600;
   white-space: nowrap;
 }

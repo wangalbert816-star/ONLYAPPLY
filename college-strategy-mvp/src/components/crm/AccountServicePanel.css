@@ -1,11 +1,11 @@
 .account-service {
-  border: 1px solid rgba(59, 130, 246, 0.22);
-  border-radius: 22px;
+  border: 1px solid #e6e8eb;
+  border-radius: 18px;
   padding: 1.15rem 1.2rem 1.25rem;
-  background:
-    radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 24rem),
-    linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.06);
+  background: #ffffff;
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.04),
+    0 10px 30px rgba(16, 24, 40, 0.04);
 }
 
 .account-service__head {
@@ -35,7 +35,7 @@
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #2563eb;
+  color: #64748b;
 }
 
 .account-service h2 {
@@ -47,8 +47,8 @@
 .account-service__phase {
   border-radius: 999px;
   padding: 0.35rem 0.65rem;
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: #e7f3ee;
+  color: #006644;
   font-size: 0.72rem;
   font-weight: 800;
   white-space: nowrap;
@@ -64,9 +64,9 @@
 .account-service__counselor,
 .account-service__tasks,
 .account-service__updates {
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid #eceef0;
+  border-radius: 14px;
+  background: #ffffff;
   padding: 0.95rem 1rem;
 }
 
@@ -76,7 +76,7 @@
   border-radius: 999px;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  background: linear-gradient(135deg, #06845a, #006644);
   color: #fff;
   font-weight: 800;
   margin-bottom: 0.55rem;
@@ -217,7 +217,7 @@
   border: 0;
   background: none;
   padding: 0;
-  color: #2563eb;
+  color: #006644;
   font: inherit;
   font-weight: 700;
   cursor: pointer;
@@ -233,7 +233,7 @@
 }
 
 .account-service__event--counselor {
-  border-left-color: #2563eb;
+  border-left-color: #006644;
 }
 
 .account-service__event--student {

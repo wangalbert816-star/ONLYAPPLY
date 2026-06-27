@@ -3,11 +3,11 @@
   flex-direction: column;
   flex: 1;
   min-width: 0;
-  border: 1px solid rgba(37, 99, 235, 0.2);
+  border: 1px solid rgba(0, 102, 68, 0.2);
   border-radius: 22px;
   background:
-    radial-gradient(circle at top left, rgba(59, 130, 246, 0.14), transparent 18rem),
-    linear-gradient(165deg, #ffffff 0%, #f0f7ff 55%, #f8fafc 100%);
+    radial-gradient(circle at top left, rgba(0, 102, 68, 0.12), transparent 18rem),
+    linear-gradient(165deg, #ffffff 0%, #eef6f1 55%, #f8fafc 100%);
   box-shadow: 0 16px 42px rgba(15, 23, 42, 0.07);
   padding: 1.05rem 1.1rem 1.15rem;
 }
@@ -29,7 +29,7 @@
 }
 
 .account-expert-panel--embedded .account-expert-panel__cta {
-  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+  box-shadow: 0 10px 24px rgba(0, 102, 68, 0.18);
 }
 
 .account-expert-panel__kicker {
@@ -38,7 +38,7 @@
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #2563eb;
+  color: #006644;
 }
 
 .account-expert-panel__title,
@@ -81,7 +81,7 @@
 
 .account-expert-panel__cta {
   width: 100%;
-  box-shadow: 0 14px 32px rgba(37, 99, 235, 0.22);
+  box-shadow: 0 14px 32px rgba(0, 102, 68, 0.22);
 }
 
 .account-expert-panel__email {
@@ -92,7 +92,7 @@
 }
 
 .account-expert-panel__email a {
-  color: #2563eb;
+  color: #006644;
   font-weight: 650;
   word-break: break-all;
 }
@@ -117,7 +117,7 @@
   width: 3.25rem;
   height: 3.25rem;
   border-radius: 999px;
-  background: linear-gradient(135deg, #2563eb 0%, #60a5fa 100%);
+  background: linear-gradient(135deg, #006644 0%, #4fae8c 100%);
   color: #fff;
   font-size: 1rem;
   font-weight: 800;
@@ -129,7 +129,7 @@
   margin: 0 0 0.45rem;
   font-size: 0.78rem;
   font-weight: 700;
-  color: #2563eb;
+  color: #006644;
 }
 
 .account-expert-panel__tags {
@@ -144,11 +144,11 @@
 .account-expert-panel__tags li {
   padding: 0.2rem 0.5rem;
   border-radius: 999px;
-  background: rgba(37, 99, 235, 0.08);
-  border: 1px solid rgba(37, 99, 235, 0.18);
+  background: rgba(0, 102, 68, 0.08);
+  border: 1px solid rgba(0, 102, 68, 0.18);
   font-size: 0.68rem;
   font-weight: 700;
-  color: #1d4ed8;
+  color: #006644;
 }
 
 .account-expert-panel__contact-list {
@@ -168,7 +168,7 @@
 }
 
 .account-expert-panel__contact-link {
-  color: #2563eb;
+  color: #006644;
   font-weight: 650;
   text-decoration: none;
 }

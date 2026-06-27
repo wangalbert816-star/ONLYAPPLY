@@ -27,12 +27,12 @@
 }
 
 .account-snapshot-radar__area {
-  fill: rgba(37, 99, 235, 0.14);
+  fill: rgba(0, 102, 68, 0.13);
 }
 
 .account-snapshot-radar__stroke {
   fill: none;
-  stroke: #2563eb;
+  stroke: #006644;
   stroke-width: 2;
   stroke-linejoin: round;
 }
@@ -44,7 +44,7 @@
 }
 
 .account-snapshot-radar__node {
-  fill: #2563eb;
+  fill: #006644;
   stroke: #fff;
   stroke-width: 1.5;
 }
