@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import express from "express";
+import { createServer } from "node:http";
+import { registerAlumniReviewRoutes } from "../server/alumniReviews.mjs";
 import { upsertAlumniReview } from "../server/alumniReviewsStore.mjs";
 
 const userId = "00000000-0000-4000-8000-000000000001";
@@ -78,5 +81,48 @@ await assert.rejects(
 assert.equal(admin.insertedRows.length, 1);
 assert.equal(admin.insertedRows[0].report_id, reportId);
 assert.equal(admin.insertedRows[0].application_id, null);
+
+async function withTestServer(handler) {
+  const app = express();
+  registerAlumniReviewRoutes(app, {
+    express,
+    supabaseAdmin: () => ({
+      auth: {
+        getUser: async (token) => ({
+          data: { user: token === "test-token" ? { id: userId, email: "alumni@example.com" } : null },
+          error: token === "test-token" ? null : new Error("bad token"),
+        }),
+      },
+      from() {
+        throw new Error("store should not be reached when reportId is missing");
+      },
+    }),
+  });
+
+  const server = createServer(app);
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  try {
+    const address = server.address();
+    assert(address && typeof address === "object");
+    await handler(`http://127.0.0.1:${address.port}`);
+  } finally {
+    await new Promise((resolve, reject) => {
+      server.close((err) => (err ? reject(err) : resolve()));
+    });
+  }
+}
+
+await withTestServer(async (baseUrl) => {
+  const res = await fetch(`${baseUrl}/api/alumni/report-reviews`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer test-token",
+    },
+    body: JSON.stringify(reviewInput({ reportId: null })),
+  });
+  assert.equal(res.status, 400);
+  assert.deepEqual(await res.json(), { error: "alumni_review_report_required" });
+});
 
 console.log("alumni review store regression tests passed");
