@@ -2340,7 +2340,7 @@ merge(zhFlat, {
     interpretZoneSafety: "绿色虚线（左侧）：Safety 区域，通常对应更稳妥的选择。",
     interpretZoneMatch: "中间虚线：你的学术分位置，对应 Match 标签。",
     interpretZoneReach: "红色虚线（右侧）：Reach 区域，对应更具挑战性的学校。",
-    interpretYou: "靶心标记：你在图中的位置；彩色圆点为所选学校，按选择性高低分布。",
+    interpretYou: "靶心标记：你在图中的位置；彩色圆点按分档（Safety/Match/Reach）落在对应竖线附近，纵轴为各校选择性。",
     categoriesHeading: "学校分档说明",
     chartAria: "录取概率散点图：横轴为学术分，纵轴为选择性",
     disclaimer: "仅供参考，不构成录取保证；仅基于统计表相对位置。",
@@ -2348,6 +2348,7 @@ merge(zhFlat, {
     errorNeedGpa: "请先填写 GPA。",
     errorNeedSchool: "请至少添加一所对比学校。",
     errorMaxSchools: "最多可对比 8 所学校。",
+    warnNotInTable: "以下学校不在统计表内，未纳入图表",
   },
   landingReplica: {
     navChances: "录取概率",
@@ -4812,7 +4813,7 @@ merge(enFlat, {
     interpretZoneSafety: "Green dashed line (left): Safety zone—typically safer options.",
     interpretZoneMatch: "Center dashed line: your academic score, marked with the Match label.",
     interpretZoneReach: "Red dashed line (right): Reach zone—more competitive schools.",
-    interpretYou: "Target marker: your position; colored dots are selected schools, spread by selectivity.",
+    interpretYou: "Target marker: your position; colored dots sit near their tier line (Safety/Match/Reach); Y-axis is each school's selectivity.",
     categoriesHeading: "College selectivity categories",
     chartAria: "Chances scatter chart: academic score on X, selectivity on Y",
     disclaimer: "For reference only—not an admission guarantee; relative match within the stats table.",
@@ -4820,6 +4821,7 @@ merge(enFlat, {
     errorNeedGpa: "Enter your GPA first.",
     errorNeedSchool: "Add at least one school to compare.",
     errorMaxSchools: "You can compare up to 8 schools.",
+    warnNotInTable: "Not in our stats table (excluded from chart)",
   },
   landingReplica: {
     navChances: "Chances",

@@ -35,11 +35,31 @@ export function normalizeChancesBody(raw) {
   };
 }
 
-/** Option A: weighted GPA + testing only (0–100). */
+/** Parse a clean numeric GPA (e.g. "3.95", "3.95 UW", "4/4.0") to a number. */
+function parsePlainGpa(raw) {
+  const m = String(raw ?? "").trim().match(/\d(?:\.\d{1,3})?/);
+  if (!m) return null;
+  const n = Number(m[0]);
+  return Number.isFinite(n) && n > 0 && n <= 5.5 ? n : null;
+}
+
+/** Map a GPA value to the same 34–94 academic band used for verified transcripts. */
+function academicScoreFromGpaValue(gpaNum) {
+  const ratio = Math.min(1, Math.max(0, (gpaNum - 2.4) / (4.0 - 2.4)));
+  return Math.round(Math.min(94, Math.max(34, 34 + ratio * 60)));
+}
+
+/** Option A: GPA + testing only (0–100). */
 export function computeChancesAcademicScore(body) {
   const normalized = normalizeChancesBody(body);
   const scores = scoreFiveDimensions(normalized);
-  const blend = scores.academic * 0.55 + scores.testing * 0.45;
+  // Chances collects a clean numeric GPA, so score academics by GPA value.
+  // The free-text path scores how richly the GPA is *described* (rank/AP/UW keywords),
+  // which badly understates a bare number like "3.95" — and disagrees with the
+  // tier engine, which already reads the numeric GPA.
+  const gpaNum = parsePlainGpa(body?.gpa ?? body?.uwGpa ?? normalized.gpa);
+  const academic = gpaNum != null ? academicScoreFromGpaValue(gpaNum) : scores.academic;
+  const blend = academic * 0.55 + scores.testing * 0.45;
   return Math.round(blend * 10) / 10;
 }
 

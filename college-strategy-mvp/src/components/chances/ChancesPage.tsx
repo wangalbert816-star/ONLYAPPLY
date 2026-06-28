@@ -317,10 +317,23 @@ function ChancesScatterChart({
         </text>
       )}
 
-      {points.map((p, index) => {
-        const baseX = academicScore != null ? academicScore : p.selectivity!;
-        const jitterX = points.length > 1 ? (index - (points.length - 1) / 2) * 12 : 0;
-        const cx = Math.min(pad.left + plotW, Math.max(pad.left, xScale(baseX) + jitterX));
+      {points.map((p) => {
+        // X follows effective tier (same source as dot color). engineGap can differ after
+        // prestige/safety caps (e.g. UC Berkeley safety with gap≈6).
+        const tierKey = p.tier ?? "match";
+        const tierBase =
+          zones && tierKey in zones
+            ? zones[tierKey as keyof typeof zones]
+            : academicScore != null
+              ? academicScore
+              : p.selectivity!;
+        const sameTierIdx = points.filter((x) => (x.tier ?? "match") === tierKey).indexOf(p);
+        const sameTierCount = points.filter((x) => (x.tier ?? "match") === tierKey).length;
+        const jitterX = sameTierCount > 1 ? (sameTierIdx - (sameTierCount - 1) / 2) * 8 : 0;
+        const cx = Math.min(
+          pad.left + plotW,
+          Math.max(pad.left, xScale(Math.min(100, Math.max(0, tierBase))) + jitterX),
+        );
         const cy = yScale(Math.min(100, Math.max(0, p.selectivity!)));
         const color = TIER_COLOR[p.tier ?? "match"] ?? TIER_COLOR.match;
         return (
@@ -393,6 +406,7 @@ export function ChancesPage({ open, onClose, onBookConsult }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ChancesEvaluateResponse | null>(null);
   const evaluateSeqRef = useRef(0);
+  const prevInputRef = useRef(`${EMPTY_INPUT.gpa}|${EMPTY_INPUT.testMode}|${EMPTY_INPUT.satScore}|${EMPTY_INPUT.actScore}`);
 
   const chartSchools = useMemo(
     () => chartSchoolsForSelection(selectedSchools, result?.schools),
@@ -402,6 +416,11 @@ export function ChancesPage({ open, onClose, onBookConsult }: Props) {
   const predictedSelectivity = useMemo(
     () => predictedSelectivityFromSchools(chartSchools, result?.academicScore),
     [chartSchools, result?.academicScore],
+  );
+
+  const schoolsNotInTable = useMemo(
+    () => (result?.schools ?? []).filter((s) => !s.inTable).map((s) => s.school),
+    [result?.schools],
   );
 
   const runEvaluate = useCallback(async () => {
@@ -447,7 +466,16 @@ export function ChancesPage({ open, onClose, onBookConsult }: Props) {
     setResult(null);
     setError(null);
     setLoading(false);
+    prevInputRef.current = `${EMPTY_INPUT.gpa}|${EMPTY_INPUT.testMode}|${EMPTY_INPUT.satScore}|${EMPTY_INPUT.actScore}`;
   }, [open]);
+
+  const inputFingerprint = `${input.gpa}|${input.testMode}|${input.satScore}|${input.actScore}`;
+
+  useEffect(() => {
+    if (prevInputRef.current === inputFingerprint) return;
+    prevInputRef.current = inputFingerprint;
+    setResult(null);
+  }, [inputFingerprint]);
 
   useEffect(() => {
     if (!open) return;
@@ -719,6 +747,12 @@ export function ChancesPage({ open, onClose, onBookConsult }: Props) {
               )}
 
               {error && <p className="chances-error">{error}</p>}
+
+              {schoolsNotInTable.length > 0 && (
+                <p className="chances-warn" role="status">
+                  {t("chances.warnNotInTable")}: {schoolsNotInTable.join(", ")}
+                </p>
+              )}
 
               <div className="chances-chart-shell">
                 <ChancesScatterChart

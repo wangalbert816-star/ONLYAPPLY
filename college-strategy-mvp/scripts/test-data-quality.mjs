@@ -790,9 +790,12 @@ check("campus profile: no_party dealbreaker penalizes social not balanced", () =
   if (socialBoost >= balancedBoost) throw new Error(`social=${socialBoost} balanced=${balancedBoost}`);
 });
 
-check("chances: academic score uses GPA + testing only", () => {
+check("chances: academic score uses GPA value + testing only", () => {
   const score = computeChancesAcademicScore({ gpa: "3.7", satScore: "1500", testing: "will_submit" });
-  if (score < 60 || score > 80) throw new Error(String(score));
+  if (score < 78 || score > 92) throw new Error(String(score));
+  // A near-perfect profile should land high, not mid-pack.
+  const elite = computeChancesAcademicScore({ gpa: "3.95", satScore: "1550", testing: "will_submit" });
+  if (elite < 88) throw new Error(`elite=${elite}`);
 });
 
 check("chances: Wisconsin match for 3.7 test-optional profile", () => {

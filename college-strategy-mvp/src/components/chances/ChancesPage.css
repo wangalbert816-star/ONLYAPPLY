@@ -600,6 +600,13 @@
   font-size: 0.875rem;
 }
 
+.chances-warn {
+  margin: 0;
+  color: #854d0e;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
 .chances-disclaimer {
   margin: 0.5rem 0 0;
   font-size: 0.75rem;
