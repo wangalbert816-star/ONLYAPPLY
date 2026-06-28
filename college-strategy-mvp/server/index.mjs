@@ -90,6 +90,21 @@ const LLM_MAX_RETRIES = Number(process.env.LLM_MAX_RETRIES ?? 0);
 /** 0 = 不传 max_tokens，由模型默认；报告 JSON 较大，默认给足输出避免截断 */
 const COMPLETION_MAX_TOKENS = Number(process.env.COMPLETION_MAX_TOKENS ?? 16384);
 
+/** Don't start an LLM call with less than this much budget left. */
+const MIN_LLM_CALL_MS = 3_000;
+/**
+ * Total wall-clock budget for one /api/report request. A report can chain several
+ * LLM calls (decision-engine fill + main generation + one validation retry);
+ * bounding the SUM keeps the request under the serverless function ceiling
+ * (Vercel) and returns a controlled 502 instead of a hard kill / hung socket.
+ */
+const REPORT_WALL_MS = (() => {
+  const configured = Number(process.env.REPORT_WALL_MS || 0);
+  if (configured > 0) return configured;
+  if (process.env.VERCEL && VERCEL_LLM_WALL_MS > 0) return VERCEL_LLM_WALL_MS;
+  return LLM_TIMEOUT_MS;
+})();
+
 const app = express();
 const IS_PROD = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL);
 app.use(cors({ origin: true }));
@@ -1547,7 +1562,7 @@ function validateSchoolUniqueness(parsed) {
   return validateMainSchoolReport(parsed, {});
 }
 
-async function generateReportWithConfig(cfg, body) {
+async function generateReportWithConfig(cfg, body, deadlineMs) {
   const locale = resolveReportLocale(body);
   const planHorizon = getIntakeHorizon(String(body?.intakeTerm || ""));
   const includeUc = wantsUcFromBody(body);
@@ -1558,6 +1573,7 @@ async function generateReportWithConfig(cfg, body) {
         logTag: "api/report/decision-fill",
         maxTokens: 1200,
         messages,
+        deadlineMs,
       }),
   });
   let userContent = buildUserPayload(body, includeUc);
@@ -1583,6 +1599,7 @@ async function generateReportWithConfig(cfg, body) {
       logTag: "api/report",
       maxTokens,
       messages,
+      deadlineMs,
     });
     totalMs += llmMs;
     if (decision.ok) mergeDecisionSchoolsIntoReport(parsed, decision, locale);
@@ -1739,26 +1756,7 @@ function llmConfigsToTryForOnlyApply() {
   return out.length > 0 ? out : base;
 }
 
-function withWallClockTimeout(promise, ms, label) {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      const err = new Error(`${label} 超过 ${ms}ms`);
-      err.code = "timeout";
-      reject(err);
-    }, ms);
-    promise
-      .then((value) => {
-        clearTimeout(timer);
-        resolve(value);
-      })
-      .catch((err) => {
-        clearTimeout(timer);
-        reject(err);
-      });
-  });
-}
-
-async function callLlmJsonOnce(client, { model, provider, messages, maxTokens }) {
+async function callLlmJsonOnce(client, { model, provider, messages, maxTokens, timeoutMs }) {
   const requestBody = { model, temperature: 0.35, messages };
   const ollamaJsonOff = (process.env.OLLAMA_JSON_FORMAT || "").toLowerCase() === "0";
   if (provider !== "ollama" || !ollamaJsonOff) {
@@ -1768,7 +1766,10 @@ async function callLlmJsonOnce(client, { model, provider, messages, maxTokens })
     requestBody.max_tokens = maxTokens;
   }
 
-  const completion = await client.chat.completions.create(requestBody);
+  // Per-request timeout overrides the client default and aborts the underlying
+  // fetch on expiry, so a slow upstream releases its socket instead of leaking.
+  const requestOptions = timeoutMs && timeoutMs > 0 ? { timeout: timeoutMs } : undefined;
+  const completion = await client.chat.completions.create(requestBody, requestOptions);
   const choice = completion.choices[0];
   const finishReason = choice?.finish_reason;
   const messageContent = choice?.message?.content;
@@ -1788,7 +1789,7 @@ async function callLlmJsonOnce(client, { model, provider, messages, maxTokens })
   }
 }
 
-async function generateLlmJsonWithConfig(cfg, { messages, maxTokens, logTag }) {
+async function generateLlmJsonWithConfig(cfg, { messages, maxTokens, logTag, deadlineMs }) {
   const { key, baseURL, model, region, provider } = cfg;
   const client = new OpenAI({
     apiKey: key,
@@ -1802,16 +1803,24 @@ async function generateLlmJsonWithConfig(cfg, { messages, maxTokens, logTag }) {
   let effectiveMaxTokens = maxTokens;
   let lastErr;
   for (let attempt = 0; attempt < parseAttempts; attempt++) {
+    // Bound this call by whichever is smaller: the per-call ceiling or the time
+    // left in the shared request budget. When the budget is exhausted we fail
+    // fast with a controlled timeout instead of risking a serverless hard-kill.
+    const remaining = deadlineMs ? deadlineMs - Date.now() : LLM_TIMEOUT_MS;
+    if (deadlineMs && remaining <= MIN_LLM_CALL_MS) {
+      const err = new Error(`${logTag} 请求预算耗尽（剩余 ${Math.max(0, remaining)}ms）`);
+      err.code = "timeout";
+      throw lastErr ?? err;
+    }
+    const callTimeoutMs = Math.max(MIN_LLM_CALL_MS, Math.min(LLM_TIMEOUT_MS, remaining));
     try {
-      const llmCall = callLlmJsonOnce(client, {
+      const parsed = await callLlmJsonOnce(client, {
         model,
         provider,
         messages,
         maxTokens: effectiveMaxTokens,
+        timeoutMs: callTimeoutMs,
       });
-      const parsed = process.env.VERCEL
-        ? await withWallClockTimeout(llmCall, VERCEL_LLM_WALL_MS, logTag)
-        : await llmCall;
       return { parsed, llmMs: Date.now() - t0, region, provider, model };
     } catch (e) {
       lastErr = e;
@@ -1923,12 +1932,15 @@ app.post("/api/report", async (req, res) => {
 
   const body = req.body || {};
   let lastErr = null;
+  // Shared budget across the decision-fill + main + retry calls AND any provider
+  // fallbacks for this single request, so the whole handler stays bounded.
+  const deadlineMs = Date.now() + REPORT_WALL_MS;
 
   for (let i = 0; i < configs.length; i++) {
     const cfg = configs[i];
     const { key, baseURL, model, isArk, region, provider } = cfg;
     try {
-      const { parsed, llmMs } = await generateReportWithConfig(cfg, body);
+      const { parsed, llmMs } = await generateReportWithConfig(cfg, body, deadlineMs);
       console.log(`[api/report] llm_ms=${llmMs} model=${model} provider=${provider}`);
 
       const de = parsed.decision_engine;
@@ -1989,10 +2001,11 @@ async function generateReportForAdmin(body) {
     throw new Error(configs.error);
   }
   let lastErr = null;
+  const deadlineMs = Date.now() + REPORT_WALL_MS;
   for (let i = 0; i < configs.length; i++) {
     const cfg = configs[i];
     try {
-      const { parsed, llmMs } = await generateReportWithConfig(cfg, body);
+      const { parsed, llmMs } = await generateReportWithConfig(cfg, body, deadlineMs);
       return {
         report: finalizeReportPayload(parsed, body),
         llmMs,
