@@ -14,7 +14,13 @@ function loadSchools() {
     schoolsCache = [];
     return schoolsCache;
   }
-  schoolsCache = JSON.parse(readFileSync(dataPath, "utf8"));
+  try {
+    const parsed = JSON.parse(readFileSync(dataPath, "utf8"));
+    schoolsCache = Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.error("[usHighSchools] failed to parse us-high-schools.json:", e instanceof Error ? e.message : e);
+    schoolsCache = [];
+  }
   return schoolsCache;
 }
 

@@ -94,6 +94,42 @@ const app = express();
 const IS_PROD = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL);
 app.use(cors({ origin: true }));
 
+/**
+ * Last-resort process guards so a single bad async path cannot take the whole
+ * server down. We log loudly but keep serving; an unhandled rejection in one
+ * request must not crash unrelated in-flight requests.
+ */
+if (!globalThis.__onlyapplyProcessGuards) {
+  globalThis.__onlyapplyProcessGuards = true;
+  process.on("unhandledRejection", (reason) => {
+    console.error("[process] unhandledRejection:", reason instanceof Error ? reason.stack || reason.message : reason);
+  });
+  process.on("uncaughtException", (err) => {
+    console.error("[process] uncaughtException:", err instanceof Error ? err.stack || err.message : err);
+  });
+}
+
+/**
+ * Auto-wrap async route handlers so a rejected promise becomes `next(err)` and
+ * is handled by the global error middleware instead of hanging the request or
+ * surfacing as an unhandledRejection (Express 4 does not do this automatically).
+ * Installed before any routes are registered so it also covers handlers added
+ * by the imported register*Routes() helpers.
+ */
+for (const method of ["get", "post", "put", "patch", "delete", "all"]) {
+  const original = app[method].bind(app);
+  app[method] = (path, ...handlers) => {
+    const wrapped = handlers.map((h) =>
+      typeof h === "function" && h.length < 4
+        ? function wrappedAsyncHandler(req, res, next) {
+            return Promise.resolve(h(req, res, next)).catch(next);
+          }
+        : h,
+    );
+    return original(path, ...wrapped);
+  };
+}
+
 function resolveSiteUrl() {
   let siteUrl = (process.env.SITE_URL || "").trim().replace(/\/$/, "");
   if (siteUrl && !/^https?:\/\//i.test(siteUrl)) {
@@ -352,7 +388,13 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
 
 registerAlumniReviewRoutes(app, { supabaseAdmin, express });
 
-app.use(express.json({ limit: "4mb" }));
+/**
+ * Global JSON limit. This parser runs first, so the larger route-level limits on
+ * transcript/activities uploads (base64 PDFs/images) never took effect before —
+ * raise the global limit to match that intent. Override with JSON_BODY_LIMIT.
+ */
+const JSON_BODY_LIMIT = (process.env.JSON_BODY_LIMIT || "12mb").trim();
+app.use(express.json({ limit: JSON_BODY_LIMIT }));
 
 app.post("/api/stripe/create-checkout-session", async (req, res) => {
   if (!stripeReadyForCheckout()) {
@@ -2523,6 +2565,28 @@ if (shouldServeDist && fs.existsSync(path.join(distDir, "index.html"))) {
   console.log(`[static] serving ${distDir}`);
 }
 
+/**
+ * Global error-handling middleware (must be registered last). Catches sync throws,
+ * malformed-JSON parse errors, and the `next(err)` produced by the async-handler
+ * wrapper above, returning a controlled JSON response instead of hanging or
+ * leaking internals. Registered before app.listen and before `export default app`
+ * so both local and Vercel paths are covered.
+ */
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  const status =
+    err && typeof err === "object" && Number.isInteger(err.status)
+      ? err.status
+      : err && err.type === "entity.too.large"
+        ? 413
+        : err && (err.type === "entity.parse.failed" || err instanceof SyntaxError)
+          ? 400
+          : 500;
+  const msg = err instanceof Error ? err.message : String(err);
+  console.error(`[error] ${req.method} ${req.originalUrl} -> ${status}:`, err instanceof Error ? err.stack || msg : msg);
+  res.status(status).json({ error: IS_PROD ? "server_error" : msg });
+});
+
 const port = Number(process.env.PORT || 8787);
 
 if (!process.env.VERCEL) {
@@ -2550,7 +2614,8 @@ if (!process.env.VERCEL) {
       );
       process.exit(1);
     }
-    throw err;
+    console.error(`[API] 启动监听失败 (port ${port}):`, err instanceof Error ? err.stack || err.message : err);
+    process.exit(1);
   });
 }
 
