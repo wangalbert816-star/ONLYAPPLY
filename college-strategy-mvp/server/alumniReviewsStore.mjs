@@ -66,6 +66,10 @@ async function upsertAlumniReviewSupabase(admin, userId, input) {
   const applicationId = isUuid(input.applicationId) ? input.applicationId : null;
   const expectedUpdatedAt = input.expectedUpdatedAt ?? null;
 
+  if (!reviewId && !reportId) {
+    throw new Error("alumni_review_report_required");
+  }
+
   if (reviewId && expectedUpdatedAt) {
     const current = await getAlumniReviewForUser(admin, userId, reviewId);
     if (!current) throw new Error("alumni_review_not_found");
@@ -152,19 +156,18 @@ export async function upsertAlumniReview(admin, userId, input) {
   const reviewId = String(input.reviewId ?? "").trim() || null;
   const reportId = input.reportId ?? null;
 
+  if (!reviewId && !reportId) {
+    throw new Error("alumni_review_report_required");
+  }
+
   if (admin) {
     try {
       return await upsertAlumniReviewSupabase(admin, userId, input);
     } catch (e) {
       if (isTableMissingError(e)) {
         /* fall through to file store */
-      } else if (isForeignKeyError(e) && !input._retryNoFk && (reportId || input.applicationId)) {
-        return upsertAlumniReview(admin, userId, {
-          ...input,
-          reportId: null,
-          applicationId: null,
-          _retryNoFk: true,
-        });
+      } else if (isForeignKeyError(e)) {
+        throw new Error("alumni_review_report_link_invalid");
       } else {
         throw e;
       }

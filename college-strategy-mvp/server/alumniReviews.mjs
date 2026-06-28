@@ -54,8 +54,8 @@ export function registerAlumniReviewRoutes(app, { supabaseAdmin, express }) {
       const ctx = await requireAuthedUser(req, res, supabaseAdmin);
       if (!ctx) return;
 
-      const reportId = String(req.body?.reportId ?? "").trim() || null;
-      const applicationId = String(req.body?.applicationId ?? "").trim() || null;
+      let reportId = String(req.body?.reportId ?? "").trim() || null;
+      let applicationId = String(req.body?.applicationId ?? "").trim() || null;
       let reportSnapshot = req.body?.reportSnapshot;
       let formSnapshot = req.body?.formSnapshot;
       const intakeTerm = String(req.body?.intakeTerm ?? "").trim() || null;
@@ -69,14 +69,27 @@ export function registerAlumniReviewRoutes(app, { supabaseAdmin, express }) {
         if (existing.status === "submitted" || existing.status === "approved") {
           return res.status(400).json({ error: "alumni_review_locked" });
         }
+        if (reportId && existing.report_id && reportId !== existing.report_id) {
+          return res.status(400).json({ error: "alumni_review_report_mismatch" });
+        }
+        reportId = existing.report_id ?? reportId;
+        applicationId = existing.application_id ?? applicationId;
+        if (!reportId) {
+          return res.status(400).json({ error: "alumni_review_report_required" });
+        }
         if (!reportSnapshot || typeof reportSnapshot !== "object") {
           reportSnapshot = existing.report_snapshot ?? {};
         }
         if (!formSnapshot || typeof formSnapshot !== "object") {
           formSnapshot = existing.form_snapshot ?? {};
         }
-      } else if (!reportSnapshot || typeof reportSnapshot !== "object") {
-        return res.status(400).json({ error: "alumni_report_snapshot_required" });
+      } else {
+        if (!reportId) {
+          return res.status(400).json({ error: "alumni_review_report_required" });
+        }
+        if (!reportSnapshot || typeof reportSnapshot !== "object") {
+          return res.status(400).json({ error: "alumni_report_snapshot_required" });
+        }
       }
 
       const normalized = normalizeReviewInput(req.body ?? {}, ctx.user.email ?? ctx.user.id);
@@ -106,6 +119,13 @@ export function registerAlumniReviewRoutes(app, { supabaseAdmin, express }) {
       const msg = extractErrorMessage(e);
       if (msg === "alumni_review_conflict") {
         return res.status(409).json({ error: "alumni_review_conflict" });
+      }
+      if (
+        msg === "alumni_review_report_required" ||
+        msg === "alumni_review_report_mismatch" ||
+        msg === "alumni_review_report_link_invalid"
+      ) {
+        return res.status(400).json({ error: msg });
       }
       res.status(500).json({ error: msg });
     }
