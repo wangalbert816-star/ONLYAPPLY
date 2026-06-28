@@ -167,6 +167,21 @@ export async function initCrmForUser(userId: string, role: CrmRole): Promise<Crm
   return crmBackend;
 }
 
+/**
+ * Tear down CRM background work (5s poll interval, visibility listener, Supabase
+ * realtime subscription) and reset module state. Without this, the sync started
+ * at login keeps running for the rest of the session even after sign-out.
+ */
+export function resetCrmForUser(): void {
+  stopCrmRemoteSync();
+  crmInitPromise = null;
+  crmUserId = null;
+  crmRole = null;
+  crmActingCounselorId = null;
+  memoryCache = null;
+  crmBackend = "local";
+}
+
 export function getCrmBackend(): CrmBackend {
   return crmBackend;
 }
@@ -219,7 +234,12 @@ function readStore(): CrmStoreSnapshot {
 }
 
 function writeStore(snapshot: CrmStoreSnapshot) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+  } catch (e) {
+    // QuotaExceededError / disabled storage must not crash a CRM mutation.
+    console.error("[crm] writeStore failed:", e instanceof Error ? e.message : e);
+  }
 }
 
 function emptyStore(): CrmStoreSnapshot {

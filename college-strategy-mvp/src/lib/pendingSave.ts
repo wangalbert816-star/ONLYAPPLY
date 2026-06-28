@@ -1,5 +1,6 @@
 import type { Locale } from "../i18n/strings";
 import type { FormState, ReportPayload, SupplementaryNote } from "../types";
+import { normalizeFormState } from "./formState";
 
 const KEY = "college_strategy_pending_save_v1";
 const MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7;
@@ -34,7 +35,9 @@ export function readPendingSave(): PendingSavePayload | null {
       clearPendingSave();
       return null;
     }
-    return parsed;
+    // Normalize the restored form so a corrupt/partial draft (e.g. geoPrefs: null)
+    // cannot crash report/account/wizard rendering downstream.
+    return { ...parsed, form: normalizeFormState(parsed.form) };
   } catch {
     return null;
   }

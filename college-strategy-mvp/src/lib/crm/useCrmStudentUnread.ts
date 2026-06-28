@@ -3,6 +3,7 @@ import {
   countUnreadCounselorMessagesForStudent,
   initCrmForUser,
   isSignedServiceEnabled,
+  resetCrmForUser,
   subscribeCrmStore,
 } from "./store";
 
@@ -15,6 +16,8 @@ export function useCrmStudentUnread(userId: string | undefined): number {
   useEffect(() => {
     if (!userId || !isSignedServiceEnabled()) return;
     void initCrmForUser(userId, "student");
+    // Stop the poll/realtime sync when the user signs out or this unmounts.
+    return () => resetCrmForUser();
   }, [userId]);
 
   return useMemo(

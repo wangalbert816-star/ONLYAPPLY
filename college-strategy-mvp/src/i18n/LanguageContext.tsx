@@ -17,8 +17,13 @@ const LanguageContext = createContext<LanguageContextValue | null>(null);
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(() => {
     if (typeof window === "undefined") return "zh";
-    const s = localStorage.getItem(STORAGE_KEY);
-    return s === "en" ? "en" : "zh";
+    try {
+      const s = localStorage.getItem(STORAGE_KEY);
+      return s === "en" ? "en" : "zh";
+    } catch {
+      // localStorage can throw (Safari private mode, blocked cookies); never crash boot.
+      return "zh";
+    }
   });
 
   const setLocale = (l: Locale) => {

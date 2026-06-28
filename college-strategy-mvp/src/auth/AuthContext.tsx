@@ -40,19 +40,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true;
 
     const syncSession = async () => {
-      const { data } = await sb.auth.getSession();
-      if (!mounted) return;
-      setSession((prev) => {
-        const next = data.session;
-        if (prev?.access_token === next?.access_token && prev?.user?.id === next?.user?.id) return prev;
-        return next;
-      });
-      setUser((prev) => {
-        const next = data.session?.user ?? null;
-        if (prev?.id === next?.id && prev?.email === next?.email) return prev;
-        return next;
-      });
-      setLoading(false);
+      try {
+        const { data } = await sb.auth.getSession();
+        if (!mounted) return;
+        setSession((prev) => {
+          const next = data.session;
+          if (prev?.access_token === next?.access_token && prev?.user?.id === next?.user?.id) return prev;
+          return next;
+        });
+        setUser((prev) => {
+          const next = data.session?.user ?? null;
+          if (prev?.id === next?.id && prev?.email === next?.email) return prev;
+          return next;
+        });
+      } catch (e) {
+        // Never leave the app stuck on the loading screen if getSession rejects.
+        if (import.meta.env.DEV) console.warn("[auth] getSession failed:", e);
+      } finally {
+        if (mounted) setLoading(false);
+      }
     };
 
     void syncSession();

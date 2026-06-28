@@ -60,7 +60,7 @@ export function SchoolTierPanel({
             locale={locale}
             form={form}
             unlocked={unlocked}
-            highlighted={highlightSchoolKeys.has(row.school.trim().toLowerCase())}
+            highlighted={highlightSchoolKeys.has(String(row.school ?? "").trim().toLowerCase())}
             blurred={!unlocked && i >= lockedSchoolRows}
           />
         ))}

@@ -5,7 +5,7 @@ import { transcriptSheetCoversGpaField } from "./lib/transcriptSheet";
 import { buildReportApiBody } from "./lib/reportApiBody";
 import { collectHighlightKeys, compareReports, reportDiffIsEmpty } from "./lib/reportDiff";
 import { REPORT_CONTENT_LOCALE } from "./lib/reportContentLocale";
-import { apiUrl } from "./lib/apiBase";
+import { apiUrl, fetchWithTimeout } from "./lib/apiBase";
 import { readApiJson } from "./lib/parseApiResponse";
 import { clearUnlockStorage, readUnlockFromStorage, ReportView, writeUnlockToStorage } from "./ReportView";
 import { FormLiveSummary, type GuideTouch } from "./components/GuidedQuestionnaire";
@@ -960,7 +960,7 @@ export default function App() {
     const t0 = performance.now();
     try {
       const existingNotes = mergeSupplementaryNotes(answeredGapSupplementaryRef.current, profileFiveSupplementaryRef.current);
-      const res = await fetch(apiUrl("/api/report"), {
+      const res = await fetchWithTimeout(apiUrl("/api/report"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildReportApiBody(form, existingNotes.length > 0 ? existingNotes : undefined, locale)),
@@ -1168,7 +1168,7 @@ export default function App() {
     answeredGapSupplementaryRef.current = mergeSupplementaryNotes(answeredGapSupplementaryRef.current, gapNotes);
     const merged = mergeSupplementaryNotes(answeredGapSupplementaryRef.current, profileFiveSupplementaryRef.current);
     try {
-      const res = await fetch(apiUrl("/api/report"), {
+      const res = await fetchWithTimeout(apiUrl("/api/report"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildReportApiBody(form, merged.length > 0 ? merged : undefined, locale)),
