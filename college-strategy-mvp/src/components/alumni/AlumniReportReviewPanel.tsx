@@ -122,6 +122,13 @@ export function AlumniReportReviewPanel({
       if (code === "alumni_review_conflict") return t("alumni.review.errConflict");
       if (code === "alumni_review_locked") return t("alumni.review.errLocked");
       if (code === "alumni_review_status_invalid") return t("alumni.review.errStatusInvalid");
+      if (
+        code === "alumni_review_report_required" ||
+        code === "alumni_review_report_mismatch" ||
+        code === "alumni_review_report_link_invalid"
+      ) {
+        return t("alumni.review.errReportRequired");
+      }
       if (code === "alumni_review_table_missing") return t("alumni.review.errTableMissing");
       if (code === "auth_required" || code === "invalid_session") return t("alumni.review.errAuthRequired");
       if (code === "alumni_report_snapshot_required") return t("alumni.review.errSnapshotRequired");
@@ -198,6 +205,13 @@ export function AlumniReportReviewPanel({
         onRequestSignIn();
         return false;
       }
+      if (!reviewId && !reportId) {
+        if (!options?.silent) {
+          setPanelError(t("alumni.review.errReportRequired"));
+          setSaveState("error");
+        }
+        return false;
+      }
       setSaving(true);
       setSaveState("saving");
       if (!options?.silent) setPanelError(null);
@@ -245,7 +259,7 @@ export function AlumniReportReviewPanel({
         setSaving(false);
       }
     },
-    [applicationId, draft, form, formatSaveError, hydrateFromRow, isAuthenticated, locale, onRequestSignIn, profileLabel, report, reportId, reviewId, reviewUpdatedAt],
+    [applicationId, draft, form, formatSaveError, hydrateFromRow, isAuthenticated, locale, onRequestSignIn, profileLabel, report, reportId, reviewId, reviewUpdatedAt, t],
   );
 
   const triggerAutoSave = useCallback(
@@ -281,6 +295,7 @@ export function AlumniReportReviewPanel({
   const evalCase = shimEvalCase(form, report, locale, title);
   const run = shimRun();
   const result = shimResult(report);
+  const waitingForReportLink = isAuthenticated && !reviewId && !reportId;
 
   return (
     <section className="alumni-review-panel" aria-labelledby="alumni-review-title">
@@ -304,11 +319,16 @@ export function AlumniReportReviewPanel({
       ) : null}
 
       {panelError ? <p className="alumni-review-panel__error">{panelError}</p> : null}
+      {waitingForReportLink ? (
+        <p className="alumni-review-panel__error" role="status">
+          {t("alumni.review.waitingForReportSave")}
+        </p>
+      ) : null}
 
       <div className="alumni-review-panel__form admin-portal">
         <AdminEvalReviewForm
           variant="alumni"
-          readOnly={reviewLocked}
+          readOnly={reviewLocked || waitingForReportLink}
           evalCase={evalCase}
           run={run}
           result={result}
