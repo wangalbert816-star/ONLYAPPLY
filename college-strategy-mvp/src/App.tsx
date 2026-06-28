@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import type { FormState, ReportDiff, ReportPayload, SupplementaryNote } from "./types";
 import { getEffectiveIntake } from "./lib/intakeTerm";
 import { transcriptSheetCoversGpaField } from "./lib/transcriptSheet";
@@ -42,15 +42,14 @@ import { requestExpertConsult } from "./lib/expertConsultBooking";
 import { useLanguage } from "./i18n/LanguageContext";
 import { useAuth } from "./auth/AuthContext";
 import { AuthModal } from "./components/auth/AuthModal";
-import { AccountHome } from "./components/auth/AccountHome";
 import { CounselorPortal } from "./components/crm/CounselorPortal";
 import { SignedServiceHub } from "./components/crm/SignedServiceHub";
-import { AdminPortal } from "./components/admin/AdminPortal";
 import { AlumniFeedbackView } from "./components/alumni/AlumniFeedbackView";
 import { AlumniAccessModal } from "./components/alumni/AlumniAccessModal";
 import { grantAlumniAccess, hasAlumniAccess } from "./lib/alumniAccess";
 import { AuthChromeProvider } from "./auth/AuthChromeContext";
 import { AppTopChrome } from "./components/AppTopChrome";
+import { AppErrorBoundary } from "./components/AppErrorBoundary";
 import { LegalLinks } from "./components/LegalLinks";
 import { saveUserSession, fetchUnlockedApplicationIds, redeemInviteCode, getApplicationReports } from "./lib/supabase/accounts";
 import { getCounselor, getEngagementForApplication, isSignedServiceEnabled } from "./lib/crm/store";
@@ -63,6 +62,35 @@ import { clearPendingSave, readPendingSave, writePendingSave } from "./lib/pendi
 import { isStripeCheckoutEnabled } from "./lib/stripeCheckout";
 import { isInviteCodesEnabled } from "./lib/inviteCodes";
 import "./App.css";
+
+/**
+ * Route-isolated, heavy views are code-split so they don't bloat the initial
+ * bundle. AdminPortal in particular pulls the entire admin/eval/CRM-console
+ * subtree, which normal users never load.
+ */
+const AdminPortal = lazy(() =>
+  import("./components/admin/AdminPortal").then((m) => ({ default: m.AdminPortal })),
+);
+const AccountHome = lazy(() =>
+  import("./components/auth/AccountHome").then((m) => ({ default: m.AccountHome })),
+);
+
+function RouteFallback() {
+  return <div className="route-suspense-fallback" aria-busy="true" />;
+}
+
+/**
+ * Wraps a code-split view in its own error boundary + Suspense so a crash or
+ * failed chunk load in a heavy subtree (admin/account) is isolated and
+ * recoverable instead of white-screening the whole app.
+ */
+function LazyRoute({ children }: { children: ReactNode }) {
+  return (
+    <AppErrorBoundary>
+      <Suspense fallback={<RouteFallback />}>{children}</Suspense>
+    </AppErrorBoundary>
+  );
+}
 
 const initialForm: FormState = emptyFormState();
 
@@ -1273,19 +1301,22 @@ export default function App() {
 
   if (view === "admin") {
     return (
-      <AdminPortal
-        onBack={() => {
-          window.location.hash = "";
-          if (user) setView("account");
-          else setView("form");
-        }}
-      />
+      <LazyRoute>
+        <AdminPortal
+          onBack={() => {
+            window.location.hash = "";
+            if (user) setView("account");
+            else setView("form");
+          }}
+        />
+      </LazyRoute>
     );
   }
 
   if (view === "account" && user) {
     return withChrome(
       <>
+        <LazyRoute>
         <AccountHome
           unlockedApplicationIds={unlockedApplicationIds}
           onOpenAppLinks={openApplicationHub}
@@ -1357,6 +1388,7 @@ export default function App() {
             queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
           }}
         />
+        </LazyRoute>
         <FullscreenLogoMarquee
           open={applicationHubOpen}
           onClose={() => {

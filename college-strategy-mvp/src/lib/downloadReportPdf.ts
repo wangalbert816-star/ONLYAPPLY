@@ -1,5 +1,3 @@
-import html2pdf from "html2pdf.js";
-
 function sanitizeFilenamePart(s: string): string {
   return s.replace(/[/\\?%*:|"<>]/g, "-").replace(/\s+/g, "-").slice(0, 48) || "report";
 }
@@ -104,6 +102,9 @@ export async function downloadReportPdf(source: HTMLElement, filename: string): 
         ],
       },
     };
+    // Lazy-load html2pdf.js (and its html2canvas/jsPDF deps) only when the user
+    // actually exports a PDF, keeping it out of the initial bundle.
+    const { default: html2pdf } = await import("html2pdf.js");
     await html2pdf().set(opts as never).from(clone).save();
   } finally {
     host.remove();

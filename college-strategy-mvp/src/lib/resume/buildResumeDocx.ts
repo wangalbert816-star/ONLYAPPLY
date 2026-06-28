@@ -1,5 +1,4 @@
-import Docxtemplater from "docxtemplater";
-import PizZip from "pizzip";
+import type PizZip from "pizzip";
 import type { ResumeFormData } from "./types";
 import { resumeFormToTemplateData } from "./resumeForm";
 
@@ -107,8 +106,14 @@ async function loadTemplate(): Promise<ArrayBuffer> {
 
 export async function generateResumeDocx(form: ResumeFormData): Promise<Blob> {
   const template = await loadTemplate();
-  const zip = prepareTemplateZip(new PizZip(template));
-  const doc = new Docxtemplater(zip, {
+  // Lazy-load docxtemplater + pizzip only when the user generates a resume,
+  // keeping these heavy libraries out of the initial bundle.
+  const [{ default: PizZipImpl }, { default: DocxtemplaterImpl }] = await Promise.all([
+    import("pizzip"),
+    import("docxtemplater"),
+  ]);
+  const zip = prepareTemplateZip(new PizZipImpl(template));
+  const doc = new DocxtemplaterImpl(zip, {
     delimiters: { start: "[", end: "]" },
     paragraphLoop: true,
     linebreaks: true,

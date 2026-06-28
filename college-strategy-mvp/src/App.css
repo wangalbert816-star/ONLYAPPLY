@@ -1752,3 +1752,8 @@ th {
   margin: 0 auto;
   padding: 0 1rem 3rem;
 }
+
+/* Fallback shown while a code-split route view (admin/account) is loading. */
+.route-suspense-fallback {
+  min-height: 60vh;
+}
