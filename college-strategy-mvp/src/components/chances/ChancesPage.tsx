@@ -172,8 +172,8 @@ function ChancesScatterChart({
   const [hover, setHover] = useState<{ school: ChancesSchoolResult; left: number; top: number } | null>(null);
 
   const width = 800;
-  const height = 520;
-  const pad = { top: 58, right: 24, bottom: 48, left: 52 };
+  const height = 540;
+  const pad = { top: 58, right: 24, bottom: 64, left: 64 };
   const plotW = width - pad.left - pad.right;
   const plotH = height - pad.top - pad.bottom;
 
@@ -236,24 +236,24 @@ function ChancesScatterChart({
       ))}
 
       {ticks.map((tick) => (
-        <text key={`x-tick-${tick}`} x={xScale(tick)} y={height - 12} textAnchor="middle" className="chances-scatter__tick">
+        <text key={`x-tick-${tick}`} x={xScale(tick)} y={pad.top + plotH + 20} textAnchor="middle" className="chances-scatter__tick">
           {tick}
         </text>
       ))}
       {ticks.map((tick) => (
-        <text key={`y-tick-${tick}`} x={pad.left - 8} y={yScale(tick) + 4} textAnchor="end" className="chances-scatter__tick">
+        <text key={`y-tick-${tick}`} x={pad.left - 10} y={yScale(tick) + 4} textAnchor="end" className="chances-scatter__tick">
           {tick}
         </text>
       ))}
 
-      <text x={pad.left + plotW / 2} y={height - 2} textAnchor="middle" className="chances-scatter__axis-label">
+      <text x={pad.left + plotW / 2} y={height - 12} textAnchor="middle" className="chances-scatter__axis-label">
         {t("chances.axisAcademicScore")}
       </text>
       <text
-        x={14}
+        x={18}
         y={pad.top + plotH / 2}
         textAnchor="middle"
-        transform={`rotate(-90 14 ${pad.top + plotH / 2})`}
+        transform={`rotate(-90 18 ${pad.top + plotH / 2})`}
         className="chances-scatter__axis-label"
       >
         {t("chances.axisSelectivity")}

@@ -526,13 +526,14 @@
 
 .chances-scatter__tick {
   fill: #64748b;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .chances-scatter__axis-label {
   fill: #334155;
-  font-size: 11px;
+  font-size: 15px;
   font-weight: 700;
+  letter-spacing: 0.01em;
 }
 
 .chances-scatter__you-score-label {
