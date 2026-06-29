@@ -160,12 +160,10 @@ function ZonePill({
 
 function ChancesScatterChart({
   academicScore,
-  predictedSelectivity,
   schools,
   t,
 }: {
   academicScore: number | null;
-  predictedSelectivity: number | null;
   schools: ChancesSchoolResult[];
   t: (k: string) => string;
 }) {
@@ -357,16 +355,12 @@ function ChancesScatterChart({
         );
       })}
 
-      {academicScore != null && predictedSelectivity != null && (
-        <g
-          className="chances-scatter__you"
-          transform={`translate(${xScale(academicScore)} ${yScale(predictedSelectivity)})`}
+      {academicScore != null && zones && (
+        <path
+          className="chances-scatter__you-pin"
+          d={`M ${xScale(zones.match) - 7} ${pad.top + 1} L ${xScale(zones.match) + 7} ${pad.top + 1} L ${xScale(zones.match)} ${pad.top + 11} Z`}
           pointerEvents="none"
-        >
-          <circle r={19} className="chances-scatter__you-ring chances-scatter__you-ring--outer" />
-          <circle r={12} className="chances-scatter__you-ring chances-scatter__you-ring--mid" />
-          <circle r={5} className="chances-scatter__you-dot" />
-        </g>
+        />
       )}
       </svg>
 
@@ -757,7 +751,6 @@ export function ChancesPage({ open, onClose, onBookConsult }: Props) {
               <div className="chances-chart-shell">
                 <ChancesScatterChart
                   academicScore={result?.academicScore ?? null}
-                  predictedSelectivity={predictedSelectivity}
                   schools={chartSchools}
                   t={t}
                 />
