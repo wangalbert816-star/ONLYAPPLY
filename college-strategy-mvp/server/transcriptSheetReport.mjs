@@ -70,15 +70,32 @@ function parseGpaNumbersFromText(gpaText) {
   if (!t) return { unweighted: null, weighted: null };
   let unweighted = null;
   let weighted = null;
-  const uw = t.match(/(?:unweighted|UW|未加权|非加权)[^\d]*(\d(?:\.\d{1,2})?)/i);
-  const w = t.match(/(?:weighted|W|加权)[^\d]*(\d(?:\.\d{1,2})?)/i);
+  const num = String.raw`(\d(?:\.\d{1,2})?)`;
+  const scale = String.raw`(?:\s*/\s*\d(?:\.\d{1,2})?)?`;
+  const uwLabel = String.raw`(?:\b(?:unweighted|uw)\b|未加权|非加权)`;
+  const wLabel = String.raw`(?:\b(?:weighted|w)\b|(?<!未)(?<!非)加权)`;
+  const cleanNumeric = t.match(new RegExp(String.raw`^(?:gpa\s*)?${num}${scale}(?:\s*(?:gpa|uw|unweighted))?$`, "i"));
+  const uw =
+    t.match(new RegExp(String.raw`${uwLabel}[^\d]*${num}`, "i")) ||
+    t.match(new RegExp(String.raw`${num}${scale}\s*${uwLabel}`, "i"));
+  const w =
+    t.match(new RegExp(String.raw`${wLabel}[^\d]*${num}`, "i")) ||
+    t.match(new RegExp(String.raw`${num}${scale}\s*${wLabel}`, "i"));
   if (uw) unweighted = Number(uw[1]);
   if (w) weighted = Number(w[1]);
+  if (unweighted == null && cleanNumeric) {
+    const n = Number(cleanNumeric[1]);
+    if (n <= 4) unweighted = n;
+    else weighted = n;
+  }
   const all = [...t.matchAll(/\b([1-4]\.\d{1,2})\b/g)].map((m) => Number(m[1]));
   if (unweighted == null && all.length) unweighted = Math.min(...all);
   if (weighted == null && all.length > 1) weighted = Math.max(...all);
   if (weighted == null && all.length === 1) weighted = all[0];
-  return { unweighted, weighted };
+  return {
+    unweighted: Number.isFinite(unweighted) && unweighted > 0 && unweighted <= 5.5 ? unweighted : null,
+    weighted: Number.isFinite(weighted) && weighted > 0 && weighted <= 6 ? weighted : null,
+  };
 }
 
 /** Prefer confirmed grade sheet GPA fields, then freeform text. */
