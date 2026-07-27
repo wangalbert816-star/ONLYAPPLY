@@ -798,6 +798,17 @@ check("chances: academic score uses GPA value + testing only", () => {
   if (elite < 88) throw new Error(`elite=${elite}`);
 });
 
+check("chances: integer GPA is used consistently for tiering", () => {
+  const integer = evaluateChances({ gpa: "4", testMode: "sat", satScore: "1350" }, ["Penn State University"]);
+  const decimal = evaluateChances({ gpa: "4.0", testMode: "sat", satScore: "1350" }, ["Penn State University"]);
+  const intSchool = integer.schools[0];
+  const decSchool = decimal.schools[0];
+  if (integer.student.uwGpa !== 4) throw new Error(`integer GPA ignored: ${JSON.stringify(integer.student)}`);
+  if (intSchool?.tier !== decSchool?.tier) {
+    throw new Error(`integer=${JSON.stringify(intSchool)} decimal=${JSON.stringify(decSchool)}`);
+  }
+});
+
 check("chances: Wisconsin match for 3.7 test-optional profile", () => {
   const result = evaluateChances({ gpa: "3.7", testing: "test_optional" }, ["University of Wisconsin-Madison"]);
   const wi = result.schools[0];
