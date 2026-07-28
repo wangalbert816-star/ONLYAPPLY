@@ -79,6 +79,10 @@ function stopCrmRemoteSync() {
   }
 }
 
+export function stopCrmBackgroundSync(): void {
+  stopCrmRemoteSync();
+}
+
 function scheduleCrmRemoteSync() {
   if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
   syncDebounceTimer = setTimeout(() => {
@@ -168,9 +172,10 @@ export async function initCrmForUser(userId: string, role: CrmRole): Promise<Crm
 }
 
 /**
- * Tear down CRM background work (5s poll interval, visibility listener, Supabase
- * realtime subscription) and reset module state. Without this, the sync started
- * at login keeps running for the rest of the session even after sign-out.
+ * Tear down CRM background work and reset session-scoped module state. Use this
+ * only when the authenticated CRM user changes or signs out; route unmounts
+ * should call stopCrmBackgroundSync() so Supabase writes do not fall back to
+ * localStorage during normal navigation.
  */
 export function resetCrmForUser(): void {
   stopCrmRemoteSync();

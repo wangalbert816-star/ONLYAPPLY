@@ -1,4 +1,15 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
 import type { FormState, ReportDiff, ReportPayload, SupplementaryNote } from "./types";
 import { getEffectiveIntake } from "./lib/intakeTerm";
 import { transcriptSheetCoversGpaField } from "./lib/transcriptSheet";
@@ -52,7 +63,7 @@ import { AppTopChrome } from "./components/AppTopChrome";
 import { AppErrorBoundary } from "./components/AppErrorBoundary";
 import { LegalLinks } from "./components/LegalLinks";
 import { saveUserSession, fetchUnlockedApplicationIds, redeemInviteCode, getApplicationReports } from "./lib/supabase/accounts";
-import { getCounselor, getEngagementForApplication, isSignedServiceEnabled } from "./lib/crm/store";
+import { getCounselor, getEngagementForApplication, isSignedServiceEnabled, resetCrmForUser } from "./lib/crm/store";
 import type { CrmEngagement } from "./lib/crm/types";
 import { getSupabase } from "./lib/supabase/client";
 import { formatSupabaseError } from "./lib/supabase/errors";
@@ -296,6 +307,16 @@ export default function App() {
   const [landingMarqueeVisible, setLandingMarqueeVisible] = useState(true);
   const [alumniFeedbackMode, setAlumniFeedbackMode] = useState(false);
   const [alumniAccessOpen, setAlumniAccessOpen] = useState(false);
+  const lastCrmUserIdRef = useRef<string | null>(user?.id ?? null);
+
+  useLayoutEffect(() => {
+    const nextUserId = user?.id ?? null;
+    const previousUserId = lastCrmUserIdRef.current;
+    if (previousUserId && previousUserId !== nextUserId) {
+      resetCrmForUser();
+    }
+    lastCrmUserIdRef.current = nextUserId;
+  }, [user?.id]);
 
   const openApplicationHub = useCallback((e: MouseEvent<HTMLElement>) => {
     applicationHubTriggerRef.current = e.currentTarget as HTMLButtonElement;
