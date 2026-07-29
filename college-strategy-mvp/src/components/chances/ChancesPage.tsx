@@ -468,6 +468,8 @@ export function ChancesPage({ open, onClose, onBookConsult }: Props) {
   useEffect(() => {
     if (prevInputRef.current === inputFingerprint) return;
     prevInputRef.current = inputFingerprint;
+    evaluateSeqRef.current += 1;
+    setLoading(false);
     setResult(null);
   }, [inputFingerprint]);
 
