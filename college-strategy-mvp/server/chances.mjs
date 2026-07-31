@@ -114,7 +114,7 @@ export function searchAdmitStatsSchools(query, limit = 10) {
 
 export function evaluateChances(body, schoolNames = []) {
   const normalized = normalizeChancesBody(body);
-  const academicScore = computeChancesAcademicScore(normalized);
+  const academicScore = computeChancesAcademicScore(body);
   const student = buildStudentStatsProfile(normalized);
   const majorBucket = resolveMajorBucket(normalized);
 

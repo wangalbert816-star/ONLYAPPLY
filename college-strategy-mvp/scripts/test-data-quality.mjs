@@ -798,6 +798,15 @@ check("chances: academic score uses GPA value + testing only", () => {
   if (elite < 88) throw new Error(`elite=${elite}`);
 });
 
+check("chances: evaluate preserves ACT mode for academic score", () => {
+  const body = { gpa: "3.7", testMode: "act", actScore: "34" };
+  const direct = computeChancesAcademicScore(body);
+  const evaluated = evaluateChances(body, []);
+  if (evaluated.student.act !== 34 || evaluated.student.sat != null) throw new Error(JSON.stringify(evaluated.student));
+  if (evaluated.academicScore !== direct) throw new Error(`direct=${direct} evaluated=${evaluated.academicScore}`);
+  if (evaluated.academicScore < 80) throw new Error(`academicScore=${evaluated.academicScore}`);
+});
+
 check("chances: Wisconsin match for 3.7 test-optional profile", () => {
   const result = evaluateChances({ gpa: "3.7", testing: "test_optional" }, ["University of Wisconsin-Madison"]);
   const wi = result.schools[0];
