@@ -630,8 +630,13 @@ Schema:
 }
 Return at most 20 activities total across all pages. Use empty strings when unknown. JSON only.`;
 
-const PDF_TEXT_ACTIVITY_THRESHOLD = 5;
 const PDF_VISION_PARALLEL = 2;
+
+export function canUseActivitiesPdfTextOnly(numPages, textActivityCount) {
+  // Multi-page PDFs can mix extractable text pages with scanned pages; text
+  // thresholds alone do not prove every page was parsed.
+  return numPages === 1 && textActivityCount > 0;
+}
 
 function pdfVisionPageLimit() {
   const configured = Number(process.env.ACTIVITIES_PDF_MAX_PAGES || process.env.TRANSCRIPT_PDF_MAX_PAGES || 0);
@@ -808,10 +813,7 @@ async function parsePdfBuffer(buffer) {
   if (text.length >= 20) {
     const fromText = heuristicParseActivitiesText(text);
     const textActivities = filterQualityActivities(fromText.activities);
-    if (numPages === 1 && textActivities.length > 0) {
-      return { result: finalizeActivitiesParseResult(textActivities), method: "pdf_text" };
-    }
-    if (textActivities.length >= PDF_TEXT_ACTIVITY_THRESHOLD) {
+    if (canUseActivitiesPdfTextOnly(numPages, textActivities.length)) {
       return { result: finalizeActivitiesParseResult(textActivities), method: "pdf_text" };
     }
   }
