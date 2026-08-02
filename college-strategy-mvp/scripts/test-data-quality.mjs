@@ -58,6 +58,8 @@ import {
   searchAdmitStatsSchools,
   engineGapToFitScore,
 } from "../server/chances.mjs";
+import { canUseActivitiesPdfTextOnly } from "../server/activitiesParse.mjs";
+import { canUseTranscriptPdfTextOnly } from "../server/transcriptParse.mjs";
 
 const results = [];
 
@@ -828,6 +830,13 @@ check("chances: test mode clears inactive score", () => {
   if (sat.actScore) throw new Error(JSON.stringify(sat));
   const act = normalizeChancesBody({ gpa: "3.7", testMode: "act", satScore: "1400", actScore: "32" });
   if (act.satScore) throw new Error(JSON.stringify(act));
+});
+
+check("pdf parse: multi-page text threshold does not skip vision", () => {
+  if (!canUseTranscriptPdfTextOnly(1, 1)) throw new Error("single-page transcript text should be accepted");
+  if (canUseTranscriptPdfTextOnly(2, 10)) throw new Error("multi-page transcript text must not skip vision");
+  if (!canUseActivitiesPdfTextOnly(1, 1)) throw new Error("single-page activities text should be accepted");
+  if (canUseActivitiesPdfTextOnly(2, 5)) throw new Error("multi-page activities text must not skip vision");
 });
 
 let failed = 0;

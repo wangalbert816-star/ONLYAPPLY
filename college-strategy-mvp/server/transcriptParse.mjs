@@ -212,8 +212,13 @@ function visionApiErrorCode(err) {
   return "vision_parse_failed";
 }
 
-const PDF_TEXT_COURSE_THRESHOLD = 10;
 const PDF_VISION_PARALLEL = 2;
+
+export function canUseTranscriptPdfTextOnly(numPages, textCourseCount) {
+  // Multi-page PDFs can be hybrid: text on some pages and scanned images on others.
+  // Only single-page PDFs are safe to satisfy entirely from concatenated text.
+  return numPages === 1 && textCourseCount > 0;
+}
 
 function pdfVisionPageLimit() {
   const configured = Number(process.env.TRANSCRIPT_PDF_MAX_PAGES || 0);
@@ -450,10 +455,7 @@ async function parsePdfBuffer(buffer) {
   if (text.length >= 20) {
     textSheet = heuristicParseTranscriptText(text);
     const textCourses = filterTranscriptCourses(textSheet.courses ?? []);
-    if (numPages === 1 && textCourses.length > 0) {
-      return { sheet: { ...textSheet, courses: textCourses }, method: "pdf_text" };
-    }
-    if (textCourses.length >= PDF_TEXT_COURSE_THRESHOLD) {
+    if (canUseTranscriptPdfTextOnly(numPages, textCourses.length)) {
       return { sheet: { ...textSheet, courses: textCourses }, method: "pdf_text" };
     }
   }
