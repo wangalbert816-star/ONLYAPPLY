@@ -6,6 +6,7 @@ import { normalizeApprovedSchools } from "./engineStandards.mjs";
 import { intakeProfileSummaryForPrompt, isUcSchoolName } from "./engineIntakeProfile.mjs";
 import { forbiddenSchoolsFromBody, schoolMatchesForbidden } from "./topReferenceSchools.mjs";
 import { normalizeSchoolKey } from "./engineTierRules.mjs";
+import { resolveGpaTextForAnalysis } from "./transcriptSheetReport.mjs";
 
 function tierSchoolNames(tierRows) {
   return (tierRows ?? []).map((r) => String(r.school ?? "").trim()).filter(Boolean);
@@ -35,7 +36,7 @@ function buildAiFillPrompt(body, intake, partialSchools, gaps, locale) {
       : `冲还需 ${gaps.reach} 所，稳还需 ${gaps.match} 所，保还需 ${gaps.safety} 所。`;
 
   const major = [body?.majorPrimary, body?.majorSecondary].filter(Boolean).join(" / ") || "undecided";
-  const gpa = String(body?.gpa ?? "").trim() || "not provided";
+  const gpa = resolveGpaTextForAnalysis(body) || "not provided";
   const testing = String(body?.testing ?? "").trim() || "unknown";
 
   if (locale === "en") {

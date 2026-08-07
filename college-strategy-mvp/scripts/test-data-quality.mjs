@@ -42,10 +42,11 @@ import {
 } from "../server/statsTierGap.mjs";
 import { sanitizeStatsTierReport } from "../server/statsTierSanitize.mjs";
 import { parseMajorGuidance, majorGuidanceRankAdjust } from "../server/majorGuidance.mjs";
-import { parseGeoPrefs, schoolRegionMatchesPrefs } from "../server/engineIntakeProfile.mjs";
+import { buildEngineIntakeProfile, parseGeoPrefs, schoolRegionMatchesPrefs } from "../server/engineIntakeProfile.mjs";
 import { isSchoolEligible, buildEngineContext, listSchoolMajorCatalog } from "../server/engineTierRules.mjs";
 import { schoolReachBand, reachBandDistance } from "../server/reachTierBand.mjs";
 import { runDecisionEngineV2 } from "../server/decisionEngineV2.mjs";
+import { fillDecisionGapsWithAi } from "../server/decisionEngineAiFill.mjs";
 import { scoreFiveDimensions } from "../server/fiveDimensionScore.mjs";
 import {
   campusProfilePrefBoost,
@@ -60,10 +61,19 @@ import {
 } from "../server/chances.mjs";
 
 const results = [];
+const pendingChecks = [];
 
 function check(name, fn) {
   try {
-    fn();
+    const maybePromise = fn();
+    if (maybePromise && typeof maybePromise.then === "function") {
+      pendingChecks.push(
+        maybePromise
+          .then(() => results.push({ name, ok: true }))
+          .catch((e) => results.push({ name, ok: false, err: e?.message ?? String(e) })),
+      );
+      return;
+    }
     results.push({ name, ok: true });
   } catch (e) {
     results.push({ name, ok: false, err: e?.message ?? String(e) });
@@ -663,6 +673,64 @@ check("major guidance: selective clears stale safety band", () => {
   if (gap.safetyBand != null) throw new Error(`stale safetyBand=${gap.safetyBand}`);
 });
 
+check("stats gap: weighted-only confirmed transcript still compares GPA", () => {
+  const student = buildStudentStatsProfile({
+    majorPrimary: "Business",
+    testing: "will_submit",
+    satScore: "1450",
+    gpa: "",
+    transcriptSheet: {
+      confirmedAt: "2026-08-07T00:00:00.000Z",
+      weightedGpa: "4.35",
+      courses: [],
+    },
+  });
+  const entry = findAdmitStatsEntry("Lafayette College");
+  if (!entry) throw new Error("Lafayette not found");
+  const gap = computeSchoolStatsGap(student, entry, "business");
+  if (gap.gpaGap == null) throw new Error(JSON.stringify(gap));
+});
+
+check("ai fill: prompt uses confirmed transcript GPA when raw GPA is empty", async () => {
+  const body = {
+    applicantIdentity: "domestic",
+    budget: "full_pay",
+    geoPrefs: ["any"],
+    gpa: "",
+    majorPrimary: "Business",
+    testing: "test_optional",
+    transcriptSheet: {
+      confirmedAt: "2026-08-07T00:00:00.000Z",
+      weightedGpa: "4.35",
+      courses: [],
+    },
+  };
+  let prompt = "";
+  await fillDecisionGapsWithAi({
+    body,
+    intake: buildEngineIntakeProfile(body),
+    partialSchools: {
+      reach: [{ school: "Boston University" }, { school: "Northeastern University" }],
+      match: [{ school: "University of Wisconsin-Madison" }, { school: "Lafayette College" }],
+      safety: [{ school: "Penn State University" }, { school: "Ohio State University" }],
+    },
+    gaps: { reach: 1, match: 1, safety: 1 },
+    locale: "en",
+    generateJson: async (messages) => {
+      prompt = String(messages[1]?.content ?? "");
+      return {
+        parsed: {
+          reach: [{ school: "Tulane University" }],
+          match: [{ school: "Baylor University" }],
+          safety: [{ school: "Indiana University Bloomington" }],
+        },
+      };
+    },
+  });
+  if (!prompt.includes("GPA notes: W 4.35")) throw new Error(prompt);
+  if (prompt.includes("GPA notes: not provided")) throw new Error(prompt);
+});
+
 check("geo strict: stats table region used for eligibility", () => {
   const body = { geoPrefs: ["west"], majorPrimary: "Business" };
   const context = buildEngineContext(body, [], {
@@ -829,6 +897,8 @@ check("chances: test mode clears inactive score", () => {
   const act = normalizeChancesBody({ gpa: "3.7", testMode: "act", satScore: "1400", actScore: "32" });
   if (act.satScore) throw new Error(JSON.stringify(act));
 });
+
+await Promise.all(pendingChecks);
 
 let failed = 0;
 for (const r of results) {
