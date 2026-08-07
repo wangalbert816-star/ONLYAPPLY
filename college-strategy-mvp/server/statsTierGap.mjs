@@ -93,8 +93,9 @@ export function computeSchoolStatsGap(student, statsEntry, majorBucket = "defaul
     }
   }
 
-  if (statsEntry.gpaPublished && student.uwGpa != null && statsEntry.gpaUwMid != null) {
-    gpaGap = statsEntry.gpaUwMid - student.uwGpa;
+  const gpaForStats = student.uwGpa ?? student.wGpa;
+  if (statsEntry.gpaPublished && gpaForStats != null && statsEntry.gpaUwMid != null) {
+    gpaGap = statsEntry.gpaUwMid - gpaForStats;
   }
 
   if (student.intl) {
