@@ -115,6 +115,12 @@ export function restoreWizardDraft(fallbackForm: FormState): WizardDraftBootstra
   };
 }
 
+export function newerFormDraftHasProgress(savedAt: number | undefined): boolean {
+  const draft = readRawDraft();
+  if (!draft || typeof draft.savedAt !== "number" || draft.savedAt <= (savedAt ?? 0)) return false;
+  return formDraftHasProgress(normalizeFormState(draft.form));
+}
+
 export function writeFormDraft(payload: Omit<FormDraftPayload, "savedAt">) {
   if (!formDraftHasProgress(payload.form) && !payload.flowStarted) return;
   try {

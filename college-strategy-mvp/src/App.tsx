@@ -56,7 +56,13 @@ import { getCounselor, getEngagementForApplication, isSignedServiceEnabled } fro
 import type { CrmEngagement } from "./lib/crm/types";
 import { getSupabase } from "./lib/supabase/client";
 import { formatSupabaseError } from "./lib/supabase/errors";
-import { clearFormDraft, formDraftHasProgress, restoreWizardDraft, writeFormDraft } from "./lib/formDraft";
+import {
+  clearFormDraft,
+  formDraftHasProgress,
+  newerFormDraftHasProgress,
+  restoreWizardDraft,
+  writeFormDraft,
+} from "./lib/formDraft";
 import { emptyFormState } from "./lib/formDefaults";
 import { clearPendingSave, readPendingSave, writePendingSave } from "./lib/pendingSave";
 import { isStripeCheckoutEnabled } from "./lib/stripeCheckout";
@@ -94,7 +100,8 @@ function LazyRoute({ children }: { children: ReactNode }) {
 
 const initialForm: FormState = emptyFormState();
 
-const wizardDraftBootstrap = readPendingSave()
+const pendingSaveBootstrap = readPendingSave();
+const wizardDraftBootstrap = pendingSaveBootstrap && !newerFormDraftHasProgress(pendingSaveBootstrap.savedAt)
   ? {
       form: initialForm,
       step: 1,
@@ -758,7 +765,7 @@ export default function App() {
   /** 刷新页面或邮件 Magic Link 回到本站后，恢复未登录前生成的报告 */
   useEffect(() => {
     const pending = readPendingSave();
-    if (!pending) return;
+    if (!pending || newerFormDraftHasProgress(pending.savedAt)) return;
     setForm(pending.form);
     setReport(pending.report);
     answeredGapSupplementaryRef.current = pending.supplementaryNotes ?? [];
@@ -787,7 +794,7 @@ export default function App() {
     );
     setAuthModalOpen(false);
     const pending = readPendingSave();
-    if (!pending) return;
+    if (!pending || newerFormDraftHasProgress(pending.savedAt)) return;
     setForm(pending.form);
     setReport(pending.report);
     answeredGapSupplementaryRef.current = pending.supplementaryNotes ?? [];
@@ -818,7 +825,8 @@ export default function App() {
 
   useEffect(() => {
     if (authLoading || !user || view !== "report" || !report || sessionSaved) return;
-    if (readPendingSave()) return;
+    const pending = readPendingSave();
+    if (pending && !newerFormDraftHasProgress(pending.savedAt)) return;
     const key = `${user.id}:${currentApplicationId ?? "new"}:${JSON.stringify(report).length}`;
     if (autoSaveAfterAuthKeyRef.current === key) return;
     autoSaveAfterAuthKeyRef.current = key;
