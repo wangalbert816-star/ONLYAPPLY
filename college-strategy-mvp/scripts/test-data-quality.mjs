@@ -58,6 +58,12 @@ import {
   searchAdmitStatsSchools,
   engineGapToFitScore,
 } from "../server/chances.mjs";
+import {
+  createReportDeadlineMs,
+  resolveLlmTimeoutMs,
+  resolveReportWallMs,
+  resolveVercelLlmWallMs,
+} from "../server/llmBudget.mjs";
 
 const results = [];
 
@@ -69,6 +75,42 @@ function check(name, fn) {
     results.push({ name, ok: false, err: e?.message ?? String(e) });
   }
 }
+
+check("local report budget default preserves per-call LLM timeout", () => {
+  const env = { LLM_TIMEOUT_MS: "290000" };
+  const vercelWall = resolveVercelLlmWallMs(env);
+  const llmTimeout = resolveLlmTimeoutMs(env, vercelWall);
+  const reportWall = resolveReportWallMs(env, { vercelLlmWallMs: vercelWall });
+  const deadline = createReportDeadlineMs(1_000, reportWall);
+
+  if (vercelWall !== 0) throw new Error(`expected no Vercel wall clock, got ${vercelWall}`);
+  if (llmTimeout !== 290_000) throw new Error(`expected configured timeout, got ${llmTimeout}`);
+  if (reportWall !== 0) throw new Error(`expected shared report budget disabled, got ${reportWall}`);
+  if (deadline !== undefined) throw new Error(`expected no shared deadline, got ${deadline}`);
+});
+
+check("Vercel report budget stays inside function ceiling", () => {
+  const env = { VERCEL: "1", VERCEL_FUNCTION_MAX_SEC: "300", LLM_TIMEOUT_MS: "400000" };
+  const vercelWall = resolveVercelLlmWallMs(env);
+  const llmTimeout = resolveLlmTimeoutMs(env, vercelWall);
+  const reportWall = resolveReportWallMs(env, { vercelLlmWallMs: vercelWall });
+  const deadline = createReportDeadlineMs(1_000, reportWall);
+
+  if (vercelWall !== 285_000) throw new Error(`expected 285000ms Vercel wall clock, got ${vercelWall}`);
+  if (llmTimeout !== 285_000) throw new Error(`expected timeout capped to Vercel wall, got ${llmTimeout}`);
+  if (reportWall !== 285_000) throw new Error(`expected shared Vercel budget, got ${reportWall}`);
+  if (deadline !== 286_000) throw new Error(`expected deadline 286000, got ${deadline}`);
+});
+
+check("REPORT_WALL_MS override enables explicit local shared budget", () => {
+  const env = { LLM_TIMEOUT_MS: "290000", REPORT_WALL_MS: "600000" };
+  const vercelWall = resolveVercelLlmWallMs(env);
+  const reportWall = resolveReportWallMs(env, { vercelLlmWallMs: vercelWall });
+  const deadline = createReportDeadlineMs(1_000, reportWall);
+
+  if (reportWall !== 600_000) throw new Error(`expected override budget, got ${reportWall}`);
+  if (deadline !== 601_000) throw new Error(`expected override deadline, got ${deadline}`);
+});
 
 check("UCLA full legal name resolves to curated links", () => {
   const id = matchesCuratedLinkLibrary("University of California, Los Angeles");

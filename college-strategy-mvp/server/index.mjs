@@ -8,6 +8,12 @@ import OpenAI from "openai";
 import Stripe from "stripe";
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 import {
+  createReportDeadlineMs,
+  resolveLlmTimeoutMs,
+  resolveReportWallMs,
+  resolveVercelLlmWallMs,
+} from "./llmBudget.mjs";
+import {
   buildImprovementPersonalizationHints,
   getIntakeHorizon,
   improvementPlanPromptBlock,
@@ -70,22 +76,9 @@ dotenv.config({ path: path.join(__dirname, "..", ".env"), override: true });
 /** 方舟 OpenAI 兼容网关（北京）；地域以控制台为准时可改 ARK_BASE_URL */
 const DEFAULT_ARK_BASE = "https://ark.cn-beijing.volces.com/api/v3";
 
-/** 与 vercel.json functions.maxDuration 对齐；Hobby 上限 300s，Pro 可在控制台提到 800 并设 VERCEL_FUNCTION_MAX_SEC=800 */
-const VERCEL_FUNCTION_MAX_SEC = Number(process.env.VERCEL_FUNCTION_MAX_SEC || 300);
 /** OpenAI SDK 默认 maxRetries=2，超时/5xx 会重试，同一用户操作可能触发多次模型计费与更长等待 */
-const VERCEL_LLM_WALL_MS = (() => {
-  const fromEnv = Number(process.env.VERCEL_LLM_WALL_MS);
-  if (fromEnv > 0) return fromEnv;
-  if (process.env.VERCEL) return Math.max(60_000, VERCEL_FUNCTION_MAX_SEC * 1000 - 15_000);
-  return 0;
-})();
-const LLM_TIMEOUT_MS = (() => {
-  const configured = Number(process.env.LLM_TIMEOUT_MS || 0);
-  if (process.env.VERCEL && VERCEL_LLM_WALL_MS > 0) {
-    return configured > 0 ? Math.min(configured, VERCEL_LLM_WALL_MS) : VERCEL_LLM_WALL_MS;
-  }
-  return configured > 0 ? configured : 240_000;
-})();
+const VERCEL_LLM_WALL_MS = resolveVercelLlmWallMs();
+const LLM_TIMEOUT_MS = resolveLlmTimeoutMs(process.env, VERCEL_LLM_WALL_MS);
 const LLM_MAX_RETRIES = Number(process.env.LLM_MAX_RETRIES ?? 0);
 /** 0 = 不传 max_tokens，由模型默认；报告 JSON 较大，默认给足输出避免截断 */
 const COMPLETION_MAX_TOKENS = Number(process.env.COMPLETION_MAX_TOKENS ?? 16384);
@@ -95,15 +88,11 @@ const MIN_LLM_CALL_MS = 3_000;
 /**
  * Total wall-clock budget for one /api/report request. A report can chain several
  * LLM calls (decision-engine fill + main generation + one validation retry);
- * bounding the SUM keeps the request under the serverless function ceiling
- * (Vercel) and returns a controlled 502 instead of a hard kill / hung socket.
+ * by default the shared sum is bounded only on serverless (Vercel) where the
+ * platform may hard-kill long requests. Non-serverless deployments keep the
+ * per-call LLM timeout unless REPORT_WALL_MS is explicitly configured.
  */
-const REPORT_WALL_MS = (() => {
-  const configured = Number(process.env.REPORT_WALL_MS || 0);
-  if (configured > 0) return configured;
-  if (process.env.VERCEL && VERCEL_LLM_WALL_MS > 0) return VERCEL_LLM_WALL_MS;
-  return LLM_TIMEOUT_MS;
-})();
+const REPORT_WALL_MS = resolveReportWallMs(process.env, { vercelLlmWallMs: VERCEL_LLM_WALL_MS });
 
 const app = express();
 const IS_PROD = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL);
@@ -1932,9 +1921,9 @@ app.post("/api/report", async (req, res) => {
 
   const body = req.body || {};
   let lastErr = null;
-  // Shared budget across the decision-fill + main + retry calls AND any provider
-  // fallbacks for this single request, so the whole handler stays bounded.
-  const deadlineMs = Date.now() + REPORT_WALL_MS;
+  // When enabled (Vercel or explicit REPORT_WALL_MS), share one budget across
+  // decision-fill + main + retry calls and provider fallbacks.
+  const deadlineMs = createReportDeadlineMs(Date.now(), REPORT_WALL_MS);
 
   for (let i = 0; i < configs.length; i++) {
     const cfg = configs[i];
@@ -2001,7 +1990,7 @@ async function generateReportForAdmin(body) {
     throw new Error(configs.error);
   }
   let lastErr = null;
-  const deadlineMs = Date.now() + REPORT_WALL_MS;
+  const deadlineMs = createReportDeadlineMs(Date.now(), REPORT_WALL_MS);
   for (let i = 0; i < configs.length; i++) {
     const cfg = configs[i];
     try {
