@@ -16,7 +16,7 @@
     "knockout-logos": "node scripts/knockout-logo-backgrounds.mjs",
     "build:onlyapply-logo": "node scripts/build-onlyapply-brand-logo.mjs",
     "build:favicon": "node scripts/build-favicon.mjs",
-    "test:data": "node scripts/test-data-quality.mjs",
+    "test:data": "node scripts/test-data-quality.mjs && node scripts/test-counselor-resolver.mjs",
     "build:schools": "node scripts/build-us-high-schools.mjs",
     "seed:counselor": "node scripts/seed-counselor.mjs",
     "seed:engagement": "node scripts/seed-engagement.mjs"
