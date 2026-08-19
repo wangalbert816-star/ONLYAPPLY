@@ -88,6 +88,23 @@ function loadFromJsonFiles() {
   cacheLoadedAt = Date.now();
 }
 
+function hasLoadedCache() {
+  return draftCache !== null && liveCache !== null;
+}
+
+function loadFromJsonFallback() {
+  loadFromJsonFiles();
+  storageSource = "file_fallback";
+}
+
+function keepWarmCacheAfterSupabaseFailure(reason, err) {
+  if (!hasLoadedCache()) return false;
+  const msg = err?.message ?? String(err ?? "");
+  console.warn(`[engine-benchmarks] ${reason}_using_warm_cache`, msg);
+  cacheLoadedAt = Date.now();
+  return true;
+}
+
 async function seedJsonToSupabaseIfEmpty(sb) {
   const draft = readJsonArray(DRAFT_FILE);
   const live = readJsonArray(LIVE_FILE);
@@ -130,8 +147,8 @@ async function loadFromSupabase(sb, forceReseed = false) {
       .select("*", { count: "exact", head: true });
     if (countErr) {
       if (/does not exist|relation|engine_benchmarks/i.test(countErr.message)) {
-        loadFromJsonFiles();
-        storageSource = "file_fallback";
+        if (keepWarmCacheAfterSupabaseFailure("supabase_schema_unavailable", countErr)) return;
+        loadFromJsonFallback();
         return;
       }
       throw countErr;
@@ -148,8 +165,8 @@ async function loadFromSupabase(sb, forceReseed = false) {
     .order("source_case_key", { ascending: true });
   if (error) {
     if (isSchemaColumnMissingError(error, "review_feedback")) {
-      loadFromJsonFiles();
-      storageSource = "file_fallback";
+      if (keepWarmCacheAfterSupabaseFailure("supabase_schema_unavailable", error)) return;
+      loadFromJsonFallback();
       return;
     }
     throw error;
@@ -190,9 +207,10 @@ export async function ensureBenchmarksLoaded(force = false) {
     try {
       await loadFromSupabase(sb);
     } catch (e) {
-      console.warn("[engine-benchmarks] supabase_load_failed", e instanceof Error ? e.message : e);
-      loadFromJsonFiles();
-      storageSource = "file_fallback";
+      if (!keepWarmCacheAfterSupabaseFailure("supabase_load_failed", e)) {
+        console.warn("[engine-benchmarks] supabase_load_failed", e instanceof Error ? e.message : e);
+        loadFromJsonFallback();
+      }
     }
   })();
 
@@ -279,11 +297,15 @@ export async function persistBenchmarkEntry(entry, tiers) {
 }
 
 export async function publishDraftBenchmarksToLive(reviewerEmail) {
-  await ensureBenchmarksLoaded(true);
+  const loadState = await ensureBenchmarksLoaded(true);
+  const sb = supabaseAdmin();
+  if (sb && loadState.source === "file_fallback") {
+    return { ok: false, reason: "benchmark_store_unavailable" };
+  }
+
   const draft = listDraftBenchmarksCached();
   if (!draft.length) return { ok: false, reason: "draft_empty" };
 
-  const sb = supabaseAdmin();
   const publishedAt = new Date().toISOString();
 
   if (sb) {
