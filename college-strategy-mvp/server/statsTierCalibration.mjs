@@ -31,6 +31,7 @@ export function calibrateSchoolsFromStats(body, schoolNames) {
       continue;
     }
     const gap = computeSchoolStatsGap(student, stats, majorBucket);
+    const testingGap = gap.testingGap ?? gap.satGap;
     rows.push({
       school: stats.school,
       inTable: true,
@@ -43,8 +44,8 @@ export function calibrateSchoolsFromStats(body, schoolNames) {
       flags: gap.flags,
       priorityPenalty: gap.priorityPenalty,
       label: qualitativeGapLabel(gap, gap.flags),
-      blocksMatch: statsGapBlocksMatch(gap.satGap, gap.gpaGap),
-      blocksSafety: statsGapBlocksSafety(gap.engineGap, gap.satGap, gap.gpaGap),
+      blocksMatch: statsGapBlocksMatch(testingGap, gap.gpaGap),
+      blocksSafety: statsGapBlocksSafety(gap.engineGap, testingGap, gap.gpaGap),
     });
   }
   return { student, rows };

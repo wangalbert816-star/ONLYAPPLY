@@ -463,6 +463,28 @@ check("admit stats: no published GPA skips gpa gap", () => {
   if (gap.gpaGap != null) throw new Error(`expected null gpaGap, got ${gap.gpaGap}`);
 });
 
+check("admit stats: SAT and ACT use stronger submitted test only", () => {
+  const yale = findAdmitStatsEntry("Yale University");
+  if (!yale) throw new Error("Yale not found");
+  const profile = {
+    testing: "will_submit",
+    satScore: "1500",
+    gpa: "3.85 UW",
+  };
+  const satOnly = computeSchoolStatsGap(buildStudentStatsProfile(profile), yale);
+  const bothScores = computeSchoolStatsGap(
+    buildStudentStatsProfile({ ...profile, actScore: "18" }),
+    yale,
+  );
+  if (bothScores.testingGapSource !== "sat") throw new Error(JSON.stringify(bothScores));
+  if (bothScores.engineGap !== satOnly.engineGap) {
+    throw new Error(`SAT+ACT engineGap=${bothScores.engineGap}, SAT-only=${satOnly.engineGap}`);
+  }
+  if (bothScores.effectiveTier !== satOnly.effectiveTier) {
+    throw new Error(`SAT+ACT tier=${bothScores.effectiveTier}, SAT-only=${satOnly.effectiveTier}`);
+  }
+});
+
 check("admit stats sanitize: strips SAT from UC row", () => {
   const parsed = sanitizeStatsTierReport(
     {

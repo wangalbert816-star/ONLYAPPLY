@@ -9,6 +9,10 @@ const INTL_SAT_OFFSET = 20;
 const INTL_ACT_OFFSET = 1;
 const INTL_GPA_OFFSET = 0.05;
 const CMU_CS_SAT_STRICT = 15;
+const SAT_ENGINE_DIVISOR = 4.5;
+const ACT_ENGINE_WEIGHT = 2.2;
+const BELOW_TESTING_BAND_ENGINE_GAP = 80 / SAT_ENGINE_DIVISOR;
+const ABOVE_TESTING_BAND_ENGINE_GAP = -40 / SAT_ENGINE_DIVISOR;
 const CS_MAJOR_RE =
   /computer science|\bcs\b|software|data science|artificial intelligence|\bai\b|computational|informatics/i;
 
@@ -61,6 +65,30 @@ export function effectiveTestPolicy(statsEntry, student) {
   return statsEntry.testPolicyDefault ?? statsEntry.testPolicy ?? "optional";
 }
 
+function pickBestTestingGap(satGap, actGap) {
+  const candidates = [];
+  if (satGap != null) {
+    candidates.push({
+      source: "sat",
+      engineContribution: satGap / SAT_ENGINE_DIVISOR,
+    });
+  }
+  if (actGap != null) {
+    candidates.push({
+      source: "act",
+      engineContribution: actGap * ACT_ENGINE_WEIGHT,
+    });
+  }
+  if (!candidates.length) return null;
+  candidates.sort((a, b) => a.engineContribution - b.engineContribution);
+  const best = candidates[0];
+  return {
+    ...best,
+    // SAT-equivalent gap used by legacy block/flag thresholds.
+    thresholdGap: best.engineContribution * SAT_ENGINE_DIVISOR,
+  };
+}
+
 /** Positive gap = student below school band (harder / reach-ward). */
 export function computeSchoolStatsGap(student, statsEntry, majorBucket = "default") {
   if (!statsEntry) return null;
@@ -109,18 +137,27 @@ export function computeSchoolStatsGap(student, statsEntry, majorBucket = "defaul
     flags.push("cmu_cs_strict");
   }
 
+  const testingGap = pickBestTestingGap(satGap, actGap);
+
   let engineGap = 6;
-  if (satGap != null) engineGap += satGap / 4.5;
-  if (actGap != null) engineGap += actGap * 2.2;
+  if (testingGap != null) engineGap += testingGap.engineContribution;
   if (gpaGap != null) engineGap += gpaGap * 22;
 
   if (!testingCompared && gpaGap == null && statsEntry.selectivity != null) {
     engineGap = statsEntry.selectivity / 4 - 12;
   }
 
-  if (satGap != null && satGap >= 80) flags.push("below_sat_band");
+  if (testingGap != null && testingGap.engineContribution >= BELOW_TESTING_BAND_ENGINE_GAP) {
+    flags.push("below_sat_band");
+  }
   if (gpaGap != null && gpaGap >= 0.3) flags.push("below_gpa_band");
-  if (satGap != null && satGap <= -40 && (gpaGap == null || gpaGap <= 0)) flags.push("above_testing_band");
+  if (
+    testingGap != null &&
+    testingGap.engineContribution <= ABOVE_TESTING_BAND_ENGINE_GAP &&
+    (gpaGap == null || gpaGap <= 0)
+  ) {
+    flags.push("above_testing_band");
+  }
 
   const suggestedTier = suggestTierFromEngineGap(engineGap, flags);
   const effectiveTier = computeEffectiveTier({
@@ -138,6 +175,8 @@ export function computeSchoolStatsGap(student, statsEntry, majorBucket = "defaul
     engineGap: Math.round(engineGap * 10) / 10,
     satGap,
     actGap,
+    testingGap: testingGap?.thresholdGap ?? null,
+    testingGapSource: testingGap?.source ?? null,
     gpaGap,
     flags,
     priorityPenalty,
@@ -147,14 +186,15 @@ export function computeSchoolStatsGap(student, statsEntry, majorBucket = "defaul
     testingCompared,
     testPolicy: policy,
     gpaPublished: statsEntry.gpaPublished,
-    blocksMatch: statsGapBlocksMatch(satGap, gpaGap),
-    blocksSafety: statsGapBlocksSafety(engineGap, satGap, gpaGap),
+    blocksMatch: statsGapBlocksMatch(testingGap?.thresholdGap ?? null, gpaGap),
+    blocksSafety: statsGapBlocksSafety(engineGap, testingGap?.thresholdGap ?? null, gpaGap),
   };
 
   const adjusted = applyMajorGuidanceToStatsGap(base, statsEntry, student, majorBucket);
+  const adjustedTestingGap = adjusted.testingGap ?? adjusted.satGap;
   return {
     ...adjusted,
-    blocksSafety: statsGapBlocksSafety(adjusted.engineGap, adjusted.satGap, adjusted.gpaGap),
+    blocksSafety: statsGapBlocksSafety(adjusted.engineGap, adjustedTestingGap, adjusted.gpaGap),
     safetyBand: classifySafetyBand(statsEntry, adjusted.effectiveTier, adjusted.flags, adjusted.gpaGap),
   };
 }
