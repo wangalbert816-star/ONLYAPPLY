@@ -385,7 +385,7 @@ export function ReportView({
             {isAuthenticated && sessionSaved && unlocked && (
               <ReportDownloadButton sourceRef={pdfSourceRef} intakeLabel={intakeLabel} unlocked={unlocked} />
             )}
-            {authConfigured && onRequestSignIn && !isAuthenticated && (
+            {authConfigured && onRequestSignIn && (!isAuthenticated || !sessionSaved) && (
               <button type="button" className="btn btn-secondary report-main__toolbar-btn" onClick={onRequestSignIn}>
                 {t("report.saveApplications")}
               </button>

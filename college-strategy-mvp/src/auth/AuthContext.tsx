@@ -10,6 +10,7 @@ import {
 import type { User, Session } from "@supabase/supabase-js";
 import { getAuthRedirectUrl } from "../lib/supabase/authRedirect";
 import { getSupabase, isSupabaseConfigured } from "../lib/supabase/client";
+import { clearPendingSave } from "../lib/pendingSave";
 
 type AuthContextValue = {
   configured: boolean;
@@ -166,6 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     const sb = getSupabase();
     if (!sb) return;
+    clearPendingSave();
     await sb.auth.signOut();
   }, []);
 
