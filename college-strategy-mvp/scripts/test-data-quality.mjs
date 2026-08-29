@@ -2,6 +2,8 @@
  * Data-quality regression: school name resolution, grad-faculty sanitization, link matching.
  * Run: node scripts/test-data-quality.mjs
  */
+import { readFileSync } from "node:fs";
+import ts from "typescript";
 import {
   CANONICAL_SCHOOL_NAME_FIXTURES,
   matchesCuratedLinkLibrary,
@@ -58,6 +60,23 @@ import {
   searchAdmitStatsSchools,
   engineGapToFitScore,
 } from "../server/chances.mjs";
+
+async function importStandaloneTypeScriptModule(relativePath) {
+  const source = readFileSync(new URL(relativePath, import.meta.url), "utf8");
+  const { outputText } = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.ES2022,
+      target: ts.ScriptTarget.ES2022,
+    },
+  });
+  return import(`data:text/javascript;base64,${Buffer.from(outputText).toString("base64")}`);
+}
+
+const {
+  PENDING_SAVE_AUTO_SAVE_INTENT_MAX_AGE_MS,
+  createPendingSaveAutoSaveIntent,
+  pendingSaveAutoSaveIntentMatches,
+} = await importStandaloneTypeScriptModule("../src/lib/pendingSaveIntent.ts");
 
 const results = [];
 
@@ -828,6 +847,25 @@ check("chances: test mode clears inactive score", () => {
   if (sat.actScore) throw new Error(JSON.stringify(sat));
   const act = normalizeChancesBody({ gpa: "3.7", testMode: "act", satScore: "1400", actScore: "32" });
   if (act.satScore) throw new Error(JSON.stringify(act));
+});
+
+check("pending save: auto-save intent is single-report scoped and expires", () => {
+  const savedAt = 123_456;
+  const requestedAt = 1_000;
+  const intent = createPendingSaveAutoSaveIntent(savedAt, requestedAt);
+  if (!intent) throw new Error("expected intent");
+  if (!pendingSaveAutoSaveIntentMatches(intent, savedAt, requestedAt + 1_000)) {
+    throw new Error("fresh matching intent rejected");
+  }
+  if (pendingSaveAutoSaveIntentMatches(intent, savedAt + 1, requestedAt + 1_000)) {
+    throw new Error("intent matched a different pending report");
+  }
+  if (pendingSaveAutoSaveIntentMatches(intent, savedAt, requestedAt + PENDING_SAVE_AUTO_SAVE_INTENT_MAX_AGE_MS + 1)) {
+    throw new Error("expired intent accepted");
+  }
+  if (createPendingSaveAutoSaveIntent(undefined, requestedAt)) {
+    throw new Error("created intent without pending save timestamp");
+  }
 });
 
 let failed = 0;

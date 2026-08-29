@@ -58,7 +58,13 @@ import { getSupabase } from "./lib/supabase/client";
 import { formatSupabaseError } from "./lib/supabase/errors";
 import { clearFormDraft, formDraftHasProgress, restoreWizardDraft, writeFormDraft } from "./lib/formDraft";
 import { emptyFormState } from "./lib/formDefaults";
-import { clearPendingSave, readPendingSave, writePendingSave } from "./lib/pendingSave";
+import {
+  clearPendingSave,
+  consumePendingSaveAutoSaveIntent,
+  markPendingSaveAutoSaveIntent,
+  readPendingSave,
+  writePendingSave,
+} from "./lib/pendingSave";
 import { isStripeCheckoutEnabled } from "./lib/stripeCheckout";
 import { isInviteCodesEnabled } from "./lib/inviteCodes";
 import "./App.css";
@@ -364,6 +370,31 @@ export default function App() {
   const answeredGapSupplementaryRef = useRef<SupplementaryNote[]>([]);
   const highlightTimerRef = useRef<number | null>(null);
 
+  const writeCurrentPendingReport = useCallback(
+    (options?: { reportUnlocked?: boolean }) => {
+      if (!report) return false;
+      const supplementaryNotes = mergeSupplementaryNotes(
+        answeredGapSupplementaryRef.current,
+        profileFiveSupplementaryRef.current,
+      );
+      writePendingSave({
+        form,
+        locale,
+        report,
+        supplementaryNotes: supplementaryNotes.length > 0 ? supplementaryNotes : undefined,
+        reportUnlocked: options?.reportUnlocked ?? reportUnlocked,
+        alumniFeedback: alumniFeedbackMode,
+      });
+      return true;
+    },
+    [alumniFeedbackMode, form, locale, report, reportUnlocked],
+  );
+
+  const requestReportSaveSignIn = useCallback(() => {
+    if (writeCurrentPendingReport()) markPendingSaveAutoSaveIntent();
+    setAuthModalOpen(true);
+  }, [writeCurrentPendingReport]);
+
   const stepError = useMemo(() => validateStep(step, form, t), [step, form, t]);
 
   const authChromeHandlers = useMemo(
@@ -581,6 +612,14 @@ export default function App() {
     [user, authConfigured, currentApplicationId, currentReportId, locale, t],
   );
 
+  const handleReportSaveOrSignIn = useCallback(() => {
+    if (user && report) {
+      void persistToCloud({ formState: form, reportPayload: report });
+      return;
+    }
+    requestReportSaveSignIn();
+  }, [form, persistToCloud, report, requestReportSaveSignIn, user]);
+
   const handleReportUnlockFlow = useCallback(async () => {
     const getActiveAccessToken = async () => {
       if (session?.access_token) return session.access_token;
@@ -597,9 +636,7 @@ export default function App() {
       if (inviteCodesEnabled) {
         const accessToken = await getActiveAccessToken();
         if (!accessToken) {
-          if (report) {
-            writePendingSave({ form, locale, report, reportUnlocked: false });
-          }
+          if (writeCurrentPendingReport({ reportUnlocked: false })) markPendingSaveAutoSaveIntent();
           setSaveNotice(t("report.inviteSignInFirst"));
           setAuthModalOpen(true);
           return;
@@ -649,9 +686,7 @@ export default function App() {
 
     const accessToken = await getActiveAccessToken();
     if (!accessToken) {
-      if (report) {
-        writePendingSave({ form, locale, report, reportUnlocked: false });
-      }
+      if (writeCurrentPendingReport({ reportUnlocked: false })) markPendingSaveAutoSaveIntent();
       setSaveNotice(t("report.stripeSignInFirst"));
       setAuthModalOpen(true);
       return;
@@ -739,6 +774,7 @@ export default function App() {
     demoUnlockEnabled,
     persistToCloud,
     refreshEntitlements,
+    writeCurrentPendingReport,
   ]);
 
   /** 问卷进行中自动保存草稿（localStorage + sessionStorage，保留 7 天） */
@@ -802,8 +838,10 @@ export default function App() {
     setAlumniFeedbackMode(Boolean(pending.alumniFeedback));
     setView("report");
     setFlowStarted(true);
-    setSaveBannerDismissed(true);
+    const shouldAutoSavePending = consumePendingSaveAutoSaveIntent(pending);
+    setSaveBannerDismissed(shouldAutoSavePending);
     queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+    if (!shouldAutoSavePending) return;
     void (async () => {
       const { ok, applicationId } = await persistToCloud({
         formState: pending.form,
@@ -1418,7 +1456,7 @@ export default function App() {
             applicationId={currentApplicationId}
             reportId={currentReportId}
             isAuthenticated={Boolean(user)}
-            onRequestSignIn={() => setAuthModalOpen(true)}
+            onRequestSignIn={handleReportSaveOrSignIn}
             onReset={() => {
               clearUnlockStorage();
               setReportUnlocked(false);
@@ -1474,7 +1512,7 @@ export default function App() {
         showSaveBanner={authConfigured && !user && !saveBannerDismissed && !authLoading}
         sessionSaved={sessionSaved}
         pdfRecipientName={user?.email ?? null}
-        onRequestSignIn={() => setAuthModalOpen(true)}
+        onRequestSignIn={handleReportSaveOrSignIn}
         onOpenAccount={() => setView("account")}
         onDismissSaveBanner={() => setSaveBannerDismissed(true)}
         reportRefreshing={reportRefreshing}
