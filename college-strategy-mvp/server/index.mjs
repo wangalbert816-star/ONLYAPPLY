@@ -402,11 +402,14 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
 });
 
 registerAlumniReviewRoutes(app, { supabaseAdmin, express });
+// Register Chances before the broad JSON parser so its tighter route parser can
+// reject oversized unauthenticated evaluation requests.
+registerChancesRoutes(app, express);
 
 /**
- * Global JSON limit. This parser runs first, so the larger route-level limits on
- * transcript/activities uploads (base64 PDFs/images) never took effect before —
- * raise the global limit to match that intent. Override with JSON_BODY_LIMIT.
+ * Global JSON limit for routes without a stricter parser. This matches the
+ * transcript/activities upload intent for base64 PDFs/images. Override with
+ * JSON_BODY_LIMIT.
  */
 const JSON_BODY_LIMIT = (process.env.JSON_BODY_LIMIT || "12mb").trim();
 app.use(express.json({ limit: JSON_BODY_LIMIT }));
@@ -2466,7 +2469,6 @@ registerCounselorCrmRoutes(app, { supabaseAdmin });
 registerUsHighSchoolRoutes(app);
 registerTranscriptParseRoutes(app, express);
 registerActivitiesParseRoutes(app, express);
-registerChancesRoutes(app, express);
 
 app.post("/api/dev/seed-counselor", (req, res) => {
   if (IS_PROD) return res.status(404).json({ error: "not_found" });
