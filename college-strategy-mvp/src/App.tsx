@@ -471,9 +471,6 @@ export default function App() {
           window.alert(t("crm.console.reportMissing"));
           return;
         }
-        const ids =
-          cloudEntitlementsEnabled && user ? await refreshEntitlements() : unlockedApplicationIds;
-        const entitled = cloudEntitlementsEnabled && ids.includes(application.id);
         setForm(application.form_state);
         setReport(latest.report_payload);
         setCurrentApplicationId(application.id);
@@ -481,16 +478,10 @@ export default function App() {
         answeredGapSupplementaryRef.current = latest.supplementary_notes ?? [];
         profileFiveSupplementaryRef.current = [];
         setSessionSaved(true);
-        if (cloudEntitlementsEnabled) {
-          clearUnlockStorage();
-          setReportUnlocked(entitled);
-        } else if (demoUnlockEnabled && latest.report_unlocked) {
-          writeUnlockToStorage();
-          setReportUnlocked(true);
-        } else {
-          clearUnlockStorage();
-          setReportUnlocked(false);
-        }
+        // CRM RLS only returns this payload to assigned counselors, so counselor
+        // report review should not depend on the counselor's own purchase state.
+        clearUnlockStorage();
+        setReportUnlocked(true);
         setView("report");
         window.location.hash = "";
         queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
@@ -498,7 +489,7 @@ export default function App() {
         window.alert(t("crm.console.reportMissing"));
       }
     },
-    [user, t, cloudEntitlementsEnabled, unlockedApplicationIds, refreshEntitlements, demoUnlockEnabled],
+    [user, t],
   );
 
   useEffect(() => {
