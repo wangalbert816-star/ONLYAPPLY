@@ -67,11 +67,28 @@ create policy "reports_select_own"
 
 create policy "reports_insert_own"
   on public.saved_reports for insert
-  with check (auth.uid() = user_id);
+  with check (
+    auth.uid() = user_id
+    and exists (
+      select 1
+      from public.saved_applications a
+      where a.id = application_id
+        and a.user_id = auth.uid()
+    )
+  );
 
 create policy "reports_update_own"
   on public.saved_reports for update
-  using (auth.uid() = user_id);
+  using (auth.uid() = user_id)
+  with check (
+    auth.uid() = user_id
+    and exists (
+      select 1
+      from public.saved_applications a
+      where a.id = application_id
+        and a.user_id = auth.uid()
+    )
+  );
 
 create policy "reports_delete_own"
   on public.saved_reports for delete
