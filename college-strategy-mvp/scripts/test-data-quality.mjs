@@ -2,6 +2,9 @@
  * Data-quality regression: school name resolution, grad-faculty sanitization, link matching.
  * Run: node scripts/test-data-quality.mjs
  */
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   CANONICAL_SCHOOL_NAME_FIXTURES,
   matchesCuratedLinkLibrary,
@@ -60,6 +63,11 @@ import {
 } from "../server/chances.mjs";
 
 const results = [];
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+function readProjectFile(relPath) {
+  return readFileSync(path.join(__dirname, "..", relPath), "utf8");
+}
 
 function check(name, fn) {
   try {
@@ -828,6 +836,16 @@ check("chances: test mode clears inactive score", () => {
   if (sat.actScore) throw new Error(JSON.stringify(sat));
   const act = normalizeChancesBody({ gpa: "3.7", testMode: "act", satScore: "1400", actScore: "32" });
   if (act.satScore) throw new Error(JSON.stringify(act));
+});
+
+check("saved report policies require owned application on writes", () => {
+  const sql = `${readProjectFile("supabase/schema.sql")}\n${readProjectFile("supabase/schema-saved-report-ownership.sql")}`;
+  const compact = sql.toLowerCase().replace(/\s+/g, " ");
+  const ownedApplication = /exists\s*\(\s*select 1 from public\.saved_applications a where a\.id = application_id and a\.user_id = auth\.uid\(\)\s*\)/;
+  const insertPolicy = /create policy "reports_insert_own" on public\.saved_reports for insert with check\s*\((.*?)\);/.exec(compact)?.[1] ?? "";
+  const updatePolicy = /create policy "reports_update_own" on public\.saved_reports for update using\s*\(auth\.uid\(\) = user_id\) with check\s*\((.*?)\);/.exec(compact)?.[1] ?? "";
+  if (!ownedApplication.test(insertPolicy)) throw new Error("reports_insert_own lacks application ownership check");
+  if (!ownedApplication.test(updatePolicy)) throw new Error("reports_update_own lacks application ownership check");
 });
 
 let failed = 0;

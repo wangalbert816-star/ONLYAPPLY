@@ -11,17 +11,20 @@ export function apiUrl(apiPath: string): string {
   return p;
 }
 
+const configuredReportClientTimeoutMs = Number(import.meta.env.VITE_REPORT_CLIENT_TIMEOUT_MS || 0);
+export const REPORT_CLIENT_TIMEOUT_MS =
+  configuredReportClientTimeoutMs > 0 ? configuredReportClientTimeoutMs : 820_000;
+
 /**
  * fetch with a hard client-side timeout via AbortController. Report generation is
- * long-running, so without this a stalled connection leaves the UI's loading
- * state stuck forever. The default (310s) is just above the server LLM timeout
- * (~290s) and Vite proxy cap (300s) so a real server error/response still wins;
- * the abort only fires if the whole pipe is dead.
+ * long-running, so without this a stalled connection leaves the UI's loading state
+ * stuck forever. The default covers the documented Vercel Pro 800s report budget;
+ * local dev's Vite proxy may still return earlier at its own 300s cap.
  */
 export async function fetchWithTimeout(
   input: string,
   init: RequestInit = {},
-  timeoutMs = 310_000,
+  timeoutMs = REPORT_CLIENT_TIMEOUT_MS,
 ): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);

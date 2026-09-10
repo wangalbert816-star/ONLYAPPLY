@@ -184,7 +184,7 @@ export async function saveUserSession(input: SaveSessionInput, accessToken?: str
   let applicationId = input.applicationId ?? null;
 
   if (applicationId) {
-    const { error } = await sb
+    const { data, error } = await sb
       .from("saved_applications")
       .update({
         form_state: input.form,
@@ -193,9 +193,13 @@ export async function saveUserSession(input: SaveSessionInput, accessToken?: str
         ...(input.title ? { title: input.title } : {}),
       })
       .eq("id", applicationId)
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .select("id")
+      .maybeSingle();
 
     if (error) throw error;
+    if (!data) throw new Error("Application not found or not owned by user");
+    applicationId = data.id;
   } else {
     const { data, error } = await sb
       .from("saved_applications")
