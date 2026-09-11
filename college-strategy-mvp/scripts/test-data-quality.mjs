@@ -58,6 +58,7 @@ import {
   searchAdmitStatsSchools,
   engineGapToFitScore,
 } from "../server/chances.mjs";
+import { devSeedCounselorEnabled } from "../server/devSeedGuard.mjs";
 
 const results = [];
 
@@ -828,6 +829,21 @@ check("chances: test mode clears inactive score", () => {
   if (sat.actScore) throw new Error(JSON.stringify(sat));
   const act = normalizeChancesBody({ gpa: "3.7", testMode: "act", satScore: "1400", actScore: "32" });
   if (act.satScore) throw new Error(JSON.stringify(act));
+});
+
+check("dev seed counselor endpoint requires explicit non-production opt-in", () => {
+  if (devSeedCounselorEnabled({ NODE_ENV: "development" })) {
+    throw new Error("default development env should not expose seed endpoint");
+  }
+  if (devSeedCounselorEnabled({ NODE_ENV: "production", ENABLE_DEV_SEED_COUNSELOR: "1" })) {
+    throw new Error("production env must not expose seed endpoint");
+  }
+  if (devSeedCounselorEnabled({ VERCEL: "1", ENABLE_DEV_SEED_COUNSELOR: "1" })) {
+    throw new Error("Vercel env must not expose seed endpoint");
+  }
+  if (!devSeedCounselorEnabled({ NODE_ENV: "development", ENABLE_DEV_SEED_COUNSELOR: "1" })) {
+    throw new Error("explicit development opt-in should expose seed endpoint");
+  }
 });
 
 let failed = 0;
