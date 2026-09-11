@@ -62,6 +62,7 @@ import { registerTranscriptParseRoutes, formatTranscriptSheetBlock } from "./tra
 import { buildGpaPromptSection, transcriptSheetIsAuthoritative } from "./transcriptSheetReport.mjs";
 import { registerActivitiesParseRoutes } from "./activitiesParse.mjs";
 import { registerChancesRoutes } from "./chances.mjs";
+import { devSeedCounselorEnabled } from "./devSeedGuard.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // 始终从项目根目录加载 .env（避免从别的 cwd 启动 node 时读不到 OPENAI_BASE_URL，误连 OpenAI 官方导致 401）
@@ -2469,7 +2470,7 @@ registerActivitiesParseRoutes(app, express);
 registerChancesRoutes(app, express);
 
 app.post("/api/dev/seed-counselor", (req, res) => {
-  if (IS_PROD) return res.status(404).json({ error: "not_found" });
+  if (!devSeedCounselorEnabled()) return res.status(404).json({ error: "not_found" });
   const admin = supabaseAdmin();
   if (!admin) {
     return res.status(503).json({
