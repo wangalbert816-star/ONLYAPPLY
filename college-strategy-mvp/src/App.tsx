@@ -358,11 +358,61 @@ export default function App() {
   const [subtleRefreshNotice, setSubtleRefreshNotice] = useState<string | null>(null);
   const refreshLockRef = useRef(false);
   const autoSaveAfterAuthKeyRef = useRef<string | null>(null);
+  const activeUserIdRef = useRef<string | null>(null);
+  const lastAuthUserIdRef = useRef<string | null | undefined>(undefined);
+  const userScopedStateEpochRef = useRef(0);
   /** 五维「下一步」下提交的补充；与信息缺口触发的刷新合并后一并 POST */
   const profileFiveSupplementaryRef = useRef<SupplementaryNote[]>([]);
   /** 信息缺口的历史回答需要跨多轮刷新持续传给模型，避免同一问题被反复追问 */
   const answeredGapSupplementaryRef = useRef<SupplementaryNote[]>([]);
   const highlightTimerRef = useRef<number | null>(null);
+
+  const clearUserScopedReportState = useCallback(() => {
+    userScopedStateEpochRef.current += 1;
+    clearUnlockStorage();
+    clearPendingSave();
+    setUnlockedApplicationIds([]);
+    setReportUnlocked(false);
+    setAlumniFeedbackMode(false);
+    setForm(initialForm);
+    setReport(null);
+    setCurrentApplicationId(null);
+    setCurrentReportId(null);
+    currentApplicationIdRef.current = null;
+    setSessionSaved(false);
+    setSaveBannerDismissed(false);
+    setSaveNotice(null);
+    setLoading(false);
+    setCheckoutBusy(false);
+    setInviteBusy(false);
+    setErr(null);
+    setReportRefreshing(false);
+    setReportDiff(null);
+    setHighlightSchoolKeys(new Set());
+    setRefreshError(null);
+    setSubtleRefreshNotice(null);
+    setSignedServiceContext(null);
+    setApplicationHubOpen(false);
+    setResourcesHubOpen(false);
+    setChancesOpen(false);
+    setStep(1);
+    setStep1Screen(0);
+    setStep2Screen(0);
+    setStep3Screen(0);
+    setFlowStarted(false);
+    profileFiveSupplementaryRef.current = [];
+    answeredGapSupplementaryRef.current = [];
+    autoSaveAfterAuthKeyRef.current = null;
+    submitLockRef.current = false;
+    refreshLockRef.current = false;
+    if (highlightTimerRef.current != null) {
+      window.clearTimeout(highlightTimerRef.current);
+      highlightTimerRef.current = null;
+    }
+    setView("form");
+  }, []);
+
+  activeUserIdRef.current = user?.id ?? null;
 
   const stepError = useMemo(() => validateStep(step, form, t), [step, form, t]);
 
@@ -559,6 +609,8 @@ export default function App() {
     }> => {
       if (!user || !authConfigured)
         return { ok: false, applicationId: currentApplicationId, reportId: currentReportId };
+      const startedUserId = user.id;
+      const startedEpoch = userScopedStateEpochRef.current;
       try {
         const { applicationId, reportId } = await saveUserSession({
           applicationId: payload.applicationId ?? currentApplicationId,
@@ -567,6 +619,9 @@ export default function App() {
           report: payload.reportPayload,
           supplementaryNotes: mergeSupplementaryNotes(answeredGapSupplementaryRef.current, profileFiveSupplementaryRef.current),
         }, payload.accessToken ?? undefined);
+        if (userScopedStateEpochRef.current !== startedEpoch || activeUserIdRef.current !== startedUserId) {
+          return { ok: false, applicationId: null, reportId: null };
+        }
         setCurrentApplicationId(applicationId);
         setCurrentReportId(reportId);
         clearPendingSave();
@@ -574,6 +629,9 @@ export default function App() {
         setSaveNotice(t("auth.saveSuccess"));
         return { ok: true, applicationId, reportId };
       } catch (e) {
+        if (userScopedStateEpochRef.current !== startedEpoch || activeUserIdRef.current !== startedUserId) {
+          return { ok: false, applicationId: null, reportId: null };
+        }
         setSaveNotice(formatSupabaseError(e, t));
         return { ok: false, applicationId: currentApplicationId, reportId: currentReportId };
       }
@@ -879,6 +937,15 @@ export default function App() {
   }, [view, authLoading, user, report]);
 
   useEffect(() => {
+    if (authLoading) return;
+    const nextUserId = user?.id ?? null;
+    const previousUserId = lastAuthUserIdRef.current;
+    lastAuthUserIdRef.current = nextUserId;
+    if (previousUserId === undefined || previousUserId === nextUserId || previousUserId === null) return;
+    clearUserScopedReportState();
+  }, [authLoading, user?.id, clearUserScopedReportState]);
+
+  useEffect(() => {
     if (!loading) return;
     setLoadingTipIndex(0);
     const id = window.setInterval(() => {
@@ -986,6 +1053,7 @@ export default function App() {
     submitLockRef.current = true;
     setLoading(true);
     const t0 = performance.now();
+    const startedEpoch = userScopedStateEpochRef.current;
     try {
       const existingNotes = mergeSupplementaryNotes(answeredGapSupplementaryRef.current, profileFiveSupplementaryRef.current);
       const res = await fetchWithTimeout(apiUrl("/api/report"), {
@@ -993,8 +1061,10 @@ export default function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildReportApiBody(form, existingNotes.length > 0 ? existingNotes : undefined, locale)),
       });
+      if (userScopedStateEpochRef.current !== startedEpoch) return;
       const llmMs = res.headers.get("X-LLM-Duration-Ms");
       const parsed = await readApiJson(res);
+      if (userScopedStateEpochRef.current !== startedEpoch) return;
       if (!parsed.ok) {
         if (import.meta.env.DEV) console.warn("[report] response_parse_failed", parsed.kind, res.status);
         if (res.status === 413) {
@@ -1057,11 +1127,14 @@ export default function App() {
       }
       queueMicrotask(() => window.scrollTo({ top: 0, behavior: "smooth" }));
     } catch (e) {
+      if (userScopedStateEpochRef.current !== startedEpoch) return;
       if (import.meta.env.DEV) console.warn("[report] fetch_failed", e);
       setErr(t("app.errNetwork"));
     } finally {
-      submitLockRef.current = false;
-      setLoading(false);
+      if (userScopedStateEpochRef.current === startedEpoch) {
+        submitLockRef.current = false;
+        setLoading(false);
+      }
     }
   }
 
@@ -1195,13 +1268,16 @@ export default function App() {
     const prev = report;
     answeredGapSupplementaryRef.current = mergeSupplementaryNotes(answeredGapSupplementaryRef.current, gapNotes);
     const merged = mergeSupplementaryNotes(answeredGapSupplementaryRef.current, profileFiveSupplementaryRef.current);
+    const startedEpoch = userScopedStateEpochRef.current;
     try {
       const res = await fetchWithTimeout(apiUrl("/api/report"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildReportApiBody(form, merged.length > 0 ? merged : undefined, locale)),
       });
+      if (userScopedStateEpochRef.current !== startedEpoch) return;
       const parsed = await readApiJson(res);
+      if (userScopedStateEpochRef.current !== startedEpoch) return;
       if (!parsed.ok) {
         setRefreshError(translateReportFetchFailure(parsed.kind, t));
         return;
@@ -1239,11 +1315,14 @@ export default function App() {
         }, 12000);
       }
     } catch (e) {
+      if (userScopedStateEpochRef.current !== startedEpoch) return;
       if (import.meta.env.DEV) console.warn("[report] refresh_fetch_failed", e);
       setRefreshError(t("app.errNetwork"));
     } finally {
-      refreshLockRef.current = false;
-      setReportRefreshing(false);
+      if (userScopedStateEpochRef.current === startedEpoch) {
+        refreshLockRef.current = false;
+        setReportRefreshing(false);
+      }
     }
   }
 

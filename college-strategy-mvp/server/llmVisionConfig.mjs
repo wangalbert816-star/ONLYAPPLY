@@ -3,6 +3,8 @@
 import OpenAI from "openai";
 
 const DEFAULT_ARK_BASE = "https://ark.cn-beijing.volces.com/api/v3";
+const DEFAULT_VISION_TIMEOUT_MS = 180_000;
+const MIN_VISION_CALL_MS = 3_000;
 
 function trimKey(raw) {
   return String(raw || "")
@@ -156,10 +158,7 @@ export function resolveVisionLlmClient() {
 
   if (!picked) return null;
 
-  const timeoutMs = (() => {
-    const configured = Number(process.env.TRANSCRIPT_VISION_TIMEOUT_MS || 0);
-    return configured > 0 ? configured : 180_000;
-  })();
+  const timeoutMs = visionLlmTimeoutMs();
 
   const client = new OpenAI({
     apiKey: picked.key,
@@ -180,6 +179,41 @@ export function resolveVisionLlmClient() {
   }
 
   return { client, model: visionModel, region: picked.region, provider: picked.provider };
+}
+
+export function visionLlmTimeoutMs() {
+  const configured = Number(process.env.TRANSCRIPT_VISION_TIMEOUT_MS || 0);
+  return configured > 0 ? configured : DEFAULT_VISION_TIMEOUT_MS;
+}
+
+export function visionParseWallMs() {
+  const configured = Number(process.env.PARSE_WALL_MS || process.env.VISION_PARSE_WALL_MS || 0);
+  if (configured > 0) return configured;
+  if (process.env.VERCEL) {
+    const functionMaxSec = Number(process.env.VERCEL_FUNCTION_MAX_SEC || 300);
+    return Math.max(60_000, functionMaxSec * 1000 - 15_000);
+  }
+  return visionLlmTimeoutMs();
+}
+
+export function createVisionParseDeadlineMs() {
+  return Date.now() + visionParseWallMs();
+}
+
+export function hasVisionCallBudget(deadlineMs) {
+  return !deadlineMs || deadlineMs - Date.now() > MIN_VISION_CALL_MS;
+}
+
+export function visionRequestOptions(deadlineMs, label = "vision") {
+  const timeoutMs = visionLlmTimeoutMs();
+  if (!deadlineMs) return { timeout: timeoutMs };
+  const remaining = deadlineMs - Date.now();
+  if (remaining <= MIN_VISION_CALL_MS) {
+    const err = new Error(`${label} request budget exhausted (${Math.max(0, remaining)}ms remaining)`);
+    err.code = "timeout";
+    throw err;
+  }
+  return { timeout: Math.max(MIN_VISION_CALL_MS, Math.min(timeoutMs, remaining)) };
 }
 
 export function visionLlmConfigHint(locale = "zh") {

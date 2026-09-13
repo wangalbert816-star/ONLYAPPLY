@@ -1,7 +1,14 @@
 /** POST /api/activities/parse — draft activity list from upload or text. */
 
 import OpenAI from "openai";
-import { resolveVisionLlmClient, visionLlmConfigHint } from "./llmVisionConfig.mjs";
+import {
+  createVisionParseDeadlineMs,
+  hasVisionCallBudget,
+  resolveVisionLlmClient,
+  visionLlmConfigHint,
+  visionLlmTimeoutMs,
+  visionRequestOptions,
+} from "./llmVisionConfig.mjs";
 import { parseJsonFromLlm } from "./parseLlmJson.mjs";
 import { extractPdfText, getPdfPageCount, renderPdfPageToPngBase64 } from "./pdfExtract.mjs";
 
@@ -671,6 +678,13 @@ function visionApiErrorCode(err) {
   return "vision_parse_failed";
 }
 
+function activitiesVisionTimeoutResult() {
+  return {
+    result: { activities: [], parseStatus: "failed", parseError: "vision_timeout" },
+    error: "vision_timeout",
+  };
+}
+
 async function parseWithVisionLlm(imageBase64List, mimeType = "image/png", opts = {}) {
   const cfg = resolveVisionLlmClient();
   if (!cfg) return { result: null, error: "vision_not_configured" };
@@ -684,7 +698,8 @@ async function parseWithVisionLlm(imageBase64List, mimeType = "image/png", opts 
     cfg.provider !== "openai" &&
     /vision_model_unsupported|endpoint_not_found|vision_parse_failed/i.test(first.error)
   ) {
-    const timeoutMs = Number(process.env.TRANSCRIPT_VISION_TIMEOUT_MS || 0) || 180_000;
+    if (!hasVisionCallBudget(opts.deadlineMs)) return activitiesVisionTimeoutResult();
+    const timeoutMs = visionLlmTimeoutMs();
     const fallbackCfg = {
       client: new OpenAI({ apiKey: sk, timeout: timeoutMs }),
       model: "gpt-4o-mini",
@@ -699,7 +714,7 @@ async function parseWithVisionLlm(imageBase64List, mimeType = "image/png", opts 
 
 async function callVisionLlm(cfg, imageBase64List, mimeType = "image/png", opts = {}) {
   const { client, model, provider } = cfg;
-  const { pageNum, numPages } = opts;
+  const { pageNum, numPages, deadlineMs } = opts;
 
   const images = Array.isArray(imageBase64List) ? imageBase64List : [imageBase64List];
   const totalBytes = images.reduce((n, b64) => n + Math.ceil((b64.length * 3) / 4), 0);
@@ -734,7 +749,10 @@ async function callVisionLlm(cfg, imageBase64List, mimeType = "image/png", opts 
       request.thinking = { type: "disabled" };
     }
 
-    const res = await client.chat.completions.create(request);
+    const res = await client.chat.completions.create(
+      request,
+      visionRequestOptions(deadlineMs, "activities vision"),
+    );
     const raw = res.choices?.[0]?.message?.content ?? "";
     console.info(`[activities/parse] vision_done model=${model}${pageTag} chars=${raw.length}`);
     const parsed = parseJsonFromLlm(raw);
@@ -759,11 +777,17 @@ function mergeParseResults(primary, fallback) {
   return finalizeActivitiesParseResult(activities);
 }
 
-async function parsePdfWithVisionPerPage(buffer, cfg, numPages) {
+async function parsePdfWithVisionPerPage(buffer, cfg, numPages, deadlineMs) {
   const limit = Math.min(numPages, pdfVisionPageLimit());
   const activityBatches = [];
+  let budgetExhausted = false;
 
   for (let start = 1; start <= limit; start += PDF_VISION_PARALLEL) {
+    if (!hasVisionCallBudget(deadlineMs)) {
+      console.warn(`[activities/parse] pdf_vision_budget_exhausted before page=${start}/${numPages}`);
+      budgetExhausted = true;
+      break;
+    }
     const batchPages = [];
     for (let p = start; p < start + PDF_VISION_PARALLEL && p <= limit; p += 1) {
       batchPages.push(p);
@@ -778,7 +802,7 @@ async function parsePdfWithVisionPerPage(buffer, cfg, numPages) {
 
     const results = await Promise.all(
       rendered.map(({ pageNum, image }) =>
-        callVisionLlm(cfg, [image], "image/png", { pageNum, numPages }),
+        callVisionLlm(cfg, [image], "image/png", { pageNum, numPages, deadlineMs }),
       ),
     );
 
@@ -787,10 +811,13 @@ async function parsePdfWithVisionPerPage(buffer, cfg, numPages) {
     }
   }
 
-  return finalizeActivitiesParseResult(mergeActivityLists(...activityBatches));
+  const result = finalizeActivitiesParseResult(mergeActivityLists(...activityBatches));
+  return budgetExhausted && !listHasUsableActivities(result)
+    ? { ...result, parseStatus: "failed", parseError: "vision_timeout" }
+    : result;
 }
 
-async function parsePdfBuffer(buffer) {
+async function parsePdfBuffer(buffer, deadlineMs = createVisionParseDeadlineMs()) {
   let numPages = 1;
   try {
     numPages = await getPdfPageCount(buffer);
@@ -834,7 +861,7 @@ async function parsePdfBuffer(buffer) {
 
   try {
     const textPartial = text.length >= 20 ? heuristicParseActivitiesText(text) : null;
-    const visionResult = await parsePdfWithVisionPerPage(buffer, cfg, numPages);
+    const visionResult = await parsePdfWithVisionPerPage(buffer, cfg, numPages, deadlineMs);
     const merged = mergeParseResults(visionResult, textPartial);
     if (listHasUsableActivities(merged)) {
       return {
@@ -863,6 +890,7 @@ async function parsePdfBuffer(buffer) {
 export function registerActivitiesParseRoutes(app, express) {
   app.post("/api/activities/parse", express.json({ limit: "12mb" }), async (req, res) => {
     try {
+      const deadlineMs = createVisionParseDeadlineMs();
       const locale = String(req.body?.locale ?? "zh").trim() === "en" ? "en" : "zh";
       const text = String(req.body?.text ?? "").trim();
       if (text) {
@@ -880,7 +908,7 @@ export function registerActivitiesParseRoutes(app, express) {
       const isPdf = mimeType === "application/pdf" || fileName.endsWith(".pdf");
 
       if (isPdf) {
-        const { result, method, warning } = await parsePdfBuffer(buffer);
+        const { result, method, warning } = await parsePdfBuffer(buffer, deadlineMs);
         if (listHasUsableActivities(result)) {
           return res.json({ ...result, method, warning: warning || undefined });
         }
@@ -894,7 +922,7 @@ export function registerActivitiesParseRoutes(app, express) {
       }
 
       if (mimeType.startsWith("image/")) {
-        const { result, error } = await parseWithVisionLlm([dataBase64], mimeType);
+        const { result, error } = await parseWithVisionLlm([dataBase64], mimeType, { deadlineMs });
         if (listHasUsableActivities(result)) {
           return res.json({ ...result, method: "image_vision" });
         }

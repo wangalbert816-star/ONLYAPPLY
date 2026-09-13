@@ -1846,12 +1846,13 @@ function reportCompletionMaxTokens() {
   return COMPLETION_MAX_TOKENS;
 }
 
-async function generateEssayAnalysisWithConfig(cfg, promptInput) {
+async function generateEssayAnalysisWithConfig(cfg, promptInput, deadlineMs) {
   const { locale, draft, formState, reportPayload, strategy } = promptInput;
   const maxTokens = COMPLETION_MAX_TOKENS > 0 ? Math.min(COMPLETION_MAX_TOKENS, 1800) : 0;
   return generateLlmJsonWithConfig(cfg, {
     logTag: "api/essay/analyze",
     maxTokens,
+    deadlineMs,
     messages: [
       {
         role: "system",
@@ -2242,11 +2243,12 @@ app.post("/api/essay/analyze", async (req, res) => {
   };
 
   let lastErr = null;
+  const deadlineMs = Date.now() + REPORT_WALL_MS;
   for (let i = 0; i < configs.length; i++) {
     const cfg = configs[i];
     const { region, provider, model } = cfg;
     try {
-      const { parsed, llmMs } = await generateEssayAnalysisWithConfig(cfg, promptInput);
+      const { parsed, llmMs } = await generateEssayAnalysisWithConfig(cfg, promptInput, deadlineMs);
       console.log(`[api/essay/analyze] llm_ms=${llmMs} model=${model} provider=${provider}`);
 
       const analysis = normalizeEssayAnalysis(parsed, locale);

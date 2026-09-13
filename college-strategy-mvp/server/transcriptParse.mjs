@@ -1,6 +1,13 @@
 /** POST /api/transcript/parse — draft grade sheet from upload or text. */
 
-import { resolveVisionLlmClient, visionLlmConfigHint } from "./llmVisionConfig.mjs";
+import {
+  createVisionParseDeadlineMs,
+  hasVisionCallBudget,
+  resolveVisionLlmClient,
+  visionLlmConfigHint,
+  visionLlmTimeoutMs,
+  visionRequestOptions,
+} from "./llmVisionConfig.mjs";
 import OpenAI from "openai";
 import { parseJsonFromLlm, salvageCourseObjectsFromLlm } from "./parseLlmJson.mjs";
 import { extractPdfText, getPdfPageCount, renderPdfPageToPngBase64 } from "./pdfExtract.mjs";
@@ -247,11 +254,18 @@ function mergeSheets(primary, fallback) {
   });
 }
 
-async function parseWithVisionLlm(imageBase64List, mimeType = "image/png") {
+function transcriptVisionTimeoutResult() {
+  return {
+    sheet: { ...PARSE_SCHEMA, parseStatus: "failed", parseError: "vision_timeout" },
+    error: "vision_timeout",
+  };
+}
+
+async function parseWithVisionLlm(imageBase64List, mimeType = "image/png", opts = {}) {
   const cfg = resolveVisionLlmClient();
   if (!cfg) return { sheet: null, error: "vision_not_configured" };
 
-  const first = await callVisionLlm(cfg, imageBase64List, mimeType);
+  const first = await callVisionLlm(cfg, imageBase64List, mimeType, opts);
   if (!first.error || first.error === "no_courses_detected") return first;
 
   const sk = String(process.env.US_OPENAI_API_KEY || process.env.OPENAI_API_KEY || "").trim();
@@ -260,14 +274,15 @@ async function parseWithVisionLlm(imageBase64List, mimeType = "image/png") {
     cfg.provider !== "openai" &&
     /vision_model_unsupported|endpoint_not_found|vision_parse_failed/i.test(first.error)
   ) {
-    const timeoutMs = Number(process.env.TRANSCRIPT_VISION_TIMEOUT_MS || 0) || 180_000;
+    if (!hasVisionCallBudget(opts.deadlineMs)) return transcriptVisionTimeoutResult();
+    const timeoutMs = visionLlmTimeoutMs();
     const fallbackCfg = {
       client: new OpenAI({ apiKey: sk, timeout: timeoutMs }),
       model: "gpt-4o-mini",
       provider: "openai",
     };
     console.info("[transcript/parse] vision_retry openai/gpt-4o-mini after", first.error);
-    return callVisionLlm(fallbackCfg, imageBase64List, mimeType);
+    return callVisionLlm(fallbackCfg, imageBase64List, mimeType, opts);
   }
 
   return first;
@@ -275,7 +290,7 @@ async function parseWithVisionLlm(imageBase64List, mimeType = "image/png") {
 
 async function callVisionLlm(cfg, imageBase64List, mimeType = "image/png", opts = {}) {
   const { client, model, provider } = cfg;
-  const { pageNum, numPages, compactRetry = false } = opts;
+  const { pageNum, numPages, compactRetry = false, deadlineMs } = opts;
 
   const images = Array.isArray(imageBase64List) ? imageBase64List : [imageBase64List];
   const totalBytes = images.reduce((n, b64) => n + Math.ceil((b64.length * 3) / 4), 0);
@@ -313,7 +328,10 @@ async function callVisionLlm(cfg, imageBase64List, mimeType = "image/png", opts 
       request.thinking = { type: "disabled" };
     }
 
-    const res = await client.chat.completions.create(request);
+    const res = await client.chat.completions.create(
+      request,
+      visionRequestOptions(deadlineMs, "transcript vision"),
+    );
 
     const raw = res.choices?.[0]?.message?.content ?? "";
     console.info(`[transcript/parse] vision_done model=${model}${pageTag} chars=${raw.length}`);
@@ -323,6 +341,7 @@ async function callVisionLlm(cfg, imageBase64List, mimeType = "image/png", opts 
     } catch (parseErr) {
       if (!compactRetry) {
         console.warn(`[transcript/parse] vision_json_retry compact${pageTag}`, parseErr instanceof Error ? parseErr.message : parseErr);
+        if (!hasVisionCallBudget(deadlineMs)) return transcriptVisionTimeoutResult();
         return callVisionLlm(cfg, imageBase64List, mimeType, { ...opts, compactRetry: true });
       }
       throw parseErr;
@@ -359,15 +378,21 @@ async function callVisionLlm(cfg, imageBase64List, mimeType = "image/png", opts 
   }
 }
 
-async function parsePdfWithVisionPerPage(buffer, cfg, numPages) {
+async function parsePdfWithVisionPerPage(buffer, cfg, numPages, deadlineMs) {
   const limit = Math.min(numPages, pdfVisionPageLimit());
   const courseBatches = [];
   let gradingScale = "";
   let unweightedGpa = "";
   let weightedGpa = "";
   let scaleNotes = "";
+  let budgetExhausted = false;
 
   for (let start = 1; start <= limit; start += PDF_VISION_PARALLEL) {
+    if (!hasVisionCallBudget(deadlineMs)) {
+      console.warn(`[transcript/parse] pdf_vision_budget_exhausted before page=${start}/${numPages}`);
+      budgetExhausted = true;
+      break;
+    }
     const batchPages = [];
     for (let p = start; p < start + PDF_VISION_PARALLEL && p <= limit; p += 1) {
       batchPages.push(p);
@@ -382,7 +407,7 @@ async function parsePdfWithVisionPerPage(buffer, cfg, numPages) {
 
     const results = await Promise.all(
       rendered.map(({ pageNum, image }) =>
-        callVisionLlm(cfg, [image], "image/png", { pageNum, numPages }),
+        callVisionLlm(cfg, [image], "image/png", { pageNum, numPages, deadlineMs }),
       ),
     );
 
@@ -398,11 +423,16 @@ async function parsePdfWithVisionPerPage(buffer, cfg, numPages) {
         continue;
       }
       if (error === "vision_parse_failed" && pageNum) {
+        if (!hasVisionCallBudget(deadlineMs)) {
+          console.warn(`[transcript/parse] page_retry_skipped_budget page=${pageNum}/${numPages}`);
+          continue;
+        }
         console.warn(`[transcript/parse] page_retry page=${pageNum}/${numPages}`);
         const retry = await callVisionLlm(cfg, [rendered[i].image], "image/png", {
           pageNum,
           numPages,
           compactRetry: true,
+          deadlineMs,
         });
         if (sheetHasUsableCourses(retry.sheet)) {
           const rs = retry.sheet;
@@ -420,7 +450,7 @@ async function parsePdfWithVisionPerPage(buffer, cfg, numPages) {
     scaleNotes = [scaleNotes, `Parsed first ${limit} of ${numPages} pages.`].filter(Boolean).join(" ");
   }
 
-  return normalizeTranscriptSheet({
+  const sheet = normalizeTranscriptSheet({
     gradingScale,
     unweightedGpa,
     weightedGpa,
@@ -429,9 +459,12 @@ async function parsePdfWithVisionPerPage(buffer, cfg, numPages) {
     parseStatus: "ready",
     parseError: "",
   });
+  return budgetExhausted && !sheetHasUsableCourses(sheet)
+    ? { ...sheet, parseStatus: "failed", parseError: "vision_timeout" }
+    : sheet;
 }
 
-async function parsePdfBuffer(buffer) {
+async function parsePdfBuffer(buffer, deadlineMs = createVisionParseDeadlineMs()) {
   let numPages = 1;
   try {
     numPages = await getPdfPageCount(buffer);
@@ -475,7 +508,7 @@ async function parsePdfBuffer(buffer) {
   }
 
   try {
-    const visionSheet = await parsePdfWithVisionPerPage(buffer, cfg, numPages);
+    const visionSheet = await parsePdfWithVisionPerPage(buffer, cfg, numPages, deadlineMs);
     const merged = mergeSheets(visionSheet, textSheet);
     if (sheetHasUsableCourses(merged)) {
       return {
@@ -504,6 +537,7 @@ async function parsePdfBuffer(buffer) {
 export function registerTranscriptParseRoutes(app, express) {
   app.post("/api/transcript/parse", express.json({ limit: "12mb" }), async (req, res) => {
     try {
+      const deadlineMs = createVisionParseDeadlineMs();
       const locale = String(req.body?.locale ?? "zh").trim() === "en" ? "en" : "zh";
       const text = String(req.body?.text ?? "").trim();
       if (text) {
@@ -521,7 +555,7 @@ export function registerTranscriptParseRoutes(app, express) {
       const isPdf = mimeType === "application/pdf" || fileName.endsWith(".pdf");
 
       if (isPdf) {
-        const { sheet, method, warning } = await parsePdfBuffer(buffer);
+        const { sheet, method, warning } = await parsePdfBuffer(buffer, deadlineMs);
         if (sheetHasUsableCourses(sheet)) {
           return res.json({ sheet, method, warning: warning || undefined });
         }
@@ -535,7 +569,7 @@ export function registerTranscriptParseRoutes(app, express) {
       }
 
       if (mimeType.startsWith("image/")) {
-        const { sheet, error } = await parseWithVisionLlm([dataBase64], mimeType);
+        const { sheet, error } = await parseWithVisionLlm([dataBase64], mimeType, { deadlineMs });
         if (sheet && sheetHasUsableCourses(sheet)) {
           return res.json({ sheet, method: "image_vision" });
         }

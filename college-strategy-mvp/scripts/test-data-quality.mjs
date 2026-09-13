@@ -58,6 +58,11 @@ import {
   searchAdmitStatsSchools,
   engineGapToFitScore,
 } from "../server/chances.mjs";
+import {
+  hasVisionCallBudget,
+  visionParseWallMs,
+  visionRequestOptions,
+} from "../server/llmVisionConfig.mjs";
 
 const results = [];
 
@@ -67,6 +72,24 @@ function check(name, fn) {
     results.push({ name, ok: true });
   } catch (e) {
     results.push({ name, ok: false, err: e?.message ?? String(e) });
+  }
+}
+
+function withEnvPatch(patch, fn) {
+  const old = {};
+  for (const key of Object.keys(patch)) {
+    old[key] = process.env[key];
+    const value = patch[key];
+    if (value == null) delete process.env[key];
+    else process.env[key] = value;
+  }
+  try {
+    return fn();
+  } finally {
+    for (const [key, value] of Object.entries(old)) {
+      if (value == null) delete process.env[key];
+      else process.env[key] = value;
+    }
   }
 }
 
@@ -828,6 +851,39 @@ check("chances: test mode clears inactive score", () => {
   if (sat.actScore) throw new Error(JSON.stringify(sat));
   const act = normalizeChancesBody({ gpa: "3.7", testMode: "act", satScore: "1400", actScore: "32" });
   if (act.satScore) throw new Error(JSON.stringify(act));
+});
+
+check("vision deadline: per-call timeout clamps to remaining request budget", () => {
+  withEnvPatch({ TRANSCRIPT_VISION_TIMEOUT_MS: "10000" }, () => {
+    const opts = visionRequestOptions(Date.now() + 5_000, "test vision");
+    if (opts.timeout < 3_000 || opts.timeout > 5_000) throw new Error(JSON.stringify(opts));
+  });
+});
+
+check("vision deadline: exhausted budgets block new calls", () => {
+  if (hasVisionCallBudget(Date.now() + 10)) throw new Error("expected no budget");
+  let threw = false;
+  try {
+    visionRequestOptions(Date.now() + 10, "test vision");
+  } catch (e) {
+    threw = e?.code === "timeout";
+  }
+  if (!threw) throw new Error("expected timeout error");
+});
+
+check("vision deadline: Vercel wall budget leaves function headroom", () => {
+  withEnvPatch(
+    {
+      PARSE_WALL_MS: null,
+      VISION_PARSE_WALL_MS: null,
+      VERCEL: "1",
+      VERCEL_FUNCTION_MAX_SEC: "300",
+    },
+    () => {
+      const wall = visionParseWallMs();
+      if (wall !== 285_000) throw new Error(String(wall));
+    },
+  );
 });
 
 let failed = 0;
