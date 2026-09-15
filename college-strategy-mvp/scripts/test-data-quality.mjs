@@ -544,6 +544,29 @@ check("admit stats resolve: Penn State not UPenn", () => {
   if (r.entry.school === upenn.entry?.school) throw new Error("confused with UPenn");
 });
 
+check("admit stats resolve: localized state schools do not map to different institutions", () => {
+  const cases = [
+    ["宾夕法尼亚州立大学", "Penn State University"],
+    ["北卡罗来纳州立大学", "North Carolina State University"],
+    ["密歇根州立大学", "Michigan State University"],
+    ["圣路易斯华盛顿大学", "Washington University in St. Louis"],
+  ];
+  for (const [input, expected] of cases) {
+    const r = resolveAdmitStatsSchool(input);
+    if (!r.entry || r.entry.school !== expected) throw new Error(`${input} -> ${JSON.stringify(r)}`);
+  }
+
+  const vt = resolveAdmitStatsSchool("弗吉尼亚理工大学");
+  if (vt.confidence !== "none" || vt.canonicalName === "University of Virginia") {
+    throw new Error(`Virginia Tech localized name should not map to UVA: ${JSON.stringify(vt)}`);
+  }
+});
+
+check("curated links: localized Penn State is not UPenn", () => {
+  const id = matchesCuratedLinkLibrary("宾夕法尼亚州立大学");
+  if (id === "upenn") throw new Error("Penn State localized name matched UPenn curated link");
+});
+
 check("admit stats resolve: Michigan State not UMich", () => {
   const r = resolveAdmitStatsSchool("Michigan State University");
   if (!r.entry || r.entry.school !== "Michigan State University") throw new Error(JSON.stringify(r));
