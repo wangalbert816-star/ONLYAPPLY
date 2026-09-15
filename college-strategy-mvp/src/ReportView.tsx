@@ -220,6 +220,10 @@ export function ReportView({
     return null;
   }, [planHorizon, t]);
   const profileFive = useMemo(() => buildFiveDimensionProfile(form, reportLocale), [form, reportLocale]);
+  const gapCompletionStorageScope = useMemo(
+    () => `${applicationId || "anonymous"}:${reportId || "draft"}`,
+    [applicationId, reportId],
+  );
   const verdict = useMemo(
     () =>
       buildOverallVerdict(form, profileFive, reportLocale, {
@@ -496,6 +500,7 @@ export function ReportView({
                   gaps={safeReport.information_gaps ?? []}
                   onRegenerate={onRefreshReportWithGaps}
                   isRegenerating={reportRefreshing}
+                  storageScope={gapCompletionStorageScope}
                   embedded
                 />
               ) : null}

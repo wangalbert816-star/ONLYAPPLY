@@ -58,6 +58,12 @@ import {
   searchAdmitStatsSchools,
   engineGapToFitScore,
 } from "../server/chances.mjs";
+import {
+  readStripeEnv,
+  stripeConfigStatusFromEnv,
+  stripeReadyForCheckoutEnv,
+  stripeReadyForEssayAnalysisCheckoutEnv,
+} from "../server/stripeConfig.mjs";
 
 const results = [];
 
@@ -538,6 +544,29 @@ check("admit stats resolve: Penn State not UPenn", () => {
   if (r.entry.school === upenn.entry?.school) throw new Error("confused with UPenn");
 });
 
+check("admit stats resolve: localized state schools do not map to different institutions", () => {
+  const cases = [
+    ["宾夕法尼亚州立大学", "Penn State University"],
+    ["北卡罗来纳州立大学", "North Carolina State University"],
+    ["密歇根州立大学", "Michigan State University"],
+    ["圣路易斯华盛顿大学", "Washington University in St. Louis"],
+  ];
+  for (const [input, expected] of cases) {
+    const r = resolveAdmitStatsSchool(input);
+    if (!r.entry || r.entry.school !== expected) throw new Error(`${input} -> ${JSON.stringify(r)}`);
+  }
+
+  const vt = resolveAdmitStatsSchool("弗吉尼亚理工大学");
+  if (vt.confidence !== "none" || vt.canonicalName === "University of Virginia") {
+    throw new Error(`Virginia Tech localized name should not map to UVA: ${JSON.stringify(vt)}`);
+  }
+});
+
+check("curated links: localized Penn State is not UPenn", () => {
+  const id = matchesCuratedLinkLibrary("宾夕法尼亚州立大学");
+  if (id === "upenn") throw new Error("Penn State localized name matched UPenn curated link");
+});
+
 check("admit stats resolve: Michigan State not UMich", () => {
   const r = resolveAdmitStatsSchool("Michigan State University");
   if (!r.entry || r.entry.school !== "Michigan State University") throw new Error(JSON.stringify(r));
@@ -828,6 +857,42 @@ check("chances: test mode clears inactive score", () => {
   if (sat.actScore) throw new Error(JSON.stringify(sat));
   const act = normalizeChancesBody({ gpa: "3.7", testMode: "act", satScore: "1400", actScore: "32" });
   if (act.satScore) throw new Error(JSON.stringify(act));
+});
+
+check("stripe config: checkout is blocked without webhook fulfillment secret", () => {
+  const env = readStripeEnv({
+    STRIPE_SECRET_KEY: "sk_test_dummy",
+    STRIPE_PRICE_ID: "price_report",
+    STRIPE_ESSAY_ANALYSIS_PRICE_ID: "price_essay",
+    SITE_URL: "https://example.test",
+  });
+  if (stripeReadyForCheckoutEnv(env, true)) throw new Error("report checkout should require STRIPE_WEBHOOK_SECRET");
+  if (stripeReadyForEssayAnalysisCheckoutEnv(env, true)) {
+    throw new Error("essay checkout should require STRIPE_WEBHOOK_SECRET");
+  }
+  const status = stripeConfigStatusFromEnv(env, true);
+  if (status.createCheckoutSession || status.createEssayAnalysisCheckoutSession || status.webhookVerified) {
+    throw new Error(JSON.stringify(status));
+  }
+  if (!status.envBlockers.includes("STRIPE_WEBHOOK_SECRET")) throw new Error(JSON.stringify(status.envBlockers));
+  if (!status.essayEnvBlockers.includes("STRIPE_WEBHOOK_SECRET")) throw new Error(JSON.stringify(status.essayEnvBlockers));
+});
+
+check("stripe config: checkout is ready when payment and fulfillment env are complete", () => {
+  const env = readStripeEnv({
+    STRIPE_SECRET_KEY: "sk_test_dummy",
+    STRIPE_WEBHOOK_SECRET: "whsec_dummy",
+    STRIPE_PRICE_ID: "price_report",
+    STRIPE_ESSAY_ANALYSIS_PRICE_ID: "price_essay",
+    SITE_URL: "example.test",
+  });
+  if (env.siteUrl !== "https://example.test") throw new Error(env.siteUrl);
+  if (!stripeReadyForCheckoutEnv(env, true)) throw new Error("report checkout should be ready");
+  if (!stripeReadyForEssayAnalysisCheckoutEnv(env, true)) throw new Error("essay checkout should be ready");
+  const status = stripeConfigStatusFromEnv(env, true);
+  if (!status.createCheckoutSession || !status.createEssayAnalysisCheckoutSession || !status.webhookVerified) {
+    throw new Error(JSON.stringify(status));
+  }
 });
 
 let failed = 0;

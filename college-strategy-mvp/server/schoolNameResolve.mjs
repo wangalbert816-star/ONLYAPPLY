@@ -27,7 +27,11 @@ const ALIAS_RULES = [
   { re: /princeton university|^princeton$|普林斯顿/i, aliases: ["Princeton"] },
   { re: /columbia university|^columbia$|哥伦比亚/i, aliases: ["Columbia"] },
   {
-    re: /university of pennsylvania|^upenn$|^penn$|宾夕法尼亚|宾大/i,
+    re: /penn\s+state|pennsylvania\s+state|\bpsu\b|宾夕法尼亚州立/i,
+    aliases: ["Penn State University", "Penn State", "PSU"],
+  },
+  {
+    re: /university of pennsylvania|^upenn$|^penn$|宾夕法尼亚(?!州立)|宾大/i,
     aliases: ["UPenn", "Penn", "University of Pennsylvania"],
   },
   { re: /duke university|^duke$|杜克/i, aliases: ["Duke"] },
@@ -37,7 +41,11 @@ const ALIAS_RULES = [
   { re: /dartmouth college|^dartmouth$|达特茅斯/i, aliases: ["Dartmouth"] },
   { re: /university of chicago|^uchicago$|芝加哥大学/i, aliases: ["UChicago", "University of Chicago"] },
   {
-    re: /university of michigan(?:\s*-\s*ann\s*arbor)?|\bumich\b|密歇根/i,
+    re: /michigan\s+state|\bmsu\b|密歇根州立/i,
+    aliases: ["Michigan State University", "Michigan State", "MSU"],
+  },
+  {
+    re: /university of michigan(?:\s*-\s*ann\s*arbor)?|\bumich\b|密歇根(?!州立)/i,
     aliases: ["University of Michigan", "UMich", "Michigan"],
   },
   {
@@ -60,7 +68,11 @@ const ALIAS_RULES = [
   { re: /university of southern california|^usc$|南加州大学/i, aliases: ["USC", "Southern California"] },
   { re: /university of texas at austin|\but\s*austin\b|德州奥斯汀/i, aliases: ["UT Austin", "Texas at Austin"] },
   {
-    re: /university of north carolina(?:\s+at\s+)?chapel\s*hill|\bunc\b|北卡罗来纳|教堂山/i,
+    re: /north\s+carolina\s+state|\bncsu\b|北卡罗来纳州立/i,
+    aliases: ["North Carolina State University", "North Carolina State", "NC State", "NCSU"],
+  },
+  {
+    re: /university of north carolina(?:\s+at\s+)?chapel\s*hill|\bunc\b|北卡罗来纳(?!州立)|教堂山/i,
     aliases: ["UNC", "UNC Chapel Hill", "North Carolina Chapel Hill"],
   },
   {
@@ -72,13 +84,21 @@ const ALIAS_RULES = [
     aliases: ["UIUC", "University of Illinois"],
   },
   {
+    re: /washington\s+university\s+in\s+st\.?\s*louis|\bwashu\b|\bwustl\b|圣路易斯华盛顿大学|华盛顿大学.*圣路易斯/i,
+    aliases: ["Washington University in St. Louis", "WashU", "WUSTL"],
+  },
+  {
     re: /university of washington(?!.*st\.?\s*louis)|^uw$|华盛顿大学/i,
     aliases: ["University of Washington", "UW"],
   },
   { re: /purdue university|^purdue$|普渡/i, aliases: ["Purdue"] },
   { re: /carnegie mellon university|^cmu$|卡内基梅隆/i, aliases: ["CMU", "Carnegie Mellon"] },
   {
-    re: /university of virginia|^uva$|\buva\b|弗吉尼亚/i,
+    re: /virginia\s+tech|\bvt\b|弗吉尼亚理工/i,
+    aliases: ["Virginia Tech", "VT"],
+  },
+  {
+    re: /university of virginia|^uva$|\buva\b|弗吉尼亚(?!理工)/i,
     aliases: ["UVA", "University of Virginia", "Virginia"],
   },
   { re: /vanderbilt university|^vanderbilt$|范德堡/i, aliases: ["Vanderbilt"] },
@@ -128,7 +148,7 @@ export const CURATED_LINK_PATTERNS = [
   { id: "stanford", patterns: [/stanford/i, /斯坦福/] },
   { id: "harvard", patterns: [/harvard/i, /哈佛/] },
   { id: "mit", patterns: [/mit\b|massachusetts institute/i] },
-  { id: "upenn", patterns: [/upenn|penn\b|university of pennsylvania/i] },
+  { id: "upenn", patterns: [/\bupenn\b|^penn$|university of pennsylvania/i] },
   { id: "usc", patterns: [/usc\b|southern california/i] },
   { id: "ucsd", patterns: [/uc san diego|ucsd/i] },
   { id: "uiuc", patterns: [/university of illinois|uiuc\b/i] },

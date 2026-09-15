@@ -13,7 +13,7 @@ type Completion = { value: string; updatedAt: number };
 
 function loadCompletions(key: string, validIds: Set<string>): Record<string, Completion> {
   try {
-    const raw = localStorage.getItem(key);
+    const raw = sessionStorage.getItem(key);
     if (!raw) return {};
     const parsed = JSON.parse(raw) as unknown;
     if (!parsed || typeof parsed !== "object") return {};
@@ -33,10 +33,24 @@ function loadCompletions(key: string, validIds: Set<string>): Record<string, Com
 
 function saveCompletions(key: string, data: Record<string, Completion>) {
   try {
-    localStorage.setItem(key, JSON.stringify(data));
+    sessionStorage.setItem(key, JSON.stringify(data));
   } catch {
     /* ignore */
   }
+}
+
+function clearLegacyLocalCompletions(key: string) {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+}
+
+function storageScopeKey(scope: string | null | undefined): string {
+  return String(scope || "anonymous")
+    .replace(/[^a-z0-9_.:-]+/gi, "_")
+    .slice(0, 140);
 }
 
 export function InformationGapsInteractive({
@@ -44,17 +58,23 @@ export function InformationGapsInteractive({
   onRegenerate,
   isRegenerating,
   embedded = false,
+  storageScope,
 }: {
   gaps: string[];
   onRegenerate?: (notes: SupplementaryNote[]) => Promise<void>;
   isRegenerating?: boolean;
   embedded?: boolean;
+  storageScope?: string | null;
 }) {
   const { t } = useLanguage();
   const reportLocale = REPORT_CONTENT_LOCALE;
   const tasks = useMemo(() => buildGapTasks(gaps, reportLocale), [gaps, reportLocale]);
   const validIds = useMemo(() => new Set(tasks.map((x) => x.id)), [tasks]);
   const storageKey = useMemo(
+    () => `${STORAGE_PREFIX}${storageScopeKey(storageScope)}_${stableGapsSignature(gaps)}`,
+    [gaps, storageScope],
+  );
+  const legacyStorageKey = useMemo(
     () => `${STORAGE_PREFIX}${stableGapsSignature(gaps)}`,
     [gaps],
   );
@@ -68,8 +88,9 @@ export function InformationGapsInteractive({
   const titleId = useId();
 
   useEffect(() => {
+    clearLegacyLocalCompletions(legacyStorageKey);
     setCompletions(loadCompletions(storageKey, validIds));
-  }, [storageKey, validIds]);
+  }, [storageKey, legacyStorageKey, validIds]);
 
   const openTask = tasks.find((x) => x.id === openId) ?? null;
 

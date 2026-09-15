@@ -24,15 +24,15 @@ const QUALIFIED_CAMPUS_REJECT_RE =
  */
 const CONFLICT_GUARDS = [
   {
-    input: /\bpenn\s+state\b|\bpennsylvania\s+state\b|\bpsu\b/i,
+    input: /\bpenn\s+state\b|\bpennsylvania\s+state\b|\bpsu\b|宾夕法尼亚州立/i,
     blockEntry: /^(university of )?pennsylvania$|^upenn$|^penn$/,
   },
   {
-    input: /\bmichigan\s+state\b|\bmsu\b/i,
+    input: /\bmichigan\s+state\b|\bmsu\b|密歇根州立/i,
     blockEntry: /^university of michigan$|^umich$|^michigan$/,
   },
   {
-    input: /\bvirginia\s+tech\b|\bvt\b/i,
+    input: /\bvirginia\s+tech\b|\bvt\b|弗吉尼亚理工/i,
     blockEntry: /^university of virginia$|^uva$|^virginia$/,
   },
   {
@@ -48,11 +48,11 @@ const CONFLICT_GUARDS = [
     blockEntry: /^university of washington$|^uw$/,
   },
   {
-    input: /\bnorth\s+carolina\s+state\b|\bncsu\b/i,
+    input: /\bnorth\s+carolina\s+state\b|\bncsu\b|北卡罗来纳州立/i,
     blockEntry: /^university of north carolina|^unc$/,
   },
   {
-    input: /\bwashington\s+university\s+in\s+st\.?\s*louis\b|\bwashu\b|\bwustl\b/i,
+    input: /\bwashington\s+university\s+in\s+st\.?\s*louis\b|\bwashu\b|\bwustl\b|圣路易斯华盛顿大学|华盛顿大学.*圣路易斯/i,
     blockEntry: /^university of washington$|^uw$/,
   },
   {

@@ -8,6 +8,12 @@ import OpenAI from "openai";
 import Stripe from "stripe";
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 import {
+  readStripeEnv,
+  stripeConfigStatusFromEnv,
+  stripeReadyForCheckoutEnv,
+  stripeReadyForEssayAnalysisCheckoutEnv,
+} from "./stripeConfig.mjs";
+import {
   buildImprovementPersonalizationHints,
   getIntakeHorizon,
   improvementPlanPromptBlock,
@@ -145,28 +151,8 @@ for (const method of ["get", "post", "put", "patch", "delete", "all"]) {
   };
 }
 
-function resolveSiteUrl() {
-  let siteUrl = (process.env.SITE_URL || "").trim().replace(/\/$/, "");
-  if (siteUrl && !/^https?:\/\//i.test(siteUrl)) {
-    siteUrl = `https://${siteUrl}`;
-  }
-  if (!siteUrl && process.env.VERCEL_PROJECT_PRODUCTION_URL) {
-    siteUrl = `https://${String(process.env.VERCEL_PROJECT_PRODUCTION_URL).trim().replace(/^https?:\/\//i, "")}`;
-  }
-  if (!siteUrl && process.env.VERCEL_URL) {
-    siteUrl = `https://${String(process.env.VERCEL_URL).trim().replace(/^https?:\/\//i, "")}`;
-  }
-  return siteUrl;
-}
-
 function stripeEnv() {
-  const secret = (process.env.STRIPE_SECRET_KEY || "").trim();
-  const webhookSecret = (process.env.STRIPE_WEBHOOK_SECRET || "").trim();
-  const priceId = (process.env.STRIPE_PRICE_ID || "").trim();
-  const essayAnalysisPriceId = (process.env.STRIPE_ESSAY_ANALYSIS_PRICE_ID || "").trim();
-  const essaySubscriptionPriceId = (process.env.STRIPE_ESSAY_SUBSCRIPTION_PRICE_ID || "").trim();
-  const siteUrl = resolveSiteUrl();
-  return { secret, webhookSecret, priceId, essayAnalysisPriceId, essaySubscriptionPriceId, siteUrl };
+  return readStripeEnv(process.env);
 }
 
 /** @returns {Promise<{ ok: true, price: import("stripe").Stripe.Price } | { ok: false, code: string, message: string }>} */
@@ -236,39 +222,16 @@ function checkoutApplicationTitle(form, locale) {
 }
 
 function stripeReadyForCheckout() {
-  const { secret, priceId, siteUrl } = stripeEnv();
-  return Boolean(secret && priceId && siteUrl && supabaseAdmin());
+  return stripeReadyForCheckoutEnv(stripeEnv(), Boolean(supabaseAdmin()));
 }
 
 function stripeReadyForEssayAnalysisCheckout() {
-  const { secret, essayAnalysisPriceId, siteUrl } = stripeEnv();
-  return Boolean(secret && essayAnalysisPriceId && siteUrl && supabaseAdmin());
+  return stripeReadyForEssayAnalysisCheckoutEnv(stripeEnv(), Boolean(supabaseAdmin()));
 }
 
 /** 自检：便于配环境；不向客户端泄漏密钥 */
 function stripeConfigStatus() {
-  const { secret, webhookSecret, priceId, essayAnalysisPriceId, siteUrl } = stripeEnv();
-  const admin = supabaseAdmin();
-  const blockers = [];
-  const essayBlockers = [];
-  if (!secret) blockers.push("STRIPE_SECRET_KEY");
-  if (!priceId) blockers.push("STRIPE_PRICE_ID");
-  if (!siteUrl) blockers.push("SITE_URL");
-  if (!admin) blockers.push("SUPABASE_SERVICE_ROLE_KEY");
-  if (!webhookSecret) blockers.push("STRIPE_WEBHOOK_SECRET");
-  if (!secret) essayBlockers.push("STRIPE_SECRET_KEY");
-  if (!essayAnalysisPriceId) essayBlockers.push("STRIPE_ESSAY_ANALYSIS_PRICE_ID");
-  if (!siteUrl) essayBlockers.push("SITE_URL");
-  if (!admin) essayBlockers.push("SUPABASE_SERVICE_ROLE_KEY");
-  if (!webhookSecret) essayBlockers.push("STRIPE_WEBHOOK_SECRET");
-  return {
-    createCheckoutSession: Boolean(secret && priceId && siteUrl && admin),
-    createEssayAnalysisCheckoutSession: Boolean(secret && essayAnalysisPriceId && siteUrl && admin),
-    /** 未配置时用户付完款也不会写入权益表 */
-    webhookVerified: Boolean(secret && webhookSecret),
-    envBlockers: blockers,
-    essayEnvBlockers: essayBlockers,
-  };
+  return stripeConfigStatusFromEnv(stripeEnv(), Boolean(supabaseAdmin()));
 }
 
 app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {
