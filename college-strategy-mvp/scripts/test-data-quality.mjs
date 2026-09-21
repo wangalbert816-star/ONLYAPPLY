@@ -798,6 +798,21 @@ check("chances: academic score uses GPA value + testing only", () => {
   if (elite < 88) throw new Error(`elite=${elite}`);
 });
 
+check("chances: class-rank text after UW does not override GPA tiers", () => {
+  const result = evaluateChances(
+    { gpa: "3.9 UW rank 15/400", testMode: "sat", satScore: "1500" },
+    ["Ohio State University"],
+  );
+  const osu = result.schools[0];
+  if (result.student.uwGpa !== 3.9) throw new Error(`uwGpa=${result.student.uwGpa}`);
+  if (osu?.tier !== "safety") throw new Error(JSON.stringify(osu));
+});
+
+check("chances: class-rank text before GPA does not lower academic score", () => {
+  const score = computeChancesAcademicScore({ gpa: "Rank 15/400, GPA 3.9", testMode: "sat", satScore: "1500" });
+  if (score < 85) throw new Error(`score=${score}`);
+});
+
 check("chances: Wisconsin match for 3.7 test-optional profile", () => {
   const result = evaluateChances({ gpa: "3.7", testing: "test_optional" }, ["University of Wisconsin-Madison"]);
   const wi = result.schools[0];

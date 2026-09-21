@@ -70,10 +70,18 @@ function parseGpaNumbersFromText(gpaText) {
   if (!t) return { unweighted: null, weighted: null };
   let unweighted = null;
   let weighted = null;
-  const uw = t.match(/(?:unweighted|UW|未加权|非加权)[^\d]*(\d(?:\.\d{1,2})?)/i);
-  const w = t.match(/(?:weighted|W|加权)[^\d]*(\d(?:\.\d{1,2})?)/i);
-  if (uw) unweighted = Number(uw[1]);
-  if (w) weighted = Number(w[1]);
+  const gpaNumber = String.raw`(\d(?:\.\d{1,2})?)`;
+  const scale = String.raw`(?:\s*/\s*[456](?:\.0)?)?`;
+  const uwLabel = String.raw`(?:\b(?:unweighted|uw)\b|未加权|非加权)`;
+  const wLabel = String.raw`(?:\b(?:weighted|w)\b|加权)`;
+  const readLabeled = (label, max) => {
+    const after = t.match(new RegExp(`${label}\\s*[:=]?\\s*${gpaNumber}${scale}\\b`, "i"));
+    const before = t.match(new RegExp(`\\b${gpaNumber}${scale}\\s*${label}`, "i"));
+    const n = Number((after ?? before)?.[1]);
+    return Number.isFinite(n) && n > 0 && n <= max ? n : null;
+  };
+  unweighted = readLabeled(uwLabel, 5.5);
+  weighted = readLabeled(wLabel, 6);
   const all = [...t.matchAll(/\b([1-4]\.\d{1,2})\b/g)].map((m) => Number(m[1]));
   if (unweighted == null && all.length) unweighted = Math.min(...all);
   if (weighted == null && all.length > 1) weighted = Math.max(...all);
