@@ -103,6 +103,10 @@ function chartSchoolsForSelection(
   return points;
 }
 
+function selectedSchoolsFingerprint(selected: string[]): string {
+  return selected.map(chancesSchoolKey).filter(Boolean).join("|");
+}
+
 function predictedSelectivityFromSchools(
   schools: ChancesSchoolResult[],
   academicScore: number | null | undefined,
@@ -401,6 +405,7 @@ export function ChancesPage({ open, onClose, onBookConsult }: Props) {
   const [result, setResult] = useState<ChancesEvaluateResponse | null>(null);
   const evaluateSeqRef = useRef(0);
   const prevInputRef = useRef(`${EMPTY_INPUT.gpa}|${EMPTY_INPUT.testMode}|${EMPTY_INPUT.satScore}|${EMPTY_INPUT.actScore}`);
+  const prevSelectedSchoolsRef = useRef("");
 
   const chartSchools = useMemo(
     () => chartSchoolsForSelection(selectedSchools, result?.schools),
@@ -461,15 +466,25 @@ export function ChancesPage({ open, onClose, onBookConsult }: Props) {
     setError(null);
     setLoading(false);
     prevInputRef.current = `${EMPTY_INPUT.gpa}|${EMPTY_INPUT.testMode}|${EMPTY_INPUT.satScore}|${EMPTY_INPUT.actScore}`;
+    prevSelectedSchoolsRef.current = "";
   }, [open]);
 
   const inputFingerprint = `${input.gpa}|${input.testMode}|${input.satScore}|${input.actScore}`;
+  const schoolSelectionFingerprint = selectedSchoolsFingerprint(selectedSchools);
 
   useEffect(() => {
     if (prevInputRef.current === inputFingerprint) return;
     prevInputRef.current = inputFingerprint;
     setResult(null);
   }, [inputFingerprint]);
+
+  useEffect(() => {
+    if (prevSelectedSchoolsRef.current === schoolSelectionFingerprint) return;
+    prevSelectedSchoolsRef.current = schoolSelectionFingerprint;
+    evaluateSeqRef.current += 1;
+    setResult(null);
+    setLoading(false);
+  }, [schoolSelectionFingerprint]);
 
   useEffect(() => {
     if (!open) return;
