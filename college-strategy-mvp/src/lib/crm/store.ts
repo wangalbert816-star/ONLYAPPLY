@@ -65,6 +65,7 @@ let crmUserId: string | null = null;
 let crmRole: CrmRole | null = null;
 let crmActingCounselorId: string | null = null;
 let crmInitPromise: Promise<void> | null = null;
+let crmContextVersion = 0;
 
 const CRM_POLL_MS = 5000;
 let stopRemoteSync: (() => void) | null = null;
@@ -114,14 +115,22 @@ function getSnapshot(): CrmStoreSnapshot {
   return readStore();
 }
 
+function isCurrentCrmContext(version: number, userId: string, role: CrmRole): boolean {
+  return crmContextVersion === version && crmUserId === userId && crmRole === role;
+}
+
 async function persistRefresh(): Promise<void> {
   if (crmBackend !== "supabase" || !crmUserId || !crmRole) return;
-  memoryCache =
-    crmRole === "counselor"
-      ? await fetchCrmSnapshotForCounselor(crmUserId)
-      : await fetchCrmSnapshotForStudent(crmUserId);
-  if (crmRole === "counselor") {
-    const profile = await fetchCounselorByUserId(crmUserId);
+  const userId = crmUserId;
+  const role = crmRole;
+  const contextVersion = crmContextVersion;
+  const snapshot =
+    role === "counselor" ? await fetchCrmSnapshotForCounselor(userId) : await fetchCrmSnapshotForStudent(userId);
+  if (!isCurrentCrmContext(contextVersion, userId, role) || crmBackend !== "supabase") return;
+  memoryCache = snapshot;
+  if (role === "counselor") {
+    const profile = await fetchCounselorByUserId(userId);
+    if (!isCurrentCrmContext(contextVersion, userId, role) || crmBackend !== "supabase") return;
     crmActingCounselorId = profile?.id ?? null;
   } else {
     crmActingCounselorId = null;
@@ -146,9 +155,11 @@ export async function initCrmForUser(userId: string, role: CrmRole): Promise<Crm
   }
   crmUserId = userId;
   crmRole = role;
+  const contextVersion = ++crmContextVersion;
   stopCrmRemoteSync();
   crmInitPromise = (async () => {
     const canUseSupabase = await probeSupabaseCrm();
+    if (!isCurrentCrmContext(contextVersion, userId, role)) return;
     if (canUseSupabase) {
       crmBackend = "supabase";
       await persistRefresh();
@@ -161,7 +172,7 @@ export async function initCrmForUser(userId: string, role: CrmRole): Promise<Crm
     }
   })();
   await crmInitPromise;
-  if (crmBackend === "supabase") {
+  if (isCurrentCrmContext(contextVersion, userId, role) && crmBackend === "supabase") {
     startCrmRemoteSync();
   }
   return crmBackend;
@@ -174,6 +185,7 @@ export async function initCrmForUser(userId: string, role: CrmRole): Promise<Crm
  */
 export function resetCrmForUser(): void {
   stopCrmRemoteSync();
+  crmContextVersion += 1;
   crmInitPromise = null;
   crmUserId = null;
   crmRole = null;
