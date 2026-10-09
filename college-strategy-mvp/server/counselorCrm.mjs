@@ -161,6 +161,10 @@ function normalizeMeetingJoinUrl(raw) {
   }
 }
 
+function normalizeInternalNotes(raw) {
+  return String(raw ?? "").slice(0, 20000);
+}
+
 /**
  * @param {import("express").Express} app
  * @param {{ supabaseAdmin: () => import("@supabase/supabase-js").SupabaseClient | null }} deps
@@ -253,6 +257,59 @@ export function registerCounselorCrmRoutes(app, { supabaseAdmin }) {
       res.json({
         engagementId: data.id,
         meetingJoinUrl: data.meeting_join_url ?? null,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      res.status(500).json({ error: msg });
+    }
+  });
+
+  app.patch("/api/counselor/crm/engagements/:id/internal-notes", async (req, res) => {
+    const admin = supabaseAdmin();
+    if (!admin) {
+      return res.status(503).json({ error: "supabase_admin_missing" });
+    }
+
+    const token = bearerToken(req);
+    if (!token) {
+      return res.status(401).json({ error: "auth_required" });
+    }
+
+    const engagementId = String(req.params.id ?? "").trim();
+    if (!engagementId) {
+      return res.status(400).json({ error: "id_required" });
+    }
+
+    try {
+      const { data: userData, error: userErr } = await admin.auth.getUser(token);
+      if (userErr || !userData.user) {
+        return res.status(401).json({ error: "invalid_session" });
+      }
+
+      const resolved = await resolveCounselorForAuthUser(admin, userData.user);
+      if (!resolved) {
+        return res.status(403).json({ error: "counselor_not_found" });
+      }
+
+      const allowed = await counselorCanAccessEngagement(admin, resolved.counselor.id, engagementId);
+      if (!allowed) {
+        return res.status(403).json({ error: "engagement_access_denied" });
+      }
+
+      const { data, error } = await admin
+        .from("engagements")
+        .update({
+          internal_notes: normalizeInternalNotes(req.body?.internalNotes),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", engagementId)
+        .select("id, internal_notes")
+        .single();
+      if (error) throw error;
+
+      res.json({
+        engagementId: data.id,
+        internalNotes: data.internal_notes ?? "",
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);

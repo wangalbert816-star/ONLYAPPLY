@@ -5,3 +5,5 @@ alter table public.engagements
 
 comment on column public.engagements.resume_draft is
   'Resume builder JSON draft; readable/editable by student and assigned counselors.';
+
+grant select (resume_draft), update (resume_draft) on public.engagements to authenticated;

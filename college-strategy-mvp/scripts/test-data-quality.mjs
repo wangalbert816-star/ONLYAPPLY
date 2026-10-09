@@ -2,6 +2,9 @@
  * Data-quality regression: school name resolution, grad-faculty sanitization, link matching.
  * Run: node scripts/test-data-quality.mjs
  */
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   CANONICAL_SCHOOL_NAME_FIXTURES,
   matchesCuratedLinkLibrary,
@@ -60,6 +63,12 @@ import {
 } from "../server/chances.mjs";
 
 const results = [];
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(__dirname, "..");
+
+function readRepoFile(relativePath) {
+  return fs.readFileSync(path.join(repoRoot, relativePath), "utf8");
+}
 
 function check(name, fn) {
   try {
@@ -69,6 +78,47 @@ function check(name, fn) {
     results.push({ name, ok: false, err: e?.message ?? String(e) });
   }
 }
+
+check("CRM RLS locks engagement application ownership and notes columns", () => {
+  const schema = readRepoFile("supabase/schema-crm.sql");
+  if (!schema.includes("crm_guard_engagement_sensitive_update")) throw new Error("missing engagement guard trigger");
+  if (!schema.includes("crm_application_belongs_to_student(application_id, student_user_id)")) {
+    throw new Error("engagement update does not validate application owner");
+  }
+  if (!/revoke\s+select\s+on\s+public\.engagements\s+from\s+anon,\s*authenticated/i.test(schema)) {
+    throw new Error("engagement select grant not column-scoped");
+  }
+  if (/grant\s+select\s*\([^)]*internal_notes/i.test(schema)) {
+    throw new Error("internal_notes should not be granted to direct clients");
+  }
+});
+
+check("CRM counselor profile policies bind engagements to the same student", () => {
+  const schema = readRepoFile("supabase/schema-crm-student-profile-access.sql");
+  if (!schema.includes("e.student_user_id = saved_applications.user_id")) {
+    throw new Error("applications policy missing student owner check");
+  }
+  if (!schema.includes("e.student_user_id = saved_reports.user_id")) {
+    throw new Error("reports policy missing student owner check");
+  }
+});
+
+check("CRM file delete policies protect counselor uploads", () => {
+  const tablePolicy = readRepoFile("supabase/schema-crm-files-delete.sql");
+  const storagePolicy = readRepoFile("supabase/schema-crm-files-storage.sql");
+  if (!tablePolicy.includes("public.crm_can_delete_case_file(id)")) {
+    throw new Error("case_files delete policy should use role-aware helper");
+  }
+  if (!storagePolicy.includes("crm_can_delete_case_file_storage_object")) {
+    throw new Error("storage delete policy should use role-aware helper");
+  }
+});
+
+check("CRM client does not select counselor-only notes directly", () => {
+  const client = readRepoFile("src/lib/crm/supabaseCrm.ts");
+  const directEngagementStar = /from\("engagements"\)[\s\S]{0,120}\.select\("\*"\)/.test(client);
+  if (directEngagementStar) throw new Error("direct engagement SELECT * would request internal_notes");
+});
 
 check("UCLA full legal name resolves to curated links", () => {
   const id = matchesCuratedLinkLibrary("University of California, Los Angeles");

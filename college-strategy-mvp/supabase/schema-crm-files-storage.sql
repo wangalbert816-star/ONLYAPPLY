@@ -7,6 +7,33 @@ alter table public.case_files
   add column if not exists content_type text,
   add column if not exists size_bytes bigint;
 
+create or replace function public.crm_can_delete_case_file_storage_object(
+  p_storage_path text,
+  p_engagement_id uuid
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select
+    exists (
+      select 1
+      from public.case_files f
+      where f.storage_path = p_storage_path
+        and public.crm_can_delete_case_file(f.id)
+    )
+    or (
+      not exists (
+        select 1
+        from public.case_files f
+        where f.storage_path = p_storage_path
+      )
+      and public.crm_can_access_engagement(p_engagement_id)
+    );
+$$;
+
 insert into storage.buckets (id, name, public, file_size_limit)
 values ('crm-case-files', 'crm-case-files', false, 20971520)
 on conflict (id) do update set
@@ -34,5 +61,5 @@ create policy crm_case_files_storage_delete on storage.objects
   for delete to authenticated
   using (
     bucket_id = 'crm-case-files'
-    and public.crm_can_access_engagement((storage.foldername(name))[1]::uuid)
+    and public.crm_can_delete_case_file_storage_object(name, (storage.foldername(name))[1]::uuid)
   );
