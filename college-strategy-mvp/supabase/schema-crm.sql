@@ -122,6 +122,75 @@ as $$
   );
 $$;
 
+create or replace function public.crm_application_belongs_to_student(
+  p_application_id uuid,
+  p_student_user_id uuid
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.saved_applications a
+    where a.id = p_application_id
+      and a.user_id = p_student_user_id
+  );
+$$;
+
+create or replace function public.crm_guard_engagement_sensitive_update()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if coalesce(auth.role(), '') = 'authenticated' then
+    if new.id is distinct from old.id
+      or new.student_user_id is distinct from old.student_user_id
+      or new.application_id is distinct from old.application_id
+      or new.counselor_id is distinct from old.counselor_id
+    then
+      raise exception 'engagement_identity_fields_locked' using errcode = '42501';
+    end if;
+
+    if new.internal_notes is distinct from old.internal_notes
+      and not public.crm_counselor_can_access_engagement(public.crm_my_counselor_id(), old.id)
+    then
+      raise exception 'internal_notes_counselor_only' using errcode = '42501';
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists crm_guard_engagement_sensitive_update on public.engagements;
+create trigger crm_guard_engagement_sensitive_update
+before update on public.engagements
+for each row execute function public.crm_guard_engagement_sensitive_update();
+
+create or replace function public.crm_can_delete_case_file(p_file_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.case_files f
+    join public.engagements e on e.id = f.engagement_id
+    where f.id = p_file_id
+      and (
+        public.crm_counselor_can_access_engagement(public.crm_my_counselor_id(), e.id)
+        or (e.student_user_id = auth.uid() and f.uploaded_by_role = 'student')
+      )
+  );
+$$;
+
 -- counselors: own profile + students see assigned counselor row
 drop policy if exists counselors_select on public.counselors;
 create policy counselors_select on public.counselors for select using (
@@ -147,15 +216,16 @@ create policy engagements_select on public.engagements for select using (
 drop policy if exists engagements_insert_student on public.engagements;
 create policy engagements_insert_student on public.engagements for insert with check (
   student_user_id = auth.uid()
-  and exists (
-    select 1 from public.saved_applications a
-    where a.id = application_id and a.user_id = auth.uid()
-  )
+  and public.crm_application_belongs_to_student(application_id, auth.uid())
 );
 
 drop policy if exists engagements_update on public.engagements;
 create policy engagements_update on public.engagements for update using (
   student_user_id = auth.uid() or public.crm_counselor_can_access_engagement(public.crm_my_counselor_id(), id)
+)
+with check (
+  (student_user_id = auth.uid() or public.crm_counselor_can_access_engagement(public.crm_my_counselor_id(), id))
+  and public.crm_application_belongs_to_student(application_id, student_user_id)
 );
 
 -- case_messages
@@ -215,4 +285,64 @@ create policy case_files_select on public.case_files for select using (
 drop policy if exists case_files_insert on public.case_files;
 create policy case_files_insert on public.case_files for insert with check (
   public.crm_can_access_engagement(engagement_id)
+  and (
+    uploaded_by_role is null
+    or (uploaded_by_role = 'student' and exists (
+      select 1 from public.engagements e
+      where e.id = engagement_id and e.student_user_id = auth.uid()
+    ))
+    or (uploaded_by_role = 'counselor' and public.crm_counselor_can_access_engagement(public.crm_my_counselor_id(), engagement_id))
+  )
 );
+
+-- Keep counselor-only notes out of direct client SELECT/UPDATE. Counselor UI reads/writes
+-- them through the service-role API routes after verifying counselor assignment.
+revoke select on public.engagements from anon, authenticated;
+grant select (
+  id,
+  student_user_id,
+  student_email,
+  student_name,
+  application_id,
+  application_title,
+  counselor_id,
+  status,
+  phase,
+  plan_label,
+  needs_follow_up,
+  next_meeting_label,
+  created_at,
+  updated_at
+) on public.engagements to authenticated;
+
+revoke update on public.engagements from anon, authenticated;
+grant update (
+  application_title,
+  status,
+  phase,
+  plan_label,
+  needs_follow_up,
+  next_meeting_label,
+  updated_at
+) on public.engagements to authenticated;
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'engagements'
+      and column_name = 'meeting_join_url'
+  ) then
+    grant select (meeting_join_url), update (meeting_join_url) on public.engagements to authenticated;
+  end if;
+
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'engagements'
+      and column_name = 'resume_draft'
+  ) then
+    grant select (resume_draft), update (resume_draft) on public.engagements to authenticated;
+  end if;
+end $$;

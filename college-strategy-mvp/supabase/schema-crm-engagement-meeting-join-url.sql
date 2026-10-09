@@ -5,3 +5,5 @@ alter table public.engagements
 
 comment on column public.engagements.meeting_join_url is
   'Google Meet (or similar) link the counselor shared with this student; visible on student Premium Meetings.';
+
+grant select (meeting_join_url), update (meeting_join_url) on public.engagements to authenticated;

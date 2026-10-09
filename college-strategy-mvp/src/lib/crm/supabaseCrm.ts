@@ -32,12 +32,21 @@ type EngagementRow = {
   phase: string;
   plan_label: string | null;
   needs_follow_up: boolean;
-  internal_notes: string;
+  internal_notes?: string | null;
   next_meeting_label: string | null;
-  meeting_join_url: string | null;
+  meeting_join_url?: string | null;
   created_at: string;
   updated_at: string;
 };
+
+const ENGAGEMENT_BASE_COLUMNS =
+  "id, student_user_id, student_email, student_name, application_id, application_title, counselor_id, status, phase, plan_label, needs_follow_up, next_meeting_label, created_at, updated_at";
+const ENGAGEMENT_PUBLIC_COLUMNS = `${ENGAGEMENT_BASE_COLUMNS}, meeting_join_url, resume_draft`;
+
+function isMissingOptionalEngagementColumn(error: { message?: string } | null | undefined): boolean {
+  const msg = (error?.message ?? "").toLowerCase();
+  return msg.includes("meeting_join_url") || msg.includes("resume_draft");
+}
 
 type CounselorRow = {
   id: string;
@@ -110,7 +119,7 @@ function mapEngagement(row: EngagementRow, counselorIdsByEngagementId?: Map<stri
     status: row.status as CrmEngagement["status"],
     planLabel: row.plan_label ?? undefined,
     needsFollowUp: row.needs_follow_up,
-    internalNotes: row.internal_notes,
+    internalNotes: row.internal_notes ?? "",
     nextMeetingLabel: row.next_meeting_label ?? undefined,
     meetingJoinUrl: row.meeting_join_url ?? undefined,
     createdAt: row.created_at,
@@ -175,11 +184,22 @@ export async function fetchCrmSnapshotForStudent(userId: string): Promise<CrmSto
   const sb = getSupabase();
   if (!sb) return emptySnapshot();
 
-  const { data: engagementRows, error: engErr } = await sb
+  const initialEngagements = await sb
     .from("engagements")
-    .select("*")
+    .select(ENGAGEMENT_PUBLIC_COLUMNS)
     .eq("student_user_id", userId)
     .order("updated_at", { ascending: false });
+  let engagementRows = (initialEngagements.data ?? null) as EngagementRow[] | null;
+  let engErr = initialEngagements.error as { message?: string } | null;
+  if (engErr && isMissingOptionalEngagementColumn(engErr)) {
+    const retry = await sb
+      .from("engagements")
+      .select(ENGAGEMENT_BASE_COLUMNS)
+      .eq("student_user_id", userId)
+      .order("updated_at", { ascending: false });
+    engagementRows = (retry.data ?? null) as EngagementRow[] | null;
+    engErr = retry.error as { message?: string } | null;
+  }
   if (engErr) throw engErr;
 
   return loadSnapshotForEngagements(sb, (engagementRows ?? []) as EngagementRow[]);
@@ -239,11 +259,22 @@ export async function fetchCrmSnapshotForCounselor(userId: string): Promise<CrmS
     return snapshot;
   }
 
-  const { data: engagementRows, error: engErr } = await sb
+  const initialEngagements = await sb
     .from("engagements")
-    .select("*")
+    .select(ENGAGEMENT_PUBLIC_COLUMNS)
     .in("id", engagementIds)
     .order("updated_at", { ascending: false });
+  let engagementRows = (initialEngagements.data ?? null) as EngagementRow[] | null;
+  let engErr = initialEngagements.error as { message?: string } | null;
+  if (engErr && isMissingOptionalEngagementColumn(engErr)) {
+    const retry = await sb
+      .from("engagements")
+      .select(ENGAGEMENT_BASE_COLUMNS)
+      .in("id", engagementIds)
+      .order("updated_at", { ascending: false });
+    engagementRows = (retry.data ?? null) as EngagementRow[] | null;
+    engErr = retry.error as { message?: string } | null;
+  }
   if (engErr) throw engErr;
 
   const snapshot = await loadSnapshotForEngagements(sb, (engagementRows ?? []) as EngagementRow[]);
@@ -516,7 +547,7 @@ export async function supabaseCreateDemoEngagement(input: {
 
   const { data: existing } = await sb
     .from("engagements")
-    .select("*")
+    .select(ENGAGEMENT_BASE_COLUMNS)
     .eq("student_user_id", input.studentUserId)
     .eq("application_id", input.applicationId)
     .maybeSingle();
@@ -550,7 +581,7 @@ export async function supabaseCreateDemoEngagement(input: {
       next_meeting_label: "6/12 · 已预约",
       updated_at: now,
     })
-    .select("*")
+    .select(ENGAGEMENT_BASE_COLUMNS)
     .single();
   if (insertErr) throw insertErr;
 
@@ -1201,6 +1232,27 @@ export async function supabaseToggleFollowUp(engagementId: string, needsFollowUp
 export async function supabaseUpdateInternalNotes(engagementId: string, notes: string): Promise<void> {
   const sb = getSupabase();
   if (!sb) return;
+
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
+  const token = session?.access_token;
+  if (token) {
+    const res = await fetch(apiUrl(`/api/counselor/crm/engagements/${encodeURIComponent(engagementId)}/internal-notes`), {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ internalNotes: notes }),
+    });
+    if (res.ok) return;
+    const body = await res.text().catch(() => "");
+    if (res.status !== 404 && res.status !== 503) {
+      throw new Error(body || `internal_notes_update_failed_${res.status}`);
+    }
+  }
+
   await sb
     .from("engagements")
     .update({ internal_notes: notes, updated_at: new Date().toISOString() })
