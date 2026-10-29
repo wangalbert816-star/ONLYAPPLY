@@ -307,9 +307,32 @@ check("plan B: Penn State in match is not treated as UPenn ultra", () => {
       { school: "Penn State University" },
       { school: "Purdue University" },
     ],
+    safety: [
+      { school: "Ohio State University" },
+      { school: "University of Minnesota" },
+      { school: "Indiana University Bloomington" },
+    ],
   });
   const v = validateMainSchoolReport(report, strongBody);
   if (!v.ok) throw new Error(v.reason);
+});
+
+check("plan B: canonical alias duplicate in main tiers fails validation", () => {
+  const report = baseNineSchoolReport({
+    reach: [
+      { school: "Georgia Institute of Technology" },
+      { school: "University of Virginia" },
+      { school: "University of Michigan" },
+    ],
+    match: [
+      { school: "Georgia Tech" },
+      { school: "University of Wisconsin-Madison" },
+      { school: "Purdue University" },
+    ],
+  });
+  const v = validateMainSchoolReport(report, strongBody);
+  if (v.ok) throw new Error("expected alias duplicate rejection");
+  if (!/重复校名/.test(v.reason) || !/同一学校/.test(v.reason)) throw new Error(v.reason);
 });
 
 check("plan B: valid main nine + top_reference for strong profile", () => {
@@ -377,6 +400,20 @@ check("plan B: duplicate across main and top_reference fails", () => {
   });
   const v = validateMainSchoolReport(report, strongBody);
   if (v.ok) throw new Error("expected overlap failure");
+});
+
+check("plan B: canonical alias duplicate across main and top_reference fails", () => {
+  const report = baseNineSchoolReport({
+    reach: [
+      { school: "University of Pennsylvania" },
+      { school: "University of Virginia" },
+      { school: "University of Michigan" },
+    ],
+    top_reference_schools: [{ school: "UPenn", why_reference_for_you: "same school alias" }],
+  });
+  const v = validateMainSchoolReport(report, strongBody);
+  if (v.ok) throw new Error("expected canonical overlap failure");
+  if (!/不得同时/.test(v.reason)) throw new Error(v.reason);
 });
 
 check("plan B: normalizeTopReferenceSchoolRows coerces string bullets", () => {

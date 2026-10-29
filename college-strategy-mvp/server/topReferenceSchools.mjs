@@ -1,5 +1,6 @@
 import { coerceStringArray } from "./coerceStringArray.mjs";
 import { isActivityThinFromBody, structuredActivityBlob } from "./activityEvidence.mjs";
+import { resolveAdmitStatsSchool } from "./schoolAdmitStats.mjs";
 import { resolveGpaNumbersFromBody } from "./transcriptSheetReport.mjs";
 
 const ULTRA_SELECTIVE_SCHOOLS = [
@@ -41,6 +42,14 @@ function normalizeSchoolName(name) {
     .replace(/[^a-z0-9]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function canonicalSchoolKey(name) {
+  const raw = String(name || "").trim();
+  if (!raw) return "";
+  const resolved = resolveAdmitStatsSchool(raw);
+  const canonical = resolved.confidence !== "none" && resolved.canonicalName ? resolved.canonicalName : raw;
+  return normalizeSchoolName(canonical);
 }
 
 export function forbiddenSchoolsFromBody(body) {
@@ -140,7 +149,7 @@ function schoolNamesFromMainTiers(o) {
 
 function validateMainNineSchools(o) {
   const tiers = ["reach", "match", "safety"];
-  const seen = new Set();
+  const seen = new Map();
   for (const t of tiers) {
     const rows = o[t];
     if (!Array.isArray(rows) || rows.length !== 3) {
@@ -159,11 +168,16 @@ function validateMainNineSchools(o) {
       if (!name) {
         return { ok: false, repairable: true, reason: `${t} 中存在空 school` };
       }
-      const key = name.toLowerCase();
-      if (seen.has(key)) {
-        return { ok: false, repairable: true, reason: `重复校名：${name}` };
+      const key = canonicalSchoolKey(name);
+      const duplicateOf = seen.get(key);
+      if (duplicateOf) {
+        const reason =
+          normalizeSchoolName(duplicateOf) === normalizeSchoolName(name)
+            ? `重复校名：${name}`
+            : `重复校名：${name}（与 ${duplicateOf} 指向同一学校）`;
+        return { ok: false, repairable: true, reason };
       }
-      seen.add(key);
+      seen.set(key, name);
     }
   }
   return { ok: true, seen };
@@ -188,8 +202,8 @@ function validateTopReferenceBlock(o, body) {
     };
   }
 
-  const mainKeys = new Set(schoolNamesFromMainTiers(o).map((n) => n.toLowerCase()));
-  const topSeen = new Set();
+  const mainKeys = new Set(schoolNamesFromMainTiers(o).map(canonicalSchoolKey));
+  const topSeen = new Map();
   for (let i = 0; i < raw.length; i++) {
     const row = raw[i];
     if (!row || typeof row !== "object") {
@@ -206,11 +220,16 @@ function validateTopReferenceBlock(o, body) {
         reason: `${name} 不属于顶级参考校，请放入 reach/match/safety 主名单`,
       };
     }
-    const key = name.toLowerCase();
-    if (topSeen.has(key)) {
-      return { ok: false, repairable: true, reason: `top_reference_schools 重复校名：${name}` };
+    const key = canonicalSchoolKey(name);
+    const duplicateOf = topSeen.get(key);
+    if (duplicateOf) {
+      const reason =
+        normalizeSchoolName(duplicateOf) === normalizeSchoolName(name)
+          ? `top_reference_schools 重复校名：${name}`
+          : `top_reference_schools 重复校名：${name}（与 ${duplicateOf} 指向同一学校）`;
+      return { ok: false, repairable: true, reason };
     }
-    topSeen.add(key);
+    topSeen.set(key, name);
     if (mainKeys.has(key)) {
       return { ok: false, repairable: true, reason: `${name} 不得同时出现在主名单 9 校与 top_reference_schools` };
     }
@@ -245,7 +264,7 @@ export function autoRepairTopReferenceSchools(parsed, body, locale = "zh") {
     return parsed;
   }
 
-  const mainKeys = new Set(schoolNamesFromMainTiers(o).map((n) => n.toLowerCase()));
+  const mainKeys = new Set(schoolNamesFromMainTiers(o).map(canonicalSchoolKey));
   const kept = [];
   const removed = [];
   const seen = new Set();
@@ -264,7 +283,7 @@ export function autoRepairTopReferenceSchools(parsed, body, locale = "zh") {
       removed.push(name);
       continue;
     }
-    const key = name.toLowerCase();
+    const key = canonicalSchoolKey(name);
     if (seen.has(key)) {
       removed.push(name);
       continue;
