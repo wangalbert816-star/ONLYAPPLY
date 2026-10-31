@@ -42,14 +42,20 @@ function gpaContextBonus(g) {
 }
 
 function parseSheetGpaNumber(s) {
-  const n = Number(String(s ?? "").trim());
+  const raw = String(s ?? "").trim();
+  if (!raw) return null;
+  const n = Number(raw);
   return Number.isFinite(n) ? n : null;
 }
 
 function transcriptSheetUsable(sheet) {
   if (!sheet || typeof sheet !== "object" || sheet.skipped) return false;
   const courses = Array.isArray(sheet.courses) ? sheet.courses : [];
-  return courses.some((c) => String(c?.courseName ?? "").trim() && String(c?.grade ?? "").trim());
+  const hasCourse = courses.some((c) => String(c?.courseName ?? "").trim() && String(c?.grade ?? "").trim());
+  const hasConfirmedGpa =
+    Boolean(sheet.confirmedAt) &&
+    (parseSheetGpaNumber(sheet.unweightedGpa) != null || parseSheetGpaNumber(sheet.weightedGpa) != null);
+  return hasCourse || hasConfirmedGpa;
 }
 
 function scoreAcademic(body) {

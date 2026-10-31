@@ -798,6 +798,32 @@ check("chances: academic score uses GPA value + testing only", () => {
   if (elite < 88) throw new Error(`elite=${elite}`);
 });
 
+check("engine scoring: confirmed GPA-only transcript sheet feeds academic score", () => {
+  const body = {
+    gpa: "",
+    transcriptSheet: {
+      confirmedAt: "2026-10-31T00:00:00.000Z",
+      unweightedGpa: "3.9",
+      weightedGpa: "4.4",
+      courses: [],
+    },
+  };
+  const withCourse = {
+    ...body,
+    transcriptSheet: {
+      ...body.transcriptSheet,
+      courses: [{ courseName: "AP Calculus AB", grade: "A" }],
+    },
+  };
+  const stats = buildStudentStatsProfile(body);
+  if (stats.uwGpa !== 3.9 || stats.wGpa !== 4.4) throw new Error(JSON.stringify(stats));
+  const sheetOnlyAcademic = scoreFiveDimensions(body).academic;
+  const withCourseAcademic = scoreFiveDimensions(withCourse).academic;
+  if (sheetOnlyAcademic !== withCourseAcademic || sheetOnlyAcademic < 88) {
+    throw new Error(`sheetOnly=${sheetOnlyAcademic} withCourse=${withCourseAcademic}`);
+  }
+});
+
 check("chances: Wisconsin match for 3.7 test-optional profile", () => {
   const result = evaluateChances({ gpa: "3.7", testing: "test_optional" }, ["University of Wisconsin-Madison"]);
   const wi = result.schools[0];
