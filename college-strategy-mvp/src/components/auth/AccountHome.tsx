@@ -55,6 +55,7 @@ type Props = {
   }) => void;
   onEditForm: (payload: { form: FormState; applicationId: string; supplementaryNotes?: SupplementaryNote[]; targetStep?: number }) => void;
   onNewApplication: () => void;
+  onApplicationDeleted: (applicationId: string) => void;
   onOpenAppLinks: (e: MouseEvent<HTMLButtonElement>) => void;
   onOpenCounselorConsole?: () => void;
   onOpenSignedService?: (payload: { form: FormState; applicationId: string }) => void;
@@ -138,6 +139,7 @@ export function AccountHome({
   onOpenReport,
   onEditForm,
   onNewApplication,
+  onApplicationDeleted,
   onOpenAppLinks,
   onOpenCounselorConsole,
   onOpenSignedService,
@@ -350,7 +352,14 @@ export function AccountHome({
     try {
       await deleteApplication(appId);
       setApps((prev) => prev.filter((a) => a.id !== appId));
+      setReportsByApp((prev) => {
+        if (!(appId in prev)) return prev;
+        const next = { ...prev };
+        delete next[appId];
+        return next;
+      });
       if (expandedId === appId) setExpandedId(null);
+      onApplicationDeleted(appId);
     } catch (e) {
       setErr(formatSupabaseError(e, t));
     }
