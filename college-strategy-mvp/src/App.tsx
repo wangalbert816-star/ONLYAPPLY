@@ -458,6 +458,34 @@ export default function App() {
     setView("signed-service");
   }, []);
 
+  const handleApplicationDeleted = useCallback(
+    (applicationId: string) => {
+      if (signedServiceContext?.applicationId === applicationId) {
+        setSignedServiceContext(null);
+      }
+      if (currentApplicationId !== applicationId) return;
+      setForm(initialForm);
+      setReport(null);
+      setCurrentApplicationId(null);
+      setCurrentReportId(null);
+      setReportUnlocked(false);
+      setAlumniFeedbackMode(false);
+      setSessionSaved(false);
+      setSaveBannerDismissed(false);
+      answeredGapSupplementaryRef.current = [];
+      profileFiveSupplementaryRef.current = [];
+      setStep(1);
+      setStep1Screen(0);
+      setStep2Screen(0);
+      setStep3Screen(0);
+      setFlowStarted(false);
+      clearUnlockStorage();
+      clearPendingSave();
+      clearFormDraft();
+    },
+    [currentApplicationId, signedServiceContext?.applicationId],
+  );
+
   const handleCounselorOpenReport = useCallback(
     async (engagement: CrmEngagement) => {
       if (!user) {
@@ -1343,6 +1371,7 @@ export default function App() {
             clearPendingSave();
             clearFormDraft();
           }}
+          onApplicationDeleted={handleApplicationDeleted}
           onEditForm={({ form: f, applicationId, supplementaryNotes, targetStep }) => {
             setForm(f);
             setCurrentApplicationId(applicationId);
